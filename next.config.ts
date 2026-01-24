@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === 'production';
+const repoName = '/LovelyMemories';
+
 const nextConfig: NextConfig = {
   output: 'export',
   images: {
@@ -15,8 +18,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  basePath: '/LovelyMemories',
-  assetPrefix: '/LovelyMemories',
+  basePath: isProd ? repoName : '',
+  assetPrefix: isProd ? repoName : '',
   async redirects() {
     return [
       {
