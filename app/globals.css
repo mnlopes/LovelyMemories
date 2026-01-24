@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+    --font-playfair: "Playfair Display", serif;
+    --font-inter: "Inter", sans-serif;
+
+    --color-navy-950: #0a1128;
+    --color-navy-900: #0d1b3e;
+    --color-gold-400: #c5a059;
+    --color-gold-500: #b08d4a;
+}
+
+/* Garante que o Tailwind tem prioridade sobre resets genéricos do CSS legado */
+@layer base {
+
+    html,
+    body {
+        @apply m-0 p-0 overflow-x-hidden;
+    }
+
+    img {
+        @apply max-w-full h-auto;
+    }
+}
+
+/* Scroll Animations */
+.reveal-pending {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    will-change: opacity, transform;
+}
+
+.reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Staggered delays for specific list items if not handled by JS */
+.services-left__list--wrap>li.reveal-pending:nth-child(1) {
+    transition-delay: 100ms;
+}
+
+.services-left__list--wrap>li.reveal-pending:nth-child(2) {
+    transition-delay: 200ms;
+}
+
+.services-left__list--wrap>li.reveal-pending:nth-child(3) {
+    transition-delay: 300ms;
+}
+
+/* OWNER IMAGES FIX - Bring them closer to center and animate */
+.owner-images__img {
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out !important;
+}
+
+/* Image Left - Was -14% */
+.owner-images__img:nth-child(1) {
+    left: -5% !important;
+    top: 5% !important;
+}
+
+/* Image Right - Was 93% */
+.owner-images__img:nth-child(3) {
+    left: 80% !important;
+    top: 5% !important;
+}
+
+/* Mobile Adjustments */
+/* PORTO SECTION SPACING */
+.section-about {
+    margin-bottom: 150px !important;
+}
+
+/* FINAL CLEANUP - Remove white space after footer */
+.wpml-ls-statics-footer,
+.otgs-development-site-front-end,
+#ui-datepicker-div,
+.pac-container,
+[id^="give-freely-root"] {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* FOOTER SUBSCRIBE OPACITY INTERACTION */
+.form-submit {
+    opacity: 0.7;
+    transition: opacity 0.3s ease !important;
+}
+
+.form-group:has(input:not(:placeholder-shown)) .form-submit {
+    opacity: 1 !important;
+}
+
+body,
+html,
+.single-home {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}

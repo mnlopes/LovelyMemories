@@ -1,0 +1,1 @@
+<body class="wp-singular page-template page-template-templates page-template-page-contact page-template-templatespage-contact-php page page-id-10 wp-theme-adhq-theme theme-adhq-theme woocommerce-js yith-booking en" cz-shortcut-listen="true">

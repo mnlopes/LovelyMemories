@@ -1,0 +1,1 @@
+<body class="blog wp-theme-adhq-theme theme-adhq-theme woocommerce-js yith-booking en" cz-shortcut-listen="true">
