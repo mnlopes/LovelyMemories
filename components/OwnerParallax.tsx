@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 export const OwnerParallax = () => {
     // Refs para performance (não causar re-renders)
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number>(undefined);
 
     useEffect(() => {
         // Seletores baseados na ordem do DOM no legacy-home-body.html

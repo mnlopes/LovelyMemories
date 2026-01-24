@@ -44,8 +44,9 @@ export const BookingSidebar = ({
     const totalTax = cityTax * (activeTab === 'short' ? nights : 30);
     const total = subtotal + totalTax + cleaningFee;
 
-    const formatPrice = (val: number) => {
-        return val.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+    const formatPrice = (val: number | null | undefined) => {
+        const safeVal = val || 0;
+        return safeVal.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
     };
 
     return (
