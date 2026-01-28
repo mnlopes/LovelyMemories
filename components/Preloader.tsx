@@ -34,7 +34,7 @@ export const Preloader = () => {
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="relative w-full max-w-4xl mx-auto"
                     >
-                        <h1 className="font-playfair text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight">
+                        <h1 className="font-playfair text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight">
                             Lovely Memories
                         </h1>
                         <motion.div

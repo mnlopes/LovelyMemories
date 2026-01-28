@@ -38,7 +38,7 @@ export const PropertyOwnerSection = () => {
                         <div className="hidden lg:block lg:col-span-4 xl:col-span-3"></div>
 
                         {/* Text Content - Using negative margin to shift left slightly without breaking grid alignment */}
-                        <div className="col-span-1 lg:col-span-8 xl:col-span-9 text-left text-white z-30 relative lg:-ml-12 xl:-ml-16">
+                        <div className="col-span-1 lg:col-span-8 xl:col-span-9 text-left text-white z-30 relative lg:-ml-28 xl:-ml-32">
                             <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
@@ -78,7 +78,7 @@ export const PropertyOwnerSection = () => {
                     className="absolute z-10 overflow-hidden rounded-2xl hidden lg:block w-[300px] h-[300px] xl:w-[360px] xl:h-[360px] 2xl:w-[450px] 2xl:h-[450px]"
                     style={{
                         y: y1,
-                        left: '-2%',
+                        left: '-10%',
                         top: '-10%',
                     }}
                 >
