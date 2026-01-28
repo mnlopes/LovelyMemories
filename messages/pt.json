@@ -1,0 +1,258 @@
+{
+    "Navbar": {
+        "book": "Reservar",
+        "owner": "Proprietário",
+        "about": "Sobre Nós",
+        "properties": "Propriedades",
+        "concierge": "Concierge",
+        "blog": "Blog",
+        "contact": "Contacto",
+        "login": "Entrar"
+    },
+    "Footer": {
+        "getInTouch": "Fale Connosco",
+        "subscribe": "Subscrever",
+        "enterEmail": "Introduza o seu email",
+        "rights": "© 2026 Lovely Memories. Todos os direitos reservados.",
+        "privacyPolicy": "Política de Privacidade e Cookies",
+        "termsConditions": "Termos e Condições"
+    },
+    "Home": {
+        "heroOverTitle": "Reserve uma das nossas casas requintadas e curadas",
+        "heroTitle": "E crie as suas próprias memórias encantadoras e duradouras do Porto",
+        "aboutTitle": "Do Porto para o Mundo",
+        "aboutDescription": "Somos o principal agente de gestão de alojamento turístico em Portugal, gerido por uma equipa internacional fantástica. Os nossos clientes, sejam os proprietários ou os próprios hóspedes, sabem exatamente porquê!",
+        "aboutButton": "Sobre Nós",
+        "featuredTitle": "Algumas das nossas Casas e Resorts Únicos",
+        "gardenHuts": "Garden Huts & Eco Homes"
+    },
+    "BookingBar": {
+        "myTrip": "Minha Viagem",
+        "destinationLabel": "O seu Destino",
+        "destinationPlaceholder": "Para onde vai?",
+        "arrival": "Chegada",
+        "departure": "Partida",
+        "addDate": "Adicionar data",
+        "selectDate": "Sel. Data",
+        "travellers": "Viajantes",
+        "selectPeople": "Sel. pessoas",
+        "search": "Procurar"
+    },
+    "GuestSelector": {
+        "adults": "Adultos",
+        "infants": "Crianças",
+        "person": "pessoa",
+        "people": "pessoas",
+        "clear": "Limpar"
+    },
+    "Concierge": {
+        "subtitle": "Serviços Exclusivos",
+        "mainTitle": "Personalize a sua viagem com um dos nossos serviços de parceiros preferenciais",
+        "exclusiveSelection": "Seleção Exclusiva",
+        "safetyGuaranteed": "Segurança Garantida",
+        "support24h": "Suporte 24h",
+        "privateTransfers": "Transfers privados",
+        "privateTransfersDesc": "Transporte sem complicações até ao seu destino.",
+        "breakfastAtHome": "Pequeno-almoço em Casa",
+        "breakfastAtHomeDesc": "Comece o seu dia com delícias gourmet.",
+        "chefAtHome": "Chef em Casa",
+        "chefAtHomeDesc": "Jantares requintados no seu próprio espaço.",
+        "anotherService": "Outro Serviço",
+        "anotherServiceDesc": "Serviços personalizados para as suas necessidades.",
+        "experiences": "Experiências",
+        "experiencesDesc": "Aventuras locais inesquecíveis."
+    },
+    "OwnerSection": {
+        "question": "É proprietário de um imóvel?",
+        "title": "Liberte o potencial da sua propriedade",
+        "subtitle": "Sabemos o que é preciso para ser o melhor. Saiba o que nos distingue dos outros.",
+        "button": "Descobrir"
+    },
+    "PropertiesGrid": {
+        "backToHome": "Voltar à Home",
+        "title": "As nossas Casas Únicas",
+        "subtitle": "Explore a nossa seleção curada de propriedades de luxo no Porto, desenhadas para criar memórias encantadoras e duradouras."
+    },
+    "OwnerHero": {
+        "subtitle": "Para Proprietários",
+        "title": "Maximizando o potencial da sua propriedade",
+        "description": "Os nossos serviços principais podem libertar o potencial da sua propriedade",
+        "badge": {
+            "earn": "Ganhe",
+            "percent": "40%",
+            "more": "mais"
+        },
+        "form": {
+            "title": "Obtenha o seu relatório de Receita personalizado",
+            "subtitle": "Detalhes da propriedade",
+            "fullName": "Nome Completo*",
+            "email": "Email*",
+            "phone": "Telemóvel*",
+            "address": "Morada*",
+            "location": "Localização*",
+            "submit": "Enviar",
+            "submitting": "A enviar...",
+            "success": "Obrigado! Entraremos em contacto brevemente."
+        }
+    },
+    "OwnerStats": {
+        "bookings": "Total de reservas",
+        "guests": "Hóspedes confiáveis",
+        "revenue": "Receita dos proprietários"
+    },
+    "OwnerServices": {
+        "title": "Os nossos serviços principais podem libertar o potencial da sua propriedade",
+        "desc": "A nossa missão é oferecer serviços completos e totalmente transparentes para o proprietário. Calendários, reservas, preços, despesas e receitas - tudo à distância de um clique.",
+        "quote": "\"Orgulhamo-nos de estar próximos de cada um dos nossos parceiros.\""
+    },
+    "OwnerFeatures": {
+        "transparency": {
+            "title": "Transparência Online",
+            "desc": "Aceda a tudo sobre a sua propriedade e anúncios 24/7 de qualquer lugar do mundo graças ao nosso dashboard LovelyStay."
+        },
+        "checkin": {
+            "title": "Check-in e Check-out",
+            "desc": "A nossa equipa de hospitalidade oferece comunicação constante com os hóspedes 24/7 e está prontamente disponível para atender todas as necessidades dos hóspedes."
+        },
+        "cleaning": {
+            "title": "Limpeza e Manutenção",
+            "desc": "Cuidamos da sua propriedade e estamos sempre presentes para resolver qualquer situação, mesmo quando você não está."
+        },
+        "account": {
+            "title": "Gestores de Conta",
+            "desc": "O objetivo dos nossos gestores de conta dedicados é estar lá para si e representar o seu melhor interesse em todas as situações."
+        },
+        "design": {
+            "title": "Design de Interiores",
+            "desc": "Os nossos especialistas em hospitalidade podem apoiá-lo na melhoria do seu espaço para aumentar a sua rentabilidade."
+        },
+        "legal": {
+            "title": "Suporte Fiscal e Legal",
+            "desc": "Oferecemos soluções tecnológicas e serviços de consultoria para qualquer tópico relacionado com o arrendamento da sua propriedade."
+        }
+    },
+    "OwnerExperience": {
+        "title": "Experiência em que pode confiar: entregando resultados para proprietários",
+        "desc": "A LovelyStay é reconhecida por fornecer serviços de gestão de propriedades de alta qualidade a proprietários em Portugal e no estrangeiro. Com uma equipa experiente nas áreas de hospitalidade, gestão de receita e tecnologia da informação.",
+        "trust": {
+            "title": "+1000 Proprietários confiaram em nós",
+            "revenue": "Receita gerada",
+            "market": "No mercado desde",
+            "cta": "Contacte-nos"
+        }
+    },
+    "OwnerPricing": {
+        "title": "Junte-se a nós e desfrute de uma gestão de propriedade sem preocupações!",
+        "subtitle": "Combine os nossos pacotes para criar uma solução de gestão personalizada!",
+        "base": {
+            "title": "Taxa Base",
+            "selected": "Selecionado",
+            "clickToSelect": "Clique para Selecionar"
+        },
+        "luxe": {
+            "title": "Luxe",
+            "add": "Adicionar Luxe",
+            "selected": "Selecionado"
+        },
+        "total": {
+            "fee": "Taxa de Serviço Total",
+            "excludingVat": "*excluindo IVA",
+            "package": "Pacote:",
+            "basePlusLuxe": "Taxa Base + Luxe",
+            "at": "a",
+            "feeLabel": "de taxa.",
+            "selectPrompt": "Selecione um pacote para ver a taxa.",
+            "cta": "Contacte-nos"
+        },
+        "services": {
+            "marketStudy": "Estudo de mercado",
+            "dashboard": "Área de utilizador no dashboard LS",
+            "listing": "Listagem em sites de reservas",
+            "bookingMgmt": "Gestão de reservas",
+            "communication": "Comunicação 24/7 com hóspedes",
+            "optimization": "Otimização de preços e receita",
+            "consultancy": "Consultoria de design, fiscal e legal",
+            "accountManager": "Gestor de conta dedicado",
+            "cleaning": "Limpeza e lavandaria",
+            "photoshoot": "Sessão fotográfica gratuita",
+            "screening": "Triagem inteligente de hóspedes",
+            "damage": "Compensação de danos",
+            "noContract": "Sem período mínimo de contrato",
+            "noLimit": "Sem limite de estadias para proprietários",
+            "checkIn": "Check-in/out",
+            "maintenance": "Manutenção e reparação",
+            "qualityControl": "Visitas de controlo de qualidade",
+            "amenities": "Amenities",
+            "sef": "Comunicação ao SEF",
+            "guestSupport": "Apoio ao hóspede durante a estadia",
+            "linen": "Toalhas e roupa de cama LovelyStay",
+            "admin": "Assistência administrativa",
+            "taxes": "Pagamento de taxas turísticas",
+            "invoice": "Serviço completo de faturação",
+            "suppliers": "Gestão de pagamentos a fornecedores"
+        }
+    },
+    "AboutHero": {
+        "title": "Do Porto para o Mundo"
+    },
+    "AboutIntro": {
+        "p1": "O núcleo do nosso negócio é a excelência no que fazemos e a procura constante de manter a nossa posição como a principal empresa de gestão de propriedades boutique no Porto, onde atualmente focamos todas as nossas operações. Somos apaixonados pela cidade e orgulhamo-nos de ser o ponto de partida da viagem de cada um dos nossos hóspedes nesta cidade cativante e deslumbrantemente bela.",
+        "p2": "Selecionamos e decoramos as nossas propriedades com os mais altos padrões apenas para que se sinta verdadeiramente bem-vindo e cuidado, e isso vai muito além da estética da propriedade onde está hospedado. O nosso serviço inigualável é a chave para o nosso sucesso."
+    },
+    "AboutTeam": {
+        "header": "As Nossas Pessoas",
+        "title": "A Equipa",
+        "roles": {
+            "cofounder": "Co-Fundador",
+            "interiorDesigner": "Interior Designer",
+            "operations": "Gestora de Operações"
+        }
+    },
+    "AboutStory": {
+        "header": "A Nossa Jornada",
+        "title": "Uma História de Memórias Encantadoras",
+        "stories": {
+            "2020": {
+                "title": "O Início",
+                "text": "Abrimos o nosso escritório e Welcome Center na baixa do Porto, marcando o início da nossa jornada nesta cidade deslumbrante."
+            },
+            "2021": {
+                "title": "Crescimento e Resiliência",
+                "text": "Apesar dos desafios globais, selecionámos mais propriedades e refinámos o nosso serviço inigualável para garantir que os nossos hóspedes se sentissem verdadeiramente bem-vindos."
+            },
+            "2022": {
+                "title": "Expandindo Horizontes",
+                "text": "A nossa empresa de gestão de propriedades tornou-se uma referência no Porto, expandindo o nosso portfólio com casas curadas e de alto padrão."
+            },
+            "2023": {
+                "title": "Design e Excelência",
+                "text": "Integrámos uma maior experiência em design de interiores para elevar a estética das nossas propriedades, fundindo conforto com luxo."
+            },
+            "2024": {
+                "title": "Conexões Inovadoras",
+                "text": "Lançamento de novas experiências digitais para colmatar a lacuna entre a nossa experiência local e as expectativas globais dos nossos hóspedes."
+            },
+            "2025": {
+                "title": "O Futuro da Hospitalidade",
+                "text": "Lutando para manter a nossa posição como a principal empresa boutique, evoluindo constantemente as nossas operações para melhores experiências dos hóspedes."
+            },
+            "2026": {
+                "title": "Alcance Global",
+                "text": "Do Porto para o Mundo - a nossa missão permanece firme: fornecer as melhores memórias locais através de padrões globais de excelência."
+            }
+        }
+    },
+    "AboutSocialWall": {
+        "title": "@lovelymemories",
+        "follow": "Siga-nos no Instagram"
+    },
+    "AboutForm": {
+        "title": "A Nossa Equipa ao Seu Dispor",
+        "subtitle": "Se tem uma propriedade e gostaria que a geríssemos e aumentássemos a sua receita, fale connosco!",
+        "name": "Nome*",
+        "email": "Email*",
+        "message": "Mensagem*",
+        "submit": "Enviar Mensagem",
+        "success": "Obrigado pela sua mensagem! Entraremos em contacto em breve."
+    }
+}

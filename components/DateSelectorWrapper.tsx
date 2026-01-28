@@ -3,12 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { format } from "date-fns";
 import { CustomCalendar } from "@/components/CustomCalendar";
+import { useTranslations } from "next-intl";
 
 export const DateSelectorWrapper = () => {
+    const t = useTranslations('GuestSelector');
     const [openInput, setOpenInput] = useState<'arrival' | 'departure' | null>(null);
     const [arrivalDate, setArrivalDate] = useState<Date | undefined>();
     const [departureDate, setDepartureDate] = useState<Date | undefined>();
-    const [coords, setCoords] = useState({ top: 0, left: 0 });
+    const [coords, setCoords] = useState<{ top: number; left: number; placement: 'top' | 'bottom' }>({ top: 0, left: 0, placement: 'bottom' });
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [mounted, setMounted] = useState(false);
 
@@ -19,35 +21,35 @@ export const DateSelectorWrapper = () => {
             ? '.yith-wcbk-booking-start-date'
             : '.yith-wcbk-booking-end-date';
 
-        // Input principal (hidden value or text)
-        const input = document.querySelector(selector) as HTMLInputElement;
-        // O formatted input geralmente tem a mesma classe + '--formatted' no ID ou é um sibling.
-        // Verificando HTML: id="...-formatted" class="...yith-wcbk-date-picker--formatted..."
-        // Vamos tentar encontrar o formatted pelo ID do input se possível, ou procurar pela classe formatted adjacente
+        const inputs = document.querySelectorAll(selector);
 
-        let formattedInput: HTMLInputElement | null = null;
-        if (input && input.id) {
-            formattedInput = document.getElementById(`${input.id}--formatted`) as HTMLInputElement;
-        }
+        inputs.forEach((inputElement) => {
+            const input = inputElement as HTMLInputElement;
 
-        if (input && date) {
-            // O plugin YITH parece usar dd.mm.yy por defeito ou dd/mm/yyyy
-            // Vamos usar dd.mm.yyyy para match com screenshot e tentar garantir compatibilidade
-            const val = format(date, 'dd.MM.yyyy');
-            input.value = val;
-
-            // Disparar eventos para garantir que o YITH/WooCommerce detetam a mudança
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-
-            if (formattedInput) {
-                formattedInput.value = val;
+            let formattedInput: HTMLInputElement | null = null;
+            if (input && input.id) {
+                formattedInput = document.getElementById(`${input.id}--formatted`) as HTMLInputElement;
             }
-        } else if (input && !date) {
-            input.value = '';
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            if (formattedInput) formattedInput.value = '';
-        }
+
+            if (input && date) {
+                // O plugin YITH parece usar dd.mm.yy por defeito ou dd/mm/yyyy
+                // Vamos usar dd.mm.yyyy para match com screenshot e tentar garantir compatibilidade
+                const val = format(date, 'dd.MM.yyyy');
+                input.value = val;
+
+                // Disparar eventos para garantir que o YITH/WooCommerce detetam a mudança
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+
+                if (formattedInput) {
+                    formattedInput.value = val;
+                }
+            } else if (input && !date) {
+                input.value = '';
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                if (formattedInput) formattedInput.value = '';
+            }
+        });
     };
 
     const updatePosition = useCallback((target: HTMLElement) => {
@@ -55,10 +57,17 @@ export const DateSelectorWrapper = () => {
         if (target && parentContainer) {
             const rect = target.getBoundingClientRect();
             const parentRect = parentContainer.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            const spaceBelow = windowHeight - rect.bottom;
+            const spaceAbove = rect.top;
+
+            // Auto-flip if less than 420px below and we have space above
+            const placement = (spaceBelow < 420 && spaceAbove > 420) ? 'top' : 'bottom';
 
             setCoords({
-                top: (rect.bottom - parentRect.top),
-                left: (rect.left - parentRect.left)
+                top: placement === 'bottom' ? (rect.bottom - parentRect.top) : (rect.top - parentRect.top),
+                left: (rect.left - parentRect.left),
+                placement
             });
         }
     }, []);
@@ -68,77 +77,60 @@ export const DateSelectorWrapper = () => {
 
         // Attach listeners to legacy inputs
         const attachListeners = () => {
-            // Seletores genéricos mais robustos
             const arrivalInputs = document.querySelectorAll('.yith-wcbk-booking-start-date');
             const departureInputs = document.querySelectorAll('.yith-wcbk-booking-end-date');
 
-            // Precisamos garantir que estamos a pegar nos inputs visíveis da home (não do sidebar se houver)
-            // Normalmente o primeiro é o da Hero.
-            const arrivalInput = arrivalInputs[0] as HTMLElement;
-            const departureInput = departureInputs[0] as HTMLElement;
-
-            if (arrivalInput) {
-                console.log("DateSelectorWrapper: Attaching to Arrival Input", arrivalInput);
-                const handleClick = (e: Event) => {
-                    e.preventDefault();
-                    e.stopPropagation(); // Importante para parar o jQuery UI
-
-                    updatePosition(arrivalInput);
-                    setOpenInput('arrival');
-
-                    // Força bruta para fechar o datepicker do jQuery se ele aparecer
-                    const jqueryDatePicker = document.getElementById('ui-datepicker-div');
-                    if (jqueryDatePicker) jqueryDatePicker.style.display = 'none';
-                };
-
-                // Adicionar listener no parent wrapper também, caso o input esteja coberto
-                const parent = arrivalInput.parentElement;
-
-                arrivalInput.addEventListener('click', handleClick, true);
-                arrivalInput.addEventListener('mousedown', handleClick, true); // Mousedown dispara antes do click
-                arrivalInput.addEventListener('focus', handleClick, true);
-
-                if (parent) {
-                    parent.addEventListener('click', handleClick, true);
-                }
-
-                (arrivalInput as any)._reactCleanup = () => {
-                    arrivalInput.removeEventListener('click', handleClick, true);
-                    arrivalInput.removeEventListener('mousedown', handleClick, true);
-                    arrivalInput.removeEventListener('focus', handleClick, true);
-                    if (parent) parent.removeEventListener('click', handleClick, true);
-                };
-            }
-
-            if (departureInput) {
-                console.log("DateSelectorWrapper: Attaching to Departure Input", departureInput);
+            arrivalInputs.forEach((arrivalInput) => {
+                const htmlArrivalInput = arrivalInput as HTMLElement;
                 const handleClick = (e: Event) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    updatePosition(departureInput);
-                    setOpenInput('departure');
-
+                    updatePosition(htmlArrivalInput);
+                    setOpenInput('arrival');
                     const jqueryDatePicker = document.getElementById('ui-datepicker-div');
                     if (jqueryDatePicker) jqueryDatePicker.style.display = 'none';
                 };
 
-                const parent = departureInput.parentElement;
+                htmlArrivalInput.addEventListener('click', handleClick, true);
+                htmlArrivalInput.addEventListener('mousedown', handleClick, true);
+                htmlArrivalInput.addEventListener('focus', handleClick, true);
 
-                departureInput.addEventListener('click', handleClick, true);
-                departureInput.addEventListener('mousedown', handleClick, true);
-                departureInput.addEventListener('focus', handleClick, true);
+                const parent = htmlArrivalInput.parentElement;
+                if (parent) parent.addEventListener('click', handleClick, true);
 
-                if (parent) {
-                    parent.addEventListener('click', handleClick, true);
-                }
-
-                (departureInput as any)._reactCleanup = () => {
-                    departureInput.removeEventListener('click', handleClick, true);
-                    departureInput.removeEventListener('mousedown', handleClick, true);
-                    departureInput.removeEventListener('focus', handleClick, true);
+                (htmlArrivalInput as any)._reactCleanup = () => {
+                    htmlArrivalInput.removeEventListener('click', handleClick, true);
+                    htmlArrivalInput.removeEventListener('mousedown', handleClick, true);
+                    htmlArrivalInput.removeEventListener('focus', handleClick, true);
                     if (parent) parent.removeEventListener('click', handleClick, true);
                 };
-            }
+            });
+
+            departureInputs.forEach((departureInput) => {
+                const htmlDepartureInput = departureInput as HTMLElement;
+                const handleClick = (e: Event) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    updatePosition(htmlDepartureInput);
+                    setOpenInput('departure');
+                    const jqueryDatePicker = document.getElementById('ui-datepicker-div');
+                    if (jqueryDatePicker) jqueryDatePicker.style.display = 'none';
+                };
+
+                htmlDepartureInput.addEventListener('click', handleClick, true);
+                htmlDepartureInput.addEventListener('mousedown', handleClick, true);
+                htmlDepartureInput.addEventListener('focus', handleClick, true);
+
+                const parent = htmlDepartureInput.parentElement;
+                if (parent) parent.addEventListener('click', handleClick, true);
+
+                (htmlDepartureInput as any)._reactCleanup = () => {
+                    htmlDepartureInput.removeEventListener('click', handleClick, true);
+                    htmlDepartureInput.removeEventListener('mousedown', handleClick, true);
+                    htmlDepartureInput.removeEventListener('focus', handleClick, true);
+                    if (parent) parent.removeEventListener('click', handleClick, true);
+                };
+            });
         };
 
         const timer = setTimeout(attachListeners, 1000); // Aumentado para 1s para garantir
@@ -188,6 +180,12 @@ export const DateSelectorWrapper = () => {
         if (openInput === 'arrival') {
             setArrivalDate(date);
             updateLegacyInput('arrival', date);
+
+            // Se a nova data de chegada for posterior ou igual à partida atual, limpa a partida
+            if (date && departureDate && date >= departureDate) {
+                setDepartureDate(undefined);
+                updateLegacyInput('departure', undefined);
+            }
         } else if (openInput === 'departure') {
             setDepartureDate(date);
             updateLegacyInput('departure', date);
@@ -201,9 +199,10 @@ export const DateSelectorWrapper = () => {
             ref={wrapperRef}
             style={{
                 position: 'absolute',
-                top: `${coords.top + 10}px`,
+                top: `${coords.top + (coords.placement === 'bottom' ? 10 : -10)}px`,
                 left: `${coords.left}px`,
-                zIndex: 40
+                zIndex: 40,
+                transform: coords.placement === 'top' ? 'translateY(-100%)' : 'none'
             }}
             className="bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] rounded-xl p-3 border border-gray-100 animate-in fade-in zoom-in-95 duration-200 min-w-[280px]"
             onMouseDown={(e) => e.stopPropagation()}
@@ -221,9 +220,9 @@ export const DateSelectorWrapper = () => {
                     onClick={() => {
                         handleDateSelect(undefined);
                     }}
-                    className="text-[10px] font-bold text-gray-300 hover:text-[#C5A059] transition-colors uppercase tracking-widest py-0.5"
+                    className="text-[10px] font-bold text-gray-300 hover:text-[#B09E80] transition-colors uppercase tracking-widest py-0.5"
                 >
-                    Clear
+                    {t('clear')}
                 </button>
             </div>
         </div>

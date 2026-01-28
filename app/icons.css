@@ -1,0 +1,182 @@
+/* Lovely Icons */
+@font-face {
+    font-family: 'lovelymemories';
+    src: url('/fonts/lovelyicons.eot?53341355');
+    src: url('/fonts/lovelyicons.eot?53341355#iefix') format('embedded-opentype'),
+        url('/fonts/lovelyicons.woff?53341355') format('woff'),
+        url('/fonts/lovelyicons.ttf?53341355') format('truetype'),
+        url('/fonts/lovelyicons.svg?53341355#lovelymemories') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+[class^="icon-"]:before,
+[class*=" icon-"]:before {
+    font-family: "lovelymemories";
+    font-style: normal;
+    font-weight: normal;
+    speak: none;
+    display: inline-block;
+    text-decoration: inherit;
+    width: 1em;
+    margin-right: .2em;
+    text-align: center;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1em;
+    margin-left: .2em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-arrival:before {
+    content: '\e900';
+}
+
+.icon-bathroom:before {
+    content: '\e901';
+}
+
+.icon-bedroom:before {
+    content: '\e902';
+}
+
+.icon-blocked:before {
+    content: '\e903';
+}
+
+.icon-calendar-7:before {
+    content: '\e904';
+}
+
+.icon-calendar-30:before {
+    content: '\e905';
+}
+
+.icon-calendar:before {
+    content: '\e906';
+}
+
+.icon-chat:before {
+    content: '\e907';
+}
+
+.icon-check:before {
+    content: '\e908';
+}
+
+.icon-chevron-down:before {
+    content: '\e909';
+}
+
+.icon-clock:before {
+    content: '\e90a';
+}
+
+.icon-cross:before {
+    content: '\e90b';
+}
+
+.icon-departure:before {
+    content: '\e90c';
+}
+
+.icon-destination:before {
+    content: '\e90d';
+}
+
+.icon-facebook:before {
+    content: '\e90e';
+}
+
+.icon-graph:before {
+    content: '\e90f';
+}
+
+.icon-guest:before {
+    content: '\e910';
+}
+
+.icon-ice:before {
+    content: '\e911';
+}
+
+.icon-instagram:before {
+    content: '\e912';
+}
+
+.icon-chevron-up:before {
+    content: '\e913';
+}
+
+.icon-chevron-left:before {
+    content: '\e914';
+}
+
+.icon-legal:before {
+    content: '\e915';
+}
+
+.icon-linkedin:before {
+    content: '\e916';
+}
+
+.icon-mail:before {
+    content: '\e917';
+}
+
+.icon-owner:before {
+    content: '\e918';
+}
+
+.icon-padlock:before {
+    content: '\e919';
+}
+
+.icon-people:before {
+    content: '\e91a';
+}
+
+.icon-phone:before {
+    content: '\e91b';
+}
+
+.icon-chevron-right:before {
+    content: '\e91c';
+}
+
+.icon-file:before {
+    content: '\e91d';
+}
+
+.icon-search:before {
+    content: '\e91e';
+}
+
+.icon-sparkles:before {
+    content: '\e91f';
+}
+
+.icon-wifi:before {
+    content: '\e920';
+}
+
+.icon-x:before {
+    content: '\e921';
+}
+
+.icon-download:before {
+    content: '\e922';
+}
+
+/* YITH Icons */
+@font-face {
+    font-family: 'yith-icon';
+    src: url('/fonts/yith-icon.eot');
+    src: url('/fonts/yith-icon.eot?#iefix') format('embedded-opentype'),
+        url('/fonts/yith-icon.woff') format('woff'),
+        url('/fonts/yith-icon.ttf') format('truetype'),
+        url('/fonts/yith-icon.svg#yith-icon') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}

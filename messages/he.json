@@ -1,0 +1,22 @@
+{
+    "Navbar": {
+        "book": "הזמן עכשיו",
+        "owner": "בעלים",
+        "about": "עלינו",
+        "properties": "נכסים",
+        "concierge": "קונסיירז'",
+        "blog": "בלוג",
+        "contact": "צור קשר",
+        "login": "התחבר"
+    },
+    "Footer": {
+        "getInTouch": "צור קשר",
+        "subscribe": "הירשם",
+        "enterEmail": "הכנס את האימייל שלך",
+        "rights": "© 2026 Lovely Memories"
+    },
+    "Home": {
+        "heroTitle": "ניהול נכסי יוקרה",
+        "heroSubtitle": "יוצרים חוויות בלתי נשכחות"
+    }
+}

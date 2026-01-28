@@ -1,0 +1,258 @@
+{
+    "Navbar": {
+        "book": "Book",
+        "owner": "Owner",
+        "about": "About Us",
+        "properties": "Properties",
+        "concierge": "Concierge",
+        "blog": "Blog",
+        "contact": "Contact",
+        "login": "Login"
+    },
+    "Footer": {
+        "getInTouch": "Get in Touch",
+        "subscribe": "Subscribe",
+        "enterEmail": "Enter your email",
+        "rights": "© 2026 Lovely Memories. All rights reserved.",
+        "privacyPolicy": "Privacy & Cookie Policy",
+        "termsConditions": "Terms & Conditions"
+    },
+    "Home": {
+        "heroOverTitle": "Booking one of our exquisite, curated Homes",
+        "heroTitle": "And create your own Lovely, Long Last Memories of Porto",
+        "aboutTitle": "From Porto to the World",
+        "aboutDescription": "We are the leading tourism accommodation management agent in Portugal, run by an amazing, international team. Our clients, be it the owners or guests themselves, know exactly why!",
+        "aboutButton": "About Us",
+        "featuredTitle": "Some of our Unique Homes & Resorts",
+        "gardenHuts": "Garden Huts & Eco Homes"
+    },
+    "BookingBar": {
+        "myTrip": "My Trip",
+        "destinationLabel": "Your Destination",
+        "destinationPlaceholder": "Where are you going?",
+        "arrival": "Arrival",
+        "departure": "Departure",
+        "addDate": "Add date",
+        "selectDate": "Select Date",
+        "travellers": "Travellers",
+        "selectPeople": "Select people",
+        "search": "Search"
+    },
+    "GuestSelector": {
+        "adults": "Adults",
+        "infants": "Infants",
+        "person": "person",
+        "people": "people",
+        "clear": "Clear"
+    },
+    "Concierge": {
+        "subtitle": "Exclusive Services",
+        "mainTitle": "Customise your trip with one of our preferred partner services",
+        "exclusiveSelection": "Exclusive Selection",
+        "safetyGuaranteed": "Safety Guaranteed",
+        "support24h": "24h Support",
+        "privateTransfers": "Private transfers",
+        "privateTransfersDesc": "Seamless transport to your destination.",
+        "breakfastAtHome": "Breakfast at Home",
+        "breakfastAtHomeDesc": "Start your day with gourmet delights.",
+        "chefAtHome": "Chef at Home",
+        "chefAtHomeDesc": "Exquisite dining in your own space.",
+        "anotherService": "Another Service",
+        "anotherServiceDesc": "Tailored services for your needs.",
+        "experiences": "Experiences",
+        "experiencesDesc": "Unforgettable local adventures."
+    },
+    "OwnerSection": {
+        "question": "Are you a Property Owner?",
+        "title": "Unleash your property's potential",
+        "subtitle": "We know what it takes to be the best. Find out what distinguishes us from the rest.",
+        "button": "Discover"
+    },
+    "PropertiesGrid": {
+        "backToHome": "Back to Home",
+        "title": "Our Unique Homes",
+        "subtitle": "Explore our curated selection of luxury properties in Porto, designed to create lovely, long-lasting memories."
+    },
+    "OwnerHero": {
+        "subtitle": "For Property Owner",
+        "title": "Maximizing your property's potential",
+        "description": "Our key services can unleash the potential of your property",
+        "badge": {
+            "earn": "Earn",
+            "percent": "40%",
+            "more": "more"
+        },
+        "form": {
+            "title": "Get your customised Revenue report",
+            "subtitle": "Property details",
+            "fullName": "Full Name*",
+            "email": "Email*",
+            "phone": "Phone Number*",
+            "address": "Address*",
+            "location": "Location*",
+            "submit": "Send",
+            "submitting": "Sending...",
+            "success": "Thank you! We'll be in touch shortly."
+        }
+    },
+    "OwnerStats": {
+        "bookings": "Total bookings",
+        "guests": "Trusted guests",
+        "revenue": "Owner revenue"
+    },
+    "OwnerServices": {
+        "title": "Our key services can unleash the potential of your property",
+        "desc": "Our mission is to offer complete services which are totally transparent to the owner. Calendars, bookings, prices, expenses, and revenue - everything is one click away.",
+        "quote": "\"We pride ourselves on being close to every single one of our partners.\""
+    },
+    "OwnerFeatures": {
+        "transparency": {
+            "title": "Online Transparency",
+            "desc": "Access everything about your property and listings 24/7 from anywhere in the world thanks to our LovelyStay dashboard."
+        },
+        "checkin": {
+            "title": "Check-in & Check-out",
+            "desc": "Our hospitality team offers constant guest communication 24/7 and is readily available to meet all guest's needs."
+        },
+        "cleaning": {
+            "title": "Cleaning & Maintenance",
+            "desc": "We take care of your property and are always there to fix any situation, even when you are not."
+        },
+        "account": {
+            "title": "Account Managers",
+            "desc": "The purpose of our dedicated account managers is to be there for you & represent your best interest in every situation."
+        },
+        "design": {
+            "title": "Interior Design",
+            "desc": "Our hospitality experts can support you in enhancing your space so as to improve your profitability."
+        },
+        "legal": {
+            "title": "Fiscal & Legal Support",
+            "desc": "We offer tech solutions and consultancy services for any topic related to the rental of your property."
+        }
+    },
+    "OwnerExperience": {
+        "title": "Experience you can trust: delivering results for property owners",
+        "desc": "LovelyStay is recognized for providing high-quality property management services to owners in Portugal and abroad. With an experienced team in the areas of hospitality, revenue management, and information technology.",
+        "trust": {
+            "title": "+1000 Owners trusted us",
+            "revenue": "Revenue generated",
+            "market": "In the market since",
+            "cta": "Contact Us"
+        }
+    },
+    "OwnerPricing": {
+        "title": "Join us and enjoy worry-free property management!",
+        "subtitle": "Combine our packages to create a personalized management solution!",
+        "base": {
+            "title": "Base Fee",
+            "selected": "Selected",
+            "clickToSelect": "Click to Select"
+        },
+        "luxe": {
+            "title": "Luxe",
+            "add": "Add Luxe",
+            "selected": "Selected"
+        },
+        "total": {
+            "fee": "Total Service Fee",
+            "excludingVat": "*excluding VAT",
+            "package": "Package:",
+            "basePlusLuxe": "Base Fee + Luxe",
+            "at": "at",
+            "feeLabel": "fee.",
+            "selectPrompt": "Select a package to see fee.",
+            "cta": "Contact Us"
+        },
+        "services": {
+            "marketStudy": "Market study",
+            "dashboard": "User area on LS dashboard",
+            "listing": "Listing on booking websites",
+            "bookingMgmt": "Booking management",
+            "communication": "24/7 Guest communication",
+            "optimization": "Price & revenue optimization",
+            "consultancy": "Design, tax & legal consultancy",
+            "accountManager": "Dedicated account manager",
+            "cleaning": "Cleaning & laundry",
+            "photoshoot": "Free photoshoot",
+            "screening": "Intelligent guest screening",
+            "damage": "Damage compensation",
+            "noContract": "No minimum contract period",
+            "noLimit": "No limit to owners stays",
+            "checkIn": "Check-in/out",
+            "maintenance": "Maintenance & repair",
+            "qualityControl": "Quality control visits",
+            "amenities": "Amenities",
+            "sef": "Communication to SEF",
+            "guestSupport": "Guest support during the stay",
+            "linen": "LovelyStay towels and linens",
+            "admin": "Administrative assistance",
+            "taxes": "Payment of tourist taxes",
+            "invoice": "Complete invoice service",
+            "suppliers": "Supplier payment management"
+        }
+    },
+    "AboutHero": {
+        "title": "From Porto to the World"
+    },
+    "AboutIntro": {
+        "p1": "The core of our business is to excel in what we do and strive to keep our position as the leading boutique property management company in Porto, where we currently focus all of our operations. We are passionate about the city and proud to be the starting point of every of our guests journey in this captivating and stunningly beautiful city.",
+        "p2": "We handpick and decorate our properties to the highest standards just so you feel truly welcome and taken care of, and that goes far beyond the aesthetic of the property you are staying in. Our unparalleled service is the key to our success."
+    },
+    "AboutTeam": {
+        "header": "Our People",
+        "title": "The Team",
+        "roles": {
+            "cofounder": "Co-Founder",
+            "interiorDesigner": "Interior Designer",
+            "operations": "Operations Manager"
+        }
+    },
+    "AboutStory": {
+        "header": "Our Journey",
+        "title": "A Story of Lovely Memories",
+        "stories": {
+            "2020": {
+                "title": "The Beginning",
+                "text": "We opened our office and Welcome Center in Porto's downtown, marking the start of our journey in this stunningly beautiful city."
+            },
+            "2021": {
+                "title": "Growth & Resilience",
+                "text": "Despite the global challenges, we handpicked more properties and refined our unparalleled service to ensure our guests felt truly welcome."
+            },
+            "2022": {
+                "title": "Expanding Horizons",
+                "text": "Our boutique property management company became a reference in Porto, expanding our portfolio with curated, high-standard homes."
+            },
+            "2023": {
+                "title": "Design & Excellence",
+                "text": "We integrated deeper interior design expertise to elevate the aesthetic of our properties, merging comfort with luxury."
+            },
+            "2024": {
+                "title": "Innovative Connections",
+                "text": "Launching new digital experiences to bridge the gap between our local expertise and our guests' global expectations."
+            },
+            "2025": {
+                "title": "The Future of Hospitality",
+                "text": "Striving to keep our position as the leading boutique company, constantly evolving our operations for better guest experiences."
+            },
+            "2026": {
+                "title": "Global Reach",
+                "text": "From Porto to the World - our mission remains firm: to provide the best local memories through global standards of excellence."
+            }
+        }
+    },
+    "AboutSocialWall": {
+        "title": "@lovelymemories",
+        "follow": "Follow us on Instagram"
+    },
+    "AboutForm": {
+        "title": "Our Team At Your Service",
+        "subtitle": "If you have a property and would like us to manage it and increase your revenue, talk to us!",
+        "name": "Name*",
+        "email": "Email*",
+        "message": "Message*",
+        "submit": "Submit Message",
+        "success": "Thank you for your message! We will get back to you soon."
+    }
+}

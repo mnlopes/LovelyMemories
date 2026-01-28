@@ -88,7 +88,9 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
                 formattedDate = format(day, dateFormat);
                 const cloneDay = day;
 
-                const isDisabled = isBefore(day, new Date(new Date().setHours(0, 0, 0, 0)));
+                const dayStart = new Date(day.setHours(0, 0, 0, 0));
+                const minDateStart = new Date(minDate.setHours(0, 0, 0, 0));
+                const isDisabled = isBefore(dayStart, minDateStart);
                 const isSelected = value ? isSameDay(day, value) : false;
                 const isCurrentMonth = isSameMonth(day, monthStart);
 
@@ -99,8 +101,8 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
                             h-9 w-9 flex items-center justify-center text-sm font-sans cursor-pointer transition-all rounded-[2px] margin-0
                             ${!isCurrentMonth ? 'text-gray-300 opacity-0 pointer-events-none' : ''} 
                             ${isDisabled ? 'text-gray-200 cursor-not-allowed' : 'hover:bg-[#F3F0EB] text-navy-900'}
-                            ${isSelected ? '!bg-[#C5A059] !text-white hover:!bg-[#b08d4b] font-semibold shadow-sm' : ''}
-                            ${isToday(day) && !isSelected ? "text-[#C5A059] font-bold" : ""}
+                            ${isSelected ? '!bg-[#B09E80] !text-white hover:!bg-[#b08d4b] font-semibold shadow-sm' : ''}
+                            ${isToday(day) && !isSelected ? "text-[#B09E80] font-bold" : ""}
                         `}
                         onClick={() => {
                             if (!isDisabled && isCurrentMonth && onChange) {
@@ -111,7 +113,7 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
                         <span className="relative">
                             {formattedDate}
                             {isToday(day) && !isSelected && (
-                                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0.5 h-0.5 bg-[#C5A059] rounded-full"></span>
+                                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0.5 h-0.5 bg-[#B09E80] rounded-full"></span>
                             )}
                         </span>
                     </div>
@@ -131,7 +133,9 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
         return (
             <div className="grid grid-cols-7 gap-y-1 w-full">
                 {allDays.map((date, idx) => {
-                    const isDisabled = isBefore(date, new Date(new Date().setHours(0, 0, 0, 0)));
+                    const dateStart = new Date(date.setHours(0, 0, 0, 0));
+                    const minDateStart = new Date(minDate.setHours(0, 0, 0, 0));
+                    const isDisabled = isBefore(dateStart, minDateStart);
                     const isSelected = value ? isSameDay(date, value) : false;
                     const isCurrentMonth = isSameMonth(date, monthStart);
 
@@ -148,14 +152,14 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
                             className={`
                                 h-9 w-9 flex items-center justify-center text-sm font-sans transition-all rounded-[2px]
                                 ${isDisabled ? 'text-gray-200 cursor-not-allowed' : 'cursor-pointer hover:bg-[#F3F0EB] text-navy-900'}
-                                ${isSelected ? '!bg-[#C5A059] !text-white hover:!bg-[#b08d4b] font-semibold shadow-sm' : ''}
-                                ${isToday(date) && !isSelected ? "text-[#C5A059] font-bold" : ""}
+                                ${isSelected ? '!bg-[#B09E80] !text-white hover:!bg-[#b08d4b] font-semibold shadow-sm' : ''}
+                                ${isToday(date) && !isSelected ? "text-[#B09E80] font-bold" : ""}
                             `}
                         >
                             <span className="relative flex flex-col items-center">
                                 {format(date, 'd')}
                                 {isToday(date) && !isSelected && (
-                                    <span className="absolute -bottom-1 w-0.5 h-0.5 bg-[#C5A059] rounded-full"></span>
+                                    <span className="absolute -bottom-1 w-0.5 h-0.5 bg-[#B09E80] rounded-full"></span>
                                 )}
                             </span>
                         </div>

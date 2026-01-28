@@ -1,89 +1,132 @@
-"use client";
-
-import Link from "next/link";
+import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Link } from "@/i18n/routing";
+import Image from "next/image";
+import React from "react";
+import { useTranslations } from "next-intl";
 
 export const Footer = () => {
+    const t = useTranslations('Footer');
+    const tNav = useTranslations('Navbar');
+
+    const navLinks = [
+        { path: '/', label: tNav('book') },
+        { path: '/owner', label: tNav('owner') },
+        { path: '/about-us', label: tNav('about') },
+        { path: '/properties', label: tNav('properties') },
+        { path: '/concierge', label: tNav('concierge') },
+        { path: '/blog', label: tNav('blog') },
+        { path: '/contact', label: tNav('contact') },
+    ];
+
     return (
-        <footer className="footer" style={{ backgroundImage: "url('http://207.154.225.193/lovely-memories/wp-content/uploads/2024/04/footer-BG.png')" }}>
-            <div className="footer-top">
-                <div className="container">
-                    <div className="row justify-content-center">
-                        <div className="col-12">
-                            <h4 className="text-center footer-title color-white">Get in Touch</h4>
-                        </div>
-                        <div className="col-12 col-md-8 col-lg-5">
-                            <p className="mb-0 text-center footer-desc color-white">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi tincidunt eu mauris a pulvinar.</p>
-                        </div>
-                        <div className="col-12 col-md-10 col-lg-8">
-                            <div className="wpcf7 js" id="wpcf7-f15-o1" lang="en-US" dir="ltr">
-                                <form action="#" method="post" className="wpcf7-form init" aria-label="Contact form" noValidate>
-                                    <div className="form-group">
-                                        <span className="wpcf7-form-control-wrap" data-name="your-email">
-                                            <input size={40} maxLength={400} className="wpcf7-form-control wpcf7-email wpcf7-validates-as-required wpcf7-text wpcf7-validates-as-email form-control" aria-required="true" aria-invalid="false" placeholder="Enter your email" type="email" name="your-email" />
-                                        </span>
-                                        <button className="form-submit" type="submit">Subscribe</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                        <div className="col-11 footer-menu">
-                            <ul id="menu-main-menu-1" className="header__main--menu">
-                                <li className="menu-item nav-item active"><Link href="/" className="nav-link active">Book</Link></li>
-                                <li className="menu-item nav-item"><Link href="/owner" className="nav-link">Owner</Link></li>
-                                <li className="menu-item nav-item"><Link href="/about" className="nav-link">About Us</Link></li>
-                                <li className="menu-item nav-item"><Link href="/properties" className="nav-link">Properties</Link></li>
-                                <li className="menu-item nav-item"><Link href="/concierge" className="nav-link">Concierge</Link></li>
-                                <li className="menu-item nav-item"><Link href="/blog" className="nav-link">Blog</Link></li>
-                                <li className="menu-item nav-item"><Link href="/contact" className="nav-link">Contact</Link></li>
-                            </ul>
-                        </div>
-                        <div className="col-12 social-icons">
-                            <ul className="social-icons__wrap d-flex align-items-center">
-                                <li className="social-icons__wrap--link">
-                                    <a href="http://instagram.com" target="_blank" className="perma" rel="noopener noreferrer">
-                                        <span className="icon-facebook"></span>
-                                    </a>
-                                </li>
-                                <li className="social-icons__wrap--link">
-                                    <a href="http://facebook.com" target="_blank" className="perma" rel="noopener noreferrer">
-                                        <span className="icon-instagram"></span>
-                                    </a>
-                                </li>
-                                <li className="social-icons__wrap--link">
-                                    <a href="http://x.com" target="_blank" className="perma" rel="noopener noreferrer">
-                                        <span className="icon-x"></span>
-                                    </a>
-                                </li>
-                                <li className="social-icons__wrap--link">
-                                    <a href="http://linkedin.com" target="_blank" className="perma" rel="noopener noreferrer">
-                                        <span className="icon-linkedin"></span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+        <footer className="relative text-white pt-24 pb-10 font-[family-name:var(--font-montserrat)]">
+            {/* Background Image & Overlay */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="/legacy/home/images/footer-BG.png"
+                    alt="Footer Background"
+                    fill
+                    className="object-cover object-center"
+                />
+                {/* Gradient Overlay */}
+                <div
+                    className="absolute inset-0 z-10"
+                    style={{ background: "linear-gradient(180deg, #192537cc 0%, #192537 100%)" }}
+                ></div>
             </div>
-            <div className="footer-bottom">
-                <div className="footer-bottom__top">
-                    <hr className="footer-bottom__top--divider" />
-                    <figure className="mb-0 footer-bottom__top--logo">
-                        <img src="http://207.154.225.193/lovely-memories/wp-content/uploads/2024/04/logo-1.svg" alt="" className="img-fluid" />
-                    </figure>
+
+            <div className="container mx-auto px-4 relative z-10 flex flex-col items-center">
+
+                {/* Top Section: CTA & Form */}
+                <div className="flex flex-col items-center text-center mb-16 space-y-6 w-full max-w-4xl">
+                    <h4 className="text-3xl md:text-4xl font-sans font-bold">{t('getInTouch')}</h4>
+                    <p className="text-gray-300 font-light leading-relaxed max-w-2xl">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi tincidunt eu mauris a pulvinar.
+                    </p>
+
+                    <div className="w-full max-w-xl mt-8">
+                        <form className="flex items-center bg-white rounded-full p-2 shadow-xl border border-white/10">
+                            <input
+                                type="email"
+                                placeholder={t('enterEmail')}
+                                className="flex-grow bg-transparent text-gray-900 placeholder-gray-400 font-light focus:outline-none pl-6 py-2.5"
+                                required
+                            />
+                            <button
+                                type="submit"
+                                className="px-10 py-3 bg-[#a39076] text-white text-[12px] !rounded-full hover:bg-[#8e7d65] transition-all duration-300 whitespace-nowrap ml-2"
+                            >
+                                {t('subscribe')}
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <div className="footer-bottom__bottom">
-                    <div className="footer-bottom__bottom--left">
-                        <Link href="/privacy-policy" className="policy-link">
-                            Privacy &amp; Cookie Policy
+
+                {/* Middle Section: Navigation & Socials */}
+                <div className="w-full flex flex-col items-center gap-8 mb-16">
+                    {/* Navigation */}
+                    <nav>
+                        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-4">
+                            {navLinks.map((link) => (
+                                <li key={link.path}>
+                                    <Link
+                                        href={link.path}
+                                        className="text-sm !font-bold uppercase tracking-widest text-white hover:text-[#a39076] transition-colors"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+
+                    {/* Social Icons */}
+                    <div className="flex items-center gap-8">
+                        <a href="http://facebook.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
+                            <Facebook size={22} strokeWidth={2} />
+                        </a>
+                        <a href="http://instagram.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
+                            <Instagram size={22} strokeWidth={2} />
+                        </a>
+                        <a href="http://x.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
+                            <Twitter size={22} strokeWidth={2} />
+                        </a>
+                        <a href="http://linkedin.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
+                            <Linkedin size={22} strokeWidth={2} />
+                        </a>
+                    </div>
+                </div>
+
+                {/* Bottom Divider & Links */}
+                <div className="w-full border-t border-[#b09e80] pt-8 flex flex-col md:flex-row justify-between items-end md:items-center text-xs tracking-widest uppercase text-[#b09e80] gap-4 relative mt-12">
+
+                    {/* Logo Centered on Line */}
+                    <div
+                        className="absolute left-1/2 top-0"
+                        style={{ transform: "translate(-50%, -62.5%)" }}
+                    >
+                        <Image
+                            src="/legacy/home/images/logo-1.svg"
+                            alt="Lovely Memories"
+                            width={300}
+                            height={100}
+                            className="h-24 w-auto object-contain"
+                        />
+                    </div>
+
+                    <div className="flex gap-6">
+                        <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors">
+                            {t('privacyPolicy')}
                         </Link>
-                        <Link href="/terms-conditions" className="policy-link">
-                            Terms &amp; Conditions
+                        <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors">
+                            {t('termsConditions')}
                         </Link>
                     </div>
-                    <div className="footer-bottom__bottom--right">
-                        <p className="mb-0 copyright">© 2026 Lovely Memories</p>
+                    <div className="text-center md:text-right">
+                        <p className="!font-bold">{t('rights')}</p>
                     </div>
                 </div>
+
             </div>
         </footer>
     );

@@ -1,32 +1,41 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 const SERVICES = [
     {
-        title: "Private transfers",
-        image: "/legacy/home/images/services-image-1.png"
+        titleKey: "privateTransfers",
+        image: "/legacy/home/images/services-image-1.png",
+        descriptionKey: "privateTransfersDesc"
     },
     {
-        title: "Breakfast at Home",
-        image: "/legacy/home/images/services-image-2.png"
+        titleKey: "breakfastAtHome",
+        image: "/legacy/home/images/services-image-2.png",
+        descriptionKey: "breakfastAtHomeDesc"
     },
     {
-        title: "Chef at Home",
-        image: "/legacy/home/images/services-image-3.png"
+        titleKey: "chefAtHome",
+        image: "/legacy/home/images/services-image-3.png",
+        descriptionKey: "chefAtHomeDesc"
     },
     {
-        title: "Another Service",
-        image: "/legacy/home/images/services-image-2-1.png"
+        titleKey: "anotherService",
+        image: "/legacy/home/images/services-image-2-1.png",
+        descriptionKey: "anotherServiceDesc"
     },
     {
-        title: "Experiences",
-        image: "/legacy/home/images/services-image-1.png"
+        titleKey: "experiences",
+        image: "/legacy/home/images/services-image-1.png",
+        descriptionKey: "experiencesDesc"
     }
 ];
 
 export const Concierge = () => {
+    const t = useTranslations('Concierge');
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [startX, setStartX] = useState(0);
@@ -34,7 +43,7 @@ export const Concierge = () => {
 
     const handleButtonClick = (direction: 'left' | 'right') => {
         if (!scrollRef.current) return;
-        const amount = 320;
+        const amount = 340; // Adjusted for wider cards
         const target = direction === 'left'
             ? scrollRef.current.scrollLeft - amount
             : scrollRef.current.scrollLeft + amount;
@@ -60,104 +69,127 @@ export const Concierge = () => {
         if (!isMouseDown || !scrollRef.current) return;
         e.preventDefault();
         const x = e.pageX - scrollRef.current.offsetLeft;
-        const walk = (x - startX) * 2; // scroll-speed
+        const walk = (x - startX) * 2;
         scrollRef.current.scrollLeft = scrollLeft - walk;
     };
 
-    return (
-        <section className="section-block section-services py-20 bg-[#F9F9F9] overflow-hidden">
-            <div className="container mx-auto px-4">
-                <div className="flex flex-col lg:flex-row gap-[10px] items-center justify-center">
+    const features = [
+        { icon: "/legacy/home/images/alt-check.svg", textKey: "exclusiveSelection" },
+        { icon: "/legacy/home/images/padlock-icon.svg", textKey: "safetyGuaranteed" },
+        { icon: "/legacy/home/images/chat-icon.svg", textKey: "support24h" }
+    ];
 
-                    {/* INFO CARD - Final Technical Refinement */}
-                    <div
-                        className="bg-white p-12 pt-[60px] pb-[50px] rounded-[12px] shadow-[0_5px_25px_rgba(0,0,0,0.02)] border border-gray-100/30 flex-shrink-0 flex flex-col justify-between"
-                        style={{ width: '600px', height: '408px' }}
+    return (
+        <section className="section-block section-services py-20 lg:py-40 bg-[#FCFCFC] relative">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-0 left-0 w-64 h-64 bg-[#B09E80]/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+
+            <div className="container mx-auto px-4">
+                <div className="flex flex-col gap-12">
+
+                    {/* HEADER SECTION: Title + Features */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                        className="w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-8"
                     >
-                        {/* Title: Pixel Perfect 26px/700 Bold at the top */}
-                        <div className="w-full">
-                            <h2 className="!text-[26px] !font-bold font-sans text-[#0A1128] leading-[1.2] tracking-tight">
-                                Customise your trip with one of our preferred partner services
+                        <div className="flex-1 max-w-none pr-8">
+                            <h6 className="uppercase tracking-[0.2em] text-[#B09E80] text-sm font-bold mb-3">
+                                {t('subtitle')}
+                            </h6>
+                            <h2 className="text-[32px] lg:text-[42px] font-semibold font-sans text-[#0A1128] leading-[1.15]">
+                                {t('mainTitle')}
                             </h2>
                         </div>
 
-                        {/* List items: Positioned at the bottom, exact 510px width as requested */}
-                        <ul className="space-y-4 w-[510px]">
-                            {[
-                                { icon: "/legacy/home/images/alt-check.svg", text: "Exclusive Selection" },
-                                { icon: "/legacy/home/images/padlock-icon.svg", text: "Safety Guaranteed" },
-                                { icon: "/legacy/home/images/chat-icon.svg", text: "24h Customer Support" }
-                            ].map((item, idx) => (
-                                <li key={idx} className="flex items-center gap-3 h-6 font-bold">
-                                    <div className="w-6 h-6 flex items-center justify-center">
+                        {/* Features List - Horizontal on Desktop */}
+                        <ul className="flex flex-col sm:flex-row gap-6 sm:gap-8">
+                            {features.map((item, idx) => (
+                                <motion.li
+                                    key={idx}
+                                    className="flex items-center gap-3 group cursor-default"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <div className="w-8 h-8 flex items-center justify-center">
                                         <img
                                             src={item.icon}
                                             alt=""
-                                            className="w-full h-full object-contain"
+                                            className="w-full h-full object-contain transition-all duration-300"
                                             style={{
-                                                /* Precise Filter for #AD9C7E */
-                                                filter: 'brightness(0) saturate(100%) invert(67%) sepia(16%) saturate(601%) hue-rotate(3deg) brightness(87%) contrast(85%)'
+                                                /* Default Gold Filter */
+                                                filter: 'brightness(0) saturate(100%) invert(67%) sepia(16%) saturate(601%) hue-rotate(3deg) brightness(87%) contrast(85%)',
                                             }}
                                         />
                                     </div>
-                                    <span className="text-[17px] leading-none text-[#192537] font-sans">
-                                        {item.text}
+                                    <span className="text-sm font-bold text-[#192537] font-sans group-hover:text-[#B09E80] transition-colors duration-300">
+                                        {t(item.textKey)}
                                     </span>
-                                </li>
+                                </motion.li>
                             ))}
                         </ul>
-                    </div>
+                    </motion.div>
 
-                    {/* SLIDER WRAPPER - Fixed height 408px */}
-                    <div className="relative" style={{ height: '408px', width: 'calc(100% - 610px)' }}>
+                    {/* SLIDER SECTION */}
+                    <div className="relative w-full group px-4 lg:px-12">
 
-                        {/* ARROWS - Centered on slider height */}
-                        <div className="absolute top-1/2 -translate-y-1/2 -left-5 z-50 pointer-events-none w-[calc(100%+2.5rem)] hidden lg:flex justify-between items-center">
-                            <button
-                                onClick={() => handleButtonClick('left')}
-                                className="w-10 h-10 bg-[#B09E80] hover:bg-[#9E8C6D] text-white flex items-center justify-center shadow-lg transition-all transform hover:scale-105 active:scale-95 pointer-events-auto cursor-pointer"
-                                style={{ borderRadius: '50%' }}
-                                type="button"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => handleButtonClick('right')}
-                                className="w-10 h-10 bg-[#B09E80] hover:bg-[#9E8C6D] text-white flex items-center justify-center shadow-lg transition-all transform hover:scale-105 active:scale-95 pointer-events-auto cursor-pointer"
-                                style={{ borderRadius: '50%' }}
-                                type="button"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
+                        {/* LEFT ARROW */}
+                        <button
+                            onClick={() => handleButtonClick('left')}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -ml-2 lg:-ml-6"
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
 
-                        {/* ACTUAL SLIDER - 10px GAP as requested */}
+                        {/* RIGHT ARROW */}
+                        <button
+                            onClick={() => handleButtonClick('right')}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -mr-2 lg:-mr-6"
+                        >
+                            <ChevronRight className="w-6 h-6" />
+                        </button>
+
+
+                        {/* SLIDER CONTAINER */}
                         <div
                             ref={scrollRef}
                             onMouseDown={handleMouseDown}
                             onMouseLeave={handleMouseUp}
                             onMouseUp={handleMouseUp}
                             onMouseMove={handleMouseMove}
-                            className={`flex gap-[10px] overflow-x-auto hide-scrollbar select-none cursor-grab active:cursor-grabbing h-full touch-pan-x snap-x snap-mandatory`}
+                            className="flex gap-8 overflow-x-auto hide-scrollbar select-none cursor-grab active:cursor-grabbing py-12 px-4"
                             style={{ scrollBehavior: 'smooth' }}
                         >
                             {SERVICES.map((service, i) => (
-                                <div
+                                <motion.div
                                     key={i}
-                                    className="flex-shrink-0 snap-start rounded-[12px] overflow-hidden relative shadow-sm"
-                                    style={{ width: '280px', height: '408px' }}
+                                    className="flex-none relative w-[300px] h-[450px] rounded-[24px] overflow-hidden shadow-xl"
+                                    whileHover={{ y: -5 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                 >
-                                    <img
+                                    <Image
                                         src={service.image}
-                                        alt={service.title}
-                                        className="w-full h-full object-cover pointer-events-none"
+                                        alt={t(service.titleKey)}
+                                        fill
+                                        sizes="300px"
+                                        className="object-cover transition-transform duration-700 ease-out hover:scale-110"
                                         draggable={false}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
-                                    <h4 className="absolute bottom-6 left-6 text-white text-[18px] font-bold font-playfair pr-6 pointer-events-none leading-tight">
-                                        {service.title}
-                                    </h4>
-                                </div>
+
+                                    {/* Gradient Overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
+
+                                    {/* Content */}
+                                    <div className="absolute bottom-0 left-0 w-full p-6 pb-8 flex justify-center items-end h-full">
+                                        <h4 className="text-white text-[26px] font-bold font-sans leading-tight text-center drop-shadow-md">
+                                            {t(service.titleKey)}
+                                        </h4>
+                                    </div>
+                                </motion.div>
                             ))}
                         </div>
                     </div>

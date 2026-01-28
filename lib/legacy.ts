@@ -37,13 +37,40 @@ export function getLegacyHead(pageName: string = 'home') {
         content = content.replace(/<\/head>[\s\S]*$/i, '');
 
         // Remove scripts perigosos (exceto JSON-LD) para evitar Runtime Errors no cliente
-        content = content.replace(/<script[^>]*src=['"][^'"]*['"][^>]*>[\s\S]*?<\/script>/gi, '');
-        content = content.replace(/<script(?![^>]*application\/ld\+json)[^>]*>[\s\S]*?<\/script>/gi, '');
+        // Robust script removal: Remove all script tags unless they contain 'application/ld+json'
+        content = content.replace(/<script([\s\S]*?)<\/script>/gi, (match, inner) => {
+            if (match.includes('application/ld+json') || inner.includes('application/ld+json')) {
+                return match;
+            }
+            return '';
+        });
 
         // Limpeza de whitespace
         content = content.replace(/>\s+</g, '><').trim();
 
-        return replaceLegacyUrls(content);
+        const legacyLoaderStyles = `
+        <style>
+            /* Force hide known legacy preloader selectors */
+            #preloader, .preloader, 
+            #loader, .loader,
+            .page-loader, .site-loader,
+            /* Specific to YITH or other plugins found in legacy code */
+            .yith-wcbk-block-ui-element,
+            .blockUI.blockOverlay,
+            .blockUI, .blockOverlay,
+            .blockMsg, .blockElement,
+            .yith-wcbk-form-section-dates
+            {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                z-index: -9999 !important;
+                pointer-events: none !important;
+            }
+        </style>
+        `;
+
+        return replaceLegacyUrls(legacyLoaderStyles + content);
     } catch (e) {
         console.error(`Error reading legacy head for ${pageName}:`, e);
         return '';
@@ -57,14 +84,40 @@ export function getLegacyBody(pageName: string = 'home') {
     try {
         let content = fs.readFileSync(filePath, 'utf8');
 
-        // Remove scripts do body também
-        content = content.replace(/<script[^>]*src=['"][^'"]*['"][^>]*>[\s\S]*?<\/script>/gi, '');
-        content = content.replace(/<script(?![^>]*application\/ld\+json)[^>]*>[\s\S]*?<\/script>/gi, '');
+        // Robust script removal: Remove all script tags unless they contain 'application/ld+json'
+        content = content.replace(/<script([\s\S]*?)<\/script>/gi, (match, inner) => {
+            if (match.includes('application/ld+json') || inner.includes('application/ld+json')) {
+                return match;
+            }
+            return '';
+        });
 
         // Limpeza de whitespace para evitar Hydration Mismatch
         content = content.replace(/>\s+</g, '><').trim();
 
-        return replaceLegacyUrls(content);
+        const legacyLoaderStyles = `
+        <style>
+            /* Force hide known legacy preloader selectors */
+            #preloader, .preloader, 
+            #loader, .loader,
+            .page-loader, .site-loader,
+            /* Specific to YITH or other plugins found in legacy code */
+            .yith-wcbk-block-ui-element,
+            .blockUI.blockOverlay,
+            .blockUI, .blockOverlay,
+            .blockMsg, .blockElement,
+            .yith-wcbk-form-section-dates
+            {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                z-index: -9999 !important;
+                pointer-events: none !important;
+            }
+        </style>
+        `;
+
+        return replaceLegacyUrls(legacyLoaderStyles + content);
     } catch (e) {
         console.error(`Error reading legacy body for ${pageName}:`, e);
         return `<div style="padding: 100px; text-align: center;">Conteúdo para '${pageName}' ainda não migrado (Ficheiro ${fileName} não encontrado).</div>`;

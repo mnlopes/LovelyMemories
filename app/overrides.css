@@ -1,0 +1,55 @@
+/* FINAL FIXES FOR MOBILE */
+
+/* Fix for language switcher alignment on mobile */
+@media (max-width: 1199px) {
+    .header__inner--user-data .language-switcher .dropdown-menu {
+        left: auto !important;
+        right: 0 !important;
+        min-width: 50px !important;
+    }
+}
+
+/* TEAM CAROUSEL FIX - Forced Flexbox since Slick JS is removed */
+.section-teams .slick-list {
+    overflow: visible !important;
+}
+
+.section-teams .slick-track {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    gap: 30px !important;
+    width: 100% !important;
+    transform: none !important;
+}
+
+@media (max-width: 991px) {
+    .section-teams .slick-track {
+        flex-wrap: wrap !important;
+    }
+}
+
+.section-teams .member-card {
+    flex: 0 1 350px !important;
+    float: none !important;
+    margin: 0 !important;
+    background: #000;
+    /* Matching the black background in the screenshot */
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.section-teams .member-card__img img {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+}
+
+@media (max-width: 767px) {
+    .section-teams .member-card {
+        flex: 0 0 100% !important;
+        max-width: 350px !important;
+    }
+}
+
+/* STORY CAROUSEL FIX - REMOVED (Handled by AboutStory.tsx) */

@@ -22,7 +22,7 @@ export const Button = ({ children, className, variant = "primary", icon = false,
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className={cn(
-                "px-8 py-4 rounded-full font-semibold transition-all duration-300 flex items-center gap-2 cursor-pointer",
+                "px-8 py-4 rounded-full font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer",
                 variants[variant],
                 className
             )}
