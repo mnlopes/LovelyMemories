@@ -172,7 +172,7 @@ export const OwnerPricing = () => {
                     </div>
 
                     <button
-                        className={`min-w-[180px] py-5 px-10 !rounded-[28px] font-bold uppercase tracking-[0.2em] text-[12px] transition-all duration-500 z-10 ${selectedPack ? 'bg-[#b29a7a] text-white shadow-xl hover:scale-105 active:scale-95' : 'bg-gray-800/50 text-gray-600 border border-gray-700/50 cursor-not-allowed'}`}
+                        className={`min-w-[180px] py-5 px-10 !rounded-[28px] font-bold uppercase tracking-[0.2em] text-[12px] transition-all duration-500 z-10 ${selectedPack ? 'bg-[#b29a7a] text-white shadow-xl hover:scale-105 active:scale-95 cursor-pointer' : 'bg-gray-800/50 text-gray-600 border border-gray-700/50 cursor-not-allowed'}`}
                     >
                         {t('total.cta')}
                     </button>

@@ -54,7 +54,7 @@ export const Footer = () => {
                             />
                             <button
                                 type="submit"
-                                className="px-10 py-3 bg-[#a39076] text-white text-[12px] !rounded-full hover:bg-[#8e7d65] transition-all duration-300 whitespace-nowrap ml-2"
+                                className="px-10 py-3 bg-[#a39076] text-white text-[12px] !rounded-full hover:bg-[#8e7d65] transition-all duration-300 whitespace-nowrap ml-2 cursor-pointer"
                             >
                                 {t('subscribe')}
                             </button>

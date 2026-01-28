@@ -101,7 +101,7 @@ export const HomeBookingBar = () => {
                         <div className="pl-4">
                             <button
                                 type="submit"
-                                className="h-[70px] px-12 rounded-xl bg-[#b09e80] text-white font-bold uppercase tracking-widest hover:bg-[#8e7d65] transition-all shadow-lg flex items-center gap-3 transform active:scale-95 text-lg"
+                                className="h-[70px] px-12 rounded-xl bg-[#b09e80] text-white font-bold uppercase tracking-widest hover:bg-[#8e7d65] transition-all shadow-lg flex items-center gap-3 transform active:scale-95 text-lg cursor-pointer"
                             >
                                 <Search className="w-6 h-6" />
                                 <span>{t('search')}</span>

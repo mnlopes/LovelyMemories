@@ -73,7 +73,7 @@ export const AboutForm = () => {
                                 </div>
                                 <div className="text-center pt-4">
                                     <button
-                                        className="inline-block px-10 py-3 bg-[#4A5568] text-white font-bold text-sm uppercase tracking-widest hover:bg-[#2D3748] transition-colors rounded-sm shadow-lg border border-transparent hover:border-white/20"
+                                        className="inline-block px-10 py-3 bg-[#4A5568] text-white font-bold text-sm uppercase tracking-widest hover:bg-[#2D3748] transition-colors rounded-sm shadow-lg border border-transparent hover:border-white/20 cursor-pointer"
                                         type="submit"
                                     >
                                         {t('submit')}

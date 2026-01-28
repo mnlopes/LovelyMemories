@@ -6,7 +6,7 @@ export default async function PropertiesLayout({
     params
 }: {
     children: React.ReactNode;
-    params: { locale: string };
+    params: Promise<{ locale: string }>;
 }) {
     // Ensure params is awaited before access
     const { locale } = await params;

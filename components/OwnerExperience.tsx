@@ -67,7 +67,7 @@ export const OwnerExperience = () => {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className="w-full h-14 rounded-full text-white font-bold uppercase tracking-widest text-sm shadow-lg transition-all"
+                                className="w-full h-14 rounded-full text-white font-bold uppercase tracking-widest text-sm shadow-lg transition-all cursor-pointer"
                                 style={{
                                     backgroundColor: '#b29a7a',
                                     boxShadow: '0 10px 15px -3px rgba(178, 154, 122, 0.2)',

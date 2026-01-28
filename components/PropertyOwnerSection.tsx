@@ -28,7 +28,7 @@ export const PropertyOwnerSection = () => {
     const y3 = useTransform(smoothY, [0, 1], [0, 40]);   // Topo (Detalhe) - Desce Levemente
 
     return (
-        <section ref={scrollRef} className="section-block section-owner relative w-full bg-[#0A1128] py-16 lg:py-12 h-auto lg:h-[500px] z-10">
+        <section ref={scrollRef} className="section-block section-owner relative w-full bg-[#192537] py-16 lg:py-12 h-auto lg:h-[500px] z-10 w-full">
             <div className="absolute inset-0 w-full h-full">
                 {/* Background Decorativo e Ajustes */}
 

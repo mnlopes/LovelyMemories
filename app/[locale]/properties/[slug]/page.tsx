@@ -3,7 +3,7 @@ import { PROPERTIES } from "@/lib/data";
 import { Metadata } from "next";
 
 type Props = {
-    params: { locale: string; slug: string };
+    params: Promise<{ locale: string; slug: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

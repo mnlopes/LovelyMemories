@@ -140,7 +140,7 @@ export const Concierge = () => {
                         {/* LEFT ARROW */}
                         <button
                             onClick={() => handleButtonClick('left')}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -ml-2 lg:-ml-6"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -ml-2 lg:-ml-6 cursor-pointer"
                         >
                             <ChevronLeft className="w-6 h-6" />
                         </button>
@@ -148,7 +148,7 @@ export const Concierge = () => {
                         {/* RIGHT ARROW */}
                         <button
                             onClick={() => handleButtonClick('right')}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -mr-2 lg:-mr-6"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -mr-2 lg:-mr-6 cursor-pointer"
                         >
                             <ChevronRight className="w-6 h-6" />
                         </button>
