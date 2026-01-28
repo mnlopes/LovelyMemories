@@ -201,7 +201,7 @@ export const DateSelectorWrapper = () => {
                 position: 'absolute',
                 top: `${coords.top + (coords.placement === 'bottom' ? 10 : -10)}px`,
                 left: `${coords.left}px`,
-                zIndex: 40,
+                zIndex: 100,
                 transform: coords.placement === 'top' ? 'translateY(-100%)' : 'none'
             }}
             className="bg-white shadow-[0_10px_40px_rgba(0,0,0,0.15)] rounded-xl p-3 border border-gray-100 animate-in fade-in zoom-in-95 duration-200 min-w-[280px]"

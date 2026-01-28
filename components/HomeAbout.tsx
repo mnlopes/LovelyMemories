@@ -34,11 +34,11 @@ export const HomeAbout = () => {
     const opacity = useTransform(scrollYProgress, [0, 0.3], [0, 1]);
 
     return (
-        <section ref={sectionRef} className="section-block relative py-24 bg-white">
+        <section ref={sectionRef} className="section-block relative py-12 md:py-24 bg-white">
             <div className="container mx-auto px-4">
                 {/* Banner Card Container - Rounded & Overflow Hidden with Scale Animation */}
                 <motion.div
-                    style={{ scale: isMobile ? scaleMobile : scaleDesktop, opacity }}
+                    style={{ scale: isMobile ? 1 : scaleDesktop, opacity }}
                     className="relative w-full rounded-[30px] overflow-hidden min-h-[500px] md:min-h-[600px] flex items-center shadow-lg"
                 >
                     {/* Background Image - Absolute */}

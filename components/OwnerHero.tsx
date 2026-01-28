@@ -72,7 +72,7 @@ export const OwnerHero = () => {
                                 {t('subtitle')}
                             </span>
                             <h1
-                                className="text-5xl md:text-6xl lg:text-[80px] font-playfair leading-[1.05] mb-10"
+                                className="text-4xl md:text-6xl lg:text-[80px] font-playfair leading-[1.05] mb-10"
                                 style={{ fontWeight: 900, color: '#0A1128' }}
                             >
                                 {t.rich('title', {

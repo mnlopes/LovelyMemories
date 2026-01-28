@@ -8,7 +8,7 @@ const StoryItem = ({ story, index }: { story: any, index: number }) => {
     const isEven = index % 2 === 0;
 
     return (
-        <div className="relative mb-32 last:mb-0">
+        <div className="relative mb-16 md:mb-32 last:mb-0">
             {/* Timeline Dot */}
             <div className="absolute left-1/2 -translate-x-1/2 top-0 z-10 hidden md:block">
                 <motion.div

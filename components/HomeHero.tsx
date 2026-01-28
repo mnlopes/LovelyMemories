@@ -8,7 +8,7 @@ export const HomeHero = () => {
     const t = useTranslations('Home');
 
     return (
-        <section className="relative w-full z-30 mb-20 md:mb-36">
+        <section className="relative w-full z-30 mb-0 md:mb-36">
             {/* 
                 Hero Container 
                 Matches legacy heights: 600px (md), 700px (lg)
@@ -43,12 +43,17 @@ export const HomeHero = () => {
                     </div>
                 </div>
 
-                {/* Booking Bar Container - Absolute Bottom Overlay */}
-                <div className="absolute left-0 right-0 z-20 -bottom-24 md:-bottom-12 px-4 pointer-events-none">
+                {/* Booking Bar Container - Desktop Absolute Only */}
+                <div className="hidden md:block absolute left-0 right-0 z-20 -bottom-12 px-4 pointer-events-none">
                     <div className="w-full pointer-events-auto">
                         <HomeBookingBar />
                     </div>
                 </div>
+            </div>
+
+            {/* Mobile Booking Bar - In Flow with Negative Margin */}
+            <div className="md:hidden relative z-40 -mt-24 px-4 mb-20">
+                <HomeBookingBar />
             </div>
         </section >
     );

@@ -65,11 +65,11 @@ export const HomeFeaturedProperties = () => {
             {/* 
                 MOBILE IMPLEMENTATION (Carousel) 
             */}
-            <div className="section-block section-buildings md:hidden">
-                <div className="container">
-                    <div className="row">
-                        <div className="col">
-                            <h5 className="section-title">{t('featuredTitle')}</h5>
+            <div className="section-block section-buildings md:hidden pt-12 pb-6">
+                <div className="container mx-auto px-4">
+                    <div className="mb-6">
+                        <div className="w-full">
+                            <h5 className="text-2xl font-bold text-[#192537]">{t('featuredTitle')}</h5>
                         </div>
                     </div>
                     {/* Horizontal Scroll Container */}

@@ -45,16 +45,16 @@ export const Footer = () => {
                     </p>
 
                     <div className="w-full max-w-xl mt-8">
-                        <form className="flex items-center bg-white rounded-full p-2 shadow-xl border border-white/10">
+                        <form className="flex items-center bg-white rounded-full p-1.5 md:p-2 shadow-xl border border-white/10">
                             <input
                                 type="email"
                                 placeholder={t('enterEmail')}
-                                className="flex-grow bg-transparent text-gray-900 placeholder-gray-400 font-light focus:outline-none pl-6 py-2.5"
+                                className="flex-grow bg-transparent text-gray-900 placeholder-gray-400 font-light focus:outline-none pl-4 md:pl-6 py-2 md:py-2.5 text-sm md:text-base min-w-0"
                                 required
                             />
                             <button
                                 type="submit"
-                                className="px-10 py-3 bg-[#a39076] text-white text-[12px] !rounded-full hover:bg-[#8e7d65] transition-all duration-300 whitespace-nowrap ml-2 cursor-pointer"
+                                className="px-6 md:px-10 py-2.5 md:py-3 bg-[#a39076] text-white text-[10px] md:text-[12px] !rounded-full hover:bg-[#8e7d65] transition-all duration-300 whitespace-nowrap ml-1 md:ml-2 cursor-pointer"
                             >
                                 {t('subscribe')}
                             </button>
@@ -98,12 +98,12 @@ export const Footer = () => {
                 </div>
 
                 {/* Bottom Divider & Links */}
-                <div className="w-full border-t border-[#b09e80] pt-8 flex flex-col md:flex-row justify-between items-end md:items-center text-xs tracking-widest uppercase text-[#b09e80] gap-4 relative mt-12">
+                <div className="w-full border-t border-[#b09e80] pt-20 md:pt-8 flex flex-col md:flex-row justify-between items-center text-xs tracking-widest uppercase text-[#b09e80] gap-4 relative mt-16 md:mt-12">
 
                     {/* Logo Centered on Line */}
                     <div
                         className="absolute left-1/2 top-0"
-                        style={{ transform: "translate(-50%, -62.5%)" }}
+                        style={{ transform: "translate(-50%, -50%)" }}
                     >
                         <Image
                             src="/legacy/home/images/logo-1.svg"
