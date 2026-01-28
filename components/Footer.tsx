@@ -1,12 +1,14 @@
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+"use client";
+import { Facebook, Instagram, Linkedin } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 
 export const Footer = () => {
     const t = useTranslations('Footer');
     const tNav = useTranslations('Navbar');
+    const [email, setEmail] = useState("");
 
     const navLinks = [
         { path: '/', label: tNav('book') },
@@ -45,16 +47,19 @@ export const Footer = () => {
                     </p>
 
                     <div className="w-full max-w-xl mt-8">
-                        <form className="flex items-center bg-white rounded-full p-1.5 md:p-2 shadow-xl border border-white/10">
+                        <form className="flex items-center bg-white rounded-full p-1 shadow-xl border border-white/10">
                             <input
                                 type="email"
                                 placeholder={t('enterEmail')}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="flex-grow bg-transparent text-gray-900 placeholder-gray-400 font-light focus:outline-none pl-4 md:pl-6 py-2 md:py-2.5 text-sm md:text-base min-w-0"
                                 required
                             />
                             <button
                                 type="submit"
-                                className="px-6 md:px-10 py-2.5 md:py-3 bg-[#a39076] text-white text-[10px] md:text-[12px] !rounded-full hover:bg-[#8e7d65] transition-all duration-300 whitespace-nowrap ml-1 md:ml-2 cursor-pointer"
+                                disabled={!email.trim()}
+                                className={`px-8 md:px-12 py-3.5 md:py-4 bg-[#a39076] text-white text-[13px] md:text-[14px] !rounded-full transition-all duration-300 border border-white/10 whitespace-nowrap ml-1 md:ml-2 font-bold tracking-tight ${!email.trim() ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#8e7d65] cursor-pointer'}`}
                             >
                                 {t('subscribe')}
                             </button>
@@ -89,7 +94,9 @@ export const Footer = () => {
                             <Instagram size={22} strokeWidth={2} />
                         </a>
                         <a href="http://x.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
-                            <Twitter size={22} strokeWidth={2} />
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932 6.064-6.932zm-1.294 19.497h2.039L6.482 2.395H4.293l13.314 18.255z" />
+                            </svg>
                         </a>
                         <a href="http://linkedin.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
                             <Linkedin size={22} strokeWidth={2} />
@@ -114,11 +121,11 @@ export const Footer = () => {
                         />
                     </div>
 
-                    <div className="flex gap-6">
-                        <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors">
+                    <div className="flex justify-between w-full md:w-auto md:gap-6">
+                        <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors text-left">
                             {t('privacyPolicy')}
                         </Link>
-                        <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors">
+                        <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors text-right">
                             {t('termsConditions')}
                         </Link>
                     </div>

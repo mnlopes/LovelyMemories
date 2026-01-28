@@ -71,11 +71,11 @@ export const OwnerPricing = () => {
                     {/* Base Fee Pack */}
                     <motion.div
                         whileHover={{ y: -6 }}
-                        onClick={() => setSelectedPack('base')}
+                        onClick={() => setSelectedPack(selectedPack !== null ? null : 'base')}
                         className={`relative flex-1 md:max-w-[360px] w-full flex flex-col rounded-[28px] transition-all duration-300 cursor-pointer border-2 ${selectedPack ? 'border-[#192537] shadow-[0_25px_50px_-12px_rgba(25,37,55,0.2)] z-[5]' : 'border-gray-100 shadow-lg opacity-80 hover:opacity-100'}`}
                     >
-                        <div className="bg-[#0A1128] p-6 text-center relative rounded-t-[26px]">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full w-24 h-24 flex items-center justify-center shadow-md border border-gray-50">
+                        <div className="bg-[#0A1128] pt-16 pb-6 text-center relative rounded-t-[26px]">
+                            <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full w-24 h-24 flex items-center justify-center shadow-md border transition-all duration-300 ${selectedPack ? 'border-2 border-[#0A1128]' : 'border-gray-50'}`}>
                                 <span className="text-2xl font-black text-[#0A1128]">+20%</span>
                             </div>
                             <h4 className="text-2xl font-bold text-white mt-4">{t('base.title')}</h4>
@@ -94,7 +94,7 @@ export const OwnerPricing = () => {
                         </div>
                         <div className="p-4 bg-gray-50/50 text-center rounded-b-[26px]">
                             <div className={`text-[11px] font-bold uppercase tracking-[0.25em] ${selectedPack ? 'text-[#b29a7a]' : 'text-gray-400'}`}>
-                                {selectedPack === 'luxe' ? t('base.selected') + ' + ' + t('luxe.selected') : selectedPack === 'base' ? t('base.selected') : t('base.clickToSelect')}
+                                {selectedPack === 'luxe' ? t('base.selected') + ' + ' + t('luxe.title') : selectedPack === 'base' ? t('base.selected') : t('base.clickToSelect')}
                             </div>
                         </div>
                     </motion.div>
@@ -115,11 +115,11 @@ export const OwnerPricing = () => {
                     {/* Luxe Pack */}
                     <motion.div
                         whileHover={{ y: -6 }}
-                        onClick={() => setSelectedPack('luxe')}
+                        onClick={() => setSelectedPack(selectedPack === 'luxe' ? 'base' : 'luxe')}
                         className={`relative flex-1 md:max-w-[360px] w-full flex flex-col rounded-[28px] transition-all duration-300 cursor-pointer border-2 ${selectedPack === 'luxe' ? 'border-[#b29a7a] shadow-[0_25px_50px_-12px_rgba(178,154,122,0.25)] z-[5]' : 'border-gray-100 shadow-lg opacity-80 hover:opacity-100'}`}
                     >
-                        <div className="bg-[#b29a7a] p-6 text-center relative text-white rounded-t-[26px]">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full w-24 h-24 flex items-center justify-center shadow-md border border-gray-50">
+                        <div className="bg-[#b29a7a] pt-16 pb-6 text-center relative text-white rounded-t-[26px]">
+                            <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full w-24 h-24 flex items-center justify-center shadow-md border transition-all duration-300 ${selectedPack === 'luxe' ? 'border-2 border-[#b29a7a]' : 'border-gray-50'}`}>
                                 <span className="text-2xl font-black text-[#b29a7a]">+5%</span>
                             </div>
                             <h4 className="text-2xl font-bold mt-4">{t('luxe.title')}</h4>
