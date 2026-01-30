@@ -60,7 +60,17 @@
         "anotherService": "Outro Serviço",
         "anotherServiceDesc": "Serviços personalizados para as suas necessidades.",
         "experiences": "Experiências",
-        "experiencesDesc": "Aventuras locais inesquecíveis."
+        "experiencesDesc": "Aventuras locais inesquecíveis.",
+        "heroOverTitle": "Excelência em cada detalhe",
+        "heroTitle": "Concierge",
+        "scrollExplore": "Role para explorar",
+        "introOverTitle": "Serviço Personalizado",
+        "introTitle": "Não se preocupe, nós tratamos de tudo...",
+        "introDescription": "Experimente o auge do luxo com os nossos serviços de concierge personalizados. Tratamos dos detalhes para que se possa concentrar em criar memórias duradouras. Desde transfers privados a reservas exclusivas, a excelência é o nosso padrão.",
+        "supportTitle": "Suporte 24/7",
+        "supportDesc": "Assistência dedicada a qualquer hora, em qualquer lugar.",
+        "expertiseTitle": "Experiência Local",
+        "expertiseDesc": "Experiências curadas e acesso local exclusivo."
     },
     "OwnerSection": {
         "question": "É proprietário de um imóvel?",
@@ -71,7 +81,17 @@
     "PropertiesGrid": {
         "backToHome": "Voltar à Home",
         "title": "As nossas Casas Únicas",
-        "subtitle": "Explore a nossa seleção curada de propriedades de luxo no Porto, desenhadas para criar memórias encantadoras e duradouras."
+        "subtitle": "Explore a nossa seleção de propriedades de luxo no Porto, desenhadas para criar memórias encantadoras e duradouras.",
+        "comingSoon": "Em breve",
+        "viewBuilding": "Ver Edifício",
+        "loadMore": "Carregar mais propriedades",
+        "discoverMore": "Descobrir mais",
+        "regions": {
+            "all": "Todos",
+            "porto": "Porto",
+            "lisboa": "Lisboa",
+            "algarve": "Algarve"
+        }
     },
     "OwnerHero": {
         "subtitle": "Para Proprietários",
@@ -122,7 +142,7 @@
             "title": "Gestores de Conta",
             "desc": "O objetivo dos nossos gestores de conta dedicados é estar lá para si e representar o seu melhor interesse em todas as situações."
         },
-        "design": {
+        "this property": {
             "title": "Design de Interiores",
             "desc": "Os nossos especialistas em hospitalidade podem apoiá-lo na melhoria do seu espaço para aumentar a sua rentabilidade."
         },
@@ -254,5 +274,420 @@
         "message": "Mensagem*",
         "submit": "Enviar Mensagem",
         "success": "Obrigado pela sua mensagem! Entraremos em contacto em breve."
+    },
+    "Blog": {
+        "heroTitle": "Histórias e Insights Encantadores",
+        "heroSubtitle": "Explore a nossa coleção curada dos segredos mais bem guardados do Porto, dicas de viagem e inspiração para um estilo de vida luxuoso."
+    },
+    "Contact": {
+        "title": "Contacto",
+        "description1": "Entre em contacto e nós guiaremos o processo. É mais simples do que a maioria das pessoas pensa, por isso, do que está à espera?",
+        "description2": "Vamos transformar essa sua bela casa, num lar para hóspedes de todo o mundo!",
+        "formTitle": "Estime o potencial da sua propriedade",
+        "formSubtitle": "Descubra quanto pode ganhar com a LovelyMemories como sua empresa de gestão de alojamento local",
+        "emailPlaceholder": "Endereço de Email",
+        "locationPlaceholder": "Introduza a localização",
+        "bedroomsPlaceholder": "Nº de quartos",
+        "cta": "Obter Estimativa",
+        "metadataTitle": "Contacto - Lovely Memories",
+        "metadataDesc": "Entre em contacto com a Lovely Memories para estimativas de gestão de propriedades."
+    },
+    "PropertyDetail": {
+        "home": "Início",
+        "properties": "Propriedades",
+        "backToAll": "Voltar a todas as casas",
+        "arrival": "Chegada",
+        "departure": "Partida",
+        "addDate": "Adicionar data",
+        "bedroom": "quarto",
+        "bedroomsCount": "{count, plural, =1 {quarto} other {quartos}}",
+        "bed": "cama",
+        "bedsCount": "{count, plural, =1 {cama} other {camas}}",
+        "bathroom": "casa de banho",
+        "bathroomsCount": "{count, plural, =1 {casa de banho} other {casas de banho}}",
+        "superhost": "Superhost",
+        "viewAllPhotos": "Ver as {count} fotos",
+        "sleepsUpTo": "Capacidade até {count} pessoas",
+        "backToGrid": "Voltar à grelha",
+        "ageRanges": {
+            "children": "(1-12 anos)",
+            "infants": "(menos de 12 meses)"
+        },
+        "whatToExpect": "O que esperar",
+        "goodToKnow": "Bom saber",
+        "aboutStay": "Sobre esta estadia",
+        "amenities": "Comodidades",
+        "showAllAmenities": "Mostrar as {count} comodidades",
+        "bedroomsBathrooms": "Quartos e casas de banho",
+        "enSuite": "Suite",
+        "viewFloorPlan": "Ver planta",
+        "location": "Localização",
+        "interactiveMap": "Mapa interativo",
+        "clickToExplore": "Clique para explorar a área",
+        "getDirections": "Obter direções",
+        "highlightsTitle": "Destaques",
+        "perNight": "noite",
+        "selectDates": "Selecione as datas de check-in e check-out",
+        "minStay": "Estadia mínima de 2 noites",
+        "checkInOut": "Check in - out",
+        "guests": "Hóspedes",
+        "people": "2 hóspedes",
+        "guestsCount": "{count, plural, =1 {hóspede} other {hóspedes}}",
+        "nightsCount": "{count, plural, =1 {noite} other {noites}}",
+        "weeklyDiscount": "Desconto semanal",
+        "cleaningFee": "Taxa de limpeza e serviço",
+        "included": "Incluído",
+        "taxes": "Impostos",
+        "total": "Total",
+        "checkAvailability": "Verificar disponibilidade",
+        "clearDates": "Limpar datas",
+        "close": "Fechar",
+        "reserveNow": "Reservar agora",
+        "reserving": "A preparar checkout...",
+        "wontBeCharged": "Ainda não será cobrado",
+        "questions": "Dúvidas?",
+        "askHostDesc": "Pergunte-nos sobre esta casa ou a área.",
+        "sendMessage": "Enviar mensagem WhatsApp",
+        "bookingPolicies": "Políticas de reserva",
+        "houseRules": "Regras da Casa",
+        "checkInCheckOut": "Check-in & Check-out",
+        "cancellationPolicy": "Política de cancelamento",
+        "rules": {
+            "children": "Crianças bem-vindas",
+            "infants": "Bebés bem-vindos",
+            "pets": "Animais não permitidos",
+            "parties": "Festas não permitidas",
+            "smoking": "Proibido fumar"
+        },
+        "from": "a partir das",
+        "before": "antes das",
+        "viewFullTerms": "Ver termos completos",
+        "openInGoogleMaps": "Abrir no Google Maps",
+        "cancellationTemplate": "Cancele antes de {date} para um reembolso de {percent}.",
+        "refundEligibilityTemplate": "Não elegível para reembolso quando a data de check-in for inferior a {days} dias.",
+        "concierge": {
+            "title": "Serviços de Concierge",
+            "description": "Melhore a sua estadia com os nossos serviços de concierge premium. A nossa equipa está dedicada a tornar a sua experiência inesquecível.",
+            "vipServices": "Serviços VIP",
+            "chef": "Chef Privado",
+            "chauffeur": "Serviço de Motorista",
+            "spa": "Spa e Massagens",
+            "tours": "Tours Privados",
+            "security": "Segurança 24/7",
+            "events": "Planeamento de Eventos",
+            "more": "E muito mais...",
+            "disclaimer": "Os extras estão sujeitos a disponibilidade e podem ter custos adicionais.",
+            "contactButton": "Contacte a Lovely Memories para saber mais.",
+            "added": "Adicionado",
+            "dailyService": "Serviço Diário",
+            "breakfastTitle": "Pequeno-almoço",
+            "breakfastDesc": "Comece o seu dia com um pequeno-almoço fresco servido na sua villa.",
+            "transferTitle": "Transfer Aeroporto",
+            "transferDesc": "Serviço de motorista premium de/para o aeroporto até 4 pessoas.",
+            "entireStayIncluded": "Estadia Completa Incluída",
+            "perGuestNight": "/ hóspede / noite"
+        },
+        "share": {
+            "title": "Partilhar",
+            "copyLink": "Copiar Link",
+            "copied": "Link Copiado!",
+            "whatsapp": "WhatsApp",
+            "publicly": "Partilhar publicamente",
+            "friends": "Enviar aos amigos"
+        },
+        "guestSelector": {
+            "adults": "Adultos",
+            "infants": "Bebés",
+            "ages13": "Idades 13 ou superior",
+            "under2": "Abaixo de 2 anos",
+            "clear": "Limpar hóspedes",
+            "person": "pessoa",
+            "people": "pessoas"
+        },
+        "booking": {
+            "nights": "{count} {count, plural, =1 {noite} other {noites}}",
+            "included": "Incluído",
+            "additionalServices": "Serviços Adicionais",
+            "vatIncluded": "IVA incluído",
+            "breakfastStay": "Pequeno-almoço (Estadia Completa)",
+            "transfer": "Transfer Aeroporto",
+            "oneWayShort": "Só ida",
+            "roundTripShort": "Ida e volta",
+            "oneWay": "só ida",
+            "roundTrip": "ida e volta"
+        },
+        "bedrooms": {
+            "sleepingAreas": "Áreas de Dormir",
+            "bathingAreas": "Casas de Banho",
+            "bedSizeGuide": "Ver guia de tamanhos",
+            "single": "Single",
+            "double": "Double",
+            "king": "King",
+            "superKing": "Super King",
+            "ensuite": "Suíte",
+            "separate": "Independente",
+            "ensuiteBathroom": "Casa de banho privativa",
+            "travelingWithChildren": "A viajar com crianças?",
+            "babyCotInfo": "Berço e cadeira alta disponíveis mediante pedido, sem custos adicionais.",
+            "detailedSleeping": "Configuração detalhada das áreas de dormir e banho",
+            "socialArea": "Área Social",
+            "luxuryBath": "Banho de Luxo"
+        }
+    },
+    "Checkout": {
+        "header": {
+            "back": "Voltar",
+            "cancel": "Cancelar",
+            "contact": "Contacto",
+            "details": "Detalhes",
+            "payment": "Pagamento",
+            "processing": "A processar...",
+            "continue": "Continuar",
+            "confirmPayment": "Confirmar Pagamento"
+        },
+        "step1": {
+            "title": "A Sua Informação",
+            "subtitle": "Por favor, forneça os seus dados de contacto para prosseguir com a reserva.",
+            "fullName": "Nome Completo",
+            "email": "Endereço de Email",
+            "phone": "Número de Telefone",
+            "selectCountry": "Selecionar Código do País",
+            "international": "Internacional",
+            "billingTitle": "Morada de Faturação",
+            "billingSubtitle": "Adicione informações de faturação para a fatura",
+            "country": "País / Região",
+            "address": "Morada",
+            "city": "Cidade",
+            "zip": "Código Postal",
+            "vat": "NIF - Opcional",
+            "fullNamePlaceholder": "ex: João Silva",
+            "emailPlaceholder": "joao@exemplo.com",
+            "phonePlaceholder": "912 345 678",
+            "countryPlaceholder": "Selecione ou escreva um país",
+            "addressPlaceholder": "Nome da rua e número",
+            "cityPlaceholder": "Lisboa",
+            "vatPlaceholder": "ex: 123456789"
+        },
+        "step2": {
+            "title": "Detalhes da Reserva",
+            "subtitle": "Deixe-nos saber se tem algum pedido especial.",
+            "arrivalTime": "Hora de Chegada Estimada",
+            "unknown": "Ainda não sei",
+            "after18": "Depois das 18:00",
+            "selectTime": "Selecione a hora de chegada",
+            "specialRequests": "Pedidos Especiais",
+            "specialRequestsPlaceholder": "Alergias, check-in tardio, berço, etc..."
+        },
+        "step3": {
+            "title": "Método de Pagamento",
+            "subtitle": "Escolha a sua forma preferida de concluir a reserva.",
+            "wire": "Transferência Bancária",
+            "manual": "Confirmação manual necessária",
+            "instructions": "Por favor, transfira o valor total para a conta bancária abaixo. Use a Referência da Reserva como descrição do pagamento. A sua reserva será confirmada assim que recebermos os fundos.",
+            "holder": "Titular da Conta",
+            "bankName": "Nome do Banco",
+            "iban": "IBAN",
+            "reference": "Referência",
+            "card": "Cartão de Crédito ou Débito",
+            "cardTypes": "Visa, Mastercard, American Express",
+            "cardDetails": "Número do Cartão",
+            "cardPlaceholder": "0000 0000 0000 0000",
+            "expiry": "Data de Validade",
+            "expiryPlaceholder": "MM/AA",
+            "cvv": "CVV",
+            "cvvPlaceholder": "000",
+            "comingSoon": "Integração Stripe disponível em breve",
+            "paypalSubtitle": "Checkout Rápido e Seguro",
+            "paypalButton": "Pagar com PayPal",
+            "paypalIntegration": "Ponto de integração futuro"
+        },
+        "sidebar": {
+            "summary": "Resumo da Reserva",
+            "guestsTitle": "Hóspedes",
+            "nights": "{count, plural, =1 {1 noite} other {{count} noites}}",
+            "guests": "{count, plural, =1 {1 hóspede} other {{count} hóspedes}}",
+            "infants": "{count, plural, =1 {1 bebé} other {{count} bebés}}",
+            "subtotal": "Subtotal",
+            "cleaning": "Taxa de limpeza",
+            "breakfast": "Pequeno-almoço (Estadia Completa)",
+            "transfer": "Transfer Aeroporto",
+            "oneWay": "Só Ida",
+            "roundTrip": "Ida e Volta",
+            "total": "Total",
+            "vatIncluded": "IVA Incluído (23%)",
+            "propertyDetails": "Detalhes da Propriedade",
+            "dateRange": "Intervalo de Datas",
+            "additionalServices": "Serviços Adicionais",
+            "adults": "{count, plural, =1 {1 adulto} other {{count} adultos}}"
+        },
+        "security": {
+            "safe": "Os seus dados estão seguros",
+            "encryption": "Utilizamos encriptação padrão da indústria para proteger as suas informações pessoais."
+        },
+        "footer": {
+            "secured": "Seguro com tecnologias líderes da indústria",
+            "rights": "© 2026 Lovely Memories. Todos os direitos reservados.",
+            "privacy": "Política de Privacidade",
+            "terms": "Termos e Condições"
+        },
+        "success": {
+            "title": "Reserva confirmada!",
+            "subtitle": "A sua reserva está a ser preparada. Receberá um e-mail de confirmação em breve.",
+            "reference": "Referência da reserva",
+            "date": "Data da reserva",
+            "paymentMethod": "Método de pagamento",
+            "bankTransfer": "Transferência bancária",
+            "orderDetails": "Detalhes do pedido",
+            "downloadPdf": "Descarregar PDF",
+            "bookingOf": "Reserva de",
+            "dates": "Datas",
+            "duration": "Duração",
+            "guests": "Hóspedes",
+            "cleaningFee": "Taxa de limpeza e serviço",
+            "note": "Nota",
+            "returnHome": "Voltar ao início"
+        },
+        "errors": {
+            "sessionNotFound": "Sessão de reserva não encontrada",
+            "sessionExpired": "A sua sessão pode ter expirado ou o link é inválido. Por favor, tente reservar a propriedade novamente.",
+            "exploreProperties": "Explorar Propriedades",
+            "nameError": "O nome completo deve ter pelo menos 3 caracteres",
+            "emailError": "Por favor, introduza um endereço de email válido",
+            "fieldRequired": "{field} é obrigatório",
+            "invalidFormat": "Formato inválido (ex: {format}) para {country}",
+            "serverError": "Ocorreu um erro no servidor. Por favor, tente novamente.",
+            "genericError": "Ocorreu um erro durante a reserva.",
+            "countryRequired": "O país é obrigatório",
+            "addressRequired": "A morada é obrigatória",
+            "cityRequired": "A cidade é obrigatória",
+            "zipRequired": "O código postal é obrigatório"
+        }
+    },
+    "Properties": {
+        "rdm-ii": {
+            "title": "RDM II",
+            "subtitle": "Premium Apartments",
+            "description": [
+                "Experimente o luxo no coração do Porto. O RDM II oferece apartamentos premium concebidos para o conforto e estilo.",
+                "Localizado a poucos passos dos jardins do Palácio de Cristal, este apartamento combina o design contemporâneo com a arquitetura clássica do Porto.",
+                "Perfeito para famílias ou viajantes de negócios que procuram um lar sofisticado longe de casa."
+            ],
+            "highlights": [
+                "Vistas deslumbrantes do Rio Douro a partir da varanda privada.",
+                "Obras de arte locais escolhidas a dedo decorando cada quarto.",
+                "Cozinha gourmet totalmente equipada para os amantes da gastronomia."
+            ],
+            "homeTruths": [
+                "O apartamento fica no terceiro andar e não tem elevador.",
+                "Estão a decorrer obras de construção nas proximidades durante os dias úteis.",
+                "Não são permitidos animais de estimação nesta propriedade."
+            ],
+            "amenities": [
+                {
+                    "category": "Quarto e Lavandaria",
+                    "items": [
+                        "Máquina de lavar roupa",
+                        "Ferro de engomar",
+                        "Cabides",
+                        "Roupa de cama",
+                        "Almofadas e mantas extras",
+                        "Cortinas black-out"
+                    ]
+                },
+                {
+                    "category": "Entretenimento",
+                    "items": [
+                        "Smart TV com Netflix e cabo",
+                        "Sistema de som Bluetooth Marshall",
+                        "Livros e material de leitura"
+                    ]
+                },
+                {
+                    "category": "Aquecimento e Arrefecimento",
+                    "items": [
+                        "Ar condicionado",
+                        "Aquecimento central",
+                        "Ventoinhas portáteis"
+                    ]
+                },
+                {
+                    "category": "Internet e Escritório",
+                    "items": [
+                        "WiFi de alta velocidade (500 Mbps)",
+                        "Espaço de trabalho dedicado",
+                        "Cadeira ergonómica"
+                    ]
+                },
+                {
+                    "category": "Cozinha e Refeições",
+                    "items": [
+                        "Cozinha totalmente equipada",
+                        "Máquina Nespresso",
+                        "Máquina de lavar louça",
+                        "Copos de vinho",
+                        "Torradeira",
+                        "Básicos de cozinha"
+                    ]
+                },
+                {
+                    "category": "Casa de Banho",
+                    "items": [
+                        "Secador de cabelo",
+                        "Produtos de higiene premium",
+                        "Água quente",
+                        "Polibã"
+                    ]
+                },
+                {
+                    "category": "Características da Localização",
+                    "items": [
+                        "Entrada privativa",
+                        "Vista rio",
+                        "Acesso ao resort"
+                    ]
+                }
+            ],
+            "sleepingArrangements": [
+                {
+                    "title": "Quarto 1",
+                    "subtitle": "1 cama king"
+                },
+                {
+                    "title": "Quarto 2",
+                    "subtitle": "2 camas single"
+                },
+                {
+                    "title": "Sala de Estar",
+                    "subtitle": "1 sofá-cama"
+                }
+            ],
+            "bathroomDetails": [
+                {
+                    "title": "Casa de Banho 1",
+                    "subtitle": "Polibã, Sanitário"
+                }
+            ],
+            "rooms": [
+                {
+                    "name": "Suíte Principal",
+                    "details": "Quarto principal espaçoso com roupa de cama premium e vistas panorâmicas.",
+                    "beds": "1 cama king"
+                },
+                {
+                    "name": "Segundo Quarto",
+                    "details": "Camas twin, armário grande e janela voltada para o jardim.",
+                    "beds": "2 camas single"
+                },
+                {
+                    "name": "Área Social",
+                    "details": "Espaço de sala e jantar em plano aberto com acesso direto à varanda.",
+                    "beds": "1 sofá-cama"
+                },
+                {
+                    "name": "Casa de Banho Privativa",
+                    "details": "Polibã de luxo com efeito de chuva, lavatório duplo e produtos de higiene premium."
+                }
+            ]
+        }
     }
 }

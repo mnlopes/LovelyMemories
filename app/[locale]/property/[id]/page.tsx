@@ -1,7 +1,9 @@
 import { BookingSidebar } from "@/components/BookingSidebar";
 import { PolicySection } from "@/components/PolicySection";
 import { AmenitiesGrid } from "@/components/AmenitiesGrid";
-import { PropertyHero } from "@/components/PropertyHero";
+import { PropertyImmersiveGallery } from "@/components/PropertyImmersiveGallery";
+import { PropertyHighlights } from "@/components/PropertyHighlights";
+import { PropertyNeighborhood } from "@/components/PropertyNeighborhood";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { PropertyGallery } from "@/components/PropertyGallery";
 import { Navbar } from "@/components/Navbar";
@@ -93,10 +95,9 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         <div className="bg-white min-h-screen font-inter text-navy-950">
             <Navbar />
 
-            <PropertyHero
+            <PropertyImmersiveGallery
                 title={property.title}
-                location={property.location}
-                image={mainImageUrl}
+                images={galleryUrls.length > 0 ? [mainImageUrl, ...galleryUrls] : [mainImageUrl]}
             />
 
             <main className="relative z-10 bg-white">
@@ -162,6 +163,12 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
                             {/* Amenities */}
                             <AmenitiesGrid amenities={formattedAmenities} />
 
+                            {/* Highlights */}
+                            <PropertyHighlights />
+
+                            {/* Neighborhood */}
+                            <PropertyNeighborhood location={property.location} />
+
                             {/* Policies */}
                             <PolicySection
                                 rules={property.houseRules}
@@ -189,9 +196,6 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
                     </div>
                 </div>
 
-                {galleryUrls.length > 0 && (
-                    <PropertyGallery images={galleryUrls} />
-                )}
 
                 <ReviewsSection agent={property.agent} reviews={property.reviews} />
 

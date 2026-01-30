@@ -3,9 +3,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations } from "next-intl";
+import { RevenueReportModal } from './RevenueReportModal';
+import { useState } from 'react';
 
 export const OwnerExperience = () => {
     const t = useTranslations('OwnerExperience');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     return (
         <section className="py-24 bg-[#FCFCFC]">
@@ -67,6 +70,7 @@ export const OwnerExperience = () => {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
+                                onClick={() => setIsModalOpen(true)}
                                 className="w-full h-14 rounded-full text-white font-bold uppercase tracking-widest text-sm shadow-lg transition-all cursor-pointer"
                                 style={{
                                     backgroundColor: '#b29a7a',
@@ -80,6 +84,11 @@ export const OwnerExperience = () => {
                     </div>
 
                 </div>
+
+                <RevenueReportModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                />
             </div>
         </section>
     );

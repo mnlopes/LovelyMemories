@@ -1,5 +1,6 @@
 import { Wifi, Wind, Car, Coffee, Tv, Shield, ChefHat, Bath, BedDouble, Dumbbell, Waves, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LegacyIcon } from "./LegacyIcon";
 
 interface AmenitiesGridProps {
     amenities: { label: string; icon: string }[];
@@ -27,11 +28,16 @@ export const AmenitiesGrid = ({ amenities }: AmenitiesGridProps) => {
             <h3 className="text-[11px] font-extrabold text-[#AD9C7E] uppercase tracking-[0.4em] mb-12">Amenities</h3>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-16">
                 {amenities.map((item, i) => {
-                    const Icon = ICON_MAP[item.icon] || Shield;
+                    const LucideIcon = ICON_MAP[item.icon];
+
                     return (
                         <div key={i} className="flex items-center gap-5 group">
                             <div className="w-12 h-12 rounded-full bg-[#FBFAF8] border border-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#F1EFEC] group-hover:text-[#AD9C7E] transition-all duration-500 shadow-sm">
-                                <Icon className="w-5 h-5 stroke-[1.5]" />
+                                {LucideIcon ? (
+                                    <LucideIcon className="w-5 h-5 stroke-[1.5]" />
+                                ) : (
+                                    <LegacyIcon name={item.icon} className="w-5 h-5" />
+                                )}
                             </div>
                             <span className="text-sm font-bold text-navy-950 tracking-tight group-hover:text-[#AD9C7E] transition-colors duration-300">
                                 {item.label}

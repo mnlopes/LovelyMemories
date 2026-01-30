@@ -3,11 +3,14 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
+import { useTranslations } from 'next-intl';
+
 export const ConciergeIntro = () => {
+    const t = useTranslations('Concierge');
     const containerRef = useRef(null);
 
     return (
-        <section ref={containerRef} className="section-block section-intro py-12 md:py-20 bg-white relative">
+        <section ref={containerRef} className="py-12 md:py-20 bg-white relative">
             <div className="container mx-auto px-4 lg:px-8">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-16 xl:gap-24">
 
@@ -19,11 +22,11 @@ export const ConciergeIntro = () => {
                             viewport={{ once: true }}
                             transition={{ duration: 0.8 }}
                         >
-                            <span className="text-[#c5a059] uppercase tracking-[0.3em] text-xs font-bold mb-6 block">
-                                Personalized Service
+                            <span className="text-gold-400 uppercase tracking-[0.3em] text-xs font-bold mb-6 block">
+                                {t('introOverTitle')}
                             </span>
-                            <h2 className="text-4xl md:text-5xl xl:text-6xl font-playfair font-bold text-[#0A1128] leading-[1.1] tracking-tight">
-                                Don&apos;t worry,<br className="hidden xl:block" /> we get it done for you...
+                            <h2 className="text-4xl md:text-5xl xl:text-6xl font-playfair font-bold text-navy-950 leading-[1.1] tracking-tight">
+                                {t('introTitle')}
                             </h2>
                         </motion.div>
 
@@ -35,20 +38,18 @@ export const ConciergeIntro = () => {
                             className="space-y-8"
                         >
                             <p className="text-[#696969] text-lg font-light leading-relaxed max-w-xl">
-                                Experience the pinnacle of luxury with our bespoke concierge services.
-                                We handle the details so you can focus on creating lasting memories.
-                                From private transfers to exclusive reservations, excellence is our standard.
+                                {t('introDescription')}
                             </p>
 
                             {/* Service Highlights */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 pt-4">
-                                <div className="space-y-3 border-l-[3px] border-[#c5a059] pl-6">
-                                    <h4 className="font-bold text-[#0A1128] text-xl">24/7 Support</h4>
-                                    <p className="text-sm text-[#696969] leading-relaxed">Dedicated assistance at any time, anywhere.</p>
+                                <div className="space-y-3 border-l-[3px] border-gold-400 pl-6">
+                                    <h4 className="font-bold text-navy-950 text-xl">{t('supportTitle')}</h4>
+                                    <p className="text-sm text-[#696969] leading-relaxed">{t('supportDesc')}</p>
                                 </div>
-                                <div className="space-y-3 border-l-[3px] border-[#c5a059] pl-6">
-                                    <h4 className="font-bold text-[#0A1128] text-xl">Local Expertise</h4>
-                                    <p className="text-sm text-[#696969] leading-relaxed">Curated experiences and hidden local access.</p>
+                                <div className="space-y-3 border-l-[3px] border-gold-400 pl-6">
+                                    <h4 className="font-bold text-navy-950 text-xl">{t('expertiseTitle')}</h4>
+                                    <p className="text-sm text-[#696969] leading-relaxed">{t('expertiseDesc')}</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -73,8 +74,8 @@ export const ConciergeIntro = () => {
                         </motion.div>
 
                         {/* Decorative background elements */}
-                        <div className="absolute -bottom-12 -left-12 w-48 h-48 md:w-80 md:h-80 bg-[#c5a059]/5 rounded-full blur-[80px] -z-10" />
-                        <div className="absolute -top-12 -right-12 w-48 h-48 md:w-64 md:h-64 bg-[#0A1128]/5 rounded-full blur-[60px] -z-10" />
+                        <div className="absolute -bottom-12 -left-12 w-48 h-48 md:w-80 md:h-80 bg-gold-400/5 rounded-full blur-[80px] -z-10" />
+                        <div className="absolute -top-12 -right-12 w-48 h-48 md:w-64 md:h-64 bg-navy-950/5 rounded-full blur-[60px] -z-10" />
 
                     </div>
 

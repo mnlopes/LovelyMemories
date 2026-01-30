@@ -4,11 +4,13 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { Montserrat } from "next/font/google";
 import "../globals.css";
-import "../icons.css";
+// import "../icons.css"; // Moved to SVG components (LegacyIcon)
 import { Preloader } from "@/components/Preloader";
 import { ScrollAnimations } from "@/components/ScrollAnimations";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { GuestSelectorWrapper } from "@/components/GuestSelectorWrapper";
+import { DateSelectorWrapper } from "@/components/DateSelectorWrapper";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -55,6 +57,8 @@ export default async function LocaleLayout({
             {children}
           </PageTransition>
           <Footer />
+          <GuestSelectorWrapper />
+          <DateSelectorWrapper />
         </NextIntlClientProvider>
       </body>
     </html>

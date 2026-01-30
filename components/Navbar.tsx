@@ -21,6 +21,8 @@ export const Navbar = () => {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+    if (pathname.includes('/booking/checkout')) return null;
+
     const isActive = (path: string) => {
         if (path === "/" && pathname === "/") return true;
         if (path !== "/" && pathname.startsWith(path)) return true;

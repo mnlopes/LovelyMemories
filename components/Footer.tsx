@@ -4,10 +4,12 @@ import { Link } from "@/i18n/routing";
 import Image from "next/image";
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/routing";
 
 export const Footer = () => {
     const t = useTranslations('Footer');
     const tNav = useTranslations('Navbar');
+    const pathname = usePathname();
     const [email, setEmail] = useState("");
 
     const navLinks = [
@@ -19,6 +21,8 @@ export const Footer = () => {
         { path: '/blog', label: tNav('blog') },
         { path: '/contact', label: tNav('contact') },
     ];
+
+    if (pathname.includes('/booking/checkout')) return null;
 
     return (
         <footer className="relative text-white pt-24 pb-10 font-[family-name:var(--font-montserrat)]">
@@ -90,7 +94,7 @@ export const Footer = () => {
                         <a href="http://facebook.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
                             <Facebook size={22} strokeWidth={2} />
                         </a>
-                        <a href="http://instagram.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
+                        <a href="https://www.instagram.com/lovely_memories_porto" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
                             <Instagram size={22} strokeWidth={2} />
                         </a>
                         <a href="http://x.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
@@ -110,14 +114,14 @@ export const Footer = () => {
                     {/* Logo Centered on Line */}
                     <div
                         className="absolute left-1/2 top-0"
-                        style={{ transform: "translate(-50%, -50%)" }}
+                        style={{ transform: "translate(-50%, -62%)" }}
                     >
                         <Image
                             src="/legacy/home/images/logo-1.svg"
                             alt="Lovely Memories"
                             width={300}
                             height={100}
-                            className="h-24 w-auto object-contain"
+                            className="h-28 w-auto object-contain"
                         />
                     </div>
 

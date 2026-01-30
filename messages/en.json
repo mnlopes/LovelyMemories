@@ -60,7 +60,17 @@
         "anotherService": "Another Service",
         "anotherServiceDesc": "Tailored services for your needs.",
         "experiences": "Experiences",
-        "experiencesDesc": "Unforgettable local adventures."
+        "experiencesDesc": "Unforgettable local adventures.",
+        "heroOverTitle": "Excellence in every detail",
+        "heroTitle": "Concierge",
+        "scrollExplore": "Scroll to explore",
+        "introOverTitle": "Personalized Service",
+        "introTitle": "Don't worry, we get it done for you...",
+        "introDescription": "Experience the pinnacle of luxury with our bespoke concierge services. We handle the details so you can focus on creating lasting memories. From private transfers to exclusive reservations, excellence is our standard.",
+        "supportTitle": "24/7 Support",
+        "supportDesc": "Dedicated assistance at any time, anywhere.",
+        "expertiseTitle": "Local Expertise",
+        "expertiseDesc": "Curated experiences and hidden local access."
     },
     "OwnerSection": {
         "question": "Are you a Property Owner?",
@@ -71,7 +81,17 @@
     "PropertiesGrid": {
         "backToHome": "Back to Home",
         "title": "Our Unique Homes",
-        "subtitle": "Explore our curated selection of luxury properties in Porto, designed to create lovely, long-lasting memories."
+        "subtitle": "Explore our curated selection of luxury properties in Porto, designed to create lovely, long-lasting memories.",
+        "comingSoon": "Coming Soon",
+        "viewBuilding": "View Building",
+        "loadMore": "Load More Properties",
+        "discoverMore": "Discover More",
+        "regions": {
+            "all": "All",
+            "porto": "Porto",
+            "lisboa": "Lisboa",
+            "algarve": "Algarve"
+        }
     },
     "OwnerHero": {
         "subtitle": "For Property Owner",
@@ -119,7 +139,7 @@
             "desc": "We take care of your property and are always there to fix any situation, even when you are not."
         },
         "account": {
-            "title": "Account Managers",
+            "title": "Gestores de Conta",
             "desc": "The purpose of our dedicated account managers is to be there for you & represent your best interest in every situation."
         },
         "design": {
@@ -254,5 +274,420 @@
         "message": "Message*",
         "submit": "Submit Message",
         "success": "Thank you for your message! We will get back to you soon."
+    },
+    "Blog": {
+        "heroTitle": "Lovely Stories & Insights",
+        "heroSubtitle": "Explore our curated collection of Porto's best kept secrets, travel tips, and luxury lifestyle inspiration."
+    },
+    "Contact": {
+        "title": "Contact",
+        "description1": "Get in touch and we will guide you through our process. It is simpler than what most people think, so what are you waiting for?",
+        "description2": "Let's transform that beautiful house of yours, in a home for guests all over the world!",
+        "formTitle": "Estimate your property’s potential",
+        "formSubtitle": "Find out how much you can make with LovelyMemories as your Airbnb Management Company",
+        "emailPlaceholder": "Email Address",
+        "locationPlaceholder": "Enter a location",
+        "bedroomsPlaceholder": "Nr. of bedrooms",
+        "cta": "Get a Quote",
+        "metadataTitle": "Contact - Lovely Memories",
+        "metadataDesc": "Get in touch with Lovely Memories for property management estimates."
+    },
+    "PropertyDetail": {
+        "home": "Home",
+        "properties": "Properties",
+        "backToAll": "Back to all homes",
+        "arrival": "Arrival",
+        "departure": "Departure",
+        "addDate": "Add date",
+        "whatToExpect": "What to expect",
+        "goodToKnow": "Good to know",
+        "aboutStay": "About this stay",
+        "amenities": "Amenities",
+        "showAllAmenities": "Show all {count} amenities",
+        "bedroomsBathrooms": "Bedrooms & bathrooms",
+        "bedroom": "bedroom",
+        "bedroomsCount": "{count, plural, =1 {bedroom} other {bedrooms}}",
+        "bed": "bed",
+        "bedsCount": "{count, plural, =1 {bed} other {beds}}",
+        "bathroom": "bathroom",
+        "bathroomsCount": "{count, plural, =1 {bathroom} other {bathrooms}}",
+        "superhost": "Superhost",
+        "viewAllPhotos": "View all {count} photos",
+        "sleepsUpTo": "Sleeps up to {count}",
+        "backToGrid": "Back to grid",
+        "ageRanges": {
+            "children": "(1-12 years)",
+            "infants": "(under 12 months)"
+        },
+        "enSuite": "En-suite",
+        "viewFloorPlan": "View floor plan",
+        "location": "Location",
+        "interactiveMap": "Interactive map",
+        "clickToExplore": "Click to explore the area",
+        "getDirections": "Get directions",
+        "highlightsTitle": "Highlights",
+        "perNight": "night",
+        "selectDates": "Select check-in and check-out dates",
+        "minStay": "Minimum stay 2 nights",
+        "checkInOut": "Check in - out",
+        "guests": "Guests",
+        "people": "2 guests",
+        "guestsCount": "{count, plural, =1 {guest} other {guests}}",
+        "nightsCount": "{count, plural, =1 {night} other {nights}}",
+        "weeklyDiscount": "Weekly discount",
+        "cleaningFee": "Cleaning & service fee",
+        "included": "Included",
+        "taxes": "Taxes",
+        "total": "Total",
+        "checkAvailability": "Check availability",
+        "clearDates": "Clear dates",
+        "close": "Close",
+        "reserveNow": "Reserve now",
+        "reserving": "Preparing checkout...",
+        "wontBeCharged": "You won't be charged yet",
+        "questions": "Questions?",
+        "askHostDesc": "Ask us about this home or the area.",
+        "sendMessage": "Send WhatsApp message",
+        "bookingPolicies": "Booking policies",
+        "houseRules": "House Rules",
+        "checkInCheckOut": "Check-in & Check-out",
+        "cancellationPolicy": "Cancellation policy",
+        "rules": {
+            "children": "Children welcome",
+            "infants": "Infants welcome",
+            "pets": "No pets",
+            "parties": "No parties or events",
+            "smoking": "No smoking"
+        },
+        "from": "from",
+        "before": "before",
+        "viewFullTerms": "View full terms",
+        "openInGoogleMaps": "Open in Google Maps",
+        "cancellationTemplate": "Cancel before {date} for a {percent} refund.",
+        "refundEligibilityTemplate": "Not eligible for a refund once your check-in date is under {days} days away.",
+        "concierge": {
+            "title": "Concierge services",
+            "description": "Enhance your stay with our premium concierge services. Our team is dedicated to making your experience unforgettable.",
+            "vipServices": "VIP Services",
+            "chef": "Private Chef",
+            "chauffeur": "Chauffeur Service",
+            "spa": "Spa & Massage",
+            "tours": "Private Tours",
+            "security": "24/7 Security",
+            "events": "Event Planning",
+            "more": "And much more...",
+            "disclaimer": "Extras are subject to availability and may carry additional charges.",
+            "contactButton": "Contact Lovely Memories to enquire.",
+            "added": "Added",
+            "dailyService": "Daily Service",
+            "breakfastTitle": "Breakfast",
+            "breakfastDesc": "Start your day with a freshly prepared breakfast served in your villa.",
+            "transferTitle": "Airport Transfer",
+            "transferDesc": "Premium chauffeur service from/to the airport for up to 4 guests.",
+            "entireStayIncluded": "Entire Stay Included",
+            "perGuestNight": "/ guest / night"
+        },
+        "share": {
+            "title": "Share",
+            "copyLink": "Copy Link",
+            "copied": "Link Copied!",
+            "whatsapp": "WhatsApp",
+            "publicly": "Share publicly",
+            "friends": "Send to friends"
+        },
+        "guestSelector": {
+            "adults": "Adults",
+            "infants": "Infants",
+            "ages13": "Ages 13 or above",
+            "under2": "Under 2",
+            "clear": "Clear guests",
+            "person": "person",
+            "people": "people"
+        },
+        "booking": {
+            "nights": "{count} {count, plural, =1 {night} other {nights}}",
+            "included": "Included",
+            "additionalServices": "Additional Services",
+            "vatIncluded": "VAT included",
+            "breakfastStay": "Breakfast (Entire Stay)",
+            "transfer": "Airport Transfer",
+            "oneWayShort": "One Way",
+            "roundTripShort": "Round Trip",
+            "oneWay": "one-way",
+            "roundTrip": "round trip"
+        },
+        "bedrooms": {
+            "sleepingAreas": "Sleeping Areas",
+            "bathingAreas": "Bathing Areas",
+            "bedSizeGuide": "Show bed size guide",
+            "single": "Single",
+            "double": "Double",
+            "king": "King",
+            "superKing": "Super King",
+            "ensuite": "Ensuite",
+            "separate": "Separate",
+            "ensuiteBathroom": "En-suite bathroom",
+            "travelingWithChildren": "Traveling with children?",
+            "babyCotInfo": "Baby cot and high chair are available on request at no extra cost.",
+            "detailedSleeping": "Detailed configuration of sleeping and bathing areas",
+            "socialArea": "Social Area",
+            "luxuryBath": "Luxury Bath"
+        }
+    },
+    "Checkout": {
+        "header": {
+            "back": "Back",
+            "cancel": "Cancel",
+            "contact": "Contact",
+            "details": "Details",
+            "payment": "Payment",
+            "processing": "Processing...",
+            "continue": "Continue",
+            "confirmPayment": "Confirm Payment"
+        },
+        "step1": {
+            "title": "Your Information",
+            "subtitle": "Please provide your contact details to proceed with the booking.",
+            "fullName": "Full Name",
+            "email": "Email Address",
+            "phone": "Phone Number",
+            "selectCountry": "Select Country Code",
+            "international": "International",
+            "billingTitle": "Billing Address",
+            "billingSubtitle": "Add billing information for invoice",
+            "country": "Country / Region",
+            "address": "Address",
+            "city": "City",
+            "zip": "Postal Code",
+            "vat": "VAT Number - Optional",
+            "fullNamePlaceholder": "John Doe",
+            "emailPlaceholder": "john@example.com",
+            "phonePlaceholder": "912 345 678",
+            "countryPlaceholder": "Select or type a country",
+            "addressPlaceholder": "Street name and number",
+            "cityPlaceholder": "Lisbon",
+            "vatPlaceholder": "e.g. 123456789"
+        },
+        "step2": {
+            "title": "Reservation Details",
+            "subtitle": "Let us know if you have any special requirements.",
+            "arrivalTime": "Estimated Arrival Time",
+            "unknown": "I don't know yet",
+            "after18": "After 6:00 PM",
+            "selectTime": "Select arrival time",
+            "specialRequests": "Special Requests",
+            "specialRequestsPlaceholder": "Allergies, late check-in, baby cot requirements..."
+        },
+        "step3": {
+            "title": "Payment",
+            "subtitle": "How would you like to pay for your stay?",
+            "wire": "Wire Transfer (IBAN)",
+            "manual": "Manual Bank Transfer",
+            "instructions": "Make your payment directly into our bank account. Please use the Reference Number as the payment reference. Your reservation will not be confirmed until the funds have cleared in our account.",
+            "holder": "Account Holder",
+            "bankName": "Bank Name",
+            "iban": "IBAN / NIB",
+            "reference": "Reference Number",
+            "card": "Credit or Debit Card",
+            "cardTypes": "Visa, Mastercard, Amex",
+            "cardDetails": "Card Details",
+            "expiry": "Expiry Date",
+            "cvv": "CVV",
+            "comingSoon": "Coming soon: Stripe Integration. This is a demonstration view.",
+            "paypalSubtitle": "Fast & Secure Checkout",
+            "paypalButton": "Pay with PayPal",
+            "paypalIntegration": "Future integration point",
+            "cardPlaceholder": "**** **** **** ****",
+            "expiryPlaceholder": "MM / YY",
+            "cvvPlaceholder": "123"
+        },
+        "sidebar": {
+            "summary": "Order Summary",
+            "guestsTitle": "Guests",
+            "nights": "{count, plural, =1 {1 night} other {{count} nights}}",
+            "guests": "{count, plural, =1 {1 guest} other {{count} guests}}",
+            "infants": "{count, plural, =1 {1 infant} other {{count} infants}}",
+            "subtotal": "Subtotal",
+            "cleaning": "Cleaning fee",
+            "breakfast": "Breakfast (Entire Stay)",
+            "transfer": "Airport Transfer",
+            "oneWay": "One Way",
+            "roundTrip": "Round Trip",
+            "total": "Total",
+            "vatIncluded": "VAT Included (23%)",
+            "propertyDetails": "Property Details",
+            "dateRange": "Date Range",
+            "additionalServices": "Additional Services",
+            "adults": "{count, plural, =1 {1 adult} other {{count} adults}}"
+        },
+        "security": {
+            "safe": "Your data is safe",
+            "encryption": "We use industry-standard encryption to protect your personal information."
+        },
+        "footer": {
+            "secured": "Secured by industry leading technologies",
+            "rights": "© 2026 Lovely Memories. All rights reserved.",
+            "privacy": "Privacy Policy",
+            "terms": "Terms & Conditions"
+        },
+        "success": {
+            "title": "Booking confirmed!",
+            "subtitle": "Your reservation is being prepared. You will receive an email confirmation shortly.",
+            "reference": "Reference Number",
+            "date": "Date",
+            "paymentMethod": "Payment Method",
+            "bankTransfer": "Direct bank transfer",
+            "orderDetails": "Order details",
+            "downloadPdf": "Download PDF",
+            "bookingOf": "Booking of:",
+            "dates": "Dates:",
+            "duration": "Duration:",
+            "guests": "Guests:",
+            "cleaningFee": "Cleaning fee:",
+            "note": "Note",
+            "returnHome": "Return Home"
+        },
+        "errors": {
+            "sessionNotFound": "Booking session not found",
+            "sessionExpired": "Your session might have expired or the link is invalid. Please try reserving the property again.",
+            "exploreProperties": "Explore Properties",
+            "nameError": "Full name must be at least 3 characters",
+            "emailError": "Please enter a valid email address",
+            "fieldRequired": "{field} is required",
+            "invalidFormat": "Invalid format (e.g., {format}) for {country}",
+            "serverError": "A server error occurred. Please try again.",
+            "genericError": "An error occurred during reservation.",
+            "countryRequired": "Country is required",
+            "addressRequired": "Address is required",
+            "cityRequired": "City is required",
+            "zipRequired": "Postal Code is required"
+        }
+    },
+    "Properties": {
+        "rdm-ii": {
+            "title": "RDM II",
+            "subtitle": "Premium Apartments",
+            "description": [
+                "Experience luxury living in the heart of Porto. RDM II offers premium apartments designed for comfort and style.",
+                "Located just steps away from the Crystal Palace gardens, this apartment merges contemporary design with classical Porto architecture.",
+                "Perfect for families or business travelers seeking a sophisticated home away from home."
+            ],
+            "highlights": [
+                "Stunning views of the Douro River from the private balcony.",
+                "Handpicked local artworks decorating every room.",
+                "Fully equipped gourmet kitchen for food lovers."
+            ],
+            "homeTruths": [
+                "The apartment is on the third floor and there is no elevator.",
+                "Construction work is happening nearby during weekdays.",
+                "Pets are not allowed in this property."
+            ],
+            "amenities": [
+                {
+                    "category": "Bedroom & Laundry",
+                    "items": [
+                        "Washing machine",
+                        "Iron",
+                        "Hangers",
+                        "Bed linens",
+                        "Extra pillows and blankets",
+                        "Room-darkening shades"
+                    ]
+                },
+                {
+                    "category": "Entertainment",
+                    "items": [
+                        "HDTV with Netflix, Standard cable",
+                        "Marshall Bluetooth sound system",
+                        "Books and reading material"
+                    ]
+                },
+                {
+                    "category": "Heating and Cooling",
+                    "items": [
+                        "Air conditioning",
+                        "Central heating",
+                        "Portable fans"
+                    ]
+                },
+                {
+                    "category": "Internet and Office",
+                    "items": [
+                        "High-speed WiFi (500 Mbps)",
+                        "Dedicated workspace",
+                        "Ergonomic chair"
+                    ]
+                },
+                {
+                    "category": "Kitchen and Dining",
+                    "items": [
+                        "Fully equipped kitchen",
+                        "Nespresso machine",
+                        "Dishwasher",
+                        "Wine glasses",
+                        "Toaster",
+                        "Cooking basics"
+                    ]
+                },
+                {
+                    "category": "Bathroom",
+                    "items": [
+                        "Hair dryer",
+                        "Premium toiletries",
+                        "Hot water",
+                        "Walk-in shower"
+                    ]
+                },
+                {
+                    "category": "Location Features",
+                    "items": [
+                        "Private entrance",
+                        "River view",
+                        "Resort access"
+                    ]
+                }
+            ],
+            "sleepingArrangements": [
+                {
+                    "title": "Bedroom 1",
+                    "subtitle": "1 king bed"
+                },
+                {
+                    "title": "Bedroom 2",
+                    "subtitle": "2 single beds"
+                },
+                {
+                    "title": "Living Room",
+                    "subtitle": "1 sofa bed"
+                }
+            ],
+            "bathroomDetails": [
+                {
+                    "title": "Bathroom 1",
+                    "subtitle": "Walk-in shower, Toilet"
+                }
+            ],
+            "rooms": [
+                {
+                    "name": "Master Suite",
+                    "details": "Spacious master bedroom with premium linens and panoramic views.",
+                    "beds": "1 king bed"
+                },
+                {
+                    "name": "Second Bedroom",
+                    "details": "Twin beds, large closet, and garden-facing window.",
+                    "beds": "2 single beds"
+                },
+                {
+                    "name": "Social Area",
+                    "details": "Open-plan living and dining space with direct access to the balcony.",
+                    "beds": "1 sofa bed"
+                },
+                {
+                    "name": "En-suite Bathroom",
+                    "details": "Luxury walk-in rainfall shower, dual vanity, and premium toiletries."
+                }
+            ]
+        }
     }
 }

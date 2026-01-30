@@ -5,10 +5,16 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 export const Preloader = () => {
-    const [isLoading, setIsLoading] = useState(true);
     const pathname = usePathname();
+    const [isLoading, setIsLoading] = useState(!pathname?.includes('/booking/checkout'));
 
     useEffect(() => {
+        // Skip preloader for checkout page to allow skeleton UI to show
+        if (pathname.includes('/booking/checkout')) {
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         window.scrollTo(0, 0);
 

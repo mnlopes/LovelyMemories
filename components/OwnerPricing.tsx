@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations } from "next-intl";
+import { RevenueReportModal } from './RevenueReportModal';
 
 export const OwnerPricing = () => {
     const t = useTranslations('OwnerPricing');
     const [selectedPack, setSelectedPack] = useState<'base' | 'luxe' | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const totalFee = selectedPack === 'base' ? 20 : selectedPack === 'luxe' ? 25 : 0;
 
@@ -42,7 +44,7 @@ export const OwnerPricing = () => {
     ];
 
     return (
-        <section className="py-20 bg-white overflow-visible text-[14px] relative z-0">
+        <section className={`py-20 bg-white overflow-visible text-[14px] relative ${isModalOpen ? 'z-[100]' : 'z-0'}`}>
             <div className="container mx-auto px-4 max-w-5xl relative">
                 <div className="text-center mb-10 space-y-4">
                     <h2 className="text-3xl md:text-4xl font-playfair font-bold text-[#0A1128]">
@@ -172,6 +174,7 @@ export const OwnerPricing = () => {
                     </div>
 
                     <button
+                        onClick={() => selectedPack && setIsModalOpen(true)}
                         className={`min-w-[180px] py-5 px-10 !rounded-[28px] font-bold uppercase tracking-[0.2em] text-[12px] transition-all duration-500 z-10 ${selectedPack ? 'bg-[#b29a7a] text-white shadow-xl hover:scale-105 active:scale-95 cursor-pointer' : 'bg-gray-800/50 text-gray-600 border border-gray-700/50 cursor-not-allowed'}`}
                     >
                         {t('total.cta')}
@@ -180,6 +183,12 @@ export const OwnerPricing = () => {
                     {/* Subtle aesthetic element for the bar */}
                     <div className="absolute -right-20 -bottom-20 w-56 h-56 bg-white/5 rounded-full blur-3xl pointer-events-none" />
                 </motion.div>
+
+                <RevenueReportModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    initialPlan={selectedPack}
+                />
             </div>
         </section>
     );

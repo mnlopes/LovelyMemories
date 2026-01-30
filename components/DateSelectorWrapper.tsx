@@ -80,8 +80,12 @@ export const DateSelectorWrapper = () => {
             const arrivalInputs = document.querySelectorAll('.yith-wcbk-booking-start-date');
             const departureInputs = document.querySelectorAll('.yith-wcbk-booking-end-date');
 
+            if (arrivalInputs.length === 0 && departureInputs.length === 0) return false;
+
             arrivalInputs.forEach((arrivalInput) => {
                 const htmlArrivalInput = arrivalInput as HTMLElement;
+                if ((htmlArrivalInput as any)._listenerAttached) return;
+
                 const handleClick = (e: Event) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -98,6 +102,7 @@ export const DateSelectorWrapper = () => {
                 const parent = htmlArrivalInput.parentElement;
                 if (parent) parent.addEventListener('click', handleClick, true);
 
+                (htmlArrivalInput as any)._listenerAttached = true;
                 (htmlArrivalInput as any)._reactCleanup = () => {
                     htmlArrivalInput.removeEventListener('click', handleClick, true);
                     htmlArrivalInput.removeEventListener('mousedown', handleClick, true);
@@ -108,6 +113,8 @@ export const DateSelectorWrapper = () => {
 
             departureInputs.forEach((departureInput) => {
                 const htmlDepartureInput = departureInput as HTMLElement;
+                if ((htmlDepartureInput as any)._listenerAttached) return;
+
                 const handleClick = (e: Event) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -124,6 +131,7 @@ export const DateSelectorWrapper = () => {
                 const parent = htmlDepartureInput.parentElement;
                 if (parent) parent.addEventListener('click', handleClick, true);
 
+                (htmlDepartureInput as any)._listenerAttached = true;
                 (htmlDepartureInput as any)._reactCleanup = () => {
                     htmlDepartureInput.removeEventListener('click', handleClick, true);
                     htmlDepartureInput.removeEventListener('mousedown', handleClick, true);
@@ -131,9 +139,17 @@ export const DateSelectorWrapper = () => {
                     if (parent) parent.removeEventListener('click', handleClick, true);
                 };
             });
+
+            return true;
         };
 
-        const timer = setTimeout(attachListeners, 1000); // Aumentado para 1s para garantir
+        const attached = attachListeners();
+        let interval: any = null;
+        if (!attached) {
+            interval = setInterval(() => {
+                if (attachListeners()) clearInterval(interval);
+            }, 500);
+        }
 
         // Global style override para esconder o datepicker do jQuery UI
         const style = document.createElement('style');
@@ -144,13 +160,13 @@ export const DateSelectorWrapper = () => {
         document.head.appendChild(style);
 
         return () => {
-            clearTimeout(timer);
+            if (interval) clearInterval(interval);
             // Cleanup melhorado
             const arrivalInputs = document.querySelectorAll('.yith-wcbk-booking-start-date');
             const departureInputs = document.querySelectorAll('.yith-wcbk-booking-end-date');
 
-            if (arrivalInputs[0] && (arrivalInputs[0] as any)._reactCleanup) (arrivalInputs[0] as any)._reactCleanup();
-            if (departureInputs[0] && (departureInputs[0] as any)._reactCleanup) (departureInputs[0] as any)._reactCleanup();
+            arrivalInputs.forEach(el => { if ((el as any)._reactCleanup) (el as any)._reactCleanup(); });
+            departureInputs.forEach(el => { if ((el as any)._reactCleanup) (el as any)._reactCleanup(); });
 
             if (document.head.contains(style)) document.head.removeChild(style);
         };

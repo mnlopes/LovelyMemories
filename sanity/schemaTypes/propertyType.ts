@@ -26,6 +26,46 @@ export const propertyType = defineType({
             type: 'string',
         }),
         defineField({
+            name: 'coordinates',
+            title: 'Property Coordinates',
+            type: 'geopoint',
+            group: 'details',
+        }),
+        defineField({
+            name: 'nearbyPlaces',
+            title: 'Nearby Places',
+            type: 'array',
+            group: 'details',
+            of: [{
+                type: 'object',
+                fields: [
+                    defineField({ name: 'category', type: 'string', title: 'Category (e.g., Local Attractions)' }),
+                    defineField({
+                        name: 'items',
+                        type: 'array',
+                        of: [{
+                            type: 'object',
+                            fields: [
+                                defineField({ name: 'name', type: 'string', title: 'Place Name' }),
+                                defineField({ name: 'time', type: 'string', title: 'Time (e.g., "5 min")' }),
+                                defineField({
+                                    name: 'icon',
+                                    type: 'string',
+                                    options: {
+                                        list: [
+                                            { title: 'Walk', value: 'walk' },
+                                            { title: 'Car', value: 'car' }
+                                        ]
+                                    }
+                                }),
+                                defineField({ name: 'location', type: 'geopoint', title: 'Place Coordinates' })
+                            ]
+                        }]
+                    })
+                ]
+            }]
+        }),
+        defineField({
             name: 'price',
             title: 'Price (per month)',
             type: 'number',
@@ -110,10 +150,40 @@ export const propertyType = defineType({
             group: 'details',
         }),
         defineField({
-            name: 'cancellationPolicy',
-            title: 'Cancellation Policy',
-            type: 'text',
+            name: 'policies',
+            title: 'Booking Policies',
+            type: 'object',
             group: 'details',
+            fields: [
+                defineField({ name: 'checkInStart', title: 'Check-in Start', type: 'string', initialValue: '15:00' }),
+                defineField({ name: 'checkOutBy', title: 'Check-out By', type: 'string', initialValue: '11:00' }),
+                defineField({ name: 'cancellationText', title: 'Cancellation Policy Text', type: 'text' }),
+                defineField({ name: 'cancellationRefund', title: 'Refund Policy Details', type: 'string' }),
+                defineField({ name: 'cancellationDeadline', title: 'Deadline (e.g., "7 days", "4 Feb")', type: 'string' }),
+                defineField({
+                    name: 'houseRules',
+                    title: 'House Rules',
+                    type: 'object',
+                    fields: [
+                        defineField({ name: 'childrenAllowed', title: 'Children Allowed', type: 'boolean', initialValue: true }),
+                        defineField({ name: 'infantsAllowed', title: 'Infants Allowed', type: 'boolean', initialValue: true }),
+                        defineField({ name: 'petsAllowed', title: 'Pets Allowed', type: 'boolean', initialValue: false }),
+                        defineField({ name: 'partiesAllowed', title: 'Parties/Events Allowed', type: 'boolean', initialValue: false }),
+                        defineField({ name: 'smokingAllowed', title: 'Smoking Allowed', type: 'boolean', initialValue: false }),
+                    ]
+                })
+            ]
+        }),
+        defineField({
+            name: 'pricingConfig',
+            title: 'Pricing Configuration',
+            type: 'object',
+            group: 'pricing',
+            fields: [
+                defineField({ name: 'weeklyDiscount', title: 'Weekly Discount (%)', type: 'number', initialValue: 0 }),
+                defineField({ name: 'cleaningFeeIncluded', title: 'Cleaning Fee Included?', type: 'boolean', initialValue: false }),
+                defineField({ name: 'cityTaxIncluded', title: 'City Tax Included?', type: 'boolean', initialValue: false }),
+            ]
         }),
         defineField({
             name: 'hostBio',
@@ -127,6 +197,20 @@ export const propertyType = defineType({
             type: 'image',
             options: { hotspot: true },
             group: 'host',
+        }),
+        defineField({
+            name: 'concierge',
+            title: 'Concierge Services',
+            type: 'object',
+            group: 'details',
+            fields: [
+                defineField({ name: 'chef', title: 'Private Chef', type: 'boolean', initialValue: true }),
+                defineField({ name: 'chauffeur', title: 'Chauffeur Service', type: 'boolean', initialValue: false }),
+                defineField({ name: 'spa', title: 'Spa & Massage', type: 'boolean', initialValue: false }),
+                defineField({ name: 'tours', title: 'Private Tours', type: 'boolean', initialValue: true }),
+                defineField({ name: 'security', title: '24/7 Security', type: 'boolean', initialValue: false }),
+                defineField({ name: 'events', title: 'Event Planning', type: 'boolean', initialValue: false }),
+            ]
         }),
         defineField({
             name: 'agent',

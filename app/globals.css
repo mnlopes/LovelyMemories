@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "react-day-picker/dist/style.css";
 
 @theme {
     --font-playfair: var(--font-montserrat), "Montserrat", sans-serif;
@@ -9,11 +10,22 @@
     --color-navy-950: #0a1128;
     --color-navy-900: #0d1b3e;
     --color-gold-400: #c5a059;
-    --color-gold-500: #b08d4a;
+    --color-gold-500: #b09e80;
 
     --color-gold: hsl(38 20% 58%);
     --color-gold-light: hsl(38 25% 75%);
     --color-gold-dark: hsl(38 20% 45%);
+
+    --color-discount: #2d8653;
+    --color-success-light: #e6f4ea;
+
+    --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --shadow-elevated: 0 20px 50px rgba(0, 0, 0, 0.12);
+}
+
+/* Override Class for Button Hover consistency */
+.hover-gold-override:hover {
+    background-color: #b09e80 !important;
 }
 
 /* Garante que o Tailwind tem prioridade sobre resets genéricos do CSS legado */
@@ -25,7 +37,7 @@
         /* FORCE SCROLL ON BODY to fix Parallax/Framer Motion */
         height: auto !important;
         overflow-y: visible !important;
-        overflow-x: hidden !important;
+        overflow-x: visible !important;
     }
 
     /* Force wrapper to not trap scroll */
@@ -110,6 +122,43 @@
     animation: scroll 2s infinite;
 }
 
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
+}
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-scale-in {
+    animation: scale-in 0.4s ease-out forwards;
+}
+
+.gradient-accent {
+    background: linear-gradient(135deg, #c5a059 0%, #b08d4a 100%);
+    color: white;
+}
+
 /* OWNER IMAGES FIX - Bring them closer to center and animate */
 .owner-images__img {
     transition: opacity 0.8s ease-out, transform 0.8s ease-out !important;
@@ -158,32 +207,80 @@ html,
     padding-bottom: 0 !important;
 }
 
+/* LEAFLET MAP STYLES - GLOBAL */
+.leaflet-container {
+    background: #f1f1f1 !important;
+}
+
+/* FINAL VISIBILITY TEST: RAW LEAFLET */
+.leaflet-tile-container img {
+    /* Critical to bypass global img rules from globals.css */
+    max-width: none !important;
+    max-height: none !important;
+
+    /* NO transformations or filters - let the browser render naturally */
+}
+
+/* Ensure no borders on tiles */
+.leaflet-tile {
+    border: none !important;
+}
+
+/* Custom Popup Styles */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    padding: 0 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-content {
+    margin: 8px 12px 14px 12px !important;
+}
+
+.leaflet-popup-close-button {
+    color: #0a1128 !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    top: 6px !important;
+    right: 6px !important;
+    width: 20px !important;
+    height: 20px !important;
+    line-height: 20px !important;
+    text-align: center;
+    border-radius: 50% !important;
+    z-index: 1000 !important;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    pointer-events: auto !important;
+}
+
+.leaflet-popup-close-button:hover {
+    color: #c5a059 !important;
+    background: rgba(0, 0, 0, 0.05);
+    opacity: 1;
+}
+
 /* MOBILE NAV FIX (REACT) - Force visibility on mobile when open */
 @media (max-width: 991.98px) {
     .header {
         overflow: visible !important;
-        /* Allow menu to drop down */
     }
 
     .header__nav--collapse {
         display: none;
-        /* Start hidden on mobile */
     }
 
     .header__nav--collapse.show {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
-
         position: absolute !important;
         top: 100% !important;
         left: 0 !important;
         width: 100% !important;
         height: auto !important;
         max-height: 80vh !important;
-        /* Scrollable if too tall */
         overflow-y: auto !important;
-
         background-color: #ffffff !important;
         z-index: 99999 !important;
         padding: 20px !important;

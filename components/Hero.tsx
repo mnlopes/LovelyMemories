@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LegacyIcon } from "./LegacyIcon";
 
 export const Hero = () => {
     return (
@@ -8,7 +9,7 @@ export const Hero = () => {
             <div className="hero">
                 <div
                     className="hero__bg"
-                    style={{ backgroundImage: "url(http://207.154.225.193/lovely-memories/wp-content/uploads/2024/04/hero-image.png)" }}
+                    style={{ backgroundImage: "url(/legacy/home/images/hero-image.png)" }}
                 ></div>
                 <div className="hero__content">
                     <div className="container">
@@ -26,7 +27,7 @@ export const Hero = () => {
                             <div className="col-12">
                                 <div className="booking-bar">
                                     <div className="booking-bar__title">
-                                        <i className="icon-calendar"></i>
+                                        <LegacyIcon name="calendar" size={24} className="text-[#AD9C7E]" />
                                         <p className="alt-p mb-0">My Trip</p>
                                     </div>
                                     <div className="booking-bar__form">

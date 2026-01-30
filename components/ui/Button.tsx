@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 
 interface ButtonProps extends HTMLMotionProps<"button"> {
     children: React.ReactNode;
-    variant?: "primary" | "outline" | "ghost";
+    variant?: "primary" | "outline" | "ghost" | "luxury";
     icon?: boolean;
 }
 
@@ -15,6 +15,7 @@ export const Button = ({ children, className, variant = "primary", icon = false,
         primary: "bg-gold-400 text-navy-950 hover:bg-gold-300 border border-gold-400",
         outline: "bg-transparent text-gold-400 border border-gold-400 hover:bg-gold-400/10",
         ghost: "bg-transparent text-white hover:text-gold-300",
+        luxury: "bg-gold-500 text-white hover:bg-[#9A7B3E] border border-gold-500 hover:border-[#9A7B3E] shadow-md hover:shadow-lg transition-all",
     };
 
     return (

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 
-export const PropertyOwnerSection = () => {
+export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: boolean }) => {
     const t = useTranslations('OwnerSection');
     const scrollRef = useRef(null);
 
@@ -28,7 +28,7 @@ export const PropertyOwnerSection = () => {
     const y3 = useTransform(smoothY, [0, 1], [0, 40]);   // Topo (Detalhe) - Desce Levemente
 
     return (
-        <section ref={scrollRef} className="section-block section-owner relative w-full bg-[#192537] py-20 lg:py-12 z-10 w-full overflow-hidden lg:overflow-visible">
+        <section ref={scrollRef} className="relative w-full bg-[#192537] py-20 lg:py-12 z-20 w-full overflow-visible">
             {/* Background Container */}
             <div className="absolute inset-0 w-full h-full z-0">
                 {/* Mobile Background Image - Low Opacity */}
@@ -58,7 +58,7 @@ export const PropertyOwnerSection = () => {
                         >
                             <span className="text-lg font-light tracking-wide text-gray-300">{t('question')}</span>
                             {/* USER REQUEST: Montserrat Font & Specific Style (36px, 700) */}
-                            <h2 className="text-[32px] md:text-[36px] !font-bold leading-[1.2] font-[family-name:var(--font-montserrat)] text-white">
+                            <h2 className="text-[36px] !font-bold leading-[1.2] font-[family-name:var(--font-montserrat)] text-white">
                                 {t.rich('title', {
                                     br: () => <br />
                                 })}
@@ -71,7 +71,7 @@ export const PropertyOwnerSection = () => {
                             <div className="pt-4">
                                 <Link
                                     href="/owner"
-                                    className="inline-block px-10 py-4 bg-white text-[#0A1128] rounded-full font-bold uppercase tracking-widest hover:bg-[#b09e80] hover:text-white transition-colors duration-300 shadow-lg text-sm md:text-base"
+                                    className="inline-block px-10 py-4 bg-white text-[#0A1128] rounded-full font-bold uppercase tracking-widest hover:bg-[#B09E80] hover:text-white transition-colors duration-300 shadow-lg text-sm md:text-base"
                                 >
                                     {t('button')}
                                 </Link>

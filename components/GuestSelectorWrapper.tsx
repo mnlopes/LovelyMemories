@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Baby } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export const GuestSelectorWrapper = () => {
@@ -77,21 +77,33 @@ export const GuestSelectorWrapper = () => {
     useEffect(() => {
         const totalsSpans = document.querySelectorAll('.yith-wcbk-people-selector__totals');
         totalsSpans.forEach(totalsSpan => {
-            // Need a reference to translations in a way that respects the current logic
-            // Since we're manipulating DOM directly (legacy sync), we just use the t hook values
-            const label = totalGuests > 0
-                ? `${totalGuests} ${totalGuests === 1 ? t('person') : t('people')}`
-                : t('people'); // Or just keep the placeholder logic from BookingBar/Mobile
+            const adultsLabel = adults > 0
+                ? `${adults} ${adults === 1 ? t('person') : t('people')}`
+                : '';
+            const infantsLabel = infants > 0
+                ? `${infants} ${t('infants').toLowerCase()}`
+                : '';
 
-            // Actually, the placeholder should probably be "Select people" if 0
-            // but let's stick to what's consistent. 
-            // The BookingBar has its own "Select people" translation.
-            // Let's just update the count correctly.
-            if (totalGuests > 0) {
-                totalsSpan.textContent = `${totalGuests} ${totalGuests === 1 ? t('person') : t('people')}`;
+            const fullLabel = [adultsLabel, infantsLabel].filter(Boolean).join(', ') || t('people');
+
+            totalsSpan.textContent = fullLabel;
+
+            // Toggle infant icon indicator in the parent button if it exists
+            const container = totalsSpan.closest('.yith-wcbk-people-selector__toggle-handler');
+            if (container) {
+                const infantIndicator = container.querySelector('.infant-icon-indicator');
+                if (infantIndicator) {
+                    if (infants > 0) {
+                        infantIndicator.classList.remove('hidden');
+                        infantIndicator.classList.add('flex');
+                    } else {
+                        infantIndicator.classList.add('hidden');
+                        infantIndicator.classList.remove('flex');
+                    }
+                }
             }
         });
-    }, [totalGuests, t]);
+    }, [adults, infants, t]);
 
     if (!mounted) return null;
 

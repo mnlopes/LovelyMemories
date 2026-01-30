@@ -113,82 +113,85 @@ export const OwnerHero = () => {
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8, delay: 0.4 }}
-                            className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-gray-100 w-full max-w-[500px]"
+                            className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-[500px] overflow-hidden"
                         >
-                            <h2
-                                className="text-[36px] mb-2 leading-tight"
-                                style={{ color: '#192537', fontWeight: 900 }}
-                            >
-                                {t('form.title')}
-                            </h2>
-                            <p
-                                className="mb-10 font-medium"
-                                style={{ color: '#192537', opacity: 0.7 }}
-                            >
-                                {t('form.subtitle')}
-                            </p>
-
-                            <form onSubmit={handleSubmit} className="flex flex-col gap-10">
-                                <div className="flex flex-col gap-6">
-                                    <Input
-                                        name="fullName"
-                                        placeholder={t('form.fullName')}
-                                        value={formData.fullName}
-                                        onChange={handleChange}
-                                        className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                        required
-                                    />
-                                    <Input
-                                        name="email"
-                                        type="email"
-                                        placeholder={t('form.email')}
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                        required
-                                    />
-                                    <Input
-                                        name="phone"
-                                        type="tel"
-                                        placeholder={t('form.phone')}
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                    />
-                                    <Input
-                                        name="address"
-                                        placeholder={t('form.address')}
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                        className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                    />
-                                    <Input
-                                        name="location"
-                                        placeholder={t('form.location')}
-                                        value={formData.location}
-                                        onChange={handleChange}
-                                        className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                    />
-                                </div>
-
-                                <Button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="w-full h-14 text-white font-bold shadow-lg transition-all rounded-full !rounded-full"
-                                    style={{
-                                        backgroundColor: isSubmitting ? '#a68f6e' : '#b29a7a',
-                                        boxShadow: '0 10px 15px -3px rgba(178, 154, 122, 0.2)',
-                                        borderRadius: '9999px'
-                                    }}
+                            {/* Card Header with Navy Background */}
+                            <div className="bg-[#0A1128] p-8 md:p-12 pb-6 md:pb-8">
+                                <h2
+                                    className="text-[36px] mb-2 leading-tight text-white font-[900]"
                                 >
-                                    {isSubmitting ? t('form.submitting') : t('form.submit')}
-                                </Button>
-
-                                <p className="text-xs text-center text-gray-400 mt-4">
-                                    By submitting, you agree to our{" "}
-                                    <a href="#" className="text-[#b29a7a] hover:underline">Privacy Policy</a>
+                                    {t('form.title')}
+                                </h2>
+                                <p
+                                    className="font-medium text-white/70"
+                                >
+                                    {t('form.subtitle')}
                                 </p>
-                            </form>
+                            </div>
+
+                            <div className="p-8 md:px-12 md:pb-12 md:pt-6">
+                                <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+                                    <div className="flex flex-col gap-5">
+                                        <Input
+                                            name="fullName"
+                                            placeholder={t('form.fullName')}
+                                            value={formData.fullName}
+                                            onChange={handleChange}
+                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                            required
+                                        />
+                                        <Input
+                                            name="email"
+                                            type="email"
+                                            placeholder={t('form.email')}
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                            required
+                                        />
+                                        <Input
+                                            name="phone"
+                                            type="tel"
+                                            placeholder={t('form.phone')}
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                        />
+                                        <Input
+                                            name="address"
+                                            placeholder={t('form.address')}
+                                            value={formData.address}
+                                            onChange={handleChange}
+                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                        />
+                                        <Input
+                                            name="location"
+                                            placeholder={t('form.location')}
+                                            value={formData.location}
+                                            onChange={handleChange}
+                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                        />
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="w-full h-14 text-white font-bold shadow-lg transition-all rounded-full !rounded-full"
+                                        style={{
+                                            backgroundColor: isSubmitting ? '#a68f6e' : '#b29a7a',
+                                            boxShadow: '0 10px 15px -3px rgba(178, 154, 122, 0.2)',
+                                            borderRadius: '9999px'
+                                        }}
+                                    >
+                                        {isSubmitting ? t('form.submitting') : t('form.submit')}
+                                    </Button>
+
+                                    <p className="text-xs text-center text-gray-400 mt-4">
+                                        By submitting, you agree to our{" "}
+                                        <a href="#" className="text-[#b29a7a] hover:underline">Privacy Policy</a>
+                                    </p>
+                                </form>
+                            </div>
                         </motion.div>
                     </div>
 

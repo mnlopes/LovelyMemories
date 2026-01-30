@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // --- DEMO MODE CONFIGURATION ---
 // Set to true to restrict access to only Home, Owner, and About Us pages for client demo.
 // Set to false to enable all pages.
-const DEMO_MODE = true;
+const DEMO_MODE = false;
 const DEMO_ALLOWED_PATHS = ['/', '/owner', '/about-us'];
 // -------------------------------
 

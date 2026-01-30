@@ -1,13 +1,16 @@
-import { getLegacyBody } from '@/lib/legacy';
+import ContactContent from '@/components/contact/ContactContent';
+import { Metadata } from "next";
+import { getTranslations } from 'next-intl/server';
 
-export default async function ContactPage() {
-    const content = getLegacyBody('contact');
+export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
+    const t = await getTranslations({ locale, namespace: 'Contact' });
 
-    return (
-        <div
-            className="legacy-content-wrapper"
-            dangerouslySetInnerHTML={{ __html: content }}
-            suppressHydrationWarning={true}
-        />
-    );
+    return {
+        title: t('metadataTitle'),
+        description: t('metadataDesc'),
+    };
+}
+
+export default function ContactPage() {
+    return <ContactContent />;
 }

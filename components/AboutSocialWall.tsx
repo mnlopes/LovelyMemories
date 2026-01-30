@@ -13,7 +13,7 @@ export const AboutSocialWall = () => {
                     <div className="hidden md:block">
                         <a
                             className="inline-block px-8 py-3 bg-[#b09e80] text-white font-bold text-sm uppercase tracking-widest hover:bg-[#8e7d65] transition-colors rounded-full"
-                            href="https://www.instagram.com/fortune_mk2"
+                            href="https://www.instagram.com/lovely_memories_porto"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -44,7 +44,7 @@ export const AboutSocialWall = () => {
                 <div className="mt-8 md:hidden text-center">
                     <a
                         className="inline-block px-8 py-3 bg-[#b09e80] text-white font-bold text-sm uppercase tracking-widest hover:bg-[#8e7d65] transition-colors rounded-full"
-                        href="https://www.instagram.com/fortune_mk2"
+                        href="https://www.instagram.com/lovely_memories_porto"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
