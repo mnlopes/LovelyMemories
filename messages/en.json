@@ -293,6 +293,7 @@
         "metadataDesc": "Get in touch with Lovely Memories for property management estimates."
     },
     "PropertyDetail": {
+        "mapUnavailable": "Map location is unavailable for this property.",
         "home": "Home",
         "properties": "Properties",
         "backToAll": "Back to all homes",
@@ -564,6 +565,314 @@
         }
     },
     "Properties": {
+        "praca-dos-poveiros": {
+            "title": "Praça dos Poveiros",
+            "subtitle": "Studio Loft",
+            "description": [
+                "Stylish studio loft located in one of Porto's most famous squares.",
+                "Perfect for solo travelers or couples wanting to be in the center of the action.",
+                "Surrounded by the best local restaurants and bars."
+            ],
+            "highlights": [
+                "Prime location in Poveiros square.",
+                "Modern open-plan design.",
+                "Walkable distance to all major sights."
+            ],
+            "homeTruths": [
+                "Located on a busy square, some noise expected.",
+                "Third floor without elevator."
+            ],
+            "amenities": [
+                {
+                    "category": "General",
+                    "items": [
+                        "WiFi",
+                        "AC"
+                    ]
+                }
+            ],
+            "rooms": {
+                "studio": {
+                    "name": "Studio Area",
+                    "description": "Open space with double bed and kitchenette."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Coliseu do Porto"
+                ],
+                "food": [
+                    "Casa Guedes",
+                    "Santiago"
+                ]
+            }
+        },
+        "the-flower-power": {
+            "title": "The Flower Power",
+            "subtitle": "Two Bedroom Home",
+            "description": [
+                "A charming and cozy two-bedroom home with a beautiful garden.",
+                "Filled with natural light and colorful decorations to brighten your stay.",
+                "Ideal for families looking for a peaceful retreat."
+            ],
+            "highlights": [
+                "Private garden with outdoor seating.",
+                "Kid-friendly environment.",
+                "Pet-friendly property."
+            ],
+            "homeTruths": [
+                "Garden maintenance occurs weekly.",
+                "Quiet residential hours apply."
+            ],
+            "amenities": [
+                {
+                    "category": "General",
+                    "items": [
+                        "WiFi",
+                        "Garden",
+                        "Pet Friendly"
+                    ]
+                }
+            ],
+            "rooms": {
+                "bedroom_1": {
+                    "name": "Master Bedroom",
+                    "description": "Queen bed with garden view."
+                },
+                "bedroom_2": {
+                    "name": "Kids Room",
+                    "description": "Bunk beds and play area."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Serralves Foundation"
+                ],
+                "food": [
+                    "Local Bakeries"
+                ]
+            }
+        },
+        "paraiso-331": {
+            "title": "Paraíso 331",
+            "subtitle": "Modern Apartment",
+            "description": [
+                "A stylish and modern apartment located in the Paraíso district. Perfectly situated to explore the best of Porto.",
+                "Featuring contemporary amenities and a comfortable living space, it's an ideal choice for couples and small families.",
+                "Enjoy the vibrant local neighborhood with easy access to public transport and famous landmarks."
+            ],
+            "highlights": [
+                "Central location near metro station.",
+                "Modern interior design with high-quality finishes.",
+                "Quiet residential area close to downtown."
+            ],
+            "homeTruths": [
+                "Street parking only.",
+                "Located on the second floor with elevator access."
+            ],
+            "amenities": [
+                {
+                    "category": "General",
+                    "items": [
+                        "WiFi",
+                        "Air conditioning",
+                        "Heating",
+                        "Elevator"
+                    ]
+                }
+            ],
+            "rooms": {
+                "bedroom_1": {
+                    "name": "Master Bedroom",
+                    "description": "Double bed with en-suite bathroom."
+                },
+                "living_room": {
+                    "name": "Living Room",
+                    "description": "Spacious area with sofa and TV."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Casa da Música"
+                ],
+                "food": [
+                    "Mercado do Bom Sucesso"
+                ]
+            }
+        },
+        "avenida-luxury": {
+            "title": "Avenida Luxury",
+            "subtitle": "Penthouse",
+            "description": [
+                "Exclusive penthouse on Avenida da Liberdade, offering the ultimate luxury experience in Lisbon.",
+                "Featuring a private terrace with panoramic views of the city and high-end finishes throughout.",
+                "Prime location surrounded by luxury boutiques and top-rated restaurants."
+            ],
+            "highlights": [
+                "Expansive private terrace with city views.",
+                "Located on the most prestigious avenue in Lisbon.",
+                "Designer interiors and premium furnishings."
+            ],
+            "homeTruths": [
+                "Strict no-party policy.",
+                "Elevator access directly to the penthouse."
+            ],
+            "amenities": [
+                {
+                    "category": "General",
+                    "items": [
+                        "WiFi",
+                        "AC",
+                        "Elevator",
+                        "Terrace"
+                    ]
+                }
+            ],
+            "rooms": {
+                "master": {
+                    "name": "Master Suite",
+                    "description": "King bed with walk-in closet and en-suite."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Tivoli Theatre"
+                ],
+                "food": [
+                    "JNcQUOI",
+                    "Seen"
+                ]
+            }
+        },
+        "sunset-villa": {
+            "title": "Sunset Villa",
+            "subtitle": "Beachfront Home",
+            "description": [
+                "Stunning beachfront villa in Quinta do Lago with direct access to the beach.",
+                "Designed for relaxation with a private pool, spacious gardens, and outdoor dining areas.",
+                "The perfect getaway for large families or groups seeking privacy and luxury."
+            ],
+            "highlights": [
+                "Direct beach access.",
+                "Private heated pool and large garden.",
+                "Outdoor kitchen and BBQ area."
+            ],
+            "homeTruths": [
+                "Pool heating available at extra cost.",
+                "Car recommended for exploring the area."
+            ],
+            "amenities": [
+                {
+                    "category": "General",
+                    "items": [
+                        "WiFi",
+                        "Pool",
+                        "Garden",
+                        "AC"
+                    ]
+                }
+            ],
+            "rooms": {
+                "master": {
+                    "name": "Master Suite",
+                    "description": "King bed with ocean view and balcony."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Ria Formosa Park"
+                ],
+                "food": [
+                    "Gigi's",
+                    "Casa do Lago"
+                ]
+            }
+        },
+        "chiado-loft": {
+            "title": "Chiado Loft",
+            "subtitle": "Classic Studio",
+            "description": [
+                "Charming studio loft in the heart of Chiado, Lisbon's cultural district.",
+                "Retaining original features like stone walls and wooden shutters combined with modern comfort.",
+                "Steps away from iconic cafes, theaters, and shops."
+            ],
+            "highlights": [
+                "Historic building with authentic charm.",
+                "Walking distance to Bairro Alto and Baixa.",
+                "Fully renovated interior."
+            ],
+            "homeTruths": [
+                "Third floor, no elevator.",
+                "Street noise possible on weekends."
+            ],
+            "amenities": [
+                {
+                    "category": "General",
+                    "items": [
+                        "WiFi",
+                        "AC"
+                    ]
+                }
+            ],
+            "rooms": {
+                "studio": {
+                    "name": "Main Room",
+                    "description": "Open plan sleeping and living area."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Bertrand Bookstore"
+                ],
+                "food": [
+                    "A Brasileira"
+                ]
+            }
+        },
+        "ocean-breeze": {
+            "title": "Ocean Breeze",
+            "subtitle": "Modern Apartment",
+            "description": [
+                "Modern apartment located in the vibrant Vilamoura Marina.",
+                "Enjoy views of the yachts and easy access to beaches, golf courses, and nightlife.",
+                "Bright and airy space with a large balcony perfect for sunset drinks."
+            ],
+            "highlights": [
+                "Marina view balcony.",
+                "Access to condominium pool.",
+                "Walkable to beach and casino."
+            ],
+            "homeTruths": [
+                "Busy area during summer season.",
+                "Parking in underground garage included."
+            ],
+            "amenities": [
+                {
+                    "category": "General",
+                    "items": [
+                        "WiFi",
+                        "AC",
+                        "Pool",
+                        "Parking"
+                    ]
+                }
+            ],
+            "rooms": {
+                "master": {
+                    "name": "Bedroom 1",
+                    "description": "Double bed with marina view."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Vilamoura Casino"
+                ],
+                "food": [
+                    "Akvavit",
+                    "My Thai"
+                ]
+            }
+        },
         "rdm-ii": {
             "title": "RDM II",
             "subtitle": "Premium Apartments",

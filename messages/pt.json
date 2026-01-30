@@ -293,6 +293,7 @@
         "metadataDesc": "Entre em contacto com a Lovely Memories para estimativas de gestão de propriedades."
     },
     "PropertyDetail": {
+        "mapUnavailable": "Localização do mapa indisponível para esta propriedade.",
         "home": "Início",
         "properties": "Propriedades",
         "backToAll": "Voltar a todas as casas",
@@ -564,6 +565,314 @@
         }
     },
     "Properties": {
+        "praca-dos-poveiros": {
+            "title": "Praça dos Poveiros",
+            "subtitle": "Studio Loft",
+            "description": [
+                "Loft estúdio elegante localizado numa das praças mais famosas do Porto.",
+                "Perfeito para viajantes a solo ou casais que querem estar no centro da ação.",
+                "Rodeado pelos melhores restaurantes e bares locais."
+            ],
+            "highlights": [
+                "Localização privilegiada na Praça dos Poveiros.",
+                "Design moderno em plano aberto.",
+                "A uma curta distância a pé de todas as principais atrações."
+            ],
+            "homeTruths": [
+                "Localizado numa praça movimentada, algum ruído esperado.",
+                "Terceiro andar sem elevador."
+            ],
+            "amenities": [
+                {
+                    "category": "Geral",
+                    "items": [
+                        "WiFi",
+                        "AC"
+                    ]
+                }
+            ],
+            "rooms": {
+                "studio": {
+                    "name": "Área Estúdio",
+                    "description": "Espaço aberto com cama de casal e kitchenette."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Coliseu do Porto"
+                ],
+                "food": [
+                    "Casa Guedes",
+                    "Santiago"
+                ]
+            }
+        },
+        "the-flower-power": {
+            "title": "The Flower Power",
+            "subtitle": "Casa T2",
+            "description": [
+                "Uma casa encantadora e acolhedora de dois quartos com um belo jardim.",
+                "Repleta de luz natural e decorações coloridas para alegrar a sua estadia.",
+                "Ideal para famílias que procuram um refúgio tranquilo."
+            ],
+            "highlights": [
+                "Jardim privado com lugares sentados ao ar livre.",
+                "Ambiente adequado para crianças.",
+                "Propriedade amiga dos animais."
+            ],
+            "homeTruths": [
+                "A manutenção do jardim ocorre semanalmente.",
+                "Aplicam-se horas de silêncio residencial."
+            ],
+            "amenities": [
+                {
+                    "category": "Geral",
+                    "items": [
+                        "WiFi",
+                        "Jardim",
+                        "Permitido Animais"
+                    ]
+                }
+            ],
+            "rooms": {
+                "bedroom_1": {
+                    "name": "Quarto Principal",
+                    "description": "Cama de casal com vista para o jardim."
+                },
+                "bedroom_2": {
+                    "name": "Quarto das Crianças",
+                    "description": "Beliches e área de brincar."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Fundação Serralves"
+                ],
+                "food": [
+                    "Padarias Locais"
+                ]
+            }
+        },
+        "paraiso-331": {
+            "title": "Paraíso 331",
+            "subtitle": "Apartamento Moderno",
+            "description": [
+                "Um apartamento elegante e moderno localizado no bairro do Paraíso. Perfeitamente situado para explorar o melhor do Porto.",
+                "Com comodidades contemporâneas e um espaço de estar confortável, é a escolha ideal para casais e pequenas famílias.",
+                "Desfrute do vibrante bairro local com fácil acesso a transportes públicos e marcos famosos."
+            ],
+            "highlights": [
+                "Localização central perto da estação de metro.",
+                "Design de interiores moderno com acabamentos de alta qualidade.",
+                "Área residencial tranquila perto do centro."
+            ],
+            "homeTruths": [
+                "Apenas estacionamento na rua.",
+                "Localizado no segundo andar com acesso por elevador."
+            ],
+            "amenities": [
+                {
+                    "category": "Geral",
+                    "items": [
+                        "WiFi",
+                        "Ar condicionado",
+                        "Aquecimento",
+                        "Elevador"
+                    ]
+                }
+            ],
+            "rooms": {
+                "bedroom_1": {
+                    "name": "Quarto Principal",
+                    "description": "Cama de casal com casa de banho privativa."
+                },
+                "living_room": {
+                    "name": "Sala de Estar",
+                    "description": "Área espaçosa com sofá e TV."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Casa da Música"
+                ],
+                "food": [
+                    "Mercado do Bom Sucesso"
+                ]
+            }
+        },
+        "avenida-luxury": {
+            "title": "Avenida Luxury",
+            "subtitle": "Penthouse",
+            "description": [
+                "Penthouse exclusiva na Avenida da Liberdade, oferecendo a derradeira experiência de luxo em Lisboa.",
+                "Com um terraço privado com vistas panorâmicas da cidade e acabamentos de alta qualidade.",
+                "Localização privilegiada rodeada de boutiques de luxo e restaurantes de topo."
+            ],
+            "highlights": [
+                "Terraço privado espaçoso com vista para a cidade.",
+                "Localizado na avenida mais prestigiada de Lisboa.",
+                "Interiores de designer e mobiliário premium."
+            ],
+            "homeTruths": [
+                "Política estrita de não festas.",
+                "Acesso de elevador diretamente à penthouse."
+            ],
+            "amenities": [
+                {
+                    "category": "Geral",
+                    "items": [
+                        "WiFi",
+                        "AC",
+                        "Elevador",
+                        "Terraço"
+                    ]
+                }
+            ],
+            "rooms": {
+                "master": {
+                    "name": "Suíte Principal",
+                    "description": "Cama King com closet e casa de banho privativa."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Teatro Tivoli"
+                ],
+                "food": [
+                    "JNcQUOI",
+                    "Seen"
+                ]
+            }
+        },
+        "sunset-villa": {
+            "title": "Sunset Villa",
+            "subtitle": "Villa Frente ao Mar",
+            "description": [
+                "Deslumbrante villa à beira-mar na Quinta do Lago com acesso direto à praia.",
+                "Projetada para relaxamento com piscina privada, jardins espaçosos e áreas de refeição ao ar livre.",
+                "O refúgio perfeito para famílias grandes ou grupos que procuram privacidade e luxo."
+            ],
+            "highlights": [
+                "Acesso direto à praia.",
+                "Piscina aquecida privada e grande jardim.",
+                "Cozinha exterior e área de churrasco."
+            ],
+            "homeTruths": [
+                "Aquecimento da piscina disponível com custo extra.",
+                "Carro recomendado para explorar a área."
+            ],
+            "amenities": [
+                {
+                    "category": "Geral",
+                    "items": [
+                        "WiFi",
+                        "Piscina",
+                        "Jardim",
+                        "AC"
+                    ]
+                }
+            ],
+            "rooms": {
+                "master": {
+                    "name": "Suíte Principal",
+                    "description": "Cama King com vista mar e varanda."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Parque da Ria Formosa"
+                ],
+                "food": [
+                    "Gigi's",
+                    "Casa do Lago"
+                ]
+            }
+        },
+        "chiado-loft": {
+            "title": "Chiado Loft",
+            "subtitle": "Estúdio Clássico",
+            "description": [
+                "Estúdio loft encantador no coração do Chiado, o bairro cultural de Lisboa.",
+                "Mantendo características originais como paredes de pedra e portadas de madeira combinadas com conforto moderno.",
+                "A passos de cafés icónicos, teatros e lojas."
+            ],
+            "highlights": [
+                "Edifício histórico com charme autêntico.",
+                "A curta distância do Bairro Alto e Baixa.",
+                "Interior totalmente renovado."
+            ],
+            "homeTruths": [
+                "Terceiro andar, sem elevador.",
+                "Possível ruído da rua aos fins de semana."
+            ],
+            "amenities": [
+                {
+                    "category": "Geral",
+                    "items": [
+                        "WiFi",
+                        "AC"
+                    ]
+                }
+            ],
+            "rooms": {
+                "studio": {
+                    "name": "Sala Principal",
+                    "description": "Área de dormir e estar em plano aberto."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Livraria Bertrand"
+                ],
+                "food": [
+                    "A Brasileira"
+                ]
+            }
+        },
+        "ocean-breeze": {
+            "title": "Ocean Breeze",
+            "subtitle": "Apartamento Moderno",
+            "description": [
+                "Apartamento moderno localizado na vibrante Marina de Vilamoura.",
+                "Desfrute das vistas dos iates e fácil acesso a praias, campos de golfe e vida noturna.",
+                "Espaço luminoso e arejado com uma grande varanda perfeita para bebidas ao pôr do sol."
+            ],
+            "highlights": [
+                "Varanda com vista para a marina.",
+                "Acesso à piscina do condomínio.",
+                "A pé da praia e casino."
+            ],
+            "homeTruths": [
+                "Área movimentada durante a época de verão.",
+                "Estacionamento em garagem subterrânea incluído."
+            ],
+            "amenities": [
+                {
+                    "category": "Geral",
+                    "items": [
+                        "WiFi",
+                        "AC",
+                        "Piscina",
+                        "Estacionamento"
+                    ]
+                }
+            ],
+            "rooms": {
+                "master": {
+                    "name": "Quarto 1",
+                    "description": "Cama de casal com vista para a marina."
+                }
+            },
+            "nearby": {
+                "culture": [
+                    "Casino de Vilamoura"
+                ],
+                "food": [
+                    "Akvavit",
+                    "My Thai"
+                ]
+            }
+        },
         "rdm-ii": {
             "title": "RDM II",
             "subtitle": "Premium Apartments",

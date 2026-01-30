@@ -109,7 +109,9 @@ export function BookingPoliciesSection({ policies }: BookingPoliciesSectionProps
                         <div className="space-y-3 text-left">
                             <p className="text-sm font-medium text-navy-950 leading-relaxed">
                                 {t('cancellationTemplate', {
-                                    date: format(parse(policies.cancellation.deadline, 'd MMM', new Date()), 'd MMM', { locale: dateLocale }),
+                                    date: (policies.cancellation.deadline.includes('days') || policies.cancellation.deadline === 'None')
+                                        ? policies.cancellation.deadline
+                                        : format(parse(policies.cancellation.deadline, 'd MMM', new Date()), 'd MMM', { locale: dateLocale }),
                                     percent: "50%"
                                 })}
                             </p>

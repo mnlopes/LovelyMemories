@@ -2,10 +2,13 @@
 
 import React from 'react';
 import { MapPin, Calendar, Users, Search } from 'lucide-react';
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from 'next/navigation';
 
 export const MobileBookingCard = () => {
     const t = useTranslations('BookingBar');
+    const router = useRouter();
+    const locale = useLocale();
 
     return (
         <div className="mobile-booking-card md:hidden">
@@ -229,7 +232,11 @@ export const MobileBookingCard = () => {
                 </div>
 
                 {/* Submit button */}
-                <button className="submit-btn" type="button">
+                <button
+                    className="submit-btn"
+                    type="button"
+                    onClick={() => router.push(`/${locale}/properties`)}
+                >
                     <Search size={20} strokeWidth={2.5} />
                     <span>{t('search')}</span>
                 </button>

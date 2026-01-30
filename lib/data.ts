@@ -352,7 +352,8 @@ export const PROPERTIES: Property[] = [
             country: "Portugal",
             region: "Norte",
             city: "Porto",
-            address: "Praça dos Poveiros"
+            address: "Praça dos Poveiros",
+            coordinates: [41.1466, -8.6063]
         },
         region: "Porto",
         types: [],
@@ -398,7 +399,8 @@ export const PROPERTIES: Property[] = [
             country: "Portugal",
             region: "Norte",
             city: "Porto",
-            address: "Lorem ipsum dolor sit amet"
+            address: "Rua de Serralves, 123",
+            coordinates: [41.1598, -8.6599]
         },
         region: "Porto",
         types: [{ icon: "icon-owner", count: 1, label: "Room" }],
@@ -425,7 +427,8 @@ export const PROPERTIES: Property[] = [
             country: "Portugal",
             region: "Lisboa",
             city: "Lisboa",
-            address: "Avenida da Liberdade"
+            address: "Avenida da Liberdade",
+            coordinates: [38.7196, -9.1456]
         },
         region: "Lisboa",
         types: [{ icon: "icon-owner", count: 1, label: "Penthouse" }],
@@ -452,7 +455,8 @@ export const PROPERTIES: Property[] = [
             country: "Portugal",
             region: "Algarve",
             city: "Quinta do Lago",
-            address: "Quinta do Lago"
+            address: "Quinta do Lago",
+            coordinates: [37.0543, -8.0264]
         },
         region: "Algarve",
         types: [{ icon: "icon-owner", count: 4, label: "Suites" }],
@@ -479,7 +483,8 @@ export const PROPERTIES: Property[] = [
             country: "Portugal",
             region: "Lisboa",
             city: "Lisboa",
-            address: "Baixa Chiado"
+            address: "Baixa Chiado",
+            coordinates: [38.7115, -9.1403]
         },
         region: "Lisboa",
         types: [{ icon: "icon-owner", count: 1, label: "Loft" }],
@@ -506,7 +511,8 @@ export const PROPERTIES: Property[] = [
             country: "Portugal",
             region: "Algarve",
             city: "Vilamoura",
-            address: "Vilamoura Marina"
+            address: "Vilamoura Marina",
+            coordinates: [37.0863, -8.1189]
         },
         region: "Algarve",
         types: [{ icon: "icon-owner", count: 2, label: "Rooms" }],

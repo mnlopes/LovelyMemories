@@ -3,10 +3,13 @@
 import React from 'react';
 import { MobileBookingCard } from './MobileBookingCard';
 import { Calendar, MapPin, Search, User } from 'lucide-react';
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from 'next/navigation';
 
 export const HomeBookingBar = () => {
     const t = useTranslations('BookingBar');
+    const router = useRouter();
+    const locale = useLocale();
 
     return (
         <React.Fragment>
@@ -28,7 +31,15 @@ export const HomeBookingBar = () => {
 
                 {/* Main Card Container - Squared rounded (rounded-xl) with more padding */}
                 <div className="w-full shadow-2xl rounded-tr-[15px] rounded-br-[15px] rounded-bl-[15px] rounded-tl-none bg-white py-5 px-10 relative z-20">
-                    <form className="flex items-center w-full min-h-[92px]" action="#" method="get" onSubmit={(e) => e.preventDefault()}>
+                    <form
+                        className="flex items-center w-full min-h-[92px]"
+                        action="#"
+                        method="get"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            router.push(`/${locale}/properties`);
+                        }}
+                    >
 
                         {/* Destination Input */}
                         <div className="flex-1 pl-2 pr-8 border-r border-gray-100 flex flex-col justify-center h-full group relative">
