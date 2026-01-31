@@ -36,7 +36,8 @@
         "selectDate": "Select Date",
         "travellers": "Travellers",
         "selectPeople": "Select people",
-        "search": "Search"
+        "search": "Search",
+        "clearLocation": "Clear destination"
     },
     "GuestSelector": {
         "adults": "Adults",
@@ -112,7 +113,9 @@
             "location": "Location*",
             "submit": "Send",
             "submitting": "Sending...",
-            "success": "Thank you! We'll be in touch shortly."
+            "success": "Thank you! We'll be in touch shortly.",
+            "errorRequired": "Please fill in the required fields",
+            "privacyAgreement": "By submitting, you agree to our <link>Privacy Policy</link>"
         }
     },
     "OwnerStats": {
@@ -139,7 +142,7 @@
             "desc": "We take care of your property and are always there to fix any situation, even when you are not."
         },
         "account": {
-            "title": "Gestores de Conta",
+            "title": "Account Managers",
             "desc": "The purpose of our dedicated account managers is to be there for you & represent your best interest in every situation."
         },
         "design": {
@@ -299,6 +302,7 @@
         "backToAll": "Back to all homes",
         "arrival": "Arrival",
         "departure": "Departure",
+        "selectDate": "Select date",
         "addDate": "Add date",
         "whatToExpect": "What to expect",
         "goodToKnow": "Good to know",

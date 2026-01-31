@@ -34,7 +34,7 @@ export const OwnerHero = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.fullName || !formData.email) {
-            toast.error("Por favor, preencha os campos obrigatórios");
+            toast.error(t('form.errorRequired'));
             return;
         }
         setIsSubmitting(true);
@@ -68,7 +68,7 @@ export const OwnerHero = () => {
                             transition={{ duration: 0.8 }}
                             className="max-w-3xl -mt-10 lg:-mt-20"
                         >
-                            <span className="text-[#b29a7a] font-bold text-sm uppercase tracking-[0.3em] block mb-8">
+                            <span className="text-[#b29a7a] font-bold text-lg uppercase tracking-[0.3em] block mb-8">
                                 {t('subtitle')}
                             </span>
                             <h1
@@ -187,8 +187,9 @@ export const OwnerHero = () => {
                                     </Button>
 
                                     <p className="text-xs text-center text-gray-400 mt-4">
-                                        By submitting, you agree to our{" "}
-                                        <a href="#" className="text-[#b29a7a] hover:underline">Privacy Policy</a>
+                                        {t.rich('form.privacyAgreement', {
+                                            link: (chunks) => <a href="#" className="text-[#b29a7a] hover:underline">{chunks}</a>
+                                        })}
                                     </p>
                                 </form>
                             </div>

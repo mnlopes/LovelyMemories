@@ -12,6 +12,7 @@ interface BookingGuestPopoverProps {
     setAdults: (count: number) => void;
     infants: number;
     setInfants: (count: number) => void;
+    placement?: 'side' | 'bottom' | 'bottom-start' | 'bottom-end' | 'bottom-center' | 'top-start' | 'top-end' | 'top-center';
 }
 
 export function BookingGuestPopover({
@@ -21,6 +22,7 @@ export function BookingGuestPopover({
     setAdults,
     infants,
     setInfants,
+    placement = 'side',
 }: BookingGuestPopoverProps) {
     const t = useTranslations('PropertyDetail');
     const popoverRef = useRef<HTMLDivElement>(null);
@@ -37,6 +39,28 @@ export function BookingGuestPopover({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isOpen, onClose]);
 
+    const getPositionClasses = () => {
+        switch (placement) {
+            case 'side':
+                return "lg:absolute lg:right-full lg:top-0 lg:mr-8 lg:left-auto lg:translate-x-0";
+            case 'bottom-start':
+                return "lg:absolute lg:left-0 lg:top-full lg:mt-4";
+            case 'bottom-end':
+                return "lg:absolute lg:right-0 lg:top-full lg:mt-4";
+            case 'bottom-center':
+            case 'bottom':
+                return "lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-full lg:mt-4 lg:right-auto";
+            case 'top-start':
+                return "lg:absolute lg:left-0 lg:bottom-full lg:mb-4";
+            case 'top-end':
+                return "lg:absolute lg:right-0 lg:bottom-full lg:mb-4";
+            case 'top-center':
+                return "lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:bottom-full lg:mb-4 lg:right-auto";
+            default:
+                return "lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-full lg:mt-4 lg:right-auto";
+        }
+    };
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -50,16 +74,16 @@ export function BookingGuestPopover({
                         className="fixed inset-0 z-[100] bg-navy-950/20 backdrop-blur-[2px] lg:hidden"
                     />
 
-                    {/* Content - Anchored to the left on Desktop, Centered on Mobile */}
+                    {/* Content - Anchored appropriately based on placement */}
                     <motion.div
                         ref={popoverRef}
-                        initial={{ opacity: 0, scale: 0.95, x: 20 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, x: 20 }}
-                        className="fixed lg:absolute inset-x-4 bottom-24 lg:inset-auto lg:right-full lg:top-0 lg:mr-8 z-[110] bg-white rounded-3xl shadow-2xl w-auto lg:w-[380px] mx-auto lg:mx-0 overflow-hidden border border-gray-100"
+                        initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
+                        animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
+                        className={`fixed inset-x-4 bottom-24 lg:inset-auto z-[110] bg-white rounded-3xl shadow-2xl w-auto lg:w-[380px] mx-auto lg:mx-0 overflow-hidden border border-gray-100 ${getPositionClasses()}`}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
+                        <div className="flex items-center justify-between py-3 px-5 border-b border-gray-100 bg-white">
                             <div>
                                 <h3 className="text-lg font-bold text-navy-950 font-serif">
                                     {t('guests') || 'Guests'}
@@ -69,6 +93,7 @@ export function BookingGuestPopover({
                                 </p>
                             </div>
                             <button
+                                type="button"
                                 onClick={onClose}
                                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                             >
@@ -91,6 +116,7 @@ export function BookingGuestPopover({
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <button
+                                        type="button"
                                         onClick={() => setAdults(Math.max(1, adults - 1))}
                                         disabled={adults <= 1}
                                         className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all disabled:opacity-20 active:scale-90"
@@ -99,6 +125,7 @@ export function BookingGuestPopover({
                                     </button>
                                     <span className="w-4 text-center font-bold text-navy-950 text-base">{adults}</span>
                                     <button
+                                        type="button"
                                         onClick={() => setAdults(adults + 1)}
                                         className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all active:scale-90"
                                     >
@@ -120,6 +147,7 @@ export function BookingGuestPopover({
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <button
+                                        type="button"
                                         onClick={() => setInfants(Math.max(0, infants - 1))}
                                         disabled={infants <= 0}
                                         className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all disabled:opacity-20 active:scale-90"
@@ -128,6 +156,7 @@ export function BookingGuestPopover({
                                     </button>
                                     <span className="w-4 text-center font-bold text-navy-950 text-base">{infants}</span>
                                     <button
+                                        type="button"
                                         onClick={() => setInfants(infants + 1)}
                                         className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all active:scale-90"
                                     >
@@ -138,13 +167,14 @@ export function BookingGuestPopover({
                         </div>
 
                         {/* Footer (Actions) */}
-                        <div className="p-6 border-t border-gray-100 flex items-center justify-center bg-white">
+                        <div className="p-2 border-t border-gray-100 flex items-center justify-center bg-white">
                             <button
+                                type="button"
                                 onClick={() => {
                                     setAdults(1);
                                     setInfants(0);
                                 }}
-                                className="text-[10px] font-bold text-navy-900/40 hover:text-[#B08D4A] uppercase tracking-[0.2em] transition-all py-2 border-b border-transparent hover:border-[#B08D4A]"
+                                className="text-[10px] font-bold text-navy-900/40 hover:text-[#B08D4A] uppercase tracking-[0.2em] transition-all py-1 border-b border-transparent hover:border-[#B08D4A]"
                             >
                                 {t('guestSelector.clear')}
                             </button>

@@ -36,7 +36,8 @@
         "selectDate": "Sel. Data",
         "travellers": "Viajantes",
         "selectPeople": "Sel. pessoas",
-        "search": "Procurar"
+        "search": "Procurar",
+        "clearLocation": "Limpar destino"
     },
     "GuestSelector": {
         "adults": "Adultos",
@@ -112,7 +113,9 @@
             "location": "Localização*",
             "submit": "Enviar",
             "submitting": "A enviar...",
-            "success": "Obrigado! Entraremos em contacto brevemente."
+            "success": "Obrigado! Entraremos em contacto brevemente.",
+            "errorRequired": "Por favor, preencha os campos obrigatórios",
+            "privacyAgreement": "Ao enviar, concorda com a nossa <link>Política de Privacidade</link>"
         }
     },
     "OwnerStats": {
@@ -142,7 +145,7 @@
             "title": "Gestores de Conta",
             "desc": "O objetivo dos nossos gestores de conta dedicados é estar lá para si e representar o seu melhor interesse em todas as situações."
         },
-        "this property": {
+        "design": {
             "title": "Design de Interiores",
             "desc": "Os nossos especialistas em hospitalidade podem apoiá-lo na melhoria do seu espaço para aumentar a sua rentabilidade."
         },
@@ -299,6 +302,7 @@
         "backToAll": "Voltar a todas as casas",
         "arrival": "Chegada",
         "departure": "Partida",
+        "selectDate": "Selecione a data",
         "addDate": "Adicionar data",
         "bedroom": "quarto",
         "bedroomsCount": "{count, plural, =1 {quarto} other {quartos}}",

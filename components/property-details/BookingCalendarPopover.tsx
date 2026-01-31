@@ -15,6 +15,8 @@ interface BookingCalendarPopoverProps {
     onClose: () => void;
     onSelect: (range: DateRange | undefined) => void;
     selectedRange: DateRange | undefined;
+    placement?: 'side' | 'bottom-start' | 'bottom-end' | 'bottom-center' | 'top-start' | 'top-end' | 'top-center';
+    numberOfMonths?: number;
 }
 
 export function BookingCalendarPopover({
@@ -22,6 +24,8 @@ export function BookingCalendarPopover({
     onClose,
     onSelect,
     selectedRange,
+    placement = 'side',
+    numberOfMonths = 2,
 }: BookingCalendarPopoverProps) {
     const t = useTranslations('PropertyDetail');
     const params = useParams();
@@ -56,6 +60,30 @@ export function BookingCalendarPopover({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isOpen, onClose]);
 
+    const getPositionClasses = () => {
+        switch (placement) {
+            case 'side':
+                return "lg:absolute lg:right-full lg:top-0 lg:mr-8 lg:left-auto lg:translate-x-0";
+            case 'bottom-start':
+                return "lg:absolute lg:left-0 lg:top-full lg:mt-4";
+            case 'bottom-end':
+                return "lg:absolute lg:right-0 lg:top-full lg:mt-4";
+            case 'bottom-center':
+                return "lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-full lg:mt-4 lg:right-auto";
+            case 'top-start':
+                return "lg:absolute lg:left-0 lg:bottom-full lg:mb-4";
+            case 'top-end':
+                return "lg:absolute lg:right-0 lg:bottom-full lg:mb-4";
+            case 'top-center':
+                return "lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:bottom-full lg:mb-4 lg:right-auto";
+            default:
+                return "lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:top-full lg:mt-4 lg:right-auto";
+        }
+    };
+
+    const widthClass = numberOfMonths === 1 ? "lg:w-[300px]" : "lg:w-[700px]";
+    const isCompact = numberOfMonths === 1;
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -69,45 +97,47 @@ export function BookingCalendarPopover({
                         className="fixed inset-0 z-[100] bg-navy-950/20 backdrop-blur-[2px] lg:hidden"
                     />
 
-                    {/* Content - Anchored to the left on Desktop, Centered on Mobile */}
+                    {/* Content - Anchored appropriately based on placement */}
                     <motion.div
                         ref={popoverRef}
-                        initial={{ opacity: 0, scale: 0.95, x: 20 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, x: 20 }}
-                        className="fixed lg:absolute inset-x-4 bottom-24 lg:inset-auto lg:right-full lg:top-0 lg:mr-8 z-[110] bg-white rounded-3xl shadow-2xl w-auto lg:w-[700px] mx-auto lg:mx-0 overflow-hidden border border-gray-100"
+                        initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
+                        animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
+                        className={`fixed inset-x-4 bottom-24 lg:inset-auto z-[110] bg-white rounded-2xl shadow-xl w-auto ${widthClass} mx-auto lg:mx-0 overflow-hidden border border-gray-100 ${getPositionClasses()}`}
                     >
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
-                            <div>
-                                <h3 className="text-xl font-bold text-navy-950 font-serif">
-                                    {selectedRange?.from && selectedRange?.to
-                                        ? `${format(selectedRange.from, 'd MMM', { locale: dateLocale })} — ${format(selectedRange.to, 'd MMM', { locale: dateLocale })}`
-                                        : t('selectDates') || 'Select dates'}
-                                </h3>
-                                <p className="text-sm text-navy-900/40 font-medium">
-                                    {nights > 0
-                                        ? `${nights} ${t('nightsCount', { count: nights })}`
-                                        : t('minStay') || 'Minimum stay 2 nights'}
-                                </p>
+                        {/* Header - Only show if not compact */}
+                        {!isCompact && (
+                            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
+                                <div>
+                                    <h3 className="text-xl font-bold text-navy-950 font-serif">
+                                        {selectedRange?.from && selectedRange?.to
+                                            ? `${format(selectedRange.from, 'd MMM', { locale: dateLocale })} - ${format(selectedRange.to, 'd MMM', { locale: dateLocale })}`
+                                            : (t('selectDates') || 'Select dates')}
+                                    </h3>
+                                    <p className="text-sm text-navy-900/40 font-medium">
+                                        {nights > 0
+                                            ? `${nights} ${t('nightsCount', { count: nights })}`
+                                            : t('minStay') || 'Minimum stay 2 nights'}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={onClose}
+                                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                    >
+                                        <X className="h-6 w-6 text-navy-950" />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={onClose}
-                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                                >
-                                    <X className="h-6 w-6 text-navy-950" />
-                                </button>
-                            </div>
-                        </div>
+                        )}
 
                         {/* Calendar Area */}
-                        <div className="p-6 lg:p-8 flex justify-center bg-white overflow-hidden luxury-calendar">
+                        <div className={`${isCompact ? 'p-3' : 'p-6 lg:p-8'} flex justify-center bg-white overflow-hidden luxury-calendar`}>
                             <DayPicker
                                 mode="range"
                                 selected={selectedRange}
                                 onSelect={onSelect}
-                                numberOfMonths={2}
+                                numberOfMonths={numberOfMonths}
                                 month={month}
                                 onMonthChange={setMonth}
                                 disabled={{ before: today }}
@@ -115,20 +145,20 @@ export function BookingCalendarPopover({
                                 classNames={{
                                     root: "luxury-calendar-root",
                                     months: "flex flex-col md:flex-row gap-8 justify-center",
-                                    month: "space-y-4 min-w-[300px]",
-                                    month_caption: "flex justify-center pt-1 relative items-center mb-6",
-                                    caption_label: "text-lg font-bold text-navy-950 font-serif",
+                                    month: `space-y-4 ${isCompact ? 'w-full' : 'min-w-[300px]'}`,
+                                    month_caption: "flex justify-center pt-1 relative items-center mb-4",
+                                    caption_label: "text-sm font-bold text-navy-950 font-serif",
                                     nav: "flex items-center",
-                                    button_previous: "absolute left-0 z-10 p-2 hover:bg-gray-50 rounded-full transition-colors",
-                                    button_next: "absolute right-0 z-10 p-2 hover:bg-gray-50 rounded-full transition-colors",
+                                    button_previous: "absolute left-0 z-10 p-1 hover:bg-gray-50 rounded-full transition-colors",
+                                    button_next: "absolute right-0 z-10 p-1 hover:bg-gray-50 rounded-full transition-colors",
                                     month_grid: "w-full border-collapse",
-                                    weekdays: "grid grid-cols-7 w-full mb-2",
-                                    weekday: "text-gray-400 font-medium text-[10px] uppercase tracking-widest text-center py-2",
+                                    weekdays: "grid grid-cols-7 w-full mb-1",
+                                    weekday: "text-gray-400 font-medium text-[9px] uppercase tracking-widest text-center py-1",
                                     weeks: "space-y-0",
                                     week: "grid grid-cols-7 w-full",
                                     hidden: "invisible",
                                     cell: "p-0 m-0",
-                                    day: "rdp-day-custom w-full h-full p-0 font-medium flex items-center justify-center text-navy-900 border-none relative cursor-pointer overflow-visible focus:outline-none isolate",
+                                    day: `rdp-day-custom w-full h-full p-0 font-medium flex items-center justify-center text-navy-900 border-none relative cursor-pointer overflow-visible focus:outline-none isolate ${isCompact ? 'text-xs' : 'text-sm'}`,
                                     day_button: "rdp-day_button w-full h-full flex items-center justify-center",
                                     range_start: "luxury-range-start !text-white",
                                     range_end: "luxury-range-end !text-white",
@@ -139,7 +169,7 @@ export function BookingCalendarPopover({
                                     disabled: "text-gray-200 opacity-10 cursor-not-allowed",
                                 }}
                                 components={{
-                                    Chevron: ({ orientation }) => orientation === "left" ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />,
+                                    Chevron: ({ orientation }) => orientation === "left" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />,
                                 }}
                                 showOutsideDays={false}
                                 weekStartsOn={1}
@@ -147,7 +177,7 @@ export function BookingCalendarPopover({
                         </div>
 
                         {/* Footer (Actions) */}
-                        <div className="p-6 border-t border-gray-100 flex items-center justify-center bg-white">
+                        <div className={`${isCompact ? 'p-3' : 'p-6'} border-t border-gray-100 flex items-center justify-center bg-white`}>
                             <button
                                 onClick={() => onSelect(undefined)}
                                 className="text-[10px] font-bold text-navy-900/40 hover:text-[#B08D4A] uppercase tracking-[0.2em] transition-all py-2 border-b border-transparent hover:border-[#B08D4A]"
@@ -314,6 +344,21 @@ export function BookingCalendarPopover({
                                     height: 38px;
                                 }
                             }
+
+                            /* Compact mode overrides */
+                            ${isCompact ? `
+                                .rdp-day-custom {
+                                    height: 36px !important;
+                                    min-height: 36px !important;
+                                }
+                                .rdp-day-custom::after {
+                                    width: 30px !important;
+                                    height: 30px !important;
+                                }
+                                .luxury-calendar-root .rdp-day_button {
+                                    min-height: 36px !important;
+                                }
+                            ` : ''}
                         `}</style>
                     </motion.div>
                 </>
