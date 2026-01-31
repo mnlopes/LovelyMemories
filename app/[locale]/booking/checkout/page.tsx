@@ -24,6 +24,9 @@ import {
     Users,
     Clock
 } from "lucide-react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { BookingInvoice } from "@/components/booking/BookingInvoice";
 import { Button } from "@/components/ui/Button";
 import { PROPERTIES } from "@/lib/data";
 import { ADDRESS_DATA, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
@@ -318,11 +321,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         if (!dateString) return "";
         try {
             const date = new Date(dateString);
-            return new Intl.DateTimeFormat(locale, {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            }).format(date);
+            const d = date.getDate().toString().padStart(2, '0');
+            const m = (date.getMonth() + 1).toString().padStart(2, '0');
+            const y = date.getFullYear();
+            return `${d}.${m}.${y}`;
         } catch (e) {
             return dateString;
         }
@@ -383,6 +385,31 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         }
     };
 
+    const handleDownloadPDF = async () => {
+        const element = document.getElementById('booking-invoice');
+        if (!element) return;
+
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: "#ffffff"
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`LovelyMemories_Reserva_${reservationRef}.pdf`);
+    };
+
     if (isFinished) {
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-white text-navy-950">
@@ -395,7 +422,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         <div className="w-20 h-20 bg-[#2d8653] text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#2d8653]/20">
                             <CheckCircle2 className="w-10 h-10" />
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-bold font-serif text-navy-950 mb-2">{t('success.title')}</h1>
+                        <h1 className="text-3xl md:text-4xl font-bold font-montserrat text-navy-950 mb-2">{t('success.title')}</h1>
                         <p className="text-navy-900/60 text-lg">{t('success.subtitle', { email: formData.email })}</p>
                     </div>
 
@@ -423,8 +450,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         {/* Order Details Body */}
                         <div className="p-8 space-y-6">
                             <div className="flex justify-between items-center pb-6 border-b border-gray-100">
-                                <h2 className="text-2xl font-bold font-serif text-navy-950">{t('success.orderDetails')}</h2>
-                                <button className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy-900/60 hover:text-navy-950 transition-colors cursor-pointer">
+                                <h2 className="text-2xl font-bold font-montserrat text-navy-950">{t('success.orderDetails')}</h2>
+                                <button
+                                    onClick={handleDownloadPDF}
+                                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B08D4A] hover:text-[#967840] transition-colors cursor-pointer"
+                                >
                                     <FileText className="w-4 h-4" />
                                     {t('success.downloadPdf')}
                                 </button>
@@ -493,7 +523,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     {/* Billing Address Card */}
                     {showBilling && formData.address && ( // Only show if address is filled (implies toggle was likely used or pre-filled)
                         <div className="mt-8 bg-white border border-gray-100 rounded-3xl p-8 md:p-12 shadow-sm">
-                            <h2 className="text-2xl font-bold font-serif text-navy-950 mb-6">{t('step1.billingTitle')}</h2>
+                            <h2 className="text-2xl font-bold font-montserrat text-navy-950 mb-6">{t('step1.billingTitle')}</h2>
                             <address className="not-italic space-y-1 text-navy-900/70">
                                 <p className="font-bold text-navy-950">{formData.fullName}</p>
                                 <p>{formData.address}</p>
@@ -512,6 +542,31 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         </Link>
                     </div>
                 </motion.div>
+
+                {/* Hidden Invoice for PDF Generation */}
+                <div style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', top: 0, left: 0, zIndex: -1 }}>
+                    <BookingInvoice
+                        reservationRef={reservationRef}
+                        date={new Date().toLocaleDateString(locale)}
+                        propertyTitle={property.title}
+                        propertyLocation={`${property.location.city}, Portugal`}
+                        checkIn={formatDate(checkIn)}
+                        checkOut={formatDate(checkOut)}
+                        nights={nights}
+                        guests={`${t('sidebar.adults', { count: adults })}${infants > 0 ? `, ${t('sidebar.infants', { count: infants })}` : ''}`}
+                        basePrice={basePrice}
+                        cleaningFee={cleaningFee}
+                        breakfastTotal={breakfastTotal}
+                        transferTotal={transferTotal}
+                        total={total}
+                        paymentMethod={formData.paymentMethod}
+                        customerName={formData.fullName}
+                        customerEmail={formData.email}
+                        customerPhone={formData.phone}
+                        specialRequests={formData.specialRequests}
+                        t={t}
+                    />
+                </div>
             </div>
         );
     }
@@ -520,15 +575,6 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         <div className="min-h-screen bg-gray-50 flex flex-col pt-20 lg:pt-24 text-navy-950">
             {/* Header / Navbar Replacement */}
             <header className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 flex flex-col">
-                {/* Visual Progress Bar */}
-                <div className="h-1 w-full bg-gray-100 overflow-hidden">
-                    <motion.div
-                        initial={{ width: "33.33%" }}
-                        animate={{ width: `${(step / 3) * 100}%` }}
-                        className="h-full bg-[#B08D4A]"
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                    />
-                </div>
                 <div className="h-20 lg:h-24 flex items-center px-6 lg:px-12 justify-between w-full gap-4">
                     {/* Left: Navigation & Brand */}
                     <div className="w-1/4 min-w-[200px] flex items-center gap-8">
@@ -560,52 +606,32 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                 { id: 3, label: t('header.payment') }
                             ].map((s, idx) => (
                                 <React.Fragment key={s.id}>
-                                    <div className="relative flex flex-col items-center group">
+                                    <div className="relative flex flex-col items-center">
                                         <div className={`
-                                            w-7 h-7 lg:w-9 lg:h-9 rounded-full flex items-center justify-center border-2 text-[10px] lg:text-xs font-bold transition-all duration-500
+                                            w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center border-2 text-[10px] lg:text-xs font-bold transition-all duration-500 z-10
                                             ${step === s.id ? 'bg-navy-950 text-white border-navy-950 shadow-lg scale-110' :
                                                 step > s.id ? 'bg-[#2d8653] text-white border-[#2d8653]' :
                                                     'bg-white text-navy-950/20 border-gray-100'}
                                         `}>
                                             {step > s.id ? '✓' : s.id}
                                         </div>
-                                        <div className="absolute -bottom-6 flex flex-col items-center">
-                                            <span className={`text-[8px] lg:text-[10px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-500
+                                        <div className="absolute top-full mt-2 lg:mt-3 flex flex-col items-center">
+                                            <span className={`text-[8px] lg:text-[9px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-500
                                                 ${step >= s.id ? 'text-navy-950' : 'text-navy-950/20'}`}>
                                                 {s.label}
                                             </span>
                                         </div>
                                     </div>
                                     {idx < 2 && (
-                                        <div className={`w-6 lg:w-12 h-0.5 rounded-full transition-colors duration-500 ${step > s.id ? 'bg-[#2d8653]' : 'bg-gray-100'}`} />
+                                        <div className={`w-8 lg:w-16 h-0.5 rounded-full transition-colors duration-500 ${step > s.id ? 'bg-[#2d8653]' : 'bg-gray-100'}`} />
                                     )}
                                 </React.Fragment>
                             ))}
                         </div>
                     </div>
 
-                    {/* Right: Empty for Balance */}
-                    {/* Right: Primary Action Button */}
-                    <div className="w-1/4 min-w-[200px] flex items-center justify-end">
-                        <Button
-                            form="checkout-form"
-                            type="submit"
-                            variant="luxury"
-                            className="h-10 lg:h-12 rounded-full text-xs lg:text-sm font-bold flex items-center gap-2 px-6 shadow-xl shadow-[#B08D4A]/20 active:scale-95 transition-transform"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span className="hidden lg:inline">{t('header.processing')}</span>
-                                </>
-                            ) : (
-                                <>
-                                    {step === 3 ? t('header.confirmPayment') : t('header.continue')}
-                                    <ArrowRight className="w-4 h-4" />
-                                </>
-                            )}
-                        </Button>
+                    <div className="w-1/4 min-w-[220px] flex items-center justify-end pr-4">
+                        {/* Right: Empty for Balance */}
                     </div>
                 </div>
             </header>
@@ -636,7 +662,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     className="space-y-8"
                                 >
                                     <div>
-                                        <h1 className="text-4xl font-bold font-serif mb-3">{t('step1.title')}</h1>
+                                        <h1 className="text-4xl font-bold font-montserrat mb-3">{t('step1.title')}</h1>
                                         <p className="text-navy-900/40 font-medium">{t('step1.subtitle')}</p>
                                     </div>
 
@@ -789,7 +815,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     <div className="pt-8">
                                         <div className="flex items-center justify-between mb-6 p-6 bg-gray-50 rounded-2xl border border-gray-100">
                                             <div>
-                                                <h1 className="text-xl font-bold font-serif text-navy-950">{t('step1.billingTitle')}</h1>
+                                                <h1 className="text-xl font-bold font-montserrat text-navy-950">{t('step1.billingTitle')}</h1>
                                                 <p className="text-navy-900/40 font-medium text-xs mt-1">{t('step1.billingSubtitle')}</p>
                                             </div>
 
@@ -904,18 +930,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                                     value={formData.city}
                                                                     onChange={(e) => {
                                                                         handleInputChange(e);
-                                                                        setIsCityOpen(true);
+                                                                        setFieldErrors(prev => ({ ...prev, city: '' }));
                                                                     }}
-                                                                    onFocus={() => setIsCityOpen(true)}
-                                                                    // Close on blur with delay to allow click
-                                                                    onBlur={() => setTimeout(() => setIsCityOpen(false), 200)}
                                                                     type="text"
                                                                     className={`w-full h-14 bg-white border rounded-2xl px-5 focus:border-[#B08D4A] outline-none transition-all focus:shadow-lg focus:shadow-gray-200/50 ${fieldErrors.city ? 'border-[#9B1D20] bg-[#9B1D20]/5 shadow-[0_0_10px_rgba(155,29,32,0.05)]' : 'border-gray-100'}`}
                                                                     placeholder={t('step1.cityPlaceholder')}
-                                                                    // Aggressive autofill disabling
-                                                                    autoComplete="new-password"
-                                                                    data-lpignore="true"
-                                                                    data-form-type="other"
                                                                     spellCheck={false}
                                                                 />
                                                                 <AnimatePresence>
@@ -927,43 +946,6 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                                         >
                                                                             {fieldErrors.city}
                                                                         </motion.p>
-                                                                    )}
-                                                                </AnimatePresence>
-
-                                                                {/* Custom Suggestions Dropdown */}
-                                                                <AnimatePresence>
-                                                                    {isCityOpen && formData.country && (
-                                                                        (() => {
-                                                                            const countryEntry = Object.values(ADDRESS_DATA).find(c => c.name === formData.country);
-                                                                            const suggestions = countryEntry?.cities.filter(city =>
-                                                                                city.toLowerCase().includes(formData.city.toLowerCase())
-                                                                            ) || [];
-
-                                                                            if (suggestions.length === 0) return null;
-
-                                                                            return (
-                                                                                <motion.div
-                                                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                                                    className="absolute top-16 left-0 w-full max-h-60 bg-white rounded-[24px] shadow-2xl border border-gray-100 z-[70] overflow-hidden overflow-y-auto luxury-scrollbar"
-                                                                                >
-                                                                                    {suggestions.map((city) => (
-                                                                                        <div
-                                                                                            key={city}
-                                                                                            onClick={() => {
-                                                                                                setFormData(prev => ({ ...prev, city: city }));
-                                                                                                setIsCityOpen(false);
-                                                                                                setFieldErrors(prev => ({ ...prev, city: '' })); // Clear city error
-                                                                                            }}
-                                                                                            className="px-6 py-3.5 hover:bg-[#B08D4A]/5 transition-all cursor-pointer flex items-center justify-between group"
-                                                                                        >
-                                                                                            <span className="text-sm font-bold text-navy-950 group-hover:text-[#B08D4A] transition-colors">{city}</span>
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </motion.div>
-                                                                            );
-                                                                        })()
                                                                     )}
                                                                 </AnimatePresence>
                                                             </div>
@@ -1038,7 +1020,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     className="space-y-8"
                                 >
                                     <div>
-                                        <h1 className="text-4xl font-bold font-serif mb-3">{t('step2.title')}</h1>
+                                        <h1 className="text-4xl font-bold font-montserrat mb-3">{t('step2.title')}</h1>
                                         <p className="text-navy-900/40 font-medium">{t('step2.subtitle')}</p>
                                     </div>
 
@@ -1112,7 +1094,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     className="space-y-8"
                                 >
                                     <div>
-                                        <h1 className="text-4xl font-bold font-serif mb-3">{t('step3.title')}</h1>
+                                        <h1 className="text-4xl font-bold font-montserrat mb-3">{t('step3.title')}</h1>
                                         <p className="text-navy-900/40 font-medium">{t('step3.subtitle')}</p>
                                     </div>
 
@@ -1260,10 +1242,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
                 {/* Summary Sidebar */}
                 <div className="w-full lg:w-[400px] shrink-0">
-                    <div className="sticky top-32 space-y-8">
+                    <div className="sticky top-32 space-y-6">
                         {/* Property Card */}
                         <div className="bg-white rounded-[40px] overflow-hidden border border-gray-100 shadow-2xl shadow-navy-950/5">
-                            <div className="h-48 relative overflow-hidden">
+                            <div className="h-40 relative overflow-hidden">
                                 <img src={property.image} alt={property.title} className="w-full h-full object-cover" />
                                 <div className="absolute top-4 left-4">
                                     <span className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-navy-950 border border-white">
@@ -1271,13 +1253,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     </span>
                                 </div>
                             </div>
-                            <div className="p-8">
-                                <h3 className="text-2xl font-bold font-serif mb-1">{property.title}</h3>
-                                <p className="text-navy-900/40 text-sm font-medium mb-8">{property.location.city}, Portugal</p>
+                            <div className="p-5 md:p-6">
+                                <h3 className="text-xl md:text-2xl font-bold font-montserrat mb-1">{property.title}</h3>
+                                <p className="text-navy-900/70 text-sm font-medium mb-4">{property.location.city}, Portugal</p>
 
 
 
-                                <div className="space-y-4 mb-8">
+                                <div className="space-y-4 mb-6">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
                                             <Calendar className="w-5 h-5" />
@@ -1285,9 +1267,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         <div>
                                             <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A] mb-1">{t('sidebar.dateRange')}</p>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-sm font-bold text-navy-950">{formatDate(checkIn)}</span>
-                                                <ArrowRight className="w-3 h-3 text-navy-900/20" />
-                                                <span className="text-sm font-bold text-navy-950">{formatDate(checkOut)}</span>
+                                                <span className="text-base font-bold text-navy-950">{formatDate(checkIn)}</span>
+                                                <ArrowRight className="w-3 h-3 text-navy-900/60" />
+                                                <span className="text-base font-bold text-navy-950">{formatDate(checkOut)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1297,7 +1279,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         </div>
                                         <div>
                                             <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A] mb-1">{t('sidebar.guestsTitle')}</p>
-                                            <p className="text-sm font-bold">
+                                            <p className="text-base font-bold">
                                                 {t('sidebar.adults', { count: adults })}
                                                 {infants > 0 && `, ${t('sidebar.infants', { count: infants })}`}
                                             </p>
@@ -1305,42 +1287,42 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     </div>
                                 </div>
 
-                                <div className="h-px bg-gray-100 mb-8" />
+                                <div className="h-px bg-gray-100 mb-6" />
 
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-navy-900/40">{t('sidebar.subtotal')} ({t('sidebar.nights', { count: nights })})</span>
+                                        <span className="text-navy-900/80 font-medium">{t('sidebar.subtotal')} ({t('sidebar.nights', { count: nights })})</span>
                                         <span className="font-bold">€{basePrice}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-navy-900/40">{t('sidebar.cleaning')}</span>
+                                        <span className="text-navy-900/80 font-medium">{t('sidebar.cleaning')}</span>
                                         <span className="font-bold">€{cleaningFee}</span>
                                     </div>
 
                                     {/* Extras Display */}
                                     {(selectedExtras?.breakfast || selectedExtras?.transfer) && (
-                                        <div className="pt-4 border-t border-gray-100 mt-4 space-y-4">
+                                        <div className="pt-3 border-t border-gray-100 mt-3 space-y-3">
                                             <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('sidebar.additionalServices')}</p>
                                             {selectedExtras.breakfast && (
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-navy-900/40">{t('sidebar.breakfast')}</span>
+                                                    <span className="text-navy-900/80 font-medium">{t('sidebar.breakfast')}</span>
                                                     <span className="font-bold">€{breakfastTotal}</span>
                                                 </div>
                                             )}
                                             {selectedExtras.transfer && (
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-navy-900/40">{t('sidebar.transfer')} ({isRoundTrip ? t('sidebar.roundTrip') : t('sidebar.oneWay')})</span>
+                                                    <span className="text-navy-900/80 font-medium">{t('sidebar.transfer')} ({isRoundTrip ? t('sidebar.roundTrip') : t('sidebar.oneWay')})</span>
                                                     <span className="font-bold">€{transferTotal}</span>
                                                 </div>
                                             )}
                                         </div>
                                     )}
 
-                                    <div className="flex justify-between items-baseline pt-4 border-t border-gray-100">
+                                    <div className="flex justify-between items-baseline pt-3 border-t border-gray-100">
                                         <span className="text-sm font-bold uppercase tracking-widest">{t('sidebar.total')}</span>
                                         <div className="text-right">
                                             <p className="text-3xl font-bold tracking-tighter">€{total}</p>
-                                            <p className="text-[10px] text-navy-900/40 font-medium">{t('sidebar.vatIncluded')}</p>
+                                            <p className="text-[10px] text-navy-900/60 font-medium">{t('sidebar.vatIncluded')}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1348,15 +1330,26 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         </div>
 
                         {/* Security Badge - Sidebar Position */}
-                        <div className="hidden lg:flex items-center gap-4 bg-navy-950 text-white px-6 py-4 rounded-[32px] shadow-xl shadow-navy-950/10">
-                            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                <ShieldCheck className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold mb-0.5">{t('security.safe')}</p>
-                                <p className="text-[10px] text-white/60 font-medium leading-tight">{t('security.encryption')}</p>
-                            </div>
-                        </div>
+                        {/* Primary Action Button - Moved from Header */}
+                        <Button
+                            form="checkout-form"
+                            type="submit"
+                            variant="luxury"
+                            className="w-full h-16 rounded-[32px] text-sm lg:text-base font-bold flex items-center justify-center gap-3 shadow-2xl shadow-[#B08D4A]/30 active:scale-[0.98] transition-all hover:scale-[1.02]"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>{t('header.processing')}</span>
+                                </>
+                            ) : (
+                                <>
+                                    {step === 3 ? t('header.confirmPayment') : t('header.continue')}
+                                    <ArrowRight className="w-5 h-5" />
+                                </>
+                            )}
+                        </Button>
                     </div>
                 </div>
             </main>

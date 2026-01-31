@@ -109,7 +109,7 @@ export function BookingCalendarPopover({
                         {!isCompact && (
                             <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white">
                                 <div>
-                                    <h3 className="text-xl font-bold text-navy-950 font-serif">
+                                    <h3 className="text-xl font-bold text-navy-950 font-montserrat">
                                         {selectedRange?.from && selectedRange?.to
                                             ? `${format(selectedRange.from, 'd MMM', { locale: dateLocale })} - ${format(selectedRange.to, 'd MMM', { locale: dateLocale })}`
                                             : (t('selectDates') || 'Select dates')}
@@ -147,7 +147,7 @@ export function BookingCalendarPopover({
                                     months: "flex flex-col md:flex-row gap-8 justify-center",
                                     month: `space-y-4 ${isCompact ? 'w-full' : 'min-w-[300px]'}`,
                                     month_caption: "flex justify-center pt-1 relative items-center mb-4",
-                                    caption_label: "text-sm font-bold text-navy-950 font-serif",
+                                    caption_label: "text-sm font-bold text-navy-950 font-montserrat",
                                     nav: "flex items-center",
                                     button_previous: "absolute left-0 z-10 p-1 hover:bg-gray-50 rounded-full transition-colors",
                                     button_next: "absolute right-0 z-10 p-1 hover:bg-gray-50 rounded-full transition-colors",

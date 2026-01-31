@@ -30,7 +30,7 @@ export const AboutTeam = () => {
             <div className="max-w-5xl mx-auto flex flex-col items-center">
                 <header className="text-center mb-16">
                     <span className="text-[#b09e80] text-xs font-bold uppercase tracking-[0.4em] block mb-4">{t('header')}</span>
-                    <h2 className="text-4xl md:text-5xl font-serif text-[#1a1a1a]">{t('title')}</h2>
+                    <h2 className="text-4xl md:text-5xl font-montserrat font-bold text-[#1a1a1a]">{t('title')}</h2>
                 </header>
 
                 <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 justify-items-center items-start">

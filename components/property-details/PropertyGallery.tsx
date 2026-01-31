@@ -105,7 +105,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                         <div className="sticky top-0 bg-white/80 backdrop-blur-md z-20 px-6 py-6 border-b border-[#E1E6EC]">
                             <div className="max-w-7xl mx-auto flex items-start justify-between">
                                 <div className="space-y-1">
-                                    <h2 className="text-3xl font-bold text-navy-950 font-serif">{title}</h2>
+                                    <h2 className="text-3xl font-bold text-navy-950 font-montserrat">{title}</h2>
                                     <p className="text-navy-900/40 text-sm font-medium">
                                         {t('sleepsUpTo', { count: metadata.guests })} • {t('bedroomsCount', { count: metadata.bedrooms })}, {t('bathroomsCount', { count: metadata.bathrooms })} • {metadata.area} m²
                                     </p>

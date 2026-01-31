@@ -177,7 +177,7 @@ export const PROPERTIES: Property[] = [
         ],
         nearbyPlaces: [
             {
-                category: "Local Attractions",
+                category: "localAttractions",
                 items: [
                     { name: "Crystal Palace Gardens", time: "2 min", icon: "walk", coordinates: [41.1485, -8.6254] },
                     { name: "Clérigos Tower", time: "10 min", icon: "walk", coordinates: [41.1458, -8.6139] },
@@ -185,7 +185,7 @@ export const PROPERTIES: Property[] = [
                 ]
             },
             {
-                category: "Essentials",
+                category: "essentials",
                 items: [
                     { name: "Continente Supermarket", time: "5 min", icon: "walk", coordinates: [41.1495, -8.6235] },
                     { name: "Porto Hospital", time: "8 min", icon: "car", coordinates: [41.1550, -8.6270] }

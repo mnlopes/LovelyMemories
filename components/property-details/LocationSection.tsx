@@ -70,7 +70,7 @@ export function LocationSection({ propertyId, nearbyPlaces, coordinates, address
                 {categories.map((category, index) => (
                     <div key={index}>
                         <h4 className="font-medium mb-5 text-xs uppercase tracking-widest text-[#B08D4A]">
-                            {category.category}
+                            {t(category.category as any)}
                         </h4>
                         <div className="space-y-1">
                             {category.items.map((item, itemIndex) => {

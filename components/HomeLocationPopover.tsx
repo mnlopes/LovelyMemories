@@ -75,7 +75,7 @@ export const HomeLocationPopover = ({
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between py-3 px-4 border-b border-gray-100 bg-white">
-                            <h3 className="text-lg font-bold text-navy-950 font-serif">
+                            <h3 className="text-lg font-bold text-navy-950 font-montserrat">
                                 {t('destinationLabel') || 'Destination'}
                             </h3>
                             <button

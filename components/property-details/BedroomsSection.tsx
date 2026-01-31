@@ -73,7 +73,7 @@ export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms =
     return (
         <>
             <section className="py-10 border-t border-[#E1E6EC]">
-                <h3 className="text-xl font-bold mb-8 text-navy-950 font-serif">{t('bedroomsBathrooms') || "Bedrooms & bathrooms"}</h3>
+                <h3 className="text-xl font-bold mb-8 text-navy-950 font-montserrat">{t('bedroomsBathrooms') || "Bedrooms & bathrooms"}</h3>
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -177,7 +177,7 @@ export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms =
                                     <span className="inline-block px-3 py-1 bg-gray-50 text-navy-900/40 text-[10px] font-bold uppercase tracking-widest rounded-full border border-gray-100 mb-3">
                                         {selectedRoom.type === 'bedroom' ? (t('bedrooms.sleepingAreas') || 'Sleeping Area') : (t('bedrooms.bathingAreas') || 'Bathing Area')}
                                     </span>
-                                    <h2 className="text-2xl font-bold text-navy-950 font-serif mb-3 leading-tight">{selectedRoom.name}</h2>
+                                    <h2 className="text-2xl font-bold text-navy-950 font-montserrat mb-3 leading-tight">{selectedRoom.name}</h2>
                                     <p className="text-navy-900/60 text-sm leading-relaxed">{selectedRoom.details}</p>
                                 </div>
 
@@ -225,7 +225,7 @@ export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms =
                             {/* Modal Header */}
                             <div className="flex items-center justify-between p-7 lg:p-8 border-b border-gray-100 bg-white z-10 text-left">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-navy-950 font-serif">{t('bedroomsBathrooms')}</h2>
+                                    <h2 className="text-2xl font-bold text-navy-950 font-montserrat">{t('bedroomsBathrooms')}</h2>
                                     <p className="text-navy-900/40 text-xs font-medium">{t('bedrooms.detailedSleeping')}</p>
                                 </div>
                                 <button

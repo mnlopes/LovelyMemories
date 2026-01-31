@@ -85,7 +85,7 @@ export function BookingGuestPopover({
                         {/* Header */}
                         <div className="flex items-center justify-between py-3 px-5 border-b border-gray-100 bg-white">
                             <div>
-                                <h3 className="text-lg font-bold text-navy-950 font-serif">
+                                <h3 className="text-lg font-bold text-navy-950 font-montserrat">
                                     {t('guests') || 'Guests'}
                                 </h3>
                                 <p className="text-xs text-navy-900/40 font-medium">

@@ -64,7 +64,7 @@ export function HomeCalendarPopover({
                 </button>
 
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                    <span className="text-lg font-bold text-navy-950 font-serif capitalize">
+                    <span className="text-lg font-bold text-navy-950 font-montserrat capitalize">
                         {displayDate ? format(displayDate, 'MMMM yyyy', { locale: dateLocale }) :
                             (props.calendarMonth ? format(props.calendarMonth.date, 'MMMM yyyy', { locale: dateLocale }) : 'Month Year')}
                     </span>
@@ -183,7 +183,7 @@ export function HomeCalendarPopover({
                             </div>
 
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <span className="text-lg font-bold text-navy-950 font-serif capitalize">
+                                <span className="text-lg font-bold text-navy-950 font-montserrat capitalize">
                                     {format(month, 'MMMM yyyy', { locale: dateLocale })}
                                 </span>
                             </div>

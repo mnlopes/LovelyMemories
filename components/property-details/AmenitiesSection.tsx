@@ -128,7 +128,7 @@ export function AmenitiesSection({ propertyId, amenities }: AmenitiesSectionProp
                         >
                             {/* Header */}
                             <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white z-10">
-                                <h3 className="text-2xl font-bold text-navy-950 font-serif">
+                                <h3 className="text-2xl font-bold text-navy-950 font-montserrat">
                                     {t('amenities')}
                                 </h3>
                                 <button
