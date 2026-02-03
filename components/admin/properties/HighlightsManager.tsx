@@ -9,32 +9,20 @@ interface HighlightsManagerProps {
 }
 
 export default function HighlightsManager({ activeLang, dir = 'ltr' }: HighlightsManagerProps) {
-    const { control, register, update } = useFieldArray({
-        control: useFormContext<PropertyFormData>().control,
-        name: "highlights",
-    });
-
-    const { getValues } = useFormContext<PropertyFormData>();
-
-    // Watch gallery images to allow selection
-    const galleryImages = useWatch({ control: useFormContext<PropertyFormData>().control, name: "images" }) || [];
-    const [openSelectorIndex, setOpenSelectorIndex] = useState<number | null>(null);
-
-    const addHighlight = () => {
-        const firstImage = galleryImages[0]?.url || "";
-        const { append } = require("react-hook-form").useFieldArray({
-            control: useFormContext<PropertyFormData>().control,
-            name: "highlights"
-        });
-        // Actually the hook from above should be enough if we just destructure append
-    };
-
-    // Correct way to get the hook values
     const form = useFormContext<PropertyFormData>();
+
     const highlightsArray = useFieldArray({
         control: form.control,
         name: "highlights",
     });
+
+    // Watch gallery images to allow selection
+    const galleryImages = useWatch({
+        control: form.control,
+        name: "images"
+    }) || [];
+
+    const [openSelectorIndex, setOpenSelectorIndex] = useState<number | null>(null);
 
     const onAddHighlight = () => {
         const firstImage = galleryImages[0]?.url || "";
