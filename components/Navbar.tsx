@@ -21,7 +21,7 @@ export const Navbar = () => {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    if (pathname.includes('/booking/checkout')) return null;
+    if (pathname.includes('/booking/checkout') || pathname.includes('/admin')) return null;
 
     const isActive = (path: string) => {
         if (path === "/" && pathname === "/") return true;
@@ -77,7 +77,7 @@ export const Navbar = () => {
                     {/* Right Side Actions (Login / Lang) */}
                     <div className="hidden lg:flex items-center gap-6">
                         <Link
-                            href="/my-account"
+                            href="/login"
                             className="flex items-center gap-2 text-white hover:text-[#b09e80] transition-colors group"
                         >
                             <span className="p-2 border border-white/30 rounded-full group-hover:border-[#b09e80] transition-colors">

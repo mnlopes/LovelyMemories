@@ -59,7 +59,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                 >
                     <Image
                         src={mainImage}
-                        alt={`${title} - 1`}
+                        alt={title}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, 50vw"
@@ -74,7 +74,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                 >
                     <Image
                         src={secondaryImage}
-                        alt={`${title} - 2`}
+                        alt={title}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="50vw"
@@ -135,7 +135,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                                     >
                                         <Image
                                             src={img}
-                                            alt={`${title} - ${idx + 1}`}
+                                            alt={title}
                                             fill
                                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                                             sizes={isLarge ? "100vw" : "33vw"}
@@ -195,7 +195,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                                     >
                                         <Image
                                             src={images[activeIndex]}
-                                            alt={`${title} - ${activeIndex + 1}`}
+                                            alt={title}
                                             fill
                                             className="object-contain"
                                             sizes="100vw"

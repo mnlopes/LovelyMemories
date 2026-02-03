@@ -1,6 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 // --- DEMO MODE CONFIGURATION ---
 // Set to true to restrict access to only Home, Owner, and About Us pages for client demo.
@@ -38,10 +39,37 @@ export default async function middleware(request: NextRequest) {
         }
     }
 
-    return createMiddleware(routing)(request);
+    // 1. Handle Locale Middleware
+    const response = createMiddleware(routing)(request);
+
+    // 2. Handle Supabase Session Refresh
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                get(name: string) {
+                    return request.cookies.get(name)?.value;
+                },
+                set(name: string, value: string, options: any) {
+                    request.cookies.set({ name, value, ...options });
+                    response.cookies.set({ name, value, ...options });
+                },
+                remove(name: string, options: any) {
+                    request.cookies.set({ name, value: '', ...options });
+                    response.cookies.set({ name, value: '', ...options });
+                },
+            },
+        }
+    );
+
+    // This refreshes the session if needed
+    await supabase.auth.getUser();
+
+    return response;
 }
 
 export const config = {
     // Match only internationalized pathnames
-    matcher: ['/', '/(en|pt)/:path*']
+    matcher: ['/', '/(en|pt|he)/:path*']
 };

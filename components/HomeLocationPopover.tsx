@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { X, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
+import { getLocations } from "@/lib/services";
 
 interface HomeLocationPopoverProps {
     isOpen: boolean;
@@ -47,11 +48,18 @@ export const HomeLocationPopover = ({
         }
     };
 
-    const locations = [
-        { name: "Porto", region: "North" },
-        { name: "Lisboa", region: "Center" },
-        { name: "Algarve", region: "South" }
-    ];
+    const [locations, setLocations] = React.useState<any[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    useEffect(() => {
+        const fetchLocations = async () => {
+            setIsLoading(true);
+            const data = await getLocations();
+            setLocations(data);
+            setIsLoading(false);
+        };
+        fetchLocations();
+    }, []);
 
     return (
         <AnimatePresence>
@@ -68,6 +76,7 @@ export const HomeLocationPopover = ({
 
                     <motion.div
                         ref={popoverRef}
+                        onMouseDown={(e) => e.stopPropagation()}
                         initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : -10 }}
@@ -88,30 +97,52 @@ export const HomeLocationPopover = ({
                         </div>
 
                         {/* Location List */}
-                        <div className="py-2 bg-white">
-                            {locations.map((loc) => (
-                                <button
-                                    type="button"
-                                    key={loc.name}
-                                    onClick={() => {
-                                        onSelect(loc.name);
-                                        onClose();
-                                    }}
-                                    className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors group"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-[#b09e80] group-hover:bg-[#b09e80]/10 transition-colors">
-                                        <MapPin className="h-5 w-5" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-bold text-navy-950 text-base leading-tight">
-                                            {loc.name}
-                                        </p>
-                                        <p className="text-xs text-navy-900/40 font-medium">
-                                            Portugal
-                                        </p>
-                                    </div>
-                                </button>
-                            ))}
+                        <div className="py-2 bg-white min-h-[100px] flex flex-col justify-center">
+                            {isLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="w-6 h-6 border-2 border-[#b09e80] border-t-transparent rounded-full animate-spin" />
+                                </div>
+                            ) : locations.length === 0 ? (
+                                <div className="px-5 py-4 text-center text-sm text-gray-400">
+                                    No destinations found.
+                                </div>
+                            ) : (
+                                locations.map((loc) => {
+                                    const isAvailable = loc.name_en === 'Porto' || loc.name_en === 'Algarve';
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={loc.id}
+                                            disabled={!isAvailable}
+                                            onClick={() => {
+                                                if (!isAvailable) return;
+                                                onSelect(loc.name_en); // Or pt based on locale
+                                                onClose();
+                                            }}
+                                            className={`w-full flex items-center justify-between px-5 py-4 transition-colors group ${!isAvailable ? 'opacity-60 cursor-not-allowed grayscale' : 'hover:bg-gray-50'}`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${!isAvailable ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 text-[#b09e80] group-hover:bg-[#b09e80]/10'}`}>
+                                                    <MapPin className="h-5 w-5" />
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className={`font-bold text-navy-950 text-base leading-tight ${!isAvailable ? 'text-gray-400' : ''}`}>
+                                                        {loc.name_en}
+                                                    </p>
+                                                    <p className="text-xs text-navy-900/40 font-medium">
+                                                        Portugal
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {!isAvailable && (
+                                                <span className="text-[9px] font-bold text-[#b09e80] uppercase tracking-widest bg-[#b09e80]/10 px-2 py-1 rounded-md border border-[#b09e80]/20">
+                                                    {t('comingSoon') || 'Coming Soon'}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })
+                            )}
                         </div>
 
                         {/* Footer (Actions) */}

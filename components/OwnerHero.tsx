@@ -25,6 +25,7 @@ export const OwnerHero = () => {
         location: "",
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -38,10 +39,31 @@ export const OwnerHero = () => {
             return;
         }
         setIsSubmitting(true);
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        toast.success(t('form.success'));
-        setFormData({ fullName: "", email: "", phone: "", address: "", location: "" });
-        setIsSubmitting(false);
+
+        try {
+            const response = await fetch('/api/contact-owner', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    phoneNumber: formData.phone,
+                    plan: 'base',
+                    numProperties: '1'
+                }),
+            });
+
+            if (response.ok) {
+                toast.success(t('form.success'));
+                setIsSuccess(true);
+                setFormData({ fullName: "", email: "", phone: "", address: "", location: "" });
+            } else {
+                toast.error("Ocorreu um erro ao enviar. Por favor tente novamente.");
+            }
+        } catch (error) {
+            toast.error("Erro de conexão. Verifique a sua internet.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -130,68 +152,84 @@ export const OwnerHero = () => {
                             </div>
 
                             <div className="p-8 md:px-12 md:pb-12 md:pt-6">
-                                <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-                                    <div className="flex flex-col gap-5">
-                                        <Input
-                                            name="fullName"
-                                            placeholder={t('form.fullName')}
-                                            value={formData.fullName}
-                                            onChange={handleChange}
-                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                            required
-                                        />
-                                        <Input
-                                            name="email"
-                                            type="email"
-                                            placeholder={t('form.email')}
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                            required
-                                        />
-                                        <Input
-                                            name="phone"
-                                            type="tel"
-                                            placeholder={t('form.phone')}
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                        />
-                                        <Input
-                                            name="address"
-                                            placeholder={t('form.address')}
-                                            value={formData.address}
-                                            onChange={handleChange}
-                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                        />
-                                        <Input
-                                            name="location"
-                                            placeholder={t('form.location')}
-                                            value={formData.location}
-                                            onChange={handleChange}
-                                            className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                        />
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="w-full h-14 text-white font-bold shadow-lg transition-all rounded-full !rounded-full"
-                                        style={{
-                                            backgroundColor: isSubmitting ? '#a68f6e' : '#b29a7a',
-                                            boxShadow: '0 10px 15px -3px rgba(178, 154, 122, 0.2)',
-                                            borderRadius: '9999px'
-                                        }}
+                                {isSuccess ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="py-12 text-center flex flex-col items-center justify-center min-h-[480px]"
                                     >
-                                        {isSubmitting ? t('form.submitting') : t('form.submit')}
-                                    </Button>
+                                        <div className="w-20 h-20 bg-[#fdfbf7] text-[#b29a7a] rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-[#b29a7a]/5">
+                                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-[#0A1128] mb-2">{t('form.success')}</h3>
+                                        <p className="text-gray-500">{t('form.reportPreparing')}</p>
+                                    </motion.div>
+                                ) : (
+                                    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+                                        <div className="flex flex-col gap-5">
+                                            <Input
+                                                name="fullName"
+                                                placeholder={t('form.fullName')}
+                                                value={formData.fullName}
+                                                onChange={handleChange}
+                                                className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                                required
+                                            />
+                                            <Input
+                                                name="email"
+                                                type="email"
+                                                placeholder={t('form.email')}
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                                required
+                                            />
+                                            <Input
+                                                name="phone"
+                                                type="tel"
+                                                placeholder={t('form.phone')}
+                                                value={formData.phone}
+                                                onChange={handleChange}
+                                                className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                            />
+                                            <Input
+                                                name="address"
+                                                placeholder={t('form.address')}
+                                                value={formData.address}
+                                                onChange={handleChange}
+                                                className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                            />
+                                            <Input
+                                                name="location"
+                                                placeholder={t('form.location')}
+                                                value={formData.location}
+                                                onChange={handleChange}
+                                                className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                            />
+                                        </div>
 
-                                    <p className="text-xs text-center text-gray-400 mt-4">
-                                        {t.rich('form.privacyAgreement', {
-                                            link: (chunks) => <a href="#" className="text-[#b29a7a] hover:underline">{chunks}</a>
-                                        })}
-                                    </p>
-                                </form>
+                                        <Button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="w-full h-14 text-white font-bold shadow-lg transition-all rounded-full !rounded-full"
+                                            style={{
+                                                backgroundColor: isSubmitting ? '#a68f6e' : '#b29a7a',
+                                                boxShadow: '0 10px 15px -3px rgba(178, 154, 122, 0.2)',
+                                                borderRadius: '9999px'
+                                            }}
+                                        >
+                                            {isSubmitting ? t('form.submitting') : t('form.submit')}
+                                        </Button>
+
+                                        <p className="text-xs text-center text-gray-400 mt-4">
+                                            {t.rich('form.privacyAgreement', {
+                                                link: (chunks) => <a href="#" className="text-[#b29a7a] hover:underline">{chunks}</a>
+                                            })}
+                                        </p>
+                                    </form>
+                                )}
                             </div>
                         </motion.div>
                     </div>

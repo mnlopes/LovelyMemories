@@ -1,14 +1,26 @@
 "use client";
 
 import { AlertTriangle, Clock } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
 
 interface HomeTruthsSectionProps {
     propertyId: string;
-    truths: string[];
+    truths: (string | Record<string, string>)[];
 }
 
 export function HomeTruthsSection({ propertyId, truths, checkIn }: HomeTruthsSectionProps & { checkIn?: { arrivalStart: string, departureEnd: string } }) {
+    const locale = useLocale();
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
 
@@ -30,9 +42,18 @@ export function HomeTruthsSection({ propertyId, truths, checkIn }: HomeTruthsSec
                                     <AlertTriangle className="h-4 w-4 text-[#B08D4A]" />
                                 </div>
                                 <p className="text-navy-900/70 leading-relaxed pt-1">
-                                    {Array.isArray(tp.raw(`${propertyId}.homeTruths`))
-                                        ? (tp.raw(`${propertyId}.homeTruths`) as string[])[index]
-                                        : truth}
+                                    {(() => {
+                                        // Skip calling tp.raw for UUIDs to avoid Dev Overlay warnings
+                                        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(propertyId);
+                                        if (isUuid) return getLocalizedStr(truth, locale);
+
+                                        try {
+                                            const raw = tp.raw(`${propertyId}.homeTruths`);
+                                            return getLocalizedStr(Array.isArray(raw) ? raw[index] : truth, locale);
+                                        } catch (e) {
+                                            return getLocalizedStr(truth, locale);
+                                        }
+                                    })()}
                                 </p>
                             </div>
                         ))}

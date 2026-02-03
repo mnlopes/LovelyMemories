@@ -11,6 +11,10 @@ interface PageTransitionProps {
 export const PageTransition = ({ children }: PageTransitionProps) => {
     const pathname = usePathname();
 
+    if (pathname.includes('/admin')) {
+        return <>{children}</>;
+    }
+
     return (
         <AnimatePresence mode="wait">
             <motion.div

@@ -11,13 +11,30 @@ interface PropertyStatsProps {
     sqm: number;
 }
 
+// Helper to safely extract number from potential object/string
+const safeCount = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') return parseInt(val, 10) || 0;
+    if (typeof val === 'object' && val !== null) {
+        return parseInt(val.en || val.pt || val.he || Object.values(val)[0] || '0', 10) || 0;
+    }
+    return 0;
+};
+
 export function PropertyStats({ guests, bedrooms, beds, bathrooms, sqm }: PropertyStatsProps) {
     const t = useTranslations('PropertyDetail');
+
+    // Sanitize counts
+    const countGuests = safeCount(guests);
+    const countBedrooms = safeCount(bedrooms);
+    const countBathrooms = safeCount(bathrooms);
+    const countSqm = safeCount(sqm);
+
     const details = [
-        { icon: Users, label: t('guestsCount', { count: guests }) },
-        { icon: Bed, label: t('bedroomsCount', { count: bedrooms }) },
-        { icon: Bath, label: t('bathroomsCount', { count: bathrooms }) },
-        { icon: Maximize, label: `${sqm} m²` },
+        { icon: Users, label: t('guestsCount', { count: countGuests }) },
+        { icon: Bed, label: t('bedroomsCount', { count: countBedrooms }) },
+        { icon: Bath, label: t('bathroomsCount', { count: countBathrooms }) },
+        { icon: Maximize, label: `${countSqm} m²` },
     ];
 
     return (

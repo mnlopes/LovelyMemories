@@ -9,12 +9,23 @@ import {
     Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
 
 interface AmenityCategory {
     category: string;
-    items: string[];
+    items: (string | Record<string, string>)[];
 }
 
 interface AmenitiesSectionProps {
@@ -23,6 +34,7 @@ interface AmenitiesSectionProps {
 }
 
 export function AmenitiesSection({ propertyId, amenities }: AmenitiesSectionProps) {
+    const locale = useLocale();
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,10 +42,24 @@ export function AmenitiesSection({ propertyId, amenities }: AmenitiesSectionProp
     if (!amenities || amenities.length === 0) return null;
 
     // Localized data access
-    const localizedAmenities = (tp.raw(`${propertyId}.amenities`) as AmenityCategory[] | undefined) || amenities;
+    const localizedAmenities = (() => {
+        // Skip calling tp.raw for UUIDs to avoid Dev Overlay warnings
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(propertyId);
+        if (isUuid) return amenities;
+
+        try {
+            const raw = tp.raw(`${propertyId}.amenities`);
+            return Array.isArray(raw) ? raw : amenities;
+        } catch (e) {
+            return amenities;
+        }
+    })();
+
+    // Ensure we have an array of AmenityCategory
+    const safeAmenities = Array.isArray(localizedAmenities) ? localizedAmenities : (Array.isArray(amenities) ? amenities : []);
 
     // Flatten amenities for preview (just show first 8 of any category)
-    const allAmenities = localizedAmenities.flatMap(c => c.items);
+    const allAmenities = safeAmenities.flatMap(c => (c?.items || []).map((item: any) => getLocalizedStr(item, locale)));
     const displayedAmenities = allAmenities.slice(0, 8);
     // Count total unique items
     const totalCount = allAmenities.length;
@@ -141,20 +167,24 @@ export function AmenitiesSection({ propertyId, amenities }: AmenitiesSectionProp
 
                             {/* Scrollable Content */}
                             <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 luxury-scrollbar">
-                                {localizedAmenities.map((group, idx) => (
+                                {safeAmenities.map((group, idx) => (
                                     <div key={idx}>
                                         <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100">
-                                            {getCategoryIcon(group.category)}
+                                            {group?.icon ? (
+                                                <Image src={group.icon} alt={getLocalizedStr(group?.category, locale)} width={48} height={48} className="w-12 h-12 object-contain" unoptimized />
+                                            ) : (
+                                                getCategoryIcon(getLocalizedStr(group?.category, locale))
+                                            )}
                                             <h4 className="text-lg font-bold text-navy-950">
-                                                {group.category}
+                                                {getLocalizedStr(group?.category, locale)}
                                             </h4>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-                                            {group.items.map((item, itemIdx) => (
+                                            {(group?.items || []).map((item: string, itemIdx: number) => (
                                                 <div key={itemIdx} className="flex items-start gap-3">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-[#B08D4A] mt-2 flex-shrink-0 opacity-60" /> {/* Subtle bullet */}
                                                     <span className="text-navy-900/80 leading-relaxed text-base">
-                                                        {item}
+                                                        {getLocalizedStr(item, locale)}
                                                     </span>
                                                 </div>
                                             ))}

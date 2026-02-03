@@ -3,12 +3,13 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/routing";
 
 export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: boolean }) => {
     const t = useTranslations('OwnerSection');
     const scrollRef = useRef(null);
+    console.log("PropertyOwnerSection render");
 
     const { scrollYProgress } = useScroll({
         target: scrollRef,
@@ -26,6 +27,11 @@ export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: bo
     const y1 = useTransform(smoothY, [0, 1], [0, -25]);  // Esquerda (Quarto) - Sobe Levemente
     const y2 = useTransform(smoothY, [0, 1], [0, -35]);  // Direita (Secundária) - Sobe Levemente
     const y3 = useTransform(smoothY, [0, 1], [0, 40]);   // Topo (Detalhe) - Desce Levemente
+
+    const locale = useLocale();
+    const isRtl = locale === 'he' || locale === 'ar'; // Future-proof for Arabic
+
+    // ... scroll hooks ...
 
     return (
         <section ref={scrollRef} className="relative w-full bg-[#192537] py-20 lg:py-12 z-20 w-full overflow-visible">
@@ -45,10 +51,13 @@ export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: bo
             <div className="container mx-auto px-4 relative z-10 h-full flex items-center">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
                     {/* Left Spacer - Desktop Only */}
+                    {/* In RTL, this spacer will visually be on the Right */}
                     <div className="hidden lg:block lg:col-span-4 xl:col-span-3"></div>
 
                     {/* Text Content */}
-                    <div className="col-span-1 lg:col-span-8 xl:col-span-9 text-left text-white z-30 relative lg:-ml-28 xl:-ml-32">
+                    <div className={`col-span-1 lg:col-span-8 xl:col-span-9 z-30 relative 
+                        ${isRtl ? 'text-right lg:pr-32 xl:pr-40' : 'text-left lg:-ml-28 xl:-ml-32'}`}
+                    >
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -63,7 +72,11 @@ export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: bo
                                     br: () => <br />
                                 })}
                             </h2>
-                            <h6 className="text-base md:text-xl font-light text-gray-300 max-w-lg leading-relaxed">
+                            <h6 className={`text-base md:text-xl font-light text-gray-300 max-w-lg leading-relaxed ${isRtl ? 'ml-auto' : ''}`}>
+                                {/* Added ml-auto conditionally? No, text-right handles text, but max-w might need 'ml-auto' in RTL to align right if it's block level? 
+                                    Let's check. max-w-lg + block means it takes width. 
+                                    If text-right, text is right. But the block adheres to left unless...
+                                */}
                                 {t.rich('subtitle', {
                                     br: () => <br />
                                 })}

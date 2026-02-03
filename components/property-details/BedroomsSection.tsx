@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Bed, Bath, ChevronRight, Ruler, ShowerHead, Toilet, Baby, Maximize, Sofa, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Room {
@@ -20,11 +20,32 @@ interface Room {
 
 interface BedroomsSectionProps {
     propertyId: string;
-    bedrooms: number;
-    beds: number;
-    bathrooms: number;
+    bedrooms: number | any;
+    beds: number | any;
+    bathrooms: number | any;
     rooms?: Room[];
+    bed_sizes?: {
+        single: string;
+        double: string;
+        king: string;
+        superKing: string;
+    };
+    baby_equipment?: {
+        available: boolean;
+        text: Record<string, string>;
+    };
 }
+
+// Helper to safely extract number from potential object/string
+const safeCount = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') return parseInt(val, 10) || 0;
+    if (typeof val === 'object' && val !== null) {
+        // Try known language keys or just take the first value
+        return parseInt(val.en || val.pt || val.he || Object.values(val)[0] || '0', 10) || 0;
+    }
+    return 0;
+};
 
 // Helper component to render bed icons based on count and type
 function BedIcons({ count = 1, type = "double" }: { count?: number; type?: "double" | "single" | "sofa" }) {
@@ -44,23 +65,88 @@ function BedIcons({ count = 1, type = "double" }: { count?: number; type?: "doub
     return <div className="flex items-center gap-2">{icons}</div>;
 }
 
-export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms = [] }: BedroomsSectionProps) {
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : '';
+    }
+    return '';
+};
+
+export function BedroomsSection({
+    propertyId,
+    bedrooms,
+    beds,
+    bathrooms,
+    rooms = [],
+    bed_sizes = {
+        single: "90 x 190 cm",
+        double: "140 x 190 cm",
+        king: "160 x 200 cm",
+        superKing: "180 x 200 cm"
+    },
+    baby_equipment = {
+        available: true,
+        text: {
+            en: "Baby cot and high chair are available on request at no extra cost.",
+            pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",
+            he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות נוספת."
+        }
+    }
+}: BedroomsSectionProps) {
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
+    const locale = useLocale();
+
+    // Sanitize counts
+    const countBedrooms = safeCount(bedrooms);
+    const countBeds = safeCount(beds);
+    const countBathrooms = safeCount(bathrooms);
+
     const [floorPlanOpen, setFloorPlanOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<Room & { index?: number } | null>(null);
     const [showBedGuide, setShowBedGuide] = useState(false);
 
     // Localized data access for rooms
-    const localizedRooms = (tp.raw(`${propertyId}.rooms`) as { name: string, details: string, beds?: string }[] | undefined);
+    const localizedRooms = (() => {
+        // Skip calling tp.raw for UUID-based properties to avoid Dev Overlay warnings
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(propertyId);
+        if (isUuid) return null;
+
+        try {
+            const raw = tp.raw(`${propertyId}.rooms`);
+            return Array.isArray(raw) ? raw : null;
+        } catch (e) {
+            return null;
+        }
+    })();
 
     const getLocalizedRoom = (room: Room, index: number) => {
-        if (!localizedRooms || !localizedRooms[index]) return room;
+        // Safe defaults from DB object
+        const dbName = getLocalizedStr(room.name, locale);
+        const dbDetails = getLocalizedStr(room.details, locale);
+        const dbBeds = getLocalizedStr(room.beds, locale);
+
+        // If we have next-intl overrides, use them
+        if (localizedRooms && localizedRooms[index]) {
+            const loc = localizedRooms[index] as any;
+            return {
+                ...room,
+                name: loc.name || dbName,
+                details: loc.details || dbDetails,
+                beds: loc.beds || dbBeds
+            };
+        }
+
+        // Otherwise use sanitized DB values (flat strings)
         return {
             ...room,
-            name: localizedRooms[index].name,
-            details: localizedRooms[index].details,
-            beds: localizedRooms[index].beds || room.beds
+            name: dbName,
+            details: dbDetails,
+            beds: dbBeds
         };
     };
 
@@ -82,8 +168,8 @@ export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms =
                             <Bed className="h-6 w-6 text-[#B08D4A]" />
                         </div>
                         <div>
-                            <p className="font-bold text-navy-950 text-lg">{bedrooms} {t('bedroomsCount', { count: bedrooms })}</p>
-                            <p className="text-sm text-navy-900/50 font-medium">{beds} {t('bedsCount', { count: beds })}</p>
+                            <p className="font-bold text-navy-950 text-lg">{countBedrooms} {t('bedroomsCount', { count: countBedrooms })}</p>
+                            <p className="text-sm text-navy-900/50 font-medium">{countBeds} {t('bedsCount', { count: countBeds })}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-[#E1E6EC] shadow-sm hover:shadow-md transition-shadow">
@@ -91,7 +177,7 @@ export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms =
                             <Bath className="h-6 w-6 text-[#B08D4A]" />
                         </div>
                         <div>
-                            <p className="font-bold text-navy-950 text-lg">{bathrooms} {t('bathroomsCount', { count: bathrooms })}</p>
+                            <p className="font-bold text-navy-950 text-lg">{countBathrooms} {t('bathroomsCount', { count: countBathrooms })}</p>
                             <p className="text-sm text-navy-900/50 font-medium">{t('enSuite') || "En-suite"}</p>
                         </div>
                     </div>
@@ -256,22 +342,22 @@ export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms =
                                                 exit={{ height: 0, opacity: 0 }}
                                                 className="overflow-hidden"
                                             >
-                                                <div className="mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 grid grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+                                                <div className="mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 grid grid-cols-2 lg:grid-cols-4 gap-6 text-sm text-left">
                                                     <div>
                                                         <p className="font-bold text-navy-950 mb-1">{t('bedrooms.single')}</p>
-                                                        <p className="text-navy-900/40">90 x 190 cm</p>
+                                                        <p className="text-navy-900/40">{bed_sizes.single}</p>
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-navy-950 mb-1">{t('bedrooms.double')}</p>
-                                                        <p className="text-navy-900/40">140 x 190 cm</p>
+                                                        <p className="text-navy-900/40">{bed_sizes.double}</p>
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-navy-950 mb-1">{t('bedrooms.king')}</p>
-                                                        <p className="text-navy-900/40">160 x 200 cm</p>
+                                                        <p className="text-navy-900/40">{bed_sizes.king}</p>
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-navy-950 mb-1">{t('bedrooms.superKing')}</p>
-                                                        <p className="text-navy-900/40">180 x 200 cm</p>
+                                                        <p className="text-navy-900/40">{bed_sizes.superKing}</p>
                                                     </div>
                                                 </div>
                                             </motion.div>
@@ -347,16 +433,17 @@ export function BedroomsSection({ propertyId, bedrooms, beds, bathrooms, rooms =
                                     </div>
                                 </div>
 
-                                {/* Other info */}
-                                <div className="mt-12 p-8 bg-gray-50 rounded-[32px] border border-gray-100 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
-                                    <div className="w-16 h-16 rounded-2xl bg-[#B08D4A]/10 flex items-center justify-center text-[#B08D4A] mx-auto md:mx-0">
-                                        <Baby className="h-8 w-8" />
+                                {baby_equipment.available && (
+                                    <div className="mt-12 p-8 bg-gray-50 rounded-[32px] border border-gray-100 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+                                        <div className="w-16 h-16 rounded-2xl bg-[#B08D4A]/10 flex items-center justify-center text-[#B08D4A] mx-auto md:mx-0">
+                                            <Baby className="h-8 w-8" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-navy-950 text-xl mb-1">{t('bedrooms.travelingWithChildren')}</h4>
+                                            <p className="text-navy-900/40 font-medium">{getLocalizedStr(baby_equipment.text, locale)}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 className="font-bold text-navy-950 text-xl mb-1">{t('bedrooms.travelingWithChildren')}</h4>
-                                        <p className="text-navy-900/40 font-medium">{t('bedrooms.babyCotInfo')}</p>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </motion.div>
                     </>

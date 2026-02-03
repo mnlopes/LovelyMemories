@@ -3,11 +3,22 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
 
 interface Highlight {
     image: string;
-    text: string;
+    text: string | Record<string, string>;
 }
 
 interface HighlightsSectionProps {
@@ -16,6 +27,7 @@ interface HighlightsSectionProps {
 }
 
 export function HighlightsSection({ propertyId, highlights }: HighlightsSectionProps) {
+    const locale = useLocale();
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
 
@@ -39,7 +51,7 @@ export function HighlightsSection({ propertyId, highlights }: HighlightsSectionP
         <section className="py-6">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-navy-950">{t('highlightsTitle')}</h3>
-                {highlights.length > 0 && (
+                {highlights.length > 3 && (
                     <div className="flex items-center gap-3">
                         <button
                             onClick={scrollPrev}
@@ -60,31 +72,33 @@ export function HighlightsSection({ propertyId, highlights }: HighlightsSectionP
             </div>
 
             <div
-                id="highlights-container"
-                className="flex overflow-x-auto gap-6 pb-4 -mx-4 px-4 snap-x snap-mandatory hide-scrollbar scroll-smooth"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                className="relative overflow-hidden -mx-4 px-4"
             >
-                {highlights.map((highlight, index) => (
-                    <div
-                        key={index}
-                        className="group cursor-pointer min-w-[280px] md:min-w-[340px] snap-center first:pl-2"
-                    >
-                        <div className="aspect-[4/3] relative rounded-xl overflow-hidden mb-4 shadow-sm">
-                            <Image
-                                src={highlight.image}
-                                alt={highlight.text}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                sizes="(max-width: 768px) 100vw, 33vw"
-                            />
+                <div
+                    id="highlights-container"
+                    className={`flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar scroll-smooth ${highlights.length <= 2 ? 'md:justify-center' : ''}`}
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    {highlights.map((highlight, index) => (
+                        <div
+                            key={index}
+                            className="group cursor-pointer min-w-[280px] md:min-w-[340px] flex-shrink-0 snap-center"
+                        >
+                            <div className="aspect-[4/3] relative rounded-xl overflow-hidden mb-4 shadow-sm">
+                                <Image
+                                    src={highlight.image}
+                                    alt={getLocalizedStr(highlight.text, locale)}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                />
+                            </div>
+                            <p className="text-sm text-navy-900/70 leading-relaxed group-hover:text-navy-950 transition-colors">
+                                {getLocalizedStr(highlight.text, locale)}
+                            </p>
                         </div>
-                        <p className="text-sm text-navy-900/70 leading-relaxed group-hover:text-navy-950 transition-colors">
-                            {Array.isArray(tp.raw(`${propertyId}.highlights`))
-                                ? (tp.raw(`${propertyId}.highlights`) as string[])[index]
-                                : highlight.text}
-                        </p>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </section>
     );

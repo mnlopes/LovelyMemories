@@ -4,7 +4,7 @@ export default function ContactInfo() {
     const t = useTranslations('Contact');
 
     return (
-        <div className="flex flex-col items-start gap-12 max-w-lg">
+        <div className="flex flex-col items-start rtl:items-end gap-12 max-w-lg rtl:text-right">
             {/* Title */}
             <div>
                 <h1 className="text-4xl md:text-5xl font-bold text-navy-950 mb-6">

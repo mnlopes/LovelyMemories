@@ -1,15 +1,36 @@
 "use client";
 
 import React from 'react';
-import { PROPERTIES } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { getPropertyBySlug } from '@/lib/services';
 import { DateRange } from "react-day-picker";
 import { differenceInDays, format } from "date-fns";
 import { Link } from '@/i18n/routing';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
+
+// Helper to safely extract number from potential object/string
+const safeCount = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') return parseInt(val, 10) || 0;
+    if (typeof val === 'object' && val !== null) {
+        return parseInt(val.en || val.pt || val.he || Object.values(val)[0] || '0', 10) || 0;
+    }
+    return 0;
+};
 
 // New Components
 import { Breadcrumb } from './property-details/Breadcrumb';
@@ -34,13 +55,76 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
     const router = useRouter();
     const locale = useLocale();
 
-    // Find the current property based on static data
-    const property = PROPERTIES.find(p => p.slug === slug);
+    const [property, setProperty] = React.useState<any>(null);
+    const [conciergeServices, setConciergeServices] = React.useState<any[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
 
-    const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>({
-        from: new Date(2026, 1, 11), // 11 Feb 2026
-        to: new Date(2026, 1, 14),   // 14 Feb 2026
-    });
+    const [adults, setAdults] = React.useState(1);
+    const [childrenCount, setChildren] = React.useState(0);
+    const [infants, setInfants] = React.useState(0);
+    const [availabilityStatus, setAvailabilityStatus] = React.useState<{ available: boolean; loading: boolean; error?: string }>({ available: true, loading: false });
+
+    React.useEffect(() => {
+        const fetchAll = async () => {
+            setIsLoading(true);
+            try {
+                const [propertyData, conciergeData] = await Promise.all([
+                    getPropertyBySlug(slug),
+                    import('@/lib/services').then(m => m.getConciergeServices())
+                ]);
+                setProperty(propertyData);
+                setConciergeServices(conciergeData);
+
+                // Initialize from search params
+                if (typeof window !== 'undefined') {
+                    const params = new URLSearchParams(window.location.search);
+                    const fromStr = params.get('from');
+                    const toStr = params.get('to');
+                    if (fromStr && toStr) {
+                        setSelectedRange({
+                            from: new Date(fromStr),
+                            to: new Date(toStr)
+                        });
+                    }
+
+                    setAdults(parseInt(params.get('adults') || '1', 10));
+                    setChildren(parseInt(params.get('children') || '0', 10));
+                    setInfants(parseInt(params.get('infants') || '0', 10));
+                }
+            } catch (error) {
+                console.error('Error fetching property data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAll();
+    }, [slug]);
+
+    const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>(undefined);
+
+    // Validation Logic
+    React.useEffect(() => {
+        const validate = async () => {
+            if (!property?.id || !selectedRange?.from || !selectedRange?.to) return;
+
+            setAvailabilityStatus(prev => ({ ...prev, loading: true }));
+            console.log('[DEBUG] PropertyDetails validation trigger:', {
+                id: property.id,
+                slug: property.slug,
+                guests: adults + childrenCount
+            });
+            const { checkPropertyAvailability } = await import('@/lib/services');
+            const result = await checkPropertyAvailability(
+                property.id,
+                selectedRange.from,
+                selectedRange.to,
+                adults + childrenCount
+            );
+            console.log('[DEBUG] PropertyDetails validation result:', result);
+            setAvailabilityStatus({ available: result.available, loading: false, error: result.error });
+        };
+        validate();
+    }, [property?.id, selectedRange, adults, childrenCount]);
 
     const nights = selectedRange?.from && selectedRange?.to
         ? differenceInDays(selectedRange.to, selectedRange.from)
@@ -91,6 +175,14 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
         setSelectedExtras(prev => ({ ...prev, transferType: type }));
     };
 
+    if (isLoading) {
+        return (
+            <div className="bg-white min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-[#b09e80] border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
     if (!property) {
         notFound();
     }
@@ -100,7 +192,13 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
             <main className="relative container mx-auto px-6 pt-32 pb-8">
                 {/* Back link */}
                 <Link
-                    href="/properties"
+                    href={(() => {
+                        const params = new URLSearchParams(window.location.search);
+                        if (params.get('location') || params.get('from') || params.get('to')) {
+                            return `/search?${params.toString()}`;
+                        }
+                        return `/properties`;
+                    })()}
                     className="inline-flex items-center gap-2 text-sm text-navy-900/40 hover:text-navy-950 transition-colors mb-6 group"
                 >
                     <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
@@ -110,20 +208,20 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                 {/* Gallery */}
                 <PropertyGallery
                     images={property.images}
-                    title={property.title}
+                    title={getLocalizedStr(property.title, locale)}
                     metadata={{
-                        guests: property.guests,
-                        bedrooms: property.bedrooms,
-                        beds: property.beds,
-                        bathrooms: property.bathrooms,
-                        area: property.area
+                        guests: safeCount(property.guests),
+                        bedrooms: safeCount(property.bedrooms),
+                        beds: safeCount(property.beds),
+                        bathrooms: safeCount(property.bathrooms),
+                        area: safeCount(property.area)
                     }}
                 />
 
                 {/* Content Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 lg:gap-12 mt-10">
                     {/* Left Column - Property Info */}
-                    <div>
+                    <div className="min-w-0">
                         {/* Breadcrumb */}
                         <Breadcrumb
                             items={[
@@ -134,13 +232,13 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
 
                         {/* Title */}
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-navy-950 mt-5 mb-2 text-balance leading-tight">
-                            {property.title}
+                            {getLocalizedStr(property.title, locale)}
                         </h1>
 
                         {/* Subtitle */}
-                        {property.subtitle && (
+                        {getLocalizedStr(property.subtitle, locale) && (
                             <p className="text-xl md:text-2xl text-navy-900/60 font-medium mb-3">
-                                {property.subtitle}
+                                {getLocalizedStr(property.subtitle, locale)}
                             </p>
                         )}
 
@@ -148,33 +246,47 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                         <div className="flex items-center gap-2 text-navy-900/50 mb-8 max-w-2xl">
                             <MapPin className="h-4 w-4 flex-shrink-0" />
                             <span className="text-sm md:text-base">
-                                {property.location.address}, {property.location.city}, {property.location.country}
+                                {getLocalizedStr(property.location?.address, locale)}, {property.location?.city}, {property.location?.country}
                             </span>
                         </div>
 
                         {/* Property Stats */}
                         <PropertyStats
-                            guests={property.guests}
-                            bedrooms={property.bedrooms}
-                            beds={property.beds}
-                            bathrooms={property.bathrooms}
-                            sqm={property.area}
+                            guests={safeCount(property.guests)}
+                            bedrooms={safeCount(property.bedrooms)}
+                            beds={safeCount(property.beds)}
+                            bathrooms={safeCount(property.bathrooms)}
+                            sqm={safeCount(property.area)}
                         />
 
                         {/* Description */}
                         <div className="mt-8 space-y-6">
-                            {(Array.isArray(tp.raw(`${property.id}.description`))
-                                ? tp.raw(`${property.id}.description`) as string[]
-                                : property.description).map((paragraph, index) => (
-                                    <p key={index} className="text-navy-900/70 leading-relaxed text-base md:text-lg">
-                                        {paragraph}
-                                    </p>
-                                ))}
+                            {(() => {
+                                // 1. Try localized arrays from service transformation
+                                if (locale === 'pt' && Array.isArray(property.description_pt) && property.description_pt.length > 0) return property.description_pt;
+                                if (locale === 'en' && Array.isArray(property.description_en) && property.description_en.length > 0) return property.description_en;
+
+                                // 2. Try the general description field (might be legacy array or new raw object)
+                                if (Array.isArray(property.description)) return property.description;
+
+                                // 3. Try to localize and split if it's a string/object
+                                const localized = getLocalizedStr(property.description, locale);
+                                if (localized) return localized.split('\n').filter(Boolean);
+
+                                return [];
+                            })().map((paragraph: string, index: number) => (
+                                <p key={index} className="text-navy-900/70 leading-relaxed text-base md:text-lg">
+                                    {paragraph}
+                                </p>
+                            ))}
                         </div>
 
                         {/* What to Expect Section */}
                         <section className="mt-10 pt-8 border-t border-[#E1E6EC]">
-                            <h2 className="text-2xl font-bold text-navy-950 mb-6">{t('whatToExpect')}</h2>
+                            <h2 className="text-2xl font-bold text-navy-950 mb-4">{t('whatToExpect')}</h2>
+                            <p className="text-navy-900/70 leading-relaxed text-base md:text-lg mb-8 max-w-4xl">
+                                {getLocalizedStr(property.highlights_intro, locale) || t('whatToExpectIntro')}
+                            </p>
                         </section>
 
                         {/* Highlights */}
@@ -196,10 +308,12 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                         {/* Bedrooms */}
                         <BedroomsSection
                             propertyId={property.id}
-                            bedrooms={property.bedrooms}
-                            beds={property.beds}
-                            bathrooms={property.bathrooms}
+                            bedrooms={safeCount(property.bedrooms)}
+                            beds={safeCount(property.beds)}
+                            bathrooms={safeCount(property.bathrooms)}
                             rooms={property.rooms}
+                            bed_sizes={property.bed_sizes}
+                            baby_equipment={property.baby_equipment}
                         />
 
                         {/* Location */}
@@ -212,6 +326,8 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
 
                         {/* Concierge Services */}
                         <ConciergeSection
+                            dbServices={conciergeServices}
+                            vipServices={property.vip_services}
                             services={property.concierge}
                             prices={property.servicesPrice}
                             selectedExtras={selectedExtras}
@@ -229,7 +345,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
 
                     {/* Right Column - Booking Card (Sticky) */}
                     <div className="hidden lg:block relative">
-                        <div className="sticky top-32">
+                        <div className="sticky top-24 2xl:top-32">
                             <BookingCard
                                 slug={property.slug}
                                 price={property.price.perNight}
@@ -240,6 +356,13 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                                 onToggleExtra={handleToggleExtra}
                                 selectedRange={selectedRange}
                                 onDateChange={handleDateChange}
+                                adults={adults}
+                                setAdults={setAdults}
+                                childrenCount={childrenCount}
+                                setChildren={setChildren}
+                                infants={infants}
+                                setInfants={setInfants}
+                                availabilityStatus={availabilityStatus}
                             />
                         </div>
                     </div>

@@ -1,4 +1,30 @@
 {
+    "AdminSidebar": {
+        "management": "Gestão",
+        "overview": "Visão Geral",
+        "properties": "Propriedades",
+        "bookings": "Reservas",
+        "tenants": "Inquilinos",
+        "concierge": "Concierge",
+        "reports": "Relatórios",
+        "finances": "Finanças",
+        "performance": "Desempenho",
+        "signOut": "Sair"
+    },
+    "AdminHeader": {
+        "searchPlaceholder": "Procurar propriedades ou hóspedes...",
+        "role": "Administrador"
+    },
+    "AdminPropertyCard": {
+        "comingSoon": "Em Breve",
+        "pricePerNight": "Preço por noite",
+        "guests": "Hóspedes",
+        "bedrooms": "Quartos",
+        "beds": "Camas",
+        "baths": "Banheiros",
+        "activeTenants": "Inquilinos Ativos",
+        "viewDetails": "Ver Detalhes"
+    },
     "Navbar": {
         "book": "Reservar",
         "owner": "Proprietário",
@@ -8,6 +34,22 @@
         "blog": "Blog",
         "contact": "Contacto",
         "login": "Entrar"
+    },
+    "Auth": {
+        "login": "Login",
+        "signUp": "Registar",
+        "email": "Endereço de Email",
+        "password": "Palavra-passe",
+        "signInButton": "Entrar",
+        "signUpButton": "Criar Conta",
+        "noAccount": "Ainda não tem conta?",
+        "hasAccount": "Já tem uma conta?",
+        "errorInvalid": "Credenciais inválidas",
+        "errorEmail": "Por favor introduza um email válido",
+        "welcomeBack": "Bem-vindo de volta",
+        "joinUs": "Junte-se à Lovely Memories",
+        "loginDesc": "Introduza as suas credenciais para aceder à sua conta",
+        "signUpDesc": "Crie a sua conta para gerir as suas estadias"
     },
     "Footer": {
         "getInTouch": "Fale Connosco",
@@ -24,7 +66,9 @@
         "aboutDescription": "Somos o principal agente de gestão de alojamento turístico em Portugal, gerido por uma equipa internacional fantástica. Os nossos clientes, sejam os proprietários ou os próprios hóspedes, sabem exatamente porquê!",
         "aboutButton": "Sobre Nós",
         "featuredTitle": "Algumas das nossas Casas e Resorts Únicos",
-        "gardenHuts": "Garden Huts & Eco Homes"
+        "gardenHuts": "Garden Huts & Eco Homes",
+        "bedrooms": "quartos",
+        "guests": "hóspedes"
     },
     "BookingBar": {
         "myTrip": "Minha Viagem",
@@ -37,7 +81,9 @@
         "travellers": "Viajantes",
         "selectPeople": "Sel. pessoas",
         "search": "Procurar",
-        "clearLocation": "Limpar destino"
+        "searching": "Pesquisando...",
+        "clearLocation": "Limpar destino",
+        "comingSoon": "Em breve"
     },
     "GuestSelector": {
         "adults": "Adultos",
@@ -81,12 +127,31 @@
     },
     "PropertiesGrid": {
         "backToHome": "Voltar à Home",
+        "found": "Encontrámos",
+        "property": "Propriedade",
+        "properties": "Propriedades",
         "title": "As nossas Casas Únicas",
         "subtitle": "Explore a nossa seleção de propriedades de luxo no Porto, desenhadas para criar memórias encantadoras e duradouras.",
         "comingSoon": "Em breve",
         "viewBuilding": "Ver Edifício",
+        "viewHome": "Ver Casa",
+        "apartment": "Apartamento",
+        "apartments": "Apartamentos",
         "loadMore": "Carregar mais propriedades",
         "discoverMore": "Descobrir mais",
+        "backToAllHomes": "Voltar a todas as casas",
+        "anywhere": "Qualquer lugar",
+        "anyDates": "Qualquer data",
+        "person": "Pessoa",
+        "people": "Pessoas",
+        "apartmentsIn": "Apartamentos em",
+        "exitBuildingMode": "Sair do modo edifício",
+        "guest": "Hóspede",
+        "guests": "Hóspedes",
+        "bedroom": "Quarto",
+        "bedrooms": "Quartos",
+        "bathroom": "Casa de Banho",
+        "bathrooms": "Casas de Banho",
         "regions": {
             "all": "Todos",
             "porto": "Porto",
@@ -114,8 +179,17 @@
             "submit": "Enviar",
             "submitting": "A enviar...",
             "success": "Obrigado! Entraremos em contacto brevemente.",
+            "reportPreparing": "O seu relatório está a ser preparado.",
             "errorRequired": "Por favor, preencha os campos obrigatórios",
-            "privacyAgreement": "Ao enviar, concorda com a nossa <link>Política de Privacidade</link>"
+            "privacyAgreement": "Ao enviar, concorda com a nossa <link>Política de Privacidade</link>",
+            "plan": "Plano",
+            "numProperties": "Número de Propriedades",
+            "basePlan": "Taxa Base (+20%)",
+            "luxePlan": "Luxe (+25%)",
+            "num1": "1 Propriedade",
+            "num2_5": "2 - 5 Propriedades",
+            "num6_10": "6 - 10 Propriedades",
+            "num10plus": "Mais de 10 Propriedades"
         }
     },
     "OwnerStats": {
@@ -161,12 +235,18 @@
             "title": "+1000 Proprietários confiaram em nós",
             "revenue": "Receita gerada",
             "market": "No mercado desde",
-            "cta": "Contacte-nos"
+            "cta": "Contacte-nos",
+            "success": "Obrigado!",
+            "successDesc": "Entraremos em contacto brevemente. O seu relatório está a ser preparado."
         }
     },
     "OwnerPricing": {
         "title": "Junte-se a nós e desfrute de uma gestão de propriedade sem preocupações!",
         "subtitle": "Combine os nossos pacotes para criar uma solução de gestão personalizada!",
+        "form": {
+            "success": "Obrigado! Entraremos em contacto brevemente.",
+            "reportPreparing": "O seu relatório está a ser preparado."
+        },
         "base": {
             "title": "Taxa Base",
             "selected": "Selecionado",
@@ -276,7 +356,8 @@
         "email": "Email*",
         "message": "Mensagem*",
         "submit": "Enviar Mensagem",
-        "success": "Obrigado pela sua mensagem! Entraremos em contacto em breve."
+        "success": "Obrigado!",
+        "successDesc": "Recebemos a sua mensagem e entraremos em contacto brevemente."
     },
     "Blog": {
         "heroTitle": "Histórias e Insights Encantadores",
@@ -292,6 +373,9 @@
         "locationPlaceholder": "Introduza a localização",
         "bedroomsPlaceholder": "Nº de quartos",
         "cta": "Obter Estimativa",
+        "success": "Enviado com sucesso!",
+        "successDesc": "Recebemos os seus detalhes e forneceremos a sua estimativa brevemente.",
+        "sendAnother": "Enviar outro",
         "metadataTitle": "Contacto - Lovely Memories",
         "metadataDesc": "Entre em contacto com a Lovely Memories para estimativas de gestão de propriedades."
     },
@@ -319,6 +403,7 @@
             "infants": "(menos de 12 meses)"
         },
         "whatToExpect": "O que esperar",
+        "whatToExpectIntro": "As nossas casas são selecionadas e decoradas de acordo com os mais elevados padrões, garantindo que cada detalhe contribua para uma experiência verdadeiramente acolhedora. Descubra os detalhes e destaques que tornam esta estadia excecional.",
         "goodToKnow": "Bom saber",
         "aboutStay": "Sobre esta estadia",
         "amenities": "Comodidades",
@@ -346,6 +431,7 @@
         "included": "Incluído",
         "taxes": "Impostos",
         "total": "Total",
+        "viewDetails": "Ver Detalhes",
         "checkAvailability": "Verificar disponibilidade",
         "clearDates": "Limpar datas",
         "close": "Fechar",
@@ -373,8 +459,16 @@
         "cancellationTemplate": "Cancele antes de {date} para um reembolso de {percent}.",
         "refundEligibilityTemplate": "Não elegível para reembolso quando a data de check-in for inferior a {days} dias.",
         "concierge": {
-            "title": "Serviços de Concierge",
-            "description": "Melhore a sua estadia com os nossos serviços de concierge premium. A nossa equipa está dedicada a tornar a sua experiência inesquecível.",
+            "title": "Pedido de Concierge",
+            "description": "Interessado em {serviceName}? Envie-nos uma mensagem e organizaremos tudo para si.",
+            "defaultService": "nossos serviços VIP",
+            "nameLabel": "Nome",
+            "emailLabel": "Email",
+            "messageLabel": "Mensagem",
+            "sendRequest": "Enviar Pedido",
+            "sending": "A enviar...",
+            "success": "Pedido Enviado!",
+            "successDesc": "Recebemos o seu pedido e entraremos em contacto brevemente.",
             "vipServices": "Serviços VIP",
             "chef": "Chef Privado",
             "chauffeur": "Serviço de Motorista",
@@ -404,8 +498,10 @@
         },
         "guestSelector": {
             "adults": "Adultos",
+            "children": "Crianças",
             "infants": "Bebés",
-            "ages13": "Idades 13 ou superior",
+            "ages16": "16 anos ou mais",
+            "ages2": "2-16 anos",
             "under2": "Abaixo de 2 anos",
             "clear": "Limpar hóspedes",
             "person": "pessoa",
@@ -494,6 +590,7 @@
             "holder": "Titular da Conta",
             "bankName": "Nome do Banco",
             "iban": "IBAN",
+            "swift": "SWIFT / BIC",
             "reference": "Referência",
             "card": "Cartão de Crédito ou Débito",
             "cardTypes": "Visa, Mastercard, American Express",
@@ -513,6 +610,8 @@
             "guestsTitle": "Hóspedes",
             "nights": "{count, plural, =1 {1 noite} other {{count} noites}}",
             "guests": "{count, plural, =1 {1 hóspede} other {{count} hóspedes}}",
+            "adults": "{count, plural, =1 {1 adulto} other {{count} adultos}}",
+            "children": "{count, plural, =1 {1 criança} other {{count} crianças}}",
             "infants": "{count, plural, =1 {1 bebé} other {{count} bebés}}",
             "subtotal": "Subtotal",
             "cleaning": "Taxa de limpeza",
@@ -525,7 +624,7 @@
             "propertyDetails": "Detalhes da Propriedade",
             "dateRange": "Intervalo de Datas",
             "additionalServices": "Serviços Adicionais",
-            "adults": "{count, plural, =1 {1 adulto} other {{count} adultos}}"
+            "child": "Criança"
         },
         "security": {
             "safe": "Os seus dados estão seguros",
@@ -552,7 +651,16 @@
             "guests": "Hóspedes",
             "cleaningFee": "Taxa de limpeza e serviço",
             "note": "Nota",
-            "returnHome": "Voltar ao início"
+            "returnHome": "Voltar ao início",
+            "guestInfo": "Informação do Hóspede",
+            "property": "Propriedade",
+            "stayDetails": "Detalhes da Estadia",
+            "financialSummary": "Resumo Financeiro",
+            "description": "Descrição",
+            "value": "Valor",
+            "vatRate": "Inclui IVA à taxa legal",
+            "officialDocument": "Documento Oficial de Reserva",
+            "thankYouLine": "Obrigado por escolher a Lovely Memories. Estamos ansiosos por recebê-lo no Porto."
         },
         "errors": {
             "sessionNotFound": "Sessão de reserva não encontrada",
@@ -567,7 +675,8 @@
             "countryRequired": "O país é obrigatório",
             "addressRequired": "A morada é obrigatória",
             "cityRequired": "A cidade é obrigatória",
-            "zipRequired": "O código postal é obrigatório"
+            "zipRequired": "O código postal é obrigatório",
+            "phoneError": "Por favor, introduza um número de telefone válido (mín. 9 dígitos)"
         }
     },
     "Properties": {

@@ -4,15 +4,29 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
-import { CONCIERGE_SERVICES } from "@/lib/data";
+import { useTranslations, useLocale } from "next-intl";
+import { getConciergeServices } from "@/lib/services";
 
 export const ConciergeServices = () => {
     const t = useTranslations('Concierge');
+    const locale = useLocale();
+    const [services, setServices] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
+
+    React.useEffect(() => {
+        const fetchServices = async () => {
+            setIsLoading(true);
+            const data = await getConciergeServices();
+            setServices(data);
+            setIsLoading(false);
+        };
+        fetchServices();
+    }, []);
 
     const handleButtonClick = (direction: 'left' | 'right') => {
         if (!scrollRef.current) return;
@@ -134,36 +148,44 @@ export const ConciergeServices = () => {
                             onMouseLeave={handleMouseUp}
                             onMouseUp={handleMouseUp}
                             onMouseMove={handleMouseMove}
-                            className="flex gap-8 overflow-x-auto hide-scrollbar select-none cursor-grab active:cursor-grabbing py-12 px-4"
+                            className="flex gap-8 overflow-x-auto hide-scrollbar select-none cursor-grab active:cursor-grabbing py-12 px-4 min-h-[400px]"
                             style={{ scrollBehavior: 'smooth' }}
                         >
-                            {CONCIERGE_SERVICES.map((service, i) => (
-                                <motion.div
-                                    key={i}
-                                    className="flex-none relative w-[300px] h-[450px] rounded-[24px] overflow-hidden shadow-xl"
-                                    whileHover={{ y: -5 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                >
-                                    <Image
-                                        src={service.image}
-                                        alt={t(service.titleKey)}
-                                        fill
-                                        sizes="300px"
-                                        className="object-cover transition-transform duration-700 ease-out hover:scale-110"
-                                        draggable={false}
-                                    />
+                            {isLoading ? (
+                                <div className="w-full flex items-center justify-center py-20">
+                                    <div className="w-10 h-10 border-4 border-[#b09e80] border-t-transparent rounded-full animate-spin" />
+                                </div>
+                            ) : services.length === 0 ? (
+                                <div className="w-full text-center py-20 text-gray-400">No concierge services found.</div>
+                            ) : (
+                                services.map((service, i) => (
+                                    <motion.div
+                                        key={service.id || i}
+                                        className="flex-none relative w-[300px] h-[450px] rounded-[24px] overflow-hidden shadow-xl"
+                                        whileHover={{ y: -5 }}
+                                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                    >
+                                        <Image
+                                            src={service.image || "/legacy/home/images/services-image-1.png"}
+                                            alt={locale === 'pt' ? service.name_pt : service.name_en}
+                                            fill
+                                            sizes="300px"
+                                            className="object-cover transition-transform duration-700 ease-out hover:scale-110"
+                                            draggable={false}
+                                        />
 
-                                    {/* Gradient Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
+                                        {/* Gradient Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
 
-                                    {/* Content */}
-                                    <div className="absolute bottom-0 left-0 w-full p-6 pb-8 flex justify-center items-end h-full">
-                                        <h4 className="text-white text-[26px] font-bold font-sans leading-tight text-center drop-shadow-md">
-                                            {t(service.titleKey)}
-                                        </h4>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                        {/* Content */}
+                                        <div className="absolute bottom-0 left-0 w-full p-6 pb-8 flex justify-center items-end h-full">
+                                            <h4 className="text-white text-[26px] font-bold font-sans leading-tight text-center drop-shadow-md">
+                                                {locale === 'pt' ? service.name_pt : locale === 'he' ? (service.name_he || service.name_en) : service.name_en}
+                                            </h4>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
                         </div>
                     </div>
 

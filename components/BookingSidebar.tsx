@@ -6,6 +6,17 @@ import { Users, Calendar, Info } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
+// Helper to safely extract number from potential object/string
+const safeCount = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') return parseFloat(val) || 0;
+    if (typeof val === 'object' && val !== null) {
+        const num = val.en || val.pt || val.he || Object.values(val)[0] || '0';
+        return typeof num === 'number' ? num : parseFloat(String(num)) || 0;
+    }
+    return 0;
+};
+
 interface BookingSidebarProps {
     shortTermPrice?: number;
     midTermPrice?: number;
@@ -33,16 +44,16 @@ export const BookingSidebar = ({
     const [guests, setGuests] = useState(2);
 
     const getBasePrice = () => {
-        if (activeTab === 'short') return shortTermPrice || 94.76;
-        if (activeTab === 'mid') return midTermPrice || 2500;
-        return longTermPrice || 2200;
+        if (activeTab === 'short') return safeCount(shortTermPrice) || 94.76;
+        if (activeTab === 'mid') return safeCount(midTermPrice) || 2500;
+        return safeCount(longTermPrice) || 2200;
     };
 
     const price = getBasePrice();
     const nights = 7; // Mock for design
     const subtotal = price * (activeTab === 'short' ? nights : 1);
-    const totalTax = cityTax * (activeTab === 'short' ? nights : 30);
-    const total = subtotal + totalTax + cleaningFee;
+    const totalTax = safeCount(cityTax) * (activeTab === 'short' ? nights : 30);
+    const total = subtotal + totalTax + safeCount(cleaningFee);
 
     const formatPrice = (val: number | null | undefined) => {
         const safeVal = val || 0;

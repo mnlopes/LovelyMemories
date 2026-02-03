@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 
 export const Preloader = () => {
     const pathname = usePathname();
-    const [isLoading, setIsLoading] = useState(!pathname?.includes('/booking/checkout'));
+    const [isLoading, setIsLoading] = useState(!pathname?.includes('/booking/checkout') && !pathname?.includes('/admin'));
 
     useEffect(() => {
-        // Skip preloader for checkout page to allow skeleton UI to show
-        if (pathname.includes('/booking/checkout')) {
+        // Skip preloader for checkout and admin pages to allow direct access
+        if (pathname.includes('/booking/checkout') || pathname.includes('/admin')) {
             setIsLoading(false);
             return;
         }
@@ -50,7 +50,9 @@ export const Preloader = () => {
                             className="h-[1px] bg-[#AD9C7E] mx-auto"
                         />
                         <p className="mt-6 text-[#AD9C7E] uppercase tracking-[0.5em] text-xs md:text-sm font-medium">
-                            Luxury Living
+                            {pathname?.includes('/owner')
+                                ? "Elevate Your Property. Maximise your Returns."
+                                : "Luxury Property Management"}
                         </p>
                     </motion.div>
                 </motion.div>

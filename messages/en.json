@@ -1,4 +1,30 @@
 {
+    "AdminSidebar": {
+        "management": "Management",
+        "overview": "Overview",
+        "properties": "Properties",
+        "bookings": "Bookings",
+        "tenants": "Tenants",
+        "concierge": "Concierge",
+        "reports": "Reports",
+        "finances": "Finances",
+        "performance": "Performance",
+        "signOut": "Sign Out"
+    },
+    "AdminHeader": {
+        "searchPlaceholder": "Find properties or guests...",
+        "role": "Administrator"
+    },
+    "AdminPropertyCard": {
+        "comingSoon": "Coming Soon",
+        "pricePerNight": "Price per night",
+        "guests": "Guests",
+        "bedrooms": "Bedrooms",
+        "beds": "Beds",
+        "baths": "Baths",
+        "activeTenants": "Active Tenants",
+        "viewDetails": "View Details"
+    },
     "Navbar": {
         "book": "Book",
         "owner": "Owner",
@@ -8,6 +34,22 @@
         "blog": "Blog",
         "contact": "Contact",
         "login": "Login"
+    },
+    "Auth": {
+        "login": "Login",
+        "signUp": "Sign Up",
+        "email": "Email Address",
+        "password": "Password",
+        "signInButton": "Sign In",
+        "signUpButton": "Create Account",
+        "noAccount": "Don't have an account?",
+        "hasAccount": "Already have an account?",
+        "errorInvalid": "Invalid login credentials",
+        "errorEmail": "Please enter a valid email",
+        "welcomeBack": "Welcome Back",
+        "joinUs": "Join Lovely Memories",
+        "loginDesc": "Enter your credentials to access your account",
+        "signUpDesc": "Create your account to manage your stays"
     },
     "Footer": {
         "getInTouch": "Get in Touch",
@@ -24,7 +66,9 @@
         "aboutDescription": "We are the leading tourism accommodation management agent in Portugal, run by an amazing, international team. Our clients, be it the owners or guests themselves, know exactly why!",
         "aboutButton": "About Us",
         "featuredTitle": "Some of our Unique Homes & Resorts",
-        "gardenHuts": "Garden Huts & Eco Homes"
+        "gardenHuts": "Garden Huts & Eco Homes",
+        "bedrooms": "bedrooms",
+        "guests": "guests"
     },
     "BookingBar": {
         "myTrip": "My Trip",
@@ -37,7 +81,9 @@
         "travellers": "Travellers",
         "selectPeople": "Select people",
         "search": "Search",
-        "clearLocation": "Clear destination"
+        "searching": "Searching...",
+        "clearLocation": "Clear destination",
+        "comingSoon": "Coming Soon"
     },
     "GuestSelector": {
         "adults": "Adults",
@@ -81,12 +127,31 @@
     },
     "PropertiesGrid": {
         "backToHome": "Back to Home",
+        "found": "Found",
+        "property": "Property",
+        "properties": "Properties",
         "title": "Our Unique Homes",
         "subtitle": "Explore our curated selection of luxury properties in Porto, designed to create lovely, long-lasting memories.",
         "comingSoon": "Coming Soon",
         "viewBuilding": "View Building",
+        "viewHome": "View Home",
+        "apartment": "Apartment",
+        "apartments": "Apartments",
         "loadMore": "Load More Properties",
         "discoverMore": "Discover More",
+        "backToAllHomes": "Back to all homes",
+        "anywhere": "Anywhere",
+        "anyDates": "Any Dates",
+        "person": "Person",
+        "people": "People",
+        "apartmentsIn": "Apartments in",
+        "exitBuildingMode": "Exit Building Mode",
+        "guest": "Guest",
+        "guests": "Guests",
+        "bedroom": "Bedroom",
+        "bedrooms": "Bedrooms",
+        "bathroom": "Bathroom",
+        "bathrooms": "Bathrooms",
         "regions": {
             "all": "All",
             "porto": "Porto",
@@ -114,8 +179,17 @@
             "submit": "Send",
             "submitting": "Sending...",
             "success": "Thank you! We'll be in touch shortly.",
+            "reportPreparing": "Your report is being prepared.",
             "errorRequired": "Please fill in the required fields",
-            "privacyAgreement": "By submitting, you agree to our <link>Privacy Policy</link>"
+            "privacyAgreement": "By submitting, you agree to our <link>Privacy Policy</link>",
+            "plan": "Plan",
+            "numProperties": "Number of Properties",
+            "basePlan": "Base Fee (+20%)",
+            "luxePlan": "Luxe (+25%)",
+            "num1": "1 Property",
+            "num2_5": "2 - 5 Properties",
+            "num6_10": "6 - 10 Properties",
+            "num10plus": "More than 10 Properties"
         }
     },
     "OwnerStats": {
@@ -161,12 +235,18 @@
             "title": "+1000 Owners trusted us",
             "revenue": "Revenue generated",
             "market": "In the market since",
-            "cta": "Contact Us"
+            "cta": "Contact Us",
+            "success": "Thank you!",
+            "successDesc": "We'll be in touch shortly. Your report is being prepared."
         }
     },
     "OwnerPricing": {
         "title": "Join us and enjoy worry-free property management!",
         "subtitle": "Combine our packages to create a personalized management solution!",
+        "form": {
+            "success": "Thank you! We'll be in touch shortly.",
+            "reportPreparing": "Your report is being prepared."
+        },
         "base": {
             "title": "Base Fee",
             "selected": "Selected",
@@ -276,7 +356,8 @@
         "email": "Email*",
         "message": "Message*",
         "submit": "Submit Message",
-        "success": "Thank you for your message! We will get back to you soon."
+        "success": "Thank you!",
+        "successDesc": "We've received your message and will get back to you shortly."
     },
     "Blog": {
         "heroTitle": "Lovely Stories & Insights",
@@ -292,6 +373,9 @@
         "locationPlaceholder": "Enter a location",
         "bedroomsPlaceholder": "Nr. of bedrooms",
         "cta": "Get a Quote",
+        "success": "Sent Successfully!",
+        "successDesc": "We've received your details and will provide your estimate shortly.",
+        "sendAnother": "Send another",
         "metadataTitle": "Contact - Lovely Memories",
         "metadataDesc": "Get in touch with Lovely Memories for property management estimates."
     },
@@ -305,6 +389,7 @@
         "selectDate": "Select date",
         "addDate": "Add date",
         "whatToExpect": "What to expect",
+        "whatToExpectIntro": "Our homes are handpicked and decorated to the highest standards, ensuring that every detail contributes to a truly welcome and cared-for experience. Discover the unique features and highlights that make this stay exceptional.",
         "goodToKnow": "Good to know",
         "aboutStay": "About this stay",
         "amenities": "Amenities",
@@ -346,6 +431,7 @@
         "included": "Included",
         "taxes": "Taxes",
         "total": "Total",
+        "viewDetails": "View Details",
         "checkAvailability": "Check availability",
         "clearDates": "Clear dates",
         "close": "Close",
@@ -373,8 +459,16 @@
         "cancellationTemplate": "Cancel before {date} for a {percent} refund.",
         "refundEligibilityTemplate": "Not eligible for a refund once your check-in date is under {days} days away.",
         "concierge": {
-            "title": "Concierge services",
-            "description": "Enhance your stay with our premium concierge services. Our team is dedicated to making your experience unforgettable.",
+            "title": "Concierge Inquiry",
+            "description": "Interested in {serviceName}? Send us a message and we'll arrange everything for you.",
+            "defaultService": "our VIP services",
+            "nameLabel": "Name",
+            "emailLabel": "Email",
+            "messageLabel": "Message",
+            "sendRequest": "Send Request",
+            "sending": "Sending...",
+            "success": "Request Sent!",
+            "successDesc": "We've received your inquiry and will contact you shortly.",
             "vipServices": "VIP Services",
             "chef": "Private Chef",
             "chauffeur": "Chauffeur Service",
@@ -404,8 +498,10 @@
         },
         "guestSelector": {
             "adults": "Adults",
+            "children": "Children",
             "infants": "Infants",
-            "ages13": "Ages 13 or above",
+            "ages16": "Ages 16 or above",
+            "ages2": "Ages 2-16",
             "under2": "Under 2",
             "clear": "Clear guests",
             "person": "person",
@@ -494,6 +590,7 @@
             "holder": "Account Holder",
             "bankName": "Bank Name",
             "iban": "IBAN / NIB",
+            "swift": "SWIFT / BIC",
             "reference": "Reference Number",
             "card": "Credit or Debit Card",
             "cardTypes": "Visa, Mastercard, Amex",
@@ -513,6 +610,8 @@
             "guestsTitle": "Guests",
             "nights": "{count, plural, =1 {1 night} other {{count} nights}}",
             "guests": "{count, plural, =1 {1 guest} other {{count} guests}}",
+            "adults": "{count, plural, =1 {1 adult} other {{count} adults}}",
+            "children": "{count, plural, =1 {1 child} other {{count} children}}",
             "infants": "{count, plural, =1 {1 infant} other {{count} infants}}",
             "subtotal": "Subtotal",
             "cleaning": "Cleaning fee",
@@ -525,7 +624,7 @@
             "propertyDetails": "Property Details",
             "dateRange": "Date Range",
             "additionalServices": "Additional Services",
-            "adults": "{count, plural, =1 {1 adult} other {{count} adults}}"
+            "child": "Child"
         },
         "security": {
             "safe": "Your data is safe",
@@ -552,7 +651,16 @@
             "guests": "Guests:",
             "cleaningFee": "Cleaning fee:",
             "note": "Note",
-            "returnHome": "Return Home"
+            "returnHome": "Return Home",
+            "guestInfo": "Guest Information",
+            "property": "Property",
+            "stayDetails": "Stay Details",
+            "financialSummary": "Financial Summary",
+            "description": "Description",
+            "value": "Value",
+            "vatRate": "Includes VAT at the legal rate",
+            "officialDocument": "Official Booking Document",
+            "thankYouLine": "Thank you for choosing Lovely Memories. We look forward to welcoming you to Porto."
         },
         "errors": {
             "sessionNotFound": "Booking session not found",
@@ -567,7 +675,8 @@
             "countryRequired": "Country is required",
             "addressRequired": "Address is required",
             "cityRequired": "City is required",
-            "zipRequired": "Postal Code is required"
+            "zipRequired": "Postal Code is required",
+            "phoneError": "Please enter a valid phone number (min. 9 digits)"
         }
     },
     "Properties": {

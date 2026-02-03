@@ -49,7 +49,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={dir}>
       <body className={`${montserrat.variable} antialiased`} suppressHydrationWarning>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages} locale={locale}>
           <Preloader />
           <ScrollAnimations />
           <Navbar />

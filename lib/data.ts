@@ -22,6 +22,7 @@ export interface Property {
     region: 'Porto' | 'Lisboa' | 'Algarve' | 'All';
     types: PropertyType[];
     isComingSoon?: boolean;
+    blockedDates?: string[]; // ISO strings
     guests: number;
     area: number; // m2
     bedrooms: number;

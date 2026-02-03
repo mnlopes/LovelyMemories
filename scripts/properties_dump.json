@@ -1,0 +1,882 @@
+[
+  {
+    "id": "f2a14bb6-c726-4a1c-9bf4-8fe40dd3b0c0",
+    "slug": "praca-dos-poveiros-studio-loft",
+    "location_id": "a37a9f41-e825-40b8-b14f-b762595136e2",
+    "price_per_night": 110,
+    "max_guests": 2,
+    "bedrooms": 1,
+    "beds": 1,
+    "bathrooms": 1,
+    "is_superhost": false,
+    "lat": 41.1466,
+    "lng": -8.6063,
+    "amenities": [],
+    "house_rules": {
+      "petsAllowed": false,
+      "infantsAllowed": true,
+      "partiesAllowed": false,
+      "smokingAllowed": false,
+      "childrenAllowed": true
+    },
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": true,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [
+      {
+        "text": {
+          "en": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,",
+          "he": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,",
+          "pt": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,"
+        },
+        "image": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769967644136-lxzsgltbox.jpg"
+      },
+      {
+        "text": {
+          "en": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,",
+          "he": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,",
+          "pt": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,"
+        },
+        "image": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769967644136-lxzsgltbox.jpg"
+      },
+      {
+        "text": {
+          "en": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,",
+          "he": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,",
+          "pt": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,"
+        },
+        "image": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769967644136-lxzsgltbox.jpg"
+      }
+    ],
+    "nearby_places": [
+      {
+        "items": []
+      },
+      {
+        "items": []
+      }
+    ],
+    "rooms": [],
+    "parent_id": "1dacc337-7d80-4554-bab2-2d6d4b52d3b7",
+    "is_multi_unit": false,
+    "title": {
+      "en": "Praça dos Poveiros",
+      "he": "Praça dos Poveiros",
+      "pt": "Praça dos Poveiros"
+    },
+    "subtitle": {
+      "en": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "",
+      "pt": ""
+    },
+    "address": "Praça dos Gorjoes",
+    "city": "Porto",
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [
+      {
+        "url": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769967644136-lxzsgltbox.jpg",
+        "order": 0,
+        "is_main": true
+      },
+      {
+        "url": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769967663607-08celoopty6k.png",
+        "order": 1,
+        "is_main": false
+      }
+    ],
+    "type": "apartment",
+    "status": "active",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  },
+  {
+    "id": "b02e8c52-3808-455d-80e9-83c6a5975197",
+    "slug": "sunset-villa-beachfront-home",
+    "location_id": "e2cef6bd-bec7-4303-861b-1f0c9d99c153",
+    "price_per_night": 400,
+    "max_guests": 8,
+    "bedrooms": 4,
+    "beds": 6,
+    "bathrooms": 4,
+    "is_superhost": false,
+    "lat": 37.0543,
+    "lng": -8.0264,
+    "amenities": [],
+    "house_rules": [],
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": false,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [],
+    "nearby_places": [],
+    "rooms": [],
+    "parent_id": "1dacc337-7d80-4554-bab2-2d6d4b52d3b7",
+    "is_multi_unit": false,
+    "title": {
+      "en": "Sunset Villa",
+      "he": "Sunset Villa",
+      "pt": "Sunset Villa"
+    },
+    "subtitle": {
+      "en": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "",
+      "pt": ""
+    },
+    "address": null,
+    "city": null,
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [],
+    "type": "apartment",
+    "status": "coming_soon",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  },
+  {
+    "id": "ba30e40e-bc96-430c-bd8f-50fdbd4b7224",
+    "slug": "chiado-loft-classic-studio",
+    "location_id": "ade99130-14b9-46ce-afca-01edfc40a641",
+    "price_per_night": 100,
+    "max_guests": 2,
+    "bedrooms": 1,
+    "beds": 1,
+    "bathrooms": 1,
+    "is_superhost": false,
+    "lat": 38.7115,
+    "lng": -9.1403,
+    "amenities": [],
+    "house_rules": [],
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": false,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [],
+    "nearby_places": [],
+    "rooms": [],
+    "parent_id": "1dacc337-7d80-4554-bab2-2d6d4b52d3b7",
+    "is_multi_unit": false,
+    "title": {
+      "en": "Chiado Loft",
+      "he": "Chiado Loft",
+      "pt": "Chiado Loft"
+    },
+    "subtitle": {
+      "en": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "",
+      "pt": ""
+    },
+    "address": null,
+    "city": null,
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [],
+    "type": "apartment",
+    "status": "coming_soon",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  },
+  {
+    "id": "14c2bb29-46ad-4afc-bf4a-c36b1d925f70",
+    "slug": "ocean-breeze-modern-apartment",
+    "location_id": "e2cef6bd-bec7-4303-861b-1f0c9d99c153",
+    "price_per_night": 150,
+    "max_guests": 4,
+    "bedrooms": 2,
+    "beds": 2,
+    "bathrooms": 2,
+    "is_superhost": false,
+    "lat": 37.0863,
+    "lng": -8.1189,
+    "amenities": [],
+    "house_rules": [],
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": false,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [],
+    "nearby_places": [],
+    "rooms": [],
+    "parent_id": null,
+    "is_multi_unit": false,
+    "title": {
+      "en": "Ocean Breeze",
+      "he": "Ocean Breeze",
+      "pt": "Ocean Breeze"
+    },
+    "subtitle": {
+      "en": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "",
+      "pt": ""
+    },
+    "address": null,
+    "city": null,
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [],
+    "type": "apartment",
+    "status": "coming_soon",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  },
+  {
+    "id": "7c56829d-4fc4-4c47-b5cb-d0b414da94b5",
+    "slug": "the-flower-power-two-bedroom-home",
+    "location_id": "a37a9f41-e825-40b8-b14f-b762595136e2",
+    "price_per_night": 90,
+    "max_guests": 4,
+    "bedrooms": 2,
+    "beds": 2,
+    "bathrooms": 1,
+    "is_superhost": false,
+    "lat": 41.1598,
+    "lng": -8.6599,
+    "amenities": [],
+    "house_rules": [],
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": false,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [],
+    "nearby_places": [],
+    "rooms": [],
+    "parent_id": null,
+    "is_multi_unit": false,
+    "title": {
+      "en": "The Flower Power",
+      "he": "The Flower Power",
+      "pt": "The Flower Power"
+    },
+    "subtitle": {
+      "en": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "",
+      "pt": ""
+    },
+    "address": null,
+    "city": null,
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [],
+    "type": "apartment",
+    "status": "coming_soon",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  },
+  {
+    "id": "1dacc337-7d80-4554-bab2-2d6d4b52d3b7",
+    "slug": "praca-dos-poveiros2",
+    "location_id": null,
+    "price_per_night": 100,
+    "max_guests": 2,
+    "bedrooms": 1,
+    "beds": 1,
+    "bathrooms": 1,
+    "is_superhost": false,
+    "lat": 41.1462673880423,
+    "lng": -8.60286032126231,
+    "amenities": [],
+    "house_rules": [],
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": true,
+    "created_at": "2026-02-01T16:27:55.318779+00:00",
+    "highlights": [],
+    "nearby_places": [
+      {
+        "items": [
+          {
+            "icon": "walk",
+            "name": "Mercado do Bolhao",
+            "time": "8 min",
+            "coordinates": [
+              41.149243572497554,
+              -8.607158568687966
+            ]
+          }
+        ],
+        "category": "essentials"
+      },
+      {
+        "items": [
+          {
+            "icon": "car",
+            "name": "Torre Clerigos",
+            "time": "5 min ",
+            "coordinates": [
+              41.14565145269789,
+              -8.614558573868061
+            ]
+          }
+        ],
+        "category": "localAttractions"
+      }
+    ],
+    "rooms": [],
+    "parent_id": null,
+    "is_multi_unit": true,
+    "title": {
+      "en": "Praças dos Poveiros",
+      "he": "Praças dos Poveiros",
+      "pt": "Praças dos Poveiros"
+    },
+    "subtitle": {
+      "en": "",
+      "he": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "Top Xuxas Descriçãos",
+      "he": "Top Xuxas Descriçãos",
+      "pt": "Top Xuxas Descriçãos"
+    },
+    "address": "Passeio de Sao Lazaro",
+    "city": "Porto",
+    "floor_plan_url": "",
+    "area": 0,
+    "original_price": 0,
+    "images": [
+      {
+        "url": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769963160812-z334ngdftlm.jpg",
+        "order": 0,
+        "is_main": true
+      },
+      {
+        "url": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769963168857-bx1oqygxxvg.jpg",
+        "order": 1,
+        "is_main": false
+      }
+    ],
+    "type": "apartment",
+    "status": "active",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  },
+  {
+    "id": "ab33b601-d072-41c7-8144-904132258def",
+    "slug": "avenida-luxury-penthouse",
+    "location_id": "ade99130-14b9-46ce-afca-01edfc40a641",
+    "price_per_night": 250,
+    "max_guests": 6,
+    "bedrooms": 3,
+    "beds": 4,
+    "bathrooms": 2,
+    "is_superhost": false,
+    "lat": 38.7196,
+    "lng": -9.1456,
+    "amenities": [
+      {
+        "icon": "/icons/heating_navy.png",
+        "items": [],
+        "category": "Heating and Cooling"
+      },
+      {
+        "icon": "/icons/internet_navy.png",
+        "items": [],
+        "category": "Internet and Office"
+      },
+      {
+        "icon": "/icons/bedroom_navy.png",
+        "items": [],
+        "category": "Bedroom & Laundry"
+      },
+      {
+        "icon": "/icons/outdoor_navy.png",
+        "items": [
+          "Garden",
+          "Garden",
+          "Garden"
+        ],
+        "category": "Outdoor"
+      }
+    ],
+    "house_rules": {
+      "petsAllowed": false,
+      "infantsAllowed": true,
+      "partiesAllowed": false,
+      "smokingAllowed": false,
+      "childrenAllowed": true
+    },
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": false,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [],
+    "nearby_places": [
+      {
+        "items": []
+      },
+      {
+        "items": []
+      }
+    ],
+    "rooms": [],
+    "parent_id": "1dacc337-7d80-4554-bab2-2d6d4b52d3b7",
+    "is_multi_unit": false,
+    "title": {
+      "en": "Avenida Luxury",
+      "he": "Avenida Luxury",
+      "pt": "Avenida Luxury"
+    },
+    "subtitle": {
+      "en": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "",
+      "pt": ""
+    },
+    "address": null,
+    "city": null,
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [],
+    "type": "apartment",
+    "status": "coming_soon",
+    "home_truths": [
+      "Nao tem elevadores",
+      "Bons restaurantes para o piteu"
+    ],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "9 days",
+        "he": "9 days",
+        "pt": "9 days"
+      },
+      "refundText": {
+        "en": "80% refund",
+        "he": "80% refund",
+        "pt": "80% refund"
+      }
+    }
+  },
+  {
+    "id": "bc2a64ba-391f-475a-adea-7cf3a87744e5",
+    "slug": "paraiso-331-garden-huts-eco-homes",
+    "location_id": "a37a9f41-e825-40b8-b14f-b762595136e2",
+    "price_per_night": 120,
+    "max_guests": 4,
+    "bedrooms": 3,
+    "beds": 3,
+    "bathrooms": 2,
+    "is_superhost": false,
+    "lat": 41.1579438,
+    "lng": -8.6291053,
+    "amenities": [
+      {
+        "items": [
+          {
+            "en": "WiFi",
+            "he": "WiFi",
+            "pt": "WiFi"
+          },
+          {
+            "en": "Garden",
+            "he": "Garden",
+            "pt": "Garden"
+          }
+        ],
+        "category": "General"
+      }
+    ],
+    "house_rules": {
+      "petsAllowed": false,
+      "infantsAllowed": true,
+      "partiesAllowed": false,
+      "smokingAllowed": false,
+      "childrenAllowed": true
+    },
+    "good_to_know": [],
+    "room_config": [],
+    "is_active": true,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [],
+    "nearby_places": [
+      {
+        "items": []
+      },
+      {
+        "items": []
+      }
+    ],
+    "rooms": [
+      {
+        "beds": {
+          "en": "",
+          "he": "",
+          "pt": ""
+        },
+        "name": {
+          "en": "Master top Bed",
+          "he": "",
+          "pt": ""
+        },
+        "type": "bedroom",
+        "image": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/rooms/1769982953856-gc298qygs5c.jpeg",
+        "bedType": "single",
+        "details": {
+          "en": "Teste King",
+          "he": "",
+          "pt": ""
+        },
+        "bedCount": 1,
+        "isEnsuite": true
+      }
+    ],
+    "parent_id": null,
+    "is_multi_unit": false,
+    "title": {
+      "en": "Paraíso 331",
+      "he": "Paraíso 331",
+      "pt": "Paraíso 331"
+    },
+    "subtitle": {
+      "en": "",
+      "he": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "Our homes are handpicked and decorated to the highest standards, ensuring that every detail contributes to a truly welcome and cared-for experience. Discover the unique features and highlights that make this stay exceptional.\n\nTeste 2",
+      "he": "הבתים שלנו נבחרו בקפידה ועוצבו בסטנדרטים הגבוהים ביותר, כדי להבטיח שכל פרט ופרט תורם לחוויה חמה, מזמינה ומלאת תשומת לב. גלו את המאפיינים והדגשים הייחודיים שהופכים את השהות הזו ליוצאת דופן.\nTeste 2",
+      "pt": "Our homes are handpicked and decorated to the highest standards, ensuring that every detail contributes to a truly welcome and cared-for experience. Discover the unique features and highlights that make this stay exceptional.\n\nTeste 2"
+    },
+    "address": null,
+    "city": null,
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [
+      {
+        "url": "https://onujtyzpvaejrvhjmlwn.supabase.co/storage/v1/object/public/properties/gallery/1769969047814-ecfrii95off.jpg",
+        "order": 0,
+        "is_main": true
+      }
+    ],
+    "type": "apartment",
+    "status": "active",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  },
+  {
+    "id": "195628a1-7ef7-4d70-be9f-8cd3d47c92ec",
+    "slug": "rdm-ii-premium-apartments",
+    "location_id": "a37a9f41-e825-40b8-b14f-b762595136e2",
+    "price_per_night": 150,
+    "max_guests": 4,
+    "bedrooms": 2,
+    "beds": 3,
+    "bathrooms": 1,
+    "is_superhost": true,
+    "lat": 41.1478338,
+    "lng": -8.6223906,
+    "amenities": [
+      {
+        "items": [
+          "Washing machine",
+          "Iron",
+          "Hangers",
+          "Bed linens",
+          "Extra pillows and blankets",
+          "Room-darkening shades"
+        ],
+        "category": "Bedroom & Laundry"
+      },
+      {
+        "items": [
+          "HDTV with Netflix, Standard cable",
+          "Marshall Bluetooth sound system",
+          "Books and reading material"
+        ],
+        "category": "Entertainment"
+      },
+      {
+        "items": [
+          "Air conditioning",
+          "Central heating",
+          "Portable fans"
+        ],
+        "category": "Heating and Cooling"
+      },
+      {
+        "items": [
+          "High-speed WiFi (500 Mbps)",
+          "Dedicated workspace",
+          "Ergonomic chair"
+        ],
+        "category": "Internet and Office"
+      },
+      {
+        "items": [
+          "Fully equipped kitchen",
+          "Nespresso machine",
+          "Dishwasher",
+          "Wine glasses",
+          "Toaster",
+          "Cooking basics"
+        ],
+        "category": "Kitchen and Dining"
+      },
+      {
+        "items": [
+          "Hair dryer",
+          "Premium toiletries",
+          "Hot water",
+          "Walk-in shower"
+        ],
+        "category": "Bathroom"
+      },
+      {
+        "items": [
+          "Private entrance",
+          "River view",
+          "Resort access"
+        ],
+        "category": "Location Features"
+      }
+    ],
+    "house_rules": {
+      "petsAllowed": false,
+      "infantsAllowed": true,
+      "partiesAllowed": false,
+      "smokingAllowed": false,
+      "childrenAllowed": true
+    },
+    "good_to_know": [
+      "The apartment is on the third floor and there is no elevator.",
+      "Construction work is happening nearby during weekdays."
+    ],
+    "room_config": [
+      {
+        "beds": "1 king bed",
+        "name": "Master Suite",
+        "type": "bedroom",
+        "bedCount": 1
+      },
+      {
+        "name": "En-suite Bathroom",
+        "type": "bathroom",
+        "isEnsuite": true
+      }
+    ],
+    "is_active": true,
+    "created_at": "2026-01-31T23:42:46.84368+00:00",
+    "highlights": [],
+    "nearby_places": [],
+    "rooms": [],
+    "parent_id": "1dacc337-7d80-4554-bab2-2d6d4b52d3b7",
+    "is_multi_unit": false,
+    "title": {
+      "en": "RDM II",
+      "he": "RDM II",
+      "pt": "RDM II"
+    },
+    "subtitle": {
+      "en": "",
+      "pt": ""
+    },
+    "description": {
+      "en": "",
+      "pt": ""
+    },
+    "address": null,
+    "city": null,
+    "floor_plan_url": null,
+    "area": 0,
+    "original_price": null,
+    "images": [],
+    "type": "apartment",
+    "status": "active",
+    "home_truths": [],
+    "check_in": {
+      "arrivalStart": "15:00",
+      "departureEnd": "11:00"
+    },
+    "cancellation": {
+      "text": {
+        "en": "Moderate",
+        "he": "Moderate",
+        "pt": "Moderate"
+      },
+      "deadline": {
+        "en": "7 days",
+        "he": "7 days",
+        "pt": "7 days"
+      },
+      "refundText": {
+        "en": "50% refund",
+        "he": "50% refund",
+        "pt": "50% refund"
+      }
+    }
+  }
+]

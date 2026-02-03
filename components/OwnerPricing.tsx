@@ -9,6 +9,7 @@ export const OwnerPricing = () => {
     const t = useTranslations('OwnerPricing');
     const [selectedPack, setSelectedPack] = useState<'base' | 'luxe' | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
 
     const totalFee = selectedPack === 'base' ? 20 : selectedPack === 'luxe' ? 25 : 0;
 
@@ -155,30 +156,46 @@ export const OwnerPricing = () => {
                 >
                     <div className="absolute top-0 left-0 w-2 h-full bg-[#b29a7a]" />
 
-                    <div className="text-center md:text-left z-10 shrink-0">
-                        <h6 className="text-[#b29a7a] uppercase tracking-[0.3em] font-bold text-[10px] mb-3">{t('total.fee')}</h6>
-                        <div className="text-5xl md:text-6xl font-bold text-white flex items-baseline gap-1">
-                            {totalFee}<span className="text-2xl opacity-50">%</span>
+                    {isSubmitted ? (
+                        <div className="flex flex-col items-center text-center gap-2 z-10 w-full py-4 relative">
+                            <div className="w-16 h-16 bg-[#fdfbf7] text-[#b29a7a] rounded-full flex items-center justify-center mb-4 shadow-sm border border-[#b29a7a]/5">
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">{t('form.success')}</h3>
+                            <p className="text-white/70 font-light">{t('form.reportPreparing')}</p>
                         </div>
-                        <p className="text-gray-500 text-[11px] mt-3 font-medium">{t('total.excludingVat')}</p>
-                    </div>
+                    ) : (
+                        <>
+                            <div className="text-center md:text-left z-10 shrink-0">
+                                <h6 className="text-[#b29a7a] uppercase tracking-[0.3em] font-bold text-[10px] mb-3">{t('total.fee')}</h6>
+                                <div className="text-5xl md:text-6xl font-bold text-white flex items-baseline gap-1">
+                                    {totalFee}<span className="text-2xl opacity-50">%</span>
+                                </div>
+                                <p className="text-gray-500 text-[11px] mt-3 font-medium">{t('total.excludingVat')}</p>
+                            </div>
 
-                    <div className="flex-grow max-w-md text-center md:text-left text-gray-400 font-light text-[15px] leading-relaxed z-10 px-6">
-                        {selectedPack === 'luxe' ? (
-                            <p>{t('total.package')} <span className="text-white font-bold">{t('total.basePlusLuxe')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">25%</span> {t('total.feeLabel')}</p>
-                        ) : selectedPack === 'base' ? (
-                            <p>{t('total.package')} <span className="text-white font-bold">{t('base.title')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">20%</span> {t('total.feeLabel')}</p>
-                        ) : (
-                            <p>{t('total.selectPrompt')}</p>
-                        )}
-                    </div>
+                            <div className="flex-grow max-w-md text-center md:text-left text-gray-400 font-light text-[15px] leading-relaxed z-10 px-6">
+                                {selectedPack === 'luxe' ? (
+                                    <p>{t('total.package')} <span className="text-white font-bold">{t('total.basePlusLuxe')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">25%</span> {t('total.feeLabel')}</p>
+                                ) : selectedPack === 'base' ? (
+                                    <p>{t('total.package')} <span className="text-white font-bold">{t('base.title')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">20%</span> {t('total.feeLabel')}</p>
+                                ) : (
+                                    <p>{t('total.selectPrompt')}</p>
+                                )}
+                            </div>
 
-                    <button
-                        onClick={() => selectedPack && setIsModalOpen(true)}
-                        className={`min-w-[180px] py-5 px-10 !rounded-[28px] font-bold uppercase tracking-[0.2em] text-[12px] transition-all duration-500 z-10 ${selectedPack ? 'bg-[#b29a7a] text-white shadow-xl hover:scale-105 active:scale-95 cursor-pointer' : 'bg-gray-800/50 text-gray-600 border border-gray-700/50 cursor-not-allowed'}`}
-                    >
-                        {t('total.cta')}
-                    </button>
+                            <button
+                                onClick={() => selectedPack && !isSubmitted && setIsModalOpen(true)}
+                                className={`min-w-[180px] py-5 px-10 !rounded-[28px] font-bold uppercase tracking-[0.2em] text-[12px] transition-all duration-500 z-10 ${selectedPack
+                                    ? 'bg-[#b29a7a] text-white shadow-xl hover:scale-105 active:scale-95 cursor-pointer'
+                                    : 'bg-gray-800/50 text-gray-600 border border-gray-700/50 cursor-not-allowed'}`}
+                            >
+                                {t('total.cta')}
+                            </button>
+                        </>
+                    )}
 
                     {/* Subtle aesthetic element for the bar */}
                     <div className="absolute -right-20 -bottom-20 w-56 h-56 bg-white/5 rounded-full blur-3xl pointer-events-none" />
@@ -187,6 +204,7 @@ export const OwnerPricing = () => {
                 <RevenueReportModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
+                    onSuccess={() => setIsSubmitted(true)}
                     initialPlan={selectedPack}
                 />
             </div>

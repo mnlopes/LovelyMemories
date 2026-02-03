@@ -6,6 +6,17 @@ import { useTranslations, useLocale } from "next-intl";
 import { format, parse } from "date-fns";
 import { enUS, pt } from "date-fns/locale";
 
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
+
 interface BookingPoliciesSectionProps {
     policies: {
         houseRules: {
@@ -14,6 +25,11 @@ interface BookingPoliciesSectionProps {
             petsAllowed: boolean;
             partiesAllowed: boolean;
             smokingAllowed: boolean;
+            custom?: Array<{
+                label: Record<string, string>;
+                allowed: boolean;
+            }>;
+            removed_rules?: string[];
         };
         checkIn: {
             arrivalStart: string;
@@ -34,19 +50,27 @@ export function BookingPoliciesSection({ policies }: BookingPoliciesSectionProps
 
     const rules = [
         {
+            id: 'childrenAllowed',
             label: t('rules.children'),
             allowed: policies.houseRules.childrenAllowed,
             sublabel: t('ageRanges.children')
         },
         {
+            id: 'infantsAllowed',
             label: t('rules.infants'),
             allowed: policies.houseRules.infantsAllowed,
             sublabel: t('ageRanges.infants')
         },
-        { label: t('rules.pets'), allowed: policies.houseRules.petsAllowed },
-        { label: t('rules.parties'), allowed: policies.houseRules.partiesAllowed },
-        { label: t('rules.smoking'), allowed: policies.houseRules.smokingAllowed },
-    ];
+        { id: 'petsAllowed', label: t('rules.pets'), allowed: policies.houseRules.petsAllowed, sublabel: undefined },
+        { id: 'partiesAllowed', label: t('rules.parties'), allowed: policies.houseRules.partiesAllowed, sublabel: undefined },
+        { id: 'smokingAllowed', label: t('rules.smoking'), allowed: policies.houseRules.smokingAllowed, sublabel: undefined },
+        ...(policies.houseRules.custom || []).map(customRule => ({
+            id: 'custom',
+            label: getLocalizedStr(customRule.label, locale),
+            allowed: customRule.allowed,
+            sublabel: undefined
+        }))
+    ].filter(r => !policies.houseRules.removed_rules?.includes(r.id));
 
     return (
         <section className="py-16 border-t border-[#E1E6EC]">
@@ -88,42 +112,50 @@ export function BookingPoliciesSection({ policies }: BookingPoliciesSectionProps
 
 
 
-                {/* Cancellation Policy */}
                 <div className="space-y-8">
                     <h3 className="font-medium text-xs uppercase tracking-widest text-[#B08D4A] mb-6">
                         {t('cancellationPolicy')}
                     </h3>
-                    <div className="flex gap-5">
-                        <div className="flex flex-col items-center justify-center w-12 h-12 bg-[#FCF5F5] text-[#854040] rounded-lg shrink-0 border border-[#E8D0D0]">
-                            <span className="text-[10px] font-bold uppercase leading-none mt-1">
-                                {policies.cancellation.deadline.includes('days')
-                                    ? policies.cancellation.deadline.split(' ')[0]
-                                    : format(parse(policies.cancellation.deadline, 'd MMM', new Date()), 'MMM', { locale: dateLocale })}
-                            </span>
-                            <span className="text-lg font-bold leading-none text-[#854040]">
-                                {policies.cancellation.deadline.includes('days')
-                                    ? 'D'
-                                    : format(parse(policies.cancellation.deadline, 'd MMM', new Date()), 'd')}
-                            </span>
-                        </div>
-                        <div className="space-y-3 text-left">
-                            <p className="text-sm font-medium text-navy-950 leading-relaxed">
-                                {t('cancellationTemplate', {
-                                    date: (policies.cancellation.deadline.includes('days') || policies.cancellation.deadline === 'None')
-                                        ? policies.cancellation.deadline
-                                        : format(parse(policies.cancellation.deadline, 'd MMM', new Date()), 'd MMM', { locale: dateLocale }),
-                                    percent: "50%"
-                                })}
-                            </p>
-                            <div className="flex gap-2 items-start text-xs text-navy-900/50">
-                                <Ban className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                                <span>{t('refundEligibilityTemplate', { days: 7 })}</span>
+                    {(() => {
+                        const deadlineStr = getLocalizedStr(policies.cancellation?.deadline, locale) || '7 days';
+                        const deadlineEn = getLocalizedStr(policies.cancellation?.deadline, 'en') || '7 days';
+                        const isRelative = deadlineEn.toLowerCase().includes('day');
+                        const isNone = deadlineEn.toLowerCase() === 'none';
+
+                        return (
+                            <div className="flex gap-5">
+                                <div className="flex flex-col items-center justify-center w-12 h-12 bg-[#FCF5F5] text-[#854040] rounded-lg shrink-0 border border-[#E8D0D0]">
+                                    <span className="text-[9px] font-bold uppercase leading-none mt-1 tracking-wide">
+                                        {isRelative
+                                            ? (deadlineStr.split(' ')[1]?.substring(0, 4).toUpperCase() || (locale === 'pt' ? 'DIAS' : 'DAYS'))
+                                            : !isNone ? format(parse(deadlineStr, 'd MMM', new Date()), 'MMM', { locale: dateLocale }) : '—'}
+                                    </span>
+                                    <span className="text-xl font-black leading-none text-[#854040]">
+                                        {isRelative
+                                            ? (deadlineStr.split(' ')[0] || '7')
+                                            : !isNone ? format(parse(deadlineStr, 'd MMM', new Date()), 'd') : 'X'}
+                                    </span>
+                                </div>
+                                <div className="space-y-3 text-left">
+                                    <p className="text-sm font-medium text-navy-950 leading-relaxed">
+                                        {t('cancellationTemplate', {
+                                            date: (isRelative || isNone)
+                                                ? deadlineStr
+                                                : format(parse(deadlineStr, 'd MMM', new Date()), 'd MMM', { locale: dateLocale }),
+                                            percent: "50%"
+                                        })}
+                                    </p>
+                                    <div className="flex gap-2 items-start text-xs text-navy-900/50">
+                                        <Ban className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                        <span>{t('refundEligibilityTemplate', { days: 7 })}</span>
+                                    </div>
+                                    <button className="text-xs font-bold text-[#B08D4A] uppercase tracking-wider border-b border-[#B08D4A] pb-0.5 hover:text-[#9A7B3E] hover:border-[#9A7B3E] transition-colors">
+                                        {t('viewFullTerms')}
+                                    </button>
+                                </div>
                             </div>
-                            <button className="text-xs font-bold text-[#B08D4A] uppercase tracking-wider border-b border-[#B08D4A] pb-0.5 hover:text-[#9A7B3E] hover:border-[#9A7B3E] transition-colors">
-                                {t('viewFullTerms')}
-                            </button>
-                        </div>
-                    </div>
+                        );
+                    })()}
                 </div>
 
             </div>

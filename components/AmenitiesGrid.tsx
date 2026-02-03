@@ -1,6 +1,18 @@
 import { Wifi, Wind, Car, Coffee, Tv, Shield, ChefHat, Bath, BedDouble, Dumbbell, Waves, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LegacyIcon } from "./LegacyIcon";
+import { useLocale } from "next-intl";
+
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
 
 interface AmenitiesGridProps {
     amenities: { label: string; icon: string }[];
@@ -23,6 +35,8 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export const AmenitiesGrid = ({ amenities }: AmenitiesGridProps) => {
+    const locale = useLocale();
+
     return (
         <section className="py-24 border-t border-gray-100">
             <h3 className="text-[11px] font-extrabold text-[#AD9C7E] uppercase tracking-[0.4em] mb-12">Amenities</h3>
@@ -40,7 +54,7 @@ export const AmenitiesGrid = ({ amenities }: AmenitiesGridProps) => {
                                 )}
                             </div>
                             <span className="text-sm font-bold text-navy-950 tracking-tight group-hover:text-[#AD9C7E] transition-colors duration-300">
-                                {item.label}
+                                {getLocalizedStr(item.label, locale)}
                             </span>
                         </div>
                     );

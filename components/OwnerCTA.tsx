@@ -1,22 +1,25 @@
-"use client";
-
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export const OwnerCTA = () => {
+    const t = useTranslations('OwnerSection');
+
     return (
         <div className="section-block section-owner">
             <div className="container">
                 <div className="row justify-content-center justify-content-xl-start section-content">
                     <div className="col-xl-2 d-none d-xl-block"></div>
-                    <div className="col-12 col-md-6 col-xl-8">
+                    <div className="col-12 col-md-6 col-xl-8 rtl:text-right">
                         <div className="owner-text">
-                            <p>Are you a Property Owner?</p><br />
-                            <h3 className="fw-bold">Unleash your <br />
-                                property´s potential</h3><br />
-                            <h6>We know what it takes to be the best<br />
-                                Find out what distinguishes us from the rest.</h6>                </div>
-                        <a className="btn" href="http://207.154.225.193/lovely-memories/owner/" target="_self">
-                            <p className="mb-0">Discover</p>
+                            <p>{t('question')}</p><br />
+                            <h3 className="fw-bold">{t.rich('title', {
+                                br: () => <br />
+                            })}</h3><br />
+                            <h6>{t.rich('subtitle', {
+                                br: () => <br />
+                            })}</h6>
+                        </div>
+                        <a className="btn" href="/owner" target="_self">
+                            <p className="mb-0">{t('button')}</p>
                         </a>
                     </div>
                 </div>

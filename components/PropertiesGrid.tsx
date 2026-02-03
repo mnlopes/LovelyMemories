@@ -3,22 +3,63 @@
 import React from 'react';
 import Image from 'next/image';
 import { Link } from "@/i18n/routing";
-import { ArrowLeft, MapPin, Building2, Bed, Home } from 'lucide-react';
+import { ArrowLeft, MapPin, Building2, Bed, Home, Maximize, Bath, Users } from 'lucide-react';
 import { useTranslations } from "next-intl";
 import { LegacyIcon } from './LegacyIcon';
 
-import { PROPERTIES } from "@/lib/data";
+import { getProperties } from '@/lib/services';
+import { useLocale } from 'next-intl';
+
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
+
+// Helper to safely extract number from potential object/string
+const safeCount = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') return parseInt(val, 10) || 0;
+    if (typeof val === 'object' && val !== null) {
+        return parseInt(val.en || val.pt || val.he || Object.values(val)[0] || '0', 10) || 0;
+    }
+    return 0;
+};
 
 export const PropertiesGrid = () => {
+    const locale = useLocale();
     const t = useTranslations('PropertiesGrid');
+    const [properties, setProperties] = React.useState<any[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
     const [selectedRegion, setSelectedRegion] = React.useState('all');
     const [visibleCount, setVisibleCount] = React.useState(4);
 
+    React.useEffect(() => {
+        const fetchProperties = async () => {
+            setIsLoading(true);
+            const data = await getProperties();
+            setProperties(data);
+            setIsLoading(false);
+        };
+        fetchProperties();
+    }, []);
+
     const regions = ['all', 'porto', 'lisboa', 'algarve'];
 
-    const filteredProperties = (PROPERTIES as any[]).filter(p =>
-        selectedRegion === 'all' || p.region.toLowerCase() === selectedRegion
+    const filteredProperties = properties.filter(p =>
+        selectedRegion === 'all' || p.location.region.toLowerCase() === selectedRegion || p.location.city.toLowerCase() === selectedRegion
     );
+
+    const sortedProperties = [...filteredProperties].sort((a, b) => {
+        if (!a.isComingSoon && b.isComingSoon) return -1;
+        if (a.isComingSoon && !b.isComingSoon) return 1;
+        return 0;
+    });
 
     const loadMore = () => {
         setVisibleCount(prev => prev + 4);
@@ -57,8 +98,8 @@ export const PropertiesGrid = () => {
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-12 gap-y-6 border-b border-gray-100 pb-2 relative">
                         {regions.map(region => {
                             const count = region === 'all'
-                                ? PROPERTIES.length
-                                : PROPERTIES.filter(p => p.region.toLowerCase() === region).length;
+                                ? properties.length
+                                : properties.filter(p => (p.location.region.toLowerCase() === region || p.location.city.toLowerCase() === region)).length;
                             const isActive = selectedRegion === region;
 
                             return (
@@ -87,104 +128,148 @@ export const PropertiesGrid = () => {
                 </div>
 
                 {/* Grid Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-12 gap-x-8">
-                    {filteredProperties.slice(0, visibleCount).map((property: any, index: number) => (
-                        <div
-                            key={index}
-                            className={`group block w-full bg-white rounded-2xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100/50 overflow-hidden transition-all duration-500 ${property.isComingSoon
-                                ? 'opacity-80'
-                                : 'hover:-translate-y-2 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)]'
-                                }`}
-                        >
-                            <div className={`block relative aspect-[1/1] w-full overflow-hidden ${property.isComingSoon ? '' : 'cursor-pointer'}`}>
-                                {property.isComingSoon ? (
-                                    <Image
-                                        src={property.image}
-                                        alt={property.title}
-                                        fill
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                                        style={{ objectFit: 'cover' }}
-                                        className="transition-transform duration-1000 grayscale-[0.3]"
-                                    />
-                                ) : (
-                                    <Link href={`/properties/${property.slug}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-12 gap-x-8 min-h-[400px]">
+                    {isLoading ? (
+                        <>
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="aspect-[1/1] rounded-2xl bg-gray-100 animate-pulse" />
+                            ))}
+                        </>
+                    ) : filteredProperties.length === 0 ? (
+                        <div className="col-span-full text-center py-20 text-gray-400">No properties found in this region.</div>
+                    ) : (
+                        sortedProperties.slice(0, visibleCount).map((property: any, index: number) => (
+                            <div
+                                key={property.id || index}
+                                className={`group block w-full bg-white rounded-2xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100/50 overflow-hidden transition-all duration-500 ${property.isComingSoon
+                                    ? 'opacity-80'
+                                    : 'hover:-translate-y-2 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)]'
+                                    }`}
+                            >
+                                <div className={`block relative aspect-[1/1] w-full overflow-hidden ${property.isComingSoon ? '' : 'cursor-pointer'}`}>
+                                    {property.isComingSoon ? (
                                         <Image
-                                            src={property.image}
+                                            src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
                                             alt={property.title}
                                             fill
                                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                                             style={{ objectFit: 'cover' }}
-                                            className="transition-transform duration-1000 group-hover:scale-110"
+                                            className="transition-transform duration-1000 grayscale-[0.3]"
                                         />
-                                    </Link>
-                                )}
-                                {/* Bottom-to-top dark gradient */}
-                                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 opacity-90 pointer-events-none"></div>
-
-                                {/* Overlay Content - Center Aligned */}
-                                <div className="absolute bottom-0 left-0 w-full p-6 z-20 text-center pointer-events-none">
-                                    <h6 className="text-white font-sans font-bold text-2xl mb-1 leading-tight tracking-tight drop-shadow-md">
-                                        {property.title}
-                                    </h6>
-                                    <p className="text-white/80 text-sm font-light uppercase tracking-[0.2em]">
-                                        {property.subtitle}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-                                {/* Location Row - Center Aligned */}
-                                <div className="flex flex-col items-center text-center pb-4 border-b border-gray-50">
-                                    <MapPin className="text-[#AD9C7E] w-5 h-5 mb-2" />
-                                    <p className="text-[#192537] text-sm font-semibold tracking-tight">
-                                        {property.location.city}
-                                    </p>
-                                </div>
-
-                                {/* Units Type Row - Center Aligned */}
-                                {property.isComingSoon ? (
-                                    <div className="flex flex-col items-center justify-center py-4 border-b border-gray-100 min-h-[4rem]">
-                                        <p className="text-gray-300 text-sm font-bold italic uppercase tracking-[0.4em]">
-                                            {t('comingSoon')}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-wrap gap-x-6 gap-y-3 pb-4 border-b border-gray-100 min-h-[4rem] items-center justify-center">
-                                        {property.types.map((type: any, idx: number) => {
-                                            const label = type.label.toLowerCase();
-                                            const Icon = label.includes('apartment') ? Building2 :
-                                                label.includes('room') ? Bed : Home;
-
-                                            return (
-                                                <div key={idx} className="flex items-center gap-2">
-                                                    <Icon className="text-[#AD9C7E] w-[18px] h-[18px]" />
-                                                    <p className="text-[#192537] text-sm whitespace-nowrap m-0">
-                                                        <span className="font-bold">{type.count}</span> {type.label}
-                                                    </p>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                                {/* CTA Button */}
-                                <div className="pt-2">
-                                    {property.isComingSoon ? (
-                                        <div className="block w-full text-center py-4 px-6 bg-gray-100 text-gray-400 font-bold uppercase tracking-widest text-sm rounded-full cursor-not-allowed">
-                                            {t('viewBuilding')}
-                                        </div>
                                     ) : (
-                                        <Link
-                                            href={`/properties/${property.slug}`}
-                                            className="block w-full text-center py-4 px-6 bg-[#192537] hover:bg-[#253654] text-white font-bold uppercase tracking-widest text-sm rounded-full transition-all duration-300 shadow-md active:scale-[0.98]"
-                                        >
-                                            {t('viewBuilding')}
+                                        <Link href={property.unitsCount >= 2 ? `/buildings/${property.slug}` : `/properties/${property.singleUnitSlug || property.slug}`}>
+                                            <Image
+                                                src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
+                                                alt={property.title}
+                                                fill
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                                style={{ objectFit: 'cover' }}
+                                                className="transition-transform duration-1000 group-hover:scale-110"
+                                            />
+                                            {property.unitsCount >= 2 && (
+                                                <div className="absolute top-4 right-4 z-30">
+                                                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#AD9C7E]/40 backdrop-blur-md border border-white/30 text-white shadow-2xl scale-100 transition-all duration-300 group-hover:scale-105 group-hover:bg-[#AD9C7E] group-hover:border-[#AD9C7E]">
+                                                        <Building2 className="w-3.5 h-3.5" />
+                                                        <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Building</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </Link>
                                     )}
+                                    {/* Bottom-to-top dark gradient */}
+                                    <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 opacity-90 pointer-events-none"></div>
+
+                                    {/* Overlay Content - Center Aligned */}
+                                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 text-center pointer-events-none">
+                                        <h6 className="text-white font-sans font-bold text-2xl mb-1 leading-tight tracking-tight drop-shadow-md">
+                                            {getLocalizedStr(property.title, locale)}
+                                        </h6>
+                                        <p className="text-white/80 text-sm font-light uppercase tracking-[0.2em]">
+                                            {getLocalizedStr(property.subtitle, locale)}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 space-y-4">
+                                    {/* Location Row - Center Aligned */}
+                                    <div className="flex items-center justify-between pb-4 border-b border-gray-50 px-2">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            <MapPin className="text-[#AD9C7E] w-3.5 h-3.5 flex-shrink-0" />
+                                            <p className="text-[#192537] text-[11px] font-bold uppercase tracking-wider truncate">
+                                                {property.location.city}
+                                            </p>
+                                        </div>
+                                        <p className="text-gray-400 text-[11px] font-medium truncate ml-4 max-w-[140px]">
+                                            {property.location.address}
+                                        </p>
+                                    </div>
+
+                                    {/* Units Type Row - Center Aligned */}
+                                    {property.isComingSoon ? (
+                                        <div className="flex flex-col items-center justify-center py-4 border-b border-gray-100 min-h-[5.5rem]">
+                                            <p className="text-gray-300 text-sm font-bold italic uppercase tracking-[0.4em]">
+                                                {t('comingSoon')}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-4 border-b border-gray-100 min-h-[5.5rem] px-4">
+                                            {property.is_multi_unit ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Building2 className="text-[#AD9C7E] w-[18px] h-[18px]" />
+                                                    <p className="text-[#192537] text-sm font-bold">
+                                                        {safeCount(property.unitsCount)} {safeCount(property.unitsCount) === 1 ? t('apartment') : t('apartments')}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-2 gap-x-8 gap-y-4 items-center justify-center w-full max-w-[280px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <Users className="text-[#AD9C7E] w-[18px] h-[18px]" />
+                                                        <p className="text-[#192537] text-sm">
+                                                            <span className="font-bold">{property.guests}</span> {property.guests === 1 ? 'Guest' : 'Guests'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Bed className="text-[#AD9C7E] w-[18px] h-[18px]" />
+                                                        <p className="text-[#192537] text-sm whitespace-nowrap">
+                                                            <span className="font-bold">{property.bedrooms}</span> {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Maximize className="text-[#AD9C7E] w-[18px] h-[18px]" />
+                                                        <p className="text-[#192537] text-sm whitespace-nowrap">
+                                                            <span className="font-bold">{property.area || 0}</span> m²
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Bath className="text-[#AD9C7E] w-[18px] h-[18px]" />
+                                                        <p className="text-[#192537] text-sm whitespace-nowrap">
+                                                            <span className="font-bold">{property.bathrooms || 0}</span> {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* CTA Button */}
+                                    <div className="pt-2">
+                                        {property.isComingSoon ? (
+                                            <div className="block w-full text-center py-4 px-6 bg-gray-100 text-gray-400 font-bold uppercase tracking-widest text-sm rounded-full cursor-not-allowed">
+                                                {t('viewBuilding')}
+                                            </div>
+                                        ) : (
+                                            <Link
+                                                href={property.unitsCount >= 2 ? `/buildings/${property.slug}` : `/properties/${property.singleUnitSlug || property.slug}`}
+                                                className="block w-full text-center py-4 px-6 bg-[#192537] hover:bg-[#253654] text-white font-bold uppercase tracking-widest text-sm rounded-full transition-all duration-300 shadow-md active:scale-[0.98]"
+                                            >
+                                                {property.unitsCount >= 2 ? t('viewBuilding') : t('viewHome')}
+                                            </Link>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
 
                 {/* Premium Modern Load More Button */}

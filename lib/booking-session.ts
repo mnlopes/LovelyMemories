@@ -11,6 +11,7 @@ export interface BookingSessionData {
     checkIn: string;
     checkOut: string;
     adults: number;
+    children: number;
     infants: number;
     selectedExtras?: {
         breakfast: boolean;

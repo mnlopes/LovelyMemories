@@ -31,6 +31,13 @@ interface BookingCardProps {
     onToggleExtra?: (key: 'breakfast' | 'transfer') => void;
     selectedRange?: DateRange;
     onDateChange?: (range: DateRange | undefined) => void;
+    adults: number;
+    setAdults: (count: number) => void;
+    childrenCount: number;
+    setChildren: (count: number) => void;
+    infants: number;
+    setInfants: (count: number) => void;
+    availabilityStatus: { available: boolean; loading: boolean; error?: string };
 }
 
 export function BookingCard({
@@ -42,7 +49,14 @@ export function BookingCard({
     selectedExtras,
     onToggleExtra,
     selectedRange,
-    onDateChange
+    onDateChange,
+    adults,
+    setAdults,
+    childrenCount,
+    setChildren,
+    infants,
+    setInfants,
+    availabilityStatus
 }: BookingCardProps) {
     const t = useTranslations('PropertyDetail');
     const router = useRouter();
@@ -50,12 +64,10 @@ export function BookingCard({
     const locale = params?.locale as string || 'en';
 
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-
-    const [guestCount, setGuestCount] = useState(0);
-    const [adults, setAdults] = useState(1);
-    const [infants, setInfants] = useState(0);
     const [isGuestSelectorOpen, setIsGuestSelectorOpen] = useState(false);
     const [isReserving, setIsReserving] = useState(false);
+
+    const guestCount = adults + childrenCount + infants;
 
     // Share feature state
     const [isShareOpen, setIsShareOpen] = useState(false);
@@ -77,10 +89,6 @@ export function BookingCard({
         }
     };
 
-    // Sync total guest count
-    useEffect(() => {
-        setGuestCount(adults + infants);
-    }, [adults, infants]);
 
     // Update legacy inputs only if they exist
     useEffect(() => {
@@ -109,7 +117,7 @@ export function BookingCard({
         };
 
         updateGuestInputs();
-    }, [adults, infants]);
+    }, [adults, childrenCount, infants]);
 
     // Clean up plugin CSS conflicts
     useEffect(() => {
@@ -186,6 +194,7 @@ export function BookingCard({
             checkIn,
             checkOut,
             adults,
+            children: childrenCount,
             infants,
             selectedExtras,
             extraPrices
@@ -204,7 +213,7 @@ export function BookingCard({
                 {/* Price Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-baseline gap-2">
-                        {originalPrice && (
+                        {(originalPrice || 0) > 0 && (
                             <span className="text-navy-900/40 line-through text-sm">€{originalPrice}</span>
                         )}
                         <span className="text-3xl font-bold text-navy-950">€{price}</span>
@@ -337,7 +346,7 @@ export function BookingCard({
                         <span className="text-navy-900/60">€{price} × {nights} {t('nightsCount', { count: nights })}</span>
                         <span className="font-semibold text-navy-950">€{subtotal}</span>
                     </div>
-                    {discount && discountAmount > 0 && (
+                    {(discount || 0) > 0 && discountAmount > 0 && (
                         <div className="flex justify-between text-[#2d8653]">
                             <span className="flex items-center gap-2">
                                 <span className="inline-block px-2 py-0.5 bg-green-50 text-[#2d8653] text-[10px] font-bold uppercase rounded-full">
@@ -417,18 +426,45 @@ export function BookingCard({
                 </div>
                 <SyncLegacyInputs range={selectedRange} />
 
+                {/* Availability Warnings */}
+                <AnimatePresence>
+                    {!availabilityStatus.available && !availabilityStatus.loading && selectedRange?.from && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-4 overflow-hidden"
+                        >
+                            <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-3 text-red-600">
+                                <X className="w-5 h-5 flex-shrink-0" />
+                                <div className="text-xs">
+                                    <p className="font-bold uppercase tracking-tight mb-0.5">Not Available</p>
+                                    <p className="opacity-80">{availabilityStatus.error || 'This property is not bookable for the selected criteria.'}</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* Book Button */}
                 <Button
                     variant="luxury"
                     className="w-full h-14 text-base font-bold rounded-full hover:scale-[1.02] transition-transform flex items-center justify-center gap-3"
-                    disabled={isReserving}
+                    disabled={isReserving || (!availabilityStatus.available && !availabilityStatus.loading && !!selectedRange?.from) || availabilityStatus.loading}
                     onClick={handleReserve}
                 >
-                    {isReserving ? (
+                    {availabilityStatus.loading ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Checking...</span>
+                        </>
+                    ) : isReserving ? (
                         <>
                             <Loader2 className="w-5 h-5 animate-spin" />
                             {t('reserving') || "Preparing checkout..."}
                         </>
+                    ) : !availabilityStatus.available && !!selectedRange?.from ? (
+                        <span>{t('reserveNow') || "Reserve now"}</span> // Keep text but button is disabled
                     ) : (
                         (!selectedRange?.from || !selectedRange?.to)
                             ? (t('checkAvailability') || "Check availability")
@@ -466,6 +502,8 @@ export function BookingCard({
                 onClose={() => setIsGuestSelectorOpen(false)}
                 adults={adults}
                 setAdults={setAdults}
+                children={childrenCount}
+                setChildren={setChildren}
                 infants={infants}
                 setInfants={setInfants}
             />

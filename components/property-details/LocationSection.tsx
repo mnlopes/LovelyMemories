@@ -2,9 +2,20 @@
 
 import { Car, Footprints, MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+
+// Helper to safely extract string from potential localized object
+const getLocalizedStr = (val: any, locale: string = 'en'): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'object') {
+        const preferred = val[locale] || val['en'] || val['pt'] || Object.values(val)[0];
+        return typeof preferred === 'string' ? preferred : String(preferred || '');
+    }
+    return String(val || '');
+};
 
 const PropertyMapLeaflet = dynamic(() => import("./PropertyMapLeaflet"), {
     ssr: false,
@@ -36,6 +47,7 @@ interface LocationSectionProps {
 }
 
 export function LocationSection({ propertyId, nearbyPlaces, coordinates, address }: LocationSectionProps) {
+    const locale = useLocale();
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
     const [selectedPlaceCoords, setSelectedPlaceCoords] = useState<[number, number] | null>(null);
@@ -98,10 +110,12 @@ export function LocationSection({ propertyId, nearbyPlaces, coordinates, address
                                     >
                                         <div className="flex-1 min-w-0 pr-4 text-left">
                                             {item.subtitle && (
-                                                <p className="text-[10px] text-navy-900/40 mb-0.5 uppercase tracking-wide">{item.name}</p>
+                                                <p className="text-[10px] text-navy-900/40 mb-0.5 uppercase tracking-wide">
+                                                    {getLocalizedStr(item.name, locale)}
+                                                </p>
                                             )}
                                             <p className="font-medium text-sm text-navy-950 group-hover:text-[#B08D4A] transition-colors truncate">
-                                                {item.subtitle || item.name}
+                                                {getLocalizedStr(item.subtitle || item.name, locale)}
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-navy-900/60 flex-shrink-0">

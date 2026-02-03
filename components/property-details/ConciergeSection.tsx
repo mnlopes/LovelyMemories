@@ -1,10 +1,36 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { Utensils, Car, Sparkles, MessageSquare, ShieldCheck, Ticket, Check, Minus, Plus } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import React, { useState } from "react";
+import { Utensils, Car, Sparkles, MessageSquare, ShieldCheck, Ticket, Check, Minus, Plus, Headset, ChefHat, Map, ChevronDown, ListFilter, Wine, GlassWater, Music, Waves, Plane, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
+const iconMap: Record<string, any> = {
+    'utensils': Utensils,
+    'car': Car,
+    'sparkles': Sparkles,
+    'shield-check': ShieldCheck,
+    'ticket': Ticket,
+    'message-square': MessageSquare,
+    'headset': Headset,
+    'ChefHat': ChefHat,
+    'Car': Car,
+    'Map': Map,
+    'Utensils': Utensils,
+    'Sparkles': Sparkles,
+    'Plane': Plane,
+    'Wine': Wine,
+    'GlassWater': GlassWater,
+    'Music': Music,
+    'Waves': Waves,
+    'ShieldCheck': ShieldCheck,
+    'Ticket': Ticket,
+    'Calendar': Calendar,
+};
+
 interface ConciergeSectionProps {
+    dbServices?: any[]; // Global from Supabase
+    vipServices?: any[]; // Property-specific
     services?: {
         chef?: boolean;
         chauffeur?: boolean;
@@ -29,18 +55,47 @@ interface ConciergeSectionProps {
     maxBreakfastDays?: number;
 }
 
-export function ConciergeSection({ services, prices, selectedExtras, onToggleExtra, onUpdateBreakfastDays, onUpdateTransferType, maxBreakfastDays }: ConciergeSectionProps) {
-    const t = useTranslations('PropertyDetail');
+import { ConciergeModal } from "../ConciergeModal";
 
-    // General Services (Just info)
-    const availableServices = [
-        { icon: Utensils, label: t('concierge.chef') || "Private Chef", available: services?.chef ?? true },
-        { icon: Car, label: t('concierge.chauffeur') || "Chauffeur Service", available: services?.chauffeur ?? true },
-        { icon: Sparkles, label: t('concierge.spa'), available: services?.spa ?? true },
-        { icon: Ticket, label: t('concierge.tours'), available: services?.tours ?? true },
-        { icon: ShieldCheck, label: t('concierge.security'), available: services?.security ?? true },
-        { icon: MessageSquare, label: t('concierge.more'), available: true },
-    ].filter(s => s.available);
+export function ConciergeSection({ dbServices, vipServices: propertyVipServices, services, prices, selectedExtras, onToggleExtra, onUpdateBreakfastDays, onUpdateTransferType, maxBreakfastDays }: ConciergeSectionProps) {
+    const t = useTranslations('PropertyDetail');
+    const locale = useLocale();
+    const [isConciergeModalOpen, setIsConciergeModalOpen] = useState(false);
+
+    // Split services from DB (Global)
+    const bookableServices = dbServices?.filter(s => s.category === 'bookable' && s.is_active) || [];
+    const globalVipServices = dbServices?.filter(s => s.category === 'vip' && s.is_active) || [];
+
+    const dbBreakfast = bookableServices.find(s => s.slug === 'breakfast');
+    const dbTransfer = bookableServices.find(s => s.slug === 'transfer');
+
+    const breakfastTitle = dbBreakfast ? (locale === 'pt' ? dbBreakfast.name_pt : dbBreakfast.name_en) : t('concierge.breakfastTitle');
+    const breakfastDesc = dbBreakfast ? (locale === 'pt' ? dbBreakfast.description_pt : dbBreakfast.description_en) : t('concierge.breakfastDesc');
+    const breakfastPrice = dbBreakfast?.price || prices?.breakfast || 15;
+
+    const transferTitle = dbTransfer ? (locale === 'pt' ? dbTransfer.name_pt : dbTransfer.name_en) : t('concierge.transferTitle');
+    const transferDesc = dbTransfer ? (locale === 'pt' ? dbTransfer.description_pt : dbTransfer.description_en) : t('concierge.transferDesc');
+    const transferPrice = dbTransfer?.price || prices?.transfer || 55;
+
+    // Use property-specific VIP services if they exist, otherwise fallback to global ones
+    const finalVipServices = (propertyVipServices && propertyVipServices.length > 0)
+        ? propertyVipServices.map(s => ({
+            icon: iconMap[s.icon] || Sparkles,
+            label: s.title?.[locale] || s.title?.en || s.label
+        }))
+        : globalVipServices.length > 0
+            ? globalVipServices.map(s => ({
+                icon: iconMap[s.icon] || MessageSquare,
+                label: locale === 'pt' ? s.name_pt : s.name_en
+            }))
+            : [
+                { icon: Utensils, label: t('concierge.chef') || "Private Chef" },
+                { icon: Car, label: t('concierge.chauffeur') || "Chauffeur Service" },
+                { icon: Sparkles, label: t('concierge.spa') },
+                { icon: Ticket, label: t('concierge.tours') },
+                { icon: ShieldCheck, label: t('concierge.security') },
+                { icon: MessageSquare, label: t('concierge.more') },
+            ];
 
     return (
         <section className="py-10 border-t border-[#E1E6EC]">
@@ -52,12 +107,12 @@ export function ConciergeSection({ services, prices, selectedExtras, onToggleExt
                         {t('concierge.title')}
                     </h2>
                     <p className="text-navy-900/70 leading-relaxed text-lg">
-                        {t('concierge.description')}
+                        {t('concierge.description', { serviceName: t('concierge.defaultService') })}
                     </p>
                 </div>
 
                 {/* Interactive Premium Services */}
-                {prices && onToggleExtra && (
+                {(onToggleExtra) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Breakfast Card */}
                         <div
@@ -83,14 +138,14 @@ export function ConciergeSection({ services, prices, selectedExtras, onToggleExt
                                         <span className="text-navy-900/40 text-sm font-medium">{t('concierge.dailyService')}</span>
                                     )}
                                 </div>
-                                <h3 className="text-xl font-bold text-navy-950 mb-1">{t('concierge.breakfastTitle')}</h3>
-                                <p className="text-navy-900/60 text-sm mb-4">{t('concierge.breakfastDesc')}</p>
+                                <h3 className="text-xl font-bold text-navy-950 mb-1">{breakfastTitle}</h3>
+                                <p className="text-navy-900/60 text-sm mb-4">{breakfastDesc}</p>
                             </div>
 
                             {/* Price & Controls */}
                             <div className="flex items-end justify-between">
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-lg font-bold text-navy-950">€{prices.breakfast}</span>
+                                    <span className="text-lg font-bold text-navy-950">€{breakfastPrice}</span>
                                     <span className="text-xs text-navy-900/50">{t('concierge.perGuestNight')}</span>
                                 </div>
 
@@ -127,12 +182,12 @@ export function ConciergeSection({ services, prices, selectedExtras, onToggleExt
                                     <span className="text-navy-900/40 text-sm font-medium">{t('booking.oneWay')}</span>
                                 )}
                             </div>
-                            <h3 className="text-xl font-bold text-navy-950 mb-1">{t('concierge.transferTitle')}</h3>
-                            <p className="text-navy-900/60 text-sm mb-4">{t('concierge.transferDesc')}</p>
+                            <h3 className="text-xl font-bold text-navy-950 mb-1">{transferTitle}</h3>
+                            <p className="text-navy-900/60 text-sm mb-4">{transferDesc}</p>
                             <div className="flex items-end justify-between gap-4">
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-lg font-bold text-navy-950">
-                                        €{selectedExtras?.transferType === 'round_trip' ? (prices.transfer || 0) * 2 : prices.transfer}
+                                        €{selectedExtras?.transferType === 'round_trip' ? (transferPrice || 0) * 2 : transferPrice}
                                     </span>
                                     <span className="text-xs text-navy-900/50">/ {selectedExtras?.transferType === 'round_trip' ? t('booking.roundTrip') : t('booking.oneWay')}</span>
                                 </div>
@@ -166,7 +221,7 @@ export function ConciergeSection({ services, prices, selectedExtras, onToggleExt
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-12">
-                        {availableServices.map((service, index) => (
+                        {finalVipServices.map((service, index) => (
                             <div key={index} className="flex items-center gap-4 group">
                                 <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
                                     <service.icon className="w-5 h-5 text-[#B08D4A]" />
@@ -180,10 +235,15 @@ export function ConciergeSection({ services, prices, selectedExtras, onToggleExt
                     <div className="mt-8 pt-8 border-t border-navy-900/5 flex items-start gap-4">
                         <div className="w-1.5 h-1.5 rounded-full bg-navy-900 mt-2 shrink-0 animate-pulse" />
                         <p className="text-sm text-navy-900/60 leading-relaxed">
-                            {t('concierge.disclaimer')} <button className="font-bold text-navy-950 hover:underline underline-offset-4 decoration-navy-900">{t('concierge.contactButton')}</button>
+                            {t('concierge.disclaimer')} <button onClick={() => setIsConciergeModalOpen(true)} className="font-bold text-navy-950 hover:underline underline-offset-4 decoration-navy-900 cursor-pointer">{t('concierge.contactButton')}</button>
                         </p>
                     </div>
                 </div>
+
+                <ConciergeModal
+                    isOpen={isConciergeModalOpen}
+                    onClose={() => setIsConciergeModalOpen(false)}
+                />
             </div>
         </section>
     );

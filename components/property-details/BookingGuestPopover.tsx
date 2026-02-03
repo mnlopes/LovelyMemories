@@ -10,6 +10,8 @@ interface BookingGuestPopoverProps {
     onClose: () => void;
     adults: number;
     setAdults: (count: number) => void;
+    children: number;
+    setChildren: (count: number) => void;
     infants: number;
     setInfants: (count: number) => void;
     placement?: 'side' | 'bottom' | 'bottom-start' | 'bottom-end' | 'bottom-center' | 'top-start' | 'top-end' | 'top-center';
@@ -20,6 +22,8 @@ export function BookingGuestPopover({
     onClose,
     adults,
     setAdults,
+    children,
+    setChildren,
     infants,
     setInfants,
     placement = 'side',
@@ -77,6 +81,7 @@ export function BookingGuestPopover({
                     {/* Content - Anchored appropriately based on placement */}
                     <motion.div
                         ref={popoverRef}
+                        onMouseDown={(e) => e.stopPropagation()}
                         initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
                         animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
@@ -89,7 +94,7 @@ export function BookingGuestPopover({
                                     {t('guests') || 'Guests'}
                                 </h3>
                                 <p className="text-xs text-navy-900/40 font-medium">
-                                    {adults + infants} {(adults + infants) === 1 ? t('guestSelector.person') : t('guestSelector.people')}
+                                    {adults + children + infants} {(adults + children + infants) === 1 ? t('guestSelector.person') : t('guestSelector.people')}
                                 </p>
                             </div>
                             <button
@@ -102,7 +107,7 @@ export function BookingGuestPopover({
                         </div>
 
                         {/* Guest Selection Area */}
-                        <div className="p-8 space-y-8 bg-white">
+                        <div className="p-8 space-y-6 bg-white">
                             {/* Adults row */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -111,7 +116,7 @@ export function BookingGuestPopover({
                                     </div>
                                     <div>
                                         <p className="font-bold text-sm text-navy-950">{t('guestSelector.adults')}</p>
-                                        <p className="text-[10px] text-navy-900/40">{t('guestSelector.ages13')}</p>
+                                        <p className="text-[10px] text-navy-900/40">{t('guestSelector.ages16')}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -127,6 +132,37 @@ export function BookingGuestPopover({
                                     <button
                                         type="button"
                                         onClick={() => setAdults(adults + 1)}
+                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all active:scale-90"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Children row */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-navy-900/40">
+                                        <Users className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-sm text-navy-950">{t('guestSelector.children')}</p>
+                                        <p className="text-[10px] text-navy-900/40">{t('guestSelector.ages2')}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setChildren(Math.max(0, children - 1))}
+                                        disabled={children <= 0}
+                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all disabled:opacity-20 active:scale-90"
+                                    >
+                                        <Minus className="h-4 w-4" />
+                                    </button>
+                                    <span className="w-4 text-center font-bold text-navy-950 text-base">{children}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setChildren(children + 1)}
                                         className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all active:scale-90"
                                     >
                                         <Plus className="h-4 w-4" />
@@ -172,6 +208,7 @@ export function BookingGuestPopover({
                                 type="button"
                                 onClick={() => {
                                     setAdults(1);
+                                    setChildren(0);
                                     setInfants(0);
                                 }}
                                 className="text-[10px] font-bold text-navy-900/40 hover:text-[#B08D4A] uppercase tracking-[0.2em] transition-all py-1 border-b border-transparent hover:border-[#B08D4A]"

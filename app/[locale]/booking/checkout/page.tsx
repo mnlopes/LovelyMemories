@@ -28,10 +28,10 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { BookingInvoice } from "@/components/booking/BookingInvoice";
 import { Button } from "@/components/ui/Button";
-import { PROPERTIES } from "@/lib/data";
 import { ADDRESS_DATA, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
 import { processReservation } from "@/app/actions/reservation";
 import { getBookingSession, BookingSessionData } from "@/lib/booking-session";
+import { getPropertyBySlug } from "@/lib/services";
 
 export default function CheckoutPage({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = React.use(params);
@@ -46,6 +46,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [reservationRef, setReservationRef] = useState("");
     const [error, setError] = useState("");
     const [bookingData, setBookingData] = useState<BookingSessionData | null>(null);
+    const [property, setProperty] = useState<any | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [zipError, setZipError] = useState<string>("");
@@ -53,19 +54,41 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const code = searchParams.get("code") || "";
     const paymentReference = code ? `LM-${code.toUpperCase()}` : "LM-PENDING";
 
-    // Load booking data from session code with a small "luxury" delay for the skeleton
+    // Load booking and property data from session code
     useEffect(() => {
-        const data = getBookingSession(code);
-        if (data) {
-            setBookingData(data);
-        }
+        const fetchData = async () => {
+            const data = getBookingSession(code);
+            if (data) {
+                setBookingData(data);
+                // Fetch property from Supabase
+                const propData = await getPropertyBySlug(data.slug);
+                if (propData) {
+                    setProperty(propData);
 
-        // Artificial delay so the skeleton is actually visible and the transition feels "prepared"
-        const timer = setTimeout(() => {
-            setIsLoadingData(false);
-        }, 1200);
+                    // SECURITY CHECK: Re-verify availability
+                    const { checkPropertyAvailability } = await import("@/lib/services");
+                    const availability = await checkPropertyAvailability(
+                        propData.id,
+                        new Date(data.checkIn),
+                        new Date(data.checkOut),
+                        data.adults + (data.children || 0)
+                    );
 
-        return () => clearTimeout(timer);
+                    if (!availability.available) {
+                        setError(availability.error || "This property is no longer available for these dates.");
+                        // Optional: Redirect back if unavailable
+                        // setTimeout(() => router.push(`/${locale}/properties/${data.slug}`), 3000);
+                    }
+                }
+            }
+
+            // Artificial delay for luxury feel
+            setTimeout(() => {
+                setIsLoadingData(false);
+            }, 1200);
+        };
+
+        fetchData();
     }, [code]);
 
     // Form state
@@ -178,9 +201,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
             if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
                 newErrors.email = t('errors.emailError');
             }
-            // Phone is now optional, so no validation here
-
-            // Phone is now optional, so no validation here
+            if (!formData.phone || formData.phone.length < 9) {
+                newErrors.phone = t('errors.phoneError');
+            }
 
             // Validate address fields ONLY if billing is shown
             if (showBilling) {
@@ -200,11 +223,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const checkIn = bookingData?.checkIn || "";
     const checkOut = bookingData?.checkOut || "";
     const adults = bookingData?.adults || 1;
+    const children = bookingData?.children || 0;
     const infants = bookingData?.infants || 0;
     const selectedExtras = bookingData?.selectedExtras;
     const extraPrices = bookingData?.extraPrices;
-
-    const property = PROPERTIES.find(p => p.slug === slug);
 
     if (isLoadingData) {
         return (
@@ -311,7 +333,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const breakfastDays = selectedExtras?.breakfastDays || 1;
     const isRoundTrip = selectedExtras?.transferType === 'round_trip';
 
-    const breakfastTotal = selectedExtras?.breakfast ? (breakfastPrice * (adults + infants) * breakfastDays) : 0;
+    const breakfastTotal = selectedExtras?.breakfast ? (breakfastPrice * (adults + children + infants) * breakfastDays) : 0;
     const transferTotal = selectedExtras?.transfer ? (transferPrice * (isRoundTrip ? 2 : 1)) : 0;
 
     const total = basePrice + cleaningFee + breakfastTotal + transferTotal;
@@ -367,11 +389,19 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     checkIn: checkIn,
                     checkOut: checkOut,
                     adults: adults,
+                    children: children,
                     infants: infants,
-                    bookingCode: code
+                    bookingCode: code,
+                    totalPrice: total,
+                    basePrice: basePrice,
+                    cleaningFee: cleaningFee,
+                    breakfastTotal: breakfastTotal,
+                    transferTotal: transferTotal,
+                    paymentMethod: formData.paymentMethod
                 });
 
                 if (result.success && result.ref) {
+                    if (result.warning) console.warn("Reservation saved with issues:", result.warning);
                     setReservationRef(result.ref);
                     setIsFinished(true);
                 } else {
@@ -461,7 +491,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                             </div>
 
                             <div className="flex justify-between items-center py-4 border-b border-gray-100">
-                                <span className="font-bold text-navy-950">{t('success.bookingOf')} <span className="text-[#B08D4A]">{property.title}</span></span>
+                                <span className="font-bold text-navy-950">{t('success.bookingOf')} <span className="text-[#B08D4A]">{property.title?.[locale] || property.title?.en || 'Untitled'}</span></span>
                                 <span className="font-bold text-navy-950">€{total}</span>
                             </div>
 
@@ -475,7 +505,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     </div>
                                 </div>
                                 <p><span className="font-bold text-navy-950">{t('success.duration')}</span> {t('sidebar.nights', { count: nights })}</p>
-                                <p><span className="font-bold text-navy-950">{t('success.guests')}</span> {t('sidebar.adults', { count: adults })}{infants > 0 && `, ${t('sidebar.infants', { count: infants })}`}</p>
+                                <p><span className="font-bold text-navy-950">{t('success.guests')}</span> {t('sidebar.adults', { count: adults })}{children > 0 && `, ${t('sidebar.children', { count: children })}`}{infants > 0 && `, ${t('sidebar.infants', { count: infants })}`}</p>
                             </div>
 
                             <div className="space-y-3 pt-4">
@@ -548,12 +578,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     <BookingInvoice
                         reservationRef={reservationRef}
                         date={new Date().toLocaleDateString(locale)}
-                        propertyTitle={property.title}
-                        propertyLocation={`${property.location.city}, Portugal`}
+                        propertyTitle={property.title?.[locale] || property.title?.en || 'Untitled'}
+                        propertyLocation={`${property.location?.city || ''}, Portugal`}
                         checkIn={formatDate(checkIn)}
                         checkOut={formatDate(checkOut)}
                         nights={nights}
-                        guests={`${t('sidebar.adults', { count: adults })}${infants > 0 ? `, ${t('sidebar.infants', { count: infants })}` : ''}`}
+                        guests={`${t('sidebar.adults', { count: adults })}${children > 0 ? `, ${t('sidebar.children', { count: children })}` : ''}${infants > 0 ? `, ${t('sidebar.infants', { count: infants })}` : ''}`}
                         basePrice={basePrice}
                         cleaningFee={cleaningFee}
                         breakfastTotal={breakfastTotal}
@@ -1136,9 +1166,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                         <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step3.bankName')}</p>
                                                         <p className="text-sm font-bold">Millennium BCP</p>
                                                     </div>
-                                                    <div className="space-y-1 md:col-span-2">
+                                                    <div className="space-y-1">
                                                         <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step3.iban')}</p>
                                                         <p className="text-sm font-mono font-bold tracking-tighter">PT50 0033 0000 1234 5678 9012 3</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step3.swift')}</p>
+                                                        <p className="text-sm font-bold">BCPTPLLX</p>
                                                     </div>
                                                     <div className="space-y-1 md:col-span-2">
                                                         <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step3.reference')}</p>
@@ -1246,7 +1280,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         {/* Property Card */}
                         <div className="bg-white rounded-[40px] overflow-hidden border border-gray-100 shadow-2xl shadow-navy-950/5">
                             <div className="h-40 relative overflow-hidden">
-                                <img src={property.image} alt={property.title} className="w-full h-full object-cover" />
+                                <img
+                                    src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
+                                    alt={property.title}
+                                    className="w-full h-full object-cover"
+                                />
                                 <div className="absolute top-4 left-4">
                                     <span className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-navy-950 border border-white">
                                         {t('sidebar.propertyDetails')}
@@ -1254,7 +1292,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                 </div>
                             </div>
                             <div className="p-5 md:p-6">
-                                <h3 className="text-xl md:text-2xl font-bold font-montserrat mb-1">{property.title}</h3>
+                                <h3 className="text-xl md:text-2xl font-bold font-montserrat mb-1">{property.title?.[locale] || property.title?.en || 'Untitled'}</h3>
                                 <p className="text-navy-900/70 text-sm font-medium mb-4">{property.location.city}, Portugal</p>
 
 
@@ -1281,6 +1319,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                             <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A] mb-1">{t('sidebar.guestsTitle')}</p>
                                             <p className="text-base font-bold">
                                                 {t('sidebar.adults', { count: adults })}
+                                                {children > 0 && `, ${t('sidebar.children', { count: children })}`}
                                                 {infants > 0 && `, ${t('sidebar.infants', { count: infants })}`}
                                             </p>
                                         </div>

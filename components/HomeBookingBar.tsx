@@ -23,7 +23,9 @@ export const HomeBookingBar = () => {
     const [location, setLocation] = useState('');
     const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
     const [adults, setAdults] = useState(1);
+    const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
+    const [isSearching, setIsSearching] = useState(false);
 
     const [openPopover, setOpenPopover] = useState<'location' | 'arrival' | 'departure' | 'guests' | null>(null);
     const [placement, setPlacement] = useState<'bottom-start' | 'top-start' | 'bottom-center' | 'top-center'>('bottom-start');
@@ -57,18 +59,20 @@ export const HomeBookingBar = () => {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSearching(true);
 
         const params = new URLSearchParams();
         if (location) params.append('location', location);
         if (selectedRange?.from) params.append('from', format(selectedRange.from, 'yyyy-MM-dd'));
         if (selectedRange?.to) params.append('to', format(selectedRange.to, 'yyyy-MM-dd'));
         if (adults > 0) params.append('adults', adults.toString());
+        if (children > 0) params.append('children', children.toString());
         if (infants > 0) params.append('infants', infants.toString());
 
-        router.push(`/${locale}/properties?${params.toString()}`);
+        router.push(`/${locale}/search?${params.toString()}`);
     };
 
-    const guestsTotal = adults + infants;
+    const guestsTotal = adults + children + infants;
 
     return (
         <React.Fragment>
@@ -89,7 +93,8 @@ export const HomeBookingBar = () => {
                 </div>
 
                 {/* Main Card Container - Squared rounded (rounded-xl) with more padding */}
-                <div className={`w-full shadow-2xl rounded-tr-[15px] rounded-br-[15px] rounded-bl-[15px] rounded-tl-none bg-white py-5 px-10 relative ${openPopover ? 'z-50' : 'z-20'}`}>
+                <div className={`w-full shadow-2xl rounded-br-[15px] rounded-bl-[15px] bg-white py-5 px-10 relative ${openPopover ? 'z-50' : 'z-20'} 
+                    ${locale === 'he' ? 'rounded-tr-none rounded-tl-[15px]' : 'rounded-tr-[15px] rounded-tl-none'}`}>
                     <form
                         className="flex items-center w-full min-h-[92px]"
                         onSubmit={handleSearch}
@@ -217,6 +222,8 @@ export const HomeBookingBar = () => {
                                 onClose={() => setOpenPopover(null)}
                                 adults={adults}
                                 setAdults={setAdults}
+                                children={children}
+                                setChildren={setChildren}
                                 infants={infants}
                                 setInfants={setInfants}
                                 placement={placement}
@@ -227,10 +234,20 @@ export const HomeBookingBar = () => {
                         <div className="pl-4">
                             <button
                                 type="submit"
-                                className="h-[70px] px-12 rounded-xl bg-[#b09e80] text-white font-bold uppercase tracking-widest hover:bg-[#8e7d65] transition-all shadow-lg flex items-center gap-3 transform active:scale-95 text-lg cursor-pointer"
+                                disabled={isSearching}
+                                className={`h-[70px] px-12 rounded-xl bg-[#b09e80] text-white font-bold uppercase tracking-widest hover:bg-[#8e7d65] transition-all shadow-lg flex items-center gap-3 transform active:scale-95 text-lg cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed`}
                             >
-                                <Search className="w-6 h-6" />
-                                <span>{t('search')}</span>
+                                {isSearching ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>{t('searching')}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Search className="w-6 h-6" />
+                                        <span>{t('search')}</span>
+                                    </>
+                                )}
                             </button>
                         </div>
 

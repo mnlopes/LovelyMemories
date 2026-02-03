@@ -22,7 +22,33 @@ export const Footer = () => {
         { path: '/contact', label: tNav('contact') },
     ];
 
-    if (pathname.includes('/booking/checkout')) return null;
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email.trim() || status === 'loading') return;
+
+        setStatus('loading');
+        try {
+            const response = await fetch('/api/newsletter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+
+            if (response.ok) {
+                setStatus('success');
+                setEmail("");
+                setTimeout(() => setStatus('idle'), 3000);
+            } else {
+                setStatus('error');
+            }
+        } catch (error) {
+            setStatus('error');
+        }
+    };
+
+    if (pathname.includes('/booking/checkout') || pathname.includes('/admin')) return null;
 
     return (
         <footer className="relative text-white pt-24 pb-10 font-[family-name:var(--font-montserrat)]">
@@ -47,11 +73,11 @@ export const Footer = () => {
                 <div className="flex flex-col items-center text-center mb-16 space-y-6 w-full max-w-4xl">
                     <h4 className="text-3xl md:text-4xl font-sans font-bold">{t('getInTouch')}</h4>
                     <p className="text-gray-300 font-light leading-relaxed max-w-2xl">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi tincidunt eu mauris a pulvinar.
+                        Acompanhe as nossas novidades e ofertas exclusivas. Subscreva a nossa newsletter.
                     </p>
 
                     <div className="w-full max-w-xl mt-8">
-                        <form className="flex items-center bg-white rounded-full p-1 shadow-xl border border-white/10">
+                        <form onSubmit={handleSubmit} className="flex items-center bg-white rounded-full p-1 shadow-xl border border-white/10">
                             <input
                                 type="email"
                                 placeholder={t('enterEmail')}
@@ -62,12 +88,13 @@ export const Footer = () => {
                             />
                             <button
                                 type="submit"
-                                disabled={!email.trim()}
-                                className={`px-8 md:px-12 py-3.5 md:py-4 bg-[#a39076] text-white text-[13px] md:text-[14px] !rounded-full transition-all duration-300 border border-white/10 whitespace-nowrap ml-1 md:ml-2 font-bold tracking-tight ${!email.trim() ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#8e7d65] cursor-pointer'}`}
+                                disabled={!email.trim() || status === 'loading'}
+                                className={`px-8 md:px-12 py-3.5 md:py-4 bg-[#a39076] text-white text-[13px] md:text-[14px] !rounded-full transition-all duration-300 border border-white/10 whitespace-nowrap ml-1 md:ml-2 font-bold tracking-tight ${!email.trim() || status === 'loading' ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#8e7d65] cursor-pointer'}`}
                             >
-                                {t('subscribe')}
+                                {status === 'loading' ? '...' : status === 'success' ? '✓' : t('subscribe')}
                             </button>
                         </form>
+                        {status === 'error' && <p className="text-red-400 text-xs mt-2">Ocorreu um erro. Tente novamente.</p>}
                     </div>
                 </div>
 

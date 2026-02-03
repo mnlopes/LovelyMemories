@@ -9,6 +9,7 @@ import { useState } from 'react';
 export const OwnerExperience = () => {
     const t = useTranslations('OwnerExperience');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
 
     return (
         <section className="py-24 bg-[#FCFCFC]">
@@ -56,30 +57,45 @@ export const OwnerExperience = () => {
                             transition={{ duration: 0.8, delay: 0.2 }}
                             className="bg-white p-8 md:p-12 rounded-[30px] shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-gray-50 max-w-lg"
                         >
-                            <h4
-                                className="mb-4"
-                                style={{ fontWeight: 900, fontSize: '26px', color: '#0A1128' }}
-                            >
-                                {t('trust.title')}
-                            </h4>
-                            <div className="space-y-2 mb-10 text-[#696969] text-lg">
-                                <p>{t('trust.revenue')} <span className="font-bold text-[#0A1128]">+44m</span></p>
-                                <p>{t('trust.market')} <span className="font-bold text-[#0A1128]">2016</span></p>
-                            </div>
+                            {isSubmitted ? (
+                                <div className="flex flex-col items-center text-center gap-4 py-8">
+                                    <div className="w-20 h-20 bg-[#fdfbf7] text-[#b29a7a] rounded-full flex items-center justify-center mb-2 shadow-sm border border-[#b29a7a]/5">
+                                        <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-[#0A1128]">{t('trust.success') || 'Thank you!'}</h3>
+                                    <p className="text-[#696969] font-light max-w-sm">
+                                        {t('trust.successDesc') || "We'll be in touch shortly. Your report is being prepared."}
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <h4
+                                        className="mb-4"
+                                        style={{ fontWeight: 900, fontSize: '26px', color: '#0A1128' }}
+                                    >
+                                        {t('trust.title')}
+                                    </h4>
+                                    <div className="space-y-2 mb-10 text-[#696969] text-lg">
+                                        <p>{t('trust.revenue')} <span className="font-bold text-[#0A1128]">+44m</span></p>
+                                        <p>{t('trust.market')} <span className="font-bold text-[#0A1128]">2016</span></p>
+                                    </div>
 
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => setIsModalOpen(true)}
-                                className="w-full h-14 rounded-full text-white font-bold uppercase tracking-widest text-sm shadow-lg transition-all cursor-pointer"
-                                style={{
-                                    backgroundColor: '#b29a7a',
-                                    boxShadow: '0 10px 15px -3px rgba(178, 154, 122, 0.2)',
-                                    borderRadius: '9999px'
-                                }}
-                            >
-                                {t('trust.cta')}
-                            </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setIsModalOpen(true)}
+                                        className="w-full h-14 rounded-full text-white font-bold uppercase tracking-widest text-sm shadow-lg transition-all cursor-pointer bg-[#b29a7a]"
+                                        style={{
+                                            boxShadow: '0 10px 15px -3px rgba(178, 154, 122, 0.2)',
+                                            borderRadius: '9999px'
+                                        }}
+                                    >
+                                        {t('trust.cta')}
+                                    </motion.button>
+                                </>
+                            )}
                         </motion.div>
                     </div>
 
@@ -88,6 +104,7 @@ export const OwnerExperience = () => {
                 <RevenueReportModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
+                    onSuccess={() => setIsSubmitted(true)}
                 />
             </div>
         </section>

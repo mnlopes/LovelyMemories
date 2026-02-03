@@ -89,7 +89,7 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                 {/* Guest & Property */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     <div>
-                        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>Informação do Hóspede</p>
+                        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>{t('success.guestInfo')}</p>
                         <div style={{ backgroundColor: '#f9fafb', borderRadius: '16px', padding: '24px', border: '1px solid #f3f4f6' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                                 <User style={{ width: '16px', height: '16px', color: '#B08D4A' }} />
@@ -108,7 +108,7 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                         </div>
                     </div>
                     <div>
-                        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>Propriedade</p>
+                        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>{t('success.property')}</p>
                         <div style={{ backgroundColor: '#f9fafb', borderRadius: '16px', padding: '24px', border: '1px solid #f3f4f6' }}>
                             <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 8px 0' }}>{propertyTitle}</h3>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6e7a91' }}>
@@ -121,7 +121,7 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
 
                 {/* Stay Details */}
                 <div>
-                    <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>Detalhes da Estadia</p>
+                    <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>{t('success.stayDetails')}</p>
                     <div style={{ backgroundColor: '#192537', color: '#ffffff', borderRadius: '24px', padding: '32px', boxShadow: '0 10px 30px rgba(25, 37, 55, 0.1)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '24px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -133,7 +133,7 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: 'rgba(255, 255, 255, 0.4)', margin: 0 }}>{t('success.duration')}</p>
-                                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{nights} {nights === 1 ? 'Noite' : 'Noites'}</p>
+                                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>{t('sidebar.nights', { count: nights })}</p>
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: 'rgba(255, 255, 255, 0.4)', margin: 0 }}>{t('success.guests')}</p>
@@ -146,18 +146,18 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
 
             {/* Pricing Table */}
             <div style={{ marginBottom: '48px' }}>
-                <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>Resumo Financeiro</p>
+                <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '16px', margin: '0 0 16px 0' }}>{t('success.financialSummary')}</p>
                 <div style={{ border: '1px solid #f3f4f6', borderRadius: '24px', overflow: 'hidden' }}>
                     <table style={{ width: '100%', fontSize: '14px', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ backgroundColor: 'rgba(249, 250, 251, 0.5)', borderBottom: '1px solid #f3f4f6' }}>
-                                <th style={{ textAlign: 'left', padding: '16px 24px', fontWeight: 'bold', color: '#6e7a91', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.1em' }}>Descrição</th>
-                                <th style={{ textAlign: 'right', padding: '16px 24px', fontWeight: 'bold', color: '#6e7a91', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.1em' }}>Valor</th>
+                                <th style={{ textAlign: 'left', padding: '16px 24px', fontWeight: 'bold', color: '#6e7a91', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.1em' }}>{t('success.description')}</th>
+                                <th style={{ textAlign: 'right', padding: '16px 24px', fontWeight: 'bold', color: '#6e7a91', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.1em' }}>{t('success.value')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                <td style={{ padding: '16px 24px', fontWeight: '500' }}>{t('sidebar.subtotal')} ({nights} noites)</td>
+                                <td style={{ padding: '16px 24px', fontWeight: '500' }}>{t('sidebar.subtotal')} ({t('sidebar.nights', { count: nights })})</td>
                                 <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 'bold' }}>€{basePrice}</td>
                             </tr>
                             <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -179,7 +179,7 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                             <tr style={{ backgroundColor: 'rgba(249, 250, 251, 0.3)' }}>
                                 <td style={{ padding: '24px' }}>
                                     <p style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>{t('sidebar.total')}</p>
-                                    <p style={{ fontSize: '10px', color: '#9ea8ba', fontWeight: '500', margin: 0 }}>Inclui IVA à taxa legal</p>
+                                    <p style={{ fontSize: '10px', color: '#9ea8ba', fontWeight: '500', margin: 0 }}>{t('success.vatRate')}</p>
                                 </td>
                                 <td style={{ padding: '24px', textAlign: 'right' }}>
                                     <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>€{total}</p>
@@ -208,10 +208,10 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
             <div style={{ marginTop: '64px', textAlign: 'center' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: '#e6f4ea', color: '#2d8653', padding: '8px 16px', borderRadius: '9999px', border: '1px solid #c4eed0', marginBottom: '16px' }}>
                     <ShieldCheck style={{ width: '16px', height: '16px' }} />
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Documento Oficial de Reserva</span>
+                    <span style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('success.officialDocument')}</span>
                 </div>
                 <p style={{ fontSize: '10px', color: '#9ea8ba', fontWeight: '500', margin: 0 }}>
-                    Obrigado por escolher a Lovely Memories. Estamos ansiosos por recebê-lo no Porto.
+                    {t('success.thankYouLine')}
                     <br />
                     © 2026 Lovely Memories Luxury Property Management
                 </p>

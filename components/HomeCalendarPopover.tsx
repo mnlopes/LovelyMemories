@@ -115,7 +115,13 @@ export function HomeCalendarPopover({
     useEffect(() => {
         if (!isOpen) return;
         const handleClickOutside = (event: MouseEvent) => {
-            if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+
+            // If the element was removed from the DOM during the click (common with re-renders)
+            // we assume it was an internal click and don't close.
+            if (!document.contains(target)) return;
+
+            if (popoverRef.current && !popoverRef.current.contains(target)) {
                 onClose();
             }
         };
@@ -163,6 +169,7 @@ export function HomeCalendarPopover({
                     {/* Content */}
                     <motion.div
                         ref={popoverRef}
+                        onMouseDown={(e) => e.stopPropagation()}
                         initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : -10 }}
