@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend with a dummy key for build time if missing
+// The actual send function checks for the key before sending
+const resend = new Resend(process.env.RESEND_API_KEY || 're_123456789');
 
 interface SendEmailProps {
     to: string | string[];
