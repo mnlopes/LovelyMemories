@@ -11,6 +11,7 @@ async function runTests() {
         checkIn: "2026-06-10",
         checkOut: "2026-06-15",
         adults: 2,
+        children: 0,
         infants: 0,
         website: "", // Empty honeypot
     };
