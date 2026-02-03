@@ -42,10 +42,19 @@ export default async function middleware(request: NextRequest) {
     // 1. Handle Locale Middleware
     const response = createMiddleware(routing)(request);
 
-    // 2. Handle Supabase Session Refresh
+    // 2. Handle Supabase Session Refresh (Safe Mode)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+        // If keys are missing (e.g. during Vercel initial setup), skip auth refresh to avoid crash.
+        // This means auth won't work, but the site won't 500.
+        return response;
+    }
+
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 get(name: string) {
