@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
 interface FormData {
@@ -13,6 +13,7 @@ interface FormData {
     phone: string;
     address: string;
     location: string;
+    website: string; // Honeypot
 }
 
 export const OwnerHero = () => {
@@ -23,9 +24,11 @@ export const OwnerHero = () => {
         phone: "",
         address: "",
         location: "",
+        website: "",
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -39,6 +42,7 @@ export const OwnerHero = () => {
             return;
         }
         setIsSubmitting(true);
+        setSubmitError(null);
 
         try {
             const response = await fetch('/api/contact-owner', {
@@ -55,11 +59,18 @@ export const OwnerHero = () => {
             if (response.ok) {
                 toast.success(t('form.success'));
                 setIsSuccess(true);
-                setFormData({ fullName: "", email: "", phone: "", address: "", location: "" });
+                setFormData({ fullName: "", email: "", phone: "", address: "", location: "", website: "" });
+            } else if (response.status === 429) {
+                const data = await response.json();
+                const msg = data.message || "Por favor aguarde uns minutos antes de tentar novamente.";
+                setSubmitError(msg);
+                toast.error(msg);
             } else {
+                setSubmitError("Ocorreu um erro ao enviar. Por favor tente novamente.");
                 toast.error("Ocorreu um erro ao enviar. Por favor tente novamente.");
             }
         } catch (error) {
+            setSubmitError("Erro de conexão. Verifique a sua internet.");
             toast.error("Erro de conexão. Verifique a sua internet.");
         } finally {
             setIsSubmitting(false);
@@ -67,8 +78,7 @@ export const OwnerHero = () => {
     };
 
     return (
-        <section className="relative min-h-screen flex items-center bg-white overflow-hidden z-0" style={{ minHeight: '100vh' }}>
-            <Toaster position="top-right" richColors />
+        <section className="relative min-h-screen bg-white overflow-hidden z-0" style={{ minHeight: '100vh' }}>
             {/* Background Image (Bottom half) - Robust implementation */}
             <div className="absolute bottom-0 left-0 w-full z-0 pointer-events-none" style={{ height: '45vh' }}>
                 <img
@@ -97,9 +107,7 @@ export const OwnerHero = () => {
                                 className="text-4xl md:text-6xl lg:text-[80px] font-playfair leading-[1.05] mb-10"
                                 style={{ fontWeight: 900, color: '#0A1128' }}
                             >
-                                {t.rich('title', {
-                                    br: () => <br />
-                                })}
+                                {t('title')}
                             </h1>
                             <p className="text-gray-500 text-lg md:text-xl lg:text-2xl font-light max-w-xl mb-12 leading-relaxed">
                                 {t('description')}
@@ -207,6 +215,16 @@ export const OwnerHero = () => {
                                                 value={formData.location}
                                                 onChange={handleChange}
                                                 className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                            />
+                                            {/* HONEYPOT FIELD (Hidden) */}
+                                            <input
+                                                type="text"
+                                                name="website"
+                                                value={formData.website}
+                                                onChange={handleChange}
+                                                style={{ display: 'none' }}
+                                                tabIndex={-1}
+                                                autoComplete="off"
                                             />
                                         </div>
 

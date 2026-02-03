@@ -3,7 +3,7 @@
 import { Check, X, Clock, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
-import { format, parse } from "date-fns";
+import { format, parse, isValid } from "date-fns";
 import { enUS, pt } from "date-fns/locale";
 
 // Helper to safely extract string from potential localized object
@@ -122,26 +122,29 @@ export function BookingPoliciesSection({ policies }: BookingPoliciesSectionProps
                         const isRelative = deadlineEn.toLowerCase().includes('day');
                         const isNone = deadlineEn.toLowerCase() === 'none';
 
+                        const parsedDate = !isRelative && !isNone ? parse(deadlineStr, 'd MMM', new Date()) : undefined;
+                        const isDateValid = parsedDate && isValid(parsedDate);
+
                         return (
                             <div className="flex gap-5">
                                 <div className="flex flex-col items-center justify-center w-12 h-12 bg-[#FCF5F5] text-[#854040] rounded-lg shrink-0 border border-[#E8D0D0]">
                                     <span className="text-[9px] font-bold uppercase leading-none mt-1 tracking-wide">
                                         {isRelative
                                             ? (deadlineStr.split(' ')[1]?.substring(0, 4).toUpperCase() || (locale === 'pt' ? 'DIAS' : 'DAYS'))
-                                            : !isNone ? format(parse(deadlineStr, 'd MMM', new Date()), 'MMM', { locale: dateLocale }) : '—'}
+                                            : isDateValid ? format(parsedDate!, 'MMM', { locale: dateLocale }) : '—'}
                                     </span>
                                     <span className="text-xl font-black leading-none text-[#854040]">
                                         {isRelative
                                             ? (deadlineStr.split(' ')[0] || '7')
-                                            : !isNone ? format(parse(deadlineStr, 'd MMM', new Date()), 'd') : 'X'}
+                                            : isDateValid ? format(parsedDate!, 'd') : '!'}
                                     </span>
                                 </div>
                                 <div className="space-y-3 text-left">
                                     <p className="text-sm font-medium text-navy-950 leading-relaxed">
                                         {t('cancellationTemplate', {
-                                            date: (isRelative || isNone)
+                                            date: (isRelative || isNone || !isDateValid)
                                                 ? deadlineStr
-                                                : format(parse(deadlineStr, 'd MMM', new Date()), 'd MMM', { locale: dateLocale }),
+                                                : format(parsedDate!, 'd MMM', { locale: dateLocale }),
                                             percent: "50%"
                                         })}
                                     </p>

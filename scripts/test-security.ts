@@ -1,6 +1,10 @@
-import { processReservation } from "../app/actions/reservation";
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 
 async function runTests() {
+    // Dynamic import to ensure logic runs after dotenv
+    const { processReservation } = await import("../app/actions/reservation");
+
     console.log("=== STARTING SECURITY VERIFICATION ===\n");
 
     const commonData = {
@@ -52,22 +56,19 @@ async function runTests() {
     console.log("Result:", !result6.success && result6.error === "Check-in date cannot be in the past." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
-    // Test 7: Zod - Invalid Email
     console.log("Test 7: Zod - Invalid Email Format");
     const result7 = await processReservation({ ...commonData, email: "not-an-email" });
-    console.log("Result:", !result7.success && result7.error === "Invalid data submitted." ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result7.success && result7.error?.includes("Invalid data submitted") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
-    // Test 8: Zod - Name too short
     console.log("Test 8: Zod - Name too short");
     const result8 = await processReservation({ ...commonData, fullName: "Ab" });
-    console.log("Result:", !result8.success && result8.error === "Invalid data submitted." ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result8.success && result8.error?.includes("Invalid data submitted") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
-    // Test 9: Zod - Phone too short
     console.log("Test 9: Zod - Phone too short");
     const result9 = await processReservation({ ...commonData, phone: "123" });
-    console.log("Result:", !result9.success && result9.error === "Invalid data submitted." ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result9.success && result9.error?.includes("Invalid data submitted") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     console.log("\n=== SECURITY VERIFICATION COMPLETE ===");

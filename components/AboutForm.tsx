@@ -2,13 +2,15 @@
 
 import React, { useState } from 'react';
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 export const AboutForm = () => {
     const t = useTranslations('AboutForm');
     const [formData, setFormData] = useState({
         uname: '',
         uemail: '',
-        message: ''
+        message: '',
+        website: '' // Honeypot
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,13 +33,22 @@ export const AboutForm = () => {
                     email: formData.uemail,
                     fullName: formData.uname,
                     message: formData.message,
-                    location: 'Página Sobre Nós'
+                    location: 'Página Sobre Nós',
+                    website: formData.website
                 }),
             });
 
+            if (response.status === 429) {
+                const data = await response.json();
+                toast.error(data.message || "Por favor aguarde uns minutos.");
+                return;
+            }
+
             if (response.ok) {
                 setIsSuccess(true);
-                setFormData({ uname: '', uemail: '', message: '' });
+                setFormData({ uname: '', uemail: '', message: '', website: '' });
+            } else {
+                toast.error("Ocorreu um erro ao enviar.");
             }
         } catch (error) {
             console.error('Error submitting form:', error);
@@ -94,6 +105,16 @@ export const AboutForm = () => {
                                             onChange={handleChange}
                                         />
                                     </div>
+                                    {/* HONEYPOT FIELD (Hidden) */}
+                                    <input
+                                        type="text"
+                                        name="website"
+                                        value={formData.website}
+                                        onChange={handleChange}
+                                        style={{ display: 'none' }}
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                    />
                                     <div>
                                         <textarea
                                             name="message"

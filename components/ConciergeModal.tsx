@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 interface ConciergeModalProps {
     isOpen: boolean;
@@ -16,7 +17,8 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({ isOpen, onClose,
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        message: ''
+        message: '',
+        website: '' // Honeypot
     });
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
@@ -45,12 +47,19 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({ isOpen, onClose,
                 }),
             });
 
+            if (response.status === 429) {
+                const data = await response.json();
+                toast.error(data.message || "Por favor aguarde uns minutos.");
+                setStatus('error');
+                return;
+            }
+
             if (response.ok) {
                 setStatus('success');
                 setTimeout(() => {
                     onClose();
                     setStatus('idle');
-                    setFormData({ name: '', email: '', message: '' });
+                    setFormData({ name: '', email: '', message: '', website: '' });
                 }, 2000);
             } else {
                 setStatus('error');
@@ -137,6 +146,17 @@ export const ConciergeModal: React.FC<ConciergeModalProps> = ({ isOpen, onClose,
                                             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                         />
                                     </div>
+
+                                    {/* HONEYPOT FIELD (Hidden) */}
+                                    <input
+                                        type="text"
+                                        name="website"
+                                        value={formData.website}
+                                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                        style={{ display: 'none' }}
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                    />
 
                                     <button
                                         type="submit"

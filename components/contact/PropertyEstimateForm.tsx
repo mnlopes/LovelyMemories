@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function PropertyEstimateForm() {
     const t = useTranslations('Contact');
@@ -12,6 +13,7 @@ export default function PropertyEstimateForm() {
     const [location, setLocation] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [website, setWebsite] = useState(""); // Honeypot
 
     const [selectedBedroom, setSelectedBedroom] = useState("");
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,15 +49,25 @@ export default function PropertyEstimateForm() {
                 body: JSON.stringify({
                     email,
                     location,
-                    bedrooms: selectedBedroom
+                    bedrooms: selectedBedroom,
+                    website
                 }),
             });
+
+            if (response.status === 429) {
+                const data = await response.json();
+                toast.error(data.message || "Por favor aguarde uns minutos.");
+                return;
+            }
 
             if (response.ok) {
                 setIsSuccess(true);
                 setEmail("");
                 setLocation("");
                 setSelectedBedroom("");
+                setWebsite("");
+            } else {
+                toast.error("Ocorreu um erro ao enviar.");
             }
         } catch (error) {
             console.error("Error submitting form:", error);
@@ -123,6 +135,17 @@ export default function PropertyEstimateForm() {
                             className="w-full px-6 py-4 rounded-full border border-gray-300 focus:border-[#B09E80] focus:ring-1 focus:ring-[#B09E80] outline-none transition-colors text-navy-900 placeholder:text-gray-400"
                         />
                     </div>
+
+                    {/* HONEYPOT FIELD (Hidden) */}
+                    <input
+                        type="text"
+                        name="website"
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                        style={{ display: 'none' }}
+                        tabIndex={-1}
+                        autoComplete="off"
+                    />
 
                     {/* Custom Dropdown */}
                     <div className="relative" ref={dropdownRef}>

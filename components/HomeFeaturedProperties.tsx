@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { Building2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from "next-intl";
 import { getProperties } from '@/lib/services';
@@ -48,7 +49,9 @@ export const HomeFeaturedProperties = () => {
         const fetchProperties = async () => {
             setIsLoading(true);
             const data = await getProperties();
-            setProperties(data);
+            // Shuffle and take only 5
+            const shuffled = [...data].sort(() => 0.5 - Math.random());
+            setProperties(shuffled.slice(0, 5));
             setIsLoading(false);
         };
         fetchProperties();
@@ -75,32 +78,46 @@ export const HomeFeaturedProperties = () => {
                         ) : properties.length === 0 ? (
                             <div className="w-full text-center py-20 text-gray-400">No properties found.</div>
                         ) : (
-                            properties.map((property, index) => (
-                                <Link
-                                    key={property.id}
-                                    href={`/properties/${property.slug}`}
-                                    className="flex-none w-[85vw] max-w-[320px] snap-center group relative block"
-                                >
-                                    <figure className="mb-0 h-[450px] w-full relative overflow-hidden rounded-2xl">
-                                        <Image
-                                            src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
-                                            alt={getLocalizedStr(property.title, locale)}
-                                            fill
-                                            sizes="(max-width: 768px) 85vw"
-                                            style={{ objectFit: 'cover' }}
-                                            className="transition-transform duration-700 group-hover:scale-105"
-                                        />
-                                        <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/60 to-transparent z-10">
-                                            <h6 className="text-white font-sans font-bold text-xl mb-1">
-                                                {getLocalizedStr(property.title, locale)}
-                                            </h6>
-                                            <p className="text-white/90 text-sm font-light">
-                                                {safeCount(property.bedrooms)} {t('bedrooms')} • {safeCount(property.max_guests)} {t('guests')}
-                                            </p>
-                                        </div>
-                                    </figure>
-                                </Link>
-                            ))
+                            properties.slice(0, 5).map((property, index) => {
+                                const isBuilding = property.is_multi_unit;
+                                const baseRoute = isBuilding ? 'buildings' : 'properties';
+                                return (
+                                    <Link
+                                        key={property.id}
+                                        href={`/${baseRoute}/${property.slug}`}
+                                        className="flex-none w-[85vw] max-w-[320px] snap-center group relative block"
+                                    >
+                                        <figure className="mb-0 h-[450px] w-full relative overflow-hidden rounded-2xl">
+                                            <Image
+                                                src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
+                                                alt={getLocalizedStr(property.title, locale)}
+                                                fill
+                                                sizes="(max-width: 768px) 85vw"
+                                                style={{ objectFit: 'cover' }}
+                                                className="transition-transform duration-700 group-hover:scale-105"
+                                            />
+                                            {isBuilding && (
+                                                <div className="absolute top-4 right-4 z-20">
+                                                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#AD9C7E]/85 backdrop-blur-md border border-white/30 text-white shadow-xl">
+                                                        <Building2 className="w-3.5 h-3.5" />
+                                                        <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Building</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/60 to-transparent z-10">
+                                                <h6 className="text-white font-sans font-bold text-xl mb-1">
+                                                    {getLocalizedStr(property.title, locale)}
+                                                </h6>
+                                                {!isBuilding && (
+                                                    <p className="text-white/90 text-sm font-light">
+                                                        {safeCount(property.bedrooms)} {t('bedrooms')} • {safeCount(property.max_guests)} {t('guests')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </figure>
+                                    </Link>
+                                );
+                            })
                         )}
                     </div>
                 </div>
@@ -116,45 +133,59 @@ export const HomeFeaturedProperties = () => {
                             <h5 className="section-title text-center text-3xl font-sans font-bold text-[#192537]">{t('featuredTitle')}</h5>
                         </div>
                     </div>
-                    {/* Modern Tailwind Grid Structure replacing legacy row/cols */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 buildings-posts">
+                    {/* Centered Flex Structure */}
+                    <div className="flex flex-wrap justify-center gap-6 buildings-posts">
                         {isLoading ? (
                             <>
                                 {[...Array(5)].map((_, i) => (
-                                    <div key={i} className="aspect-[3/4] rounded-2xl bg-gray-100 animate-pulse" />
+                                    <div key={i} className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-2rem)] xl:w-[calc(20%-2rem)] aspect-[3/4] rounded-2xl bg-gray-100 animate-pulse" />
                                 ))}
                             </>
                         ) : (
-                            properties.map((property, index) => (
-                                <Link
-                                    key={property.id}
-                                    href={`/properties/${property.slug}`}
-                                    className="buildings-posts__card reveal-pending reveal-visible group block w-full"
-                                    style={{ transitionDelay: `${index * 100}ms` }}
-                                >
-                                    <figure className="mb-0 buildings-posts__card--img rounded-2xl overflow-hidden relative aspect-[3/4] w-full shadow-md">
-                                        <Image
-                                            src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
-                                            alt={getLocalizedStr(property.title, locale)}
-                                            fill
-                                            sizes="(max-width: 1200px) 50vw, 20vw"
-                                            style={{ objectFit: 'cover' }}
-                                            className="transition-transform duration-700 group-hover:scale-110"
-                                        />
-                                        {/* Gradient Overlay for text readability */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 transition-opacity duration-300"></div>
+                            properties.slice(0, 5).map((property, index) => {
+                                const isBuilding = property.is_multi_unit;
+                                const baseRoute = isBuilding ? 'buildings' : 'properties';
+                                return (
+                                    <Link
+                                        key={property.id}
+                                        href={`/${baseRoute}/${property.slug}`}
+                                        className="buildings-posts__card reveal-pending reveal-visible group block w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-2rem)] xl:w-[calc(20%-2rem)]"
+                                        style={{ transitionDelay: `${index * 100}ms` }}
+                                    >
+                                        <figure className="mb-0 buildings-posts__card--img rounded-2xl overflow-hidden relative aspect-[3/4] w-full shadow-md">
+                                            <Image
+                                                src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
+                                                alt={getLocalizedStr(property.title, locale)}
+                                                fill
+                                                sizes="(max-width: 1200px) 50vw, 20vw"
+                                                style={{ objectFit: 'cover' }}
+                                                className="transition-transform duration-700 group-hover:scale-110"
+                                            />
+                                            {isBuilding && (
+                                                <div className="absolute top-4 right-4 z-20">
+                                                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#AD9C7E]/85 backdrop-blur-md border border-white/30 text-white shadow-xl scale-100 transition-all duration-300 group-hover:scale-105 group-hover:bg-[#AD9C7E]">
+                                                        <Building2 className="w-3.5 h-3.5" />
+                                                        <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Building</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Gradient Overlay for text readability */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 transition-opacity duration-300"></div>
 
-                                        <div className="absolute bottom-0 left-0 w-full p-6 z-10 text-left">
-                                            <h6 className="text-white font-sans font-bold text-xl mb-1 leading-tight">
-                                                {getLocalizedStr(property.title, locale)}
-                                            </h6>
-                                            <p className="text-white/90 text-sm font-light tracking-wide">
-                                                {safeCount(property.bedrooms)} {t('bedrooms')} • {safeCount(property.max_guests)} {t('guests')}
-                                            </p>
-                                        </div>
-                                    </figure>
-                                </Link>
-                            ))
+                                            <div className="absolute bottom-0 left-0 w-full p-6 z-10 text-left">
+                                                <h6 className="text-white font-sans font-bold text-xl mb-1 leading-tight">
+                                                    {getLocalizedStr(property.title, locale)}
+                                                </h6>
+                                                {!isBuilding && (
+                                                    <p className="text-white/90 text-sm font-light tracking-wide">
+                                                        {safeCount(property.bedrooms)} {t('bedrooms')} • {safeCount(property.max_guests)} {t('guests')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </figure>
+                                    </Link>
+                                );
+                            })
                         )}
                     </div>
                 </div>

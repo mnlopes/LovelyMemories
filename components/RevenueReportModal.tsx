@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { toast } from 'sonner';
 import { Input } from './ui/Input';
-import { useEffect } from 'react';
 
 interface RevenueReportModalProps {
     isOpen: boolean;
@@ -26,7 +26,8 @@ export const RevenueReportModal: React.FC<RevenueReportModalProps> = ({ isOpen, 
         address: '',
         location: '',
         plan: initialPlan || 'base',
-        numProperties: '1'
+        numProperties: '1',
+        website: '' // Honeypot
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,9 +75,16 @@ export const RevenueReportModal: React.FC<RevenueReportModalProps> = ({ isOpen, 
                 body: JSON.stringify(formData),
             });
 
+            if (response.status === 429) {
+                const data = await response.json();
+                toast.error(data.message || "Por favor aguarde uns minutos antes de tentar novamente.");
+                return;
+            }
+
             if (response.ok) {
                 setIsSuccess(true);
                 onSuccess?.();
+                setFormData(prev => ({ ...prev, website: '' })); // Reset honeypot
                 setTimeout(() => {
                     onClose();
                     setIsSuccess(false);
@@ -181,6 +189,17 @@ export const RevenueReportModal: React.FC<RevenueReportModalProps> = ({ isOpen, 
                                         className="h-14 bg-white border-gray-200 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
                                         value={formData.location}
                                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    />
+
+                                    {/* HONEYPOT FIELD (Hidden) */}
+                                    <input
+                                        type="text"
+                                        name="website"
+                                        value={formData.website}
+                                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                        style={{ display: 'none' }}
+                                        tabIndex={-1}
+                                        autoComplete="off"
                                     />
 
                                     {/* Custom Plan Dropdown - Back to Full Width */}

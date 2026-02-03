@@ -5,12 +5,14 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/routing";
+import { toast } from "sonner";
 
 export const Footer = () => {
     const t = useTranslations('Footer');
     const tNav = useTranslations('Navbar');
     const pathname = usePathname();
     const [email, setEmail] = useState("");
+    const [website, setWebsite] = useState(""); // Honeypot
 
     const navLinks = [
         { path: '/', label: tNav('book') },
@@ -33,12 +35,20 @@ export const Footer = () => {
             const response = await fetch('/api/newsletter', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, website }),
             });
+
+            if (response.status === 429) {
+                const data = await response.json();
+                toast.error(data.message || "Por favor aguarde uns minutos.");
+                setStatus('error');
+                return;
+            }
 
             if (response.ok) {
                 setStatus('success');
                 setEmail("");
+                setWebsite("");
                 setTimeout(() => setStatus('idle'), 3000);
             } else {
                 setStatus('error');
@@ -85,6 +95,16 @@ export const Footer = () => {
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="flex-grow bg-transparent text-gray-900 placeholder-gray-400 font-light focus:outline-none pl-4 md:pl-6 py-2 md:py-2.5 text-sm md:text-base min-w-0"
                                 required
+                            />
+                            {/* HONEYPOT FIELD (Hidden) */}
+                            <input
+                                type="text"
+                                name="website"
+                                value={website}
+                                onChange={(e) => setWebsite(e.target.value)}
+                                style={{ display: 'none' }}
+                                tabIndex={-1}
+                                autoComplete="off"
                             />
                             <button
                                 type="submit"

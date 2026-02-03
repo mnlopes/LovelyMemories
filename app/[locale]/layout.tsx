@@ -1,4 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl';
+import { Toaster } from 'sonner';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
@@ -50,6 +51,7 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir}>
       <body className={`${montserrat.variable} antialiased`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages} locale={locale}>
+          <Toaster position="top-right" richColors expand={true} style={{ zIndex: 200000, top: '120px' }} />
           <Preloader />
           <ScrollAnimations />
           <Navbar />
