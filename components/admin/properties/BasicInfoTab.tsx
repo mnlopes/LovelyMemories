@@ -265,21 +265,8 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                 </div>
 
                 <div className="space-y-6">
-                    <div className="flex items-center justify-between pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
-                        <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                            Highlights Manager
-                        </h3>
-                        <button
-                            type="button"
-                            onClick={addHighlight}
-                            className="flex items-center gap-2 px-4 py-1.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-xl text-[10px] font-bold uppercase tracking-wider hover:opacity-80 transition-all shadow-sm"
-                        >
-                            <Plus className="size-3" />
-                            Add Highlight
-                        </button>
-                    </div>
                     <div className="pt-2">
-                        <HighlightsManager activeLang={activeLang} />
+                        <HighlightsManager activeLang={activeLang} dir={dir} />
                     </div>
                 </div>
             </div>

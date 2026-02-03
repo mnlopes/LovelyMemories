@@ -108,7 +108,7 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                         <p className="text-gray-500">Choose from {activeUnits.length} unique apartments within this building.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                         {sortedUnits.map((unit) => {
                             const isComingSoon = unit.isComingSoon;
 
