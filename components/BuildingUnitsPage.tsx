@@ -161,29 +161,29 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-2 gap-4 items-center justify-between w-full">
-                                                <div className="flex items-center gap-2">
-                                                    <Users className="text-[#AD9C7E] w-[18px] h-[18px]" />
-                                                    <p className="text-[#192537] text-sm font-medium">
-                                                        <span className="font-bold">{safeCount(unit.guests)}</span> {safeCount(unit.guests) === 1 ? 'Guest' : 'Guests'}
+                                            <div className="grid grid-cols-2 gap-x-2 gap-y-3 items-center w-full">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Users className="text-[#AD9C7E] w-4 h-4 shrink-0" />
+                                                    <p className="text-[#192537] text-[12px] font-medium whitespace-nowrap">
+                                                        <span className="font-bold">{safeCount(unit.guests)}</span> {td('guestsCount', { count: safeCount(unit.guests) })}
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Bed className="text-[#AD9C7E] w-[18px] h-[18px]" />
-                                                    <p className="text-[#192537] text-sm font-medium whitespace-nowrap">
-                                                        <span className="font-bold">{safeCount(unit.bedrooms)}</span> {safeCount(unit.bedrooms) === 1 ? 'Bedroom' : 'Bedrooms'}
+                                                <div className="flex items-center gap-1.5">
+                                                    <Bed className="text-[#AD9C7E] w-4 h-4 shrink-0" />
+                                                    <p className="text-[#192537] text-[12px] font-medium whitespace-nowrap">
+                                                        <span className="font-bold">{safeCount(unit.bedrooms)}</span> {td('bedroomsCount', { count: safeCount(unit.bedrooms) })}
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Maximize className="text-[#AD9C7E] w-[18px] h-[18px]" />
-                                                    <p className="text-[#192537] text-sm font-medium whitespace-nowrap">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Maximize className="text-[#AD9C7E] w-4 h-4 shrink-0" />
+                                                    <p className="text-[#192537] text-[12px] font-medium whitespace-nowrap">
                                                         <span className="font-bold">{safeCount(unit.area)}</span> m²
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Bath className="text-[#AD9C7E] w-[18px] h-[18px]" />
-                                                    <p className="text-[#192537] text-sm font-medium whitespace-nowrap">
-                                                        <span className="font-bold">{safeCount(unit.bathrooms)}</span> {safeCount(unit.bathrooms) === 1 ? 'Bathroom' : 'Bathrooms'}
+                                                <div className="flex items-center gap-1.5">
+                                                    <Bath className="text-[#AD9C7E] w-4 h-4 shrink-0" />
+                                                    <p className="text-[#192537] text-[12px] font-medium whitespace-nowrap">
+                                                        <span className="font-bold">{safeCount(unit.bathrooms)}</span> {td('bathroomsCount', { count: safeCount(unit.bathrooms) })}
                                                     </p>
                                                 </div>
                                             </div>
