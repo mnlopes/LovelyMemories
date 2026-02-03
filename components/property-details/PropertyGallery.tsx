@@ -52,7 +52,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
     return (
         <>
             {/* Page Gallery Grid */}
-            <div className="relative grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-3 h-[450px] md:h-[520px] overflow-hidden rounded-2xl">
+            <div className="relative grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-3 h-[450px] md:h-[450px] lg:h-[400px] 2xl:h-[520px] overflow-hidden rounded-2xl">
                 <div
                     className="md:col-span-2 md:row-span-2 relative overflow-hidden cursor-pointer group"
                     onClick={() => openSlider(0)}
