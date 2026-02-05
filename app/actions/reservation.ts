@@ -60,24 +60,24 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
 
     if (!result.success) {
         const errorMsg = result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
-        return { success: false, error: `Dados inválidos: ${errorMsg}` };
+        return { success: false, error: `Dados inválidos: ${errorMsg}`, warning: undefined, ref: undefined };
     }
 
     // 2. Extra Security: Check Honeypot
     if (data.website) {
         // Bot detected
-        return { success: false, error: "Bot activity detected." };
+        return { success: false, error: "Bot activity detected.", warning: undefined, ref: undefined };
     }
 
     // 3. Extra Security: Verify Property Existence & Capacity
     const property = await getPropertyBySlug(data.propertySlug);
     if (!property) {
-        return { success: false, error: "Propriedade inválida selecionada." };
+        return { success: false, error: "Propriedade inválida selecionada.", warning: undefined, ref: undefined };
     }
 
     const totalGuests = data.adults + data.children + data.infants;
     if (totalGuests > property.guests) {
-        return { success: false, error: `Esta propriedade apenas acomoda até ${property.guests} hóspedes.` };
+        return { success: false, error: `Esta propriedade apenas acomoda até ${property.guests} hóspedes.`, warning: undefined, ref: undefined };
     }
 
     // 4. Extra Security: Date Integrity
@@ -87,15 +87,15 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
     today.setHours(0, 0, 0, 0);
 
     if (isNaN(dateIn.getTime()) || isNaN(dateOut.getTime())) {
-        return { success: false, error: "Formato de data inválido." };
+        return { success: false, error: "Formato de data inválido.", warning: undefined, ref: undefined };
     }
 
     if (dateIn < today) {
-        return { success: false, error: "A data de check-in não pode ser no passado." };
+        return { success: false, error: "A data de check-in não pode ser no passado.", warning: undefined, ref: undefined };
     }
 
     if (dateOut <= dateIn) {
-        return { success: false, error: "A data de check-out deve ser após a data de check-in." };
+        return { success: false, error: "A data de check-out deve ser após a data de check-in.", warning: undefined, ref: undefined };
     }
 
     // 5. Generate Reference ID
@@ -148,11 +148,13 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         if (dbError.code === '42703') {
             return {
                 success: false,
-                error: "Erro de sistema: A base de dados precisa de ser sincronizada (Colunas em falta). Por favor, contacte o administrador."
+                error: "Erro de sistema: A base de dados precisa de ser sincronizada (Colunas em falta). Por favor, contacte o administrador.",
+                warning: undefined,
+                ref: undefined
             };
         }
 
-        return { success: false, error: "Não foi possível guardar a reserva na base de dados. Por favor, tente novamente." };
+        return { success: false, error: "Não foi possível guardar a reserva na base de dados. Por favor, tente novamente.", warning: undefined, ref: undefined };
     }
 
     console.log("Secure reservation processed and saved for:", data.fullName, "Ref:", referenceId);
@@ -180,6 +182,7 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
     }
 
     // 7. Trigger Email Notifications (Async - don't block response)
+    let warning: string | undefined;
     try {
         const { sendEmail } = await import("@/lib/email");
         const { bookingAdminEmail, bookingGuestConfirmationEmail } = await import("@/lib/email-templates");
@@ -229,12 +232,13 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
 
     } catch (emailErr) {
         console.error("Non-critical error sending reservation emails:", emailErr);
-        // We don't return error here because the reservation is already saved in DB
+        warning = "Reservation saved but notification emails failed to send.";
     }
 
     return {
         success: true,
-        ref: referenceId
+        ref: referenceId,
+        warning
     };
 }
 
