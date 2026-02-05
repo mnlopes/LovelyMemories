@@ -216,27 +216,36 @@ export async function upsertProperty(data: PropertyFormData) {
             });
 
             // Compare Arrays (Amenities, etc)
-            ['amenities', 'house_rules', 'vip_services'].forEach(field => {
-                const oldArr = (previousData[field] as any[]) || [];
-                const newArr = (payload[field as keyof typeof payload] as any[]) || [];
+            ['amenities', 'vip_services', 'home_truths'].forEach(field => {
+                const oldVal = previousData[field];
+                const newVal = payload[field as keyof typeof payload];
 
-                // deeply compare with JSON stringify for simplicity
-                if (JSON.stringify(oldArr) !== JSON.stringify(newArr)) {
-                    // Check added/removed
-                    const added = newArr.filter((x: any) => !oldArr.includes(x));
-                    const removed = oldArr.filter((x: any) => !newArr.includes(x));
+                // Ensure we are dealing with arrays
+                if (Array.isArray(oldVal) && Array.isArray(newVal)) {
+                    // deeply compare with JSON stringify for simplicity
+                    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+                        // For logging, we just want to know if items were added/removed
+                        // Note: .includes on objects only works by reference, so we use stringify for small sets
+                        const added = newVal.filter(x => !oldVal.some(y => JSON.stringify(x) === JSON.stringify(y)));
+                        const removed = oldVal.filter(x => !newVal.some(y => JSON.stringify(x) === JSON.stringify(y)));
 
-                    let diffText = '';
-                    if (added.length > 0) diffText += `+${added.length} added `;
-                    if (removed.length > 0) diffText += `-${removed.length} removed`;
-                    if (!diffText) diffText = 'Modified';
+                        let diffText = '';
+                        if (added.length > 0) diffText += `+${added.length} added `;
+                        if (removed.length > 0) diffText += `-${removed.length} removed`;
+                        if (!diffText) diffText = 'Modified';
 
-                    changes[field] = {
-                        from: `${oldArr.length} items`,
-                        to: `${newArr.length} items (${diffText})`
-                    };
+                        changes[field] = {
+                            from: `${oldVal.length} items`,
+                            to: `${newVal.length} items (${diffText})`
+                        };
+                    }
                 }
             });
+
+            // Compare house_rules (Object)
+            if (JSON.stringify(payload.house_rules) !== JSON.stringify(previousData.house_rules)) {
+                changes.house_rules = { from: 'Updated', to: 'Updated' };
+            }
 
             // Compare original price
             if (payload.original_price !== previousData.original_price) {
