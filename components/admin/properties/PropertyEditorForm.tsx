@@ -92,7 +92,10 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 deadline: "7 days",
                 ...initialData?.cancellation
             },
-            amenities: initialData?.amenities || [],
+            nearby_places: initialData?.nearby_places?.length ? initialData.nearby_places : [
+                { category: 'essentials', items: [] },
+                { category: 'localAttractions', items: [] }
+            ],
             highlights: initialData?.highlights || [],
             vip_services: initialData?.vip_services || [],
             home_truths: (initialData as any)?.home_truths || (initialData as any)?.good_to_know || [],

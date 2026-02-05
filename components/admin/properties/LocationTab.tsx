@@ -42,8 +42,7 @@ export default function LocationTab() {
                         <FormInput
                             label="Latitude"
                             placeholder="e.g. 41.1579"
-                            type="number"
-                            step="any"
+                            type="text"
                             {...register("lat")}
                             error={errors.lat?.message}
                         />
@@ -52,8 +51,7 @@ export default function LocationTab() {
                         <FormInput
                             label="Longitude"
                             placeholder="e.g. -8.6291"
-                            type="number"
-                            step="any"
+                            type="text"
                             {...register("lng")}
                             error={errors.lng?.message}
                         />

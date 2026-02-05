@@ -344,8 +344,12 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
     // Coordinate validation
     const isValidCoord = (c: number) => typeof c === 'number' && !isNaN(c) && Math.abs(c) < 500;
     const safeCoords = (lat: any, lng: any, fallbackLat = 0, fallbackLng = 0): [number, number] => {
-        const cLat = parseFloat(lat);
-        const cLng = parseFloat(lng);
+        const normalize = (val: any) => {
+            if (typeof val === 'string') return val.replace(',', '.');
+            return val;
+        };
+        const cLat = parseFloat(normalize(lat));
+        const cLng = parseFloat(normalize(lng));
         return [
             isValidCoord(cLat) ? cLat : fallbackLat,
             isValidCoord(cLng) ? cLng : fallbackLng

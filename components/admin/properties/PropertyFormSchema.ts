@@ -3,7 +3,12 @@ import { z } from "zod";
 // Helper to coerce strings to numbers or null safely
 const coerceNumberOrNull = z.preprocess((val) => {
     if (val === "" || val === null || val === undefined) return null;
-    const parsed = typeof val === "string" ? parseFloat(val) : Number(val);
+    let normalized = val;
+    if (typeof val === "string") {
+        // Replace comma with dot for European/Portuguese format
+        normalized = val.replace(',', '.');
+    }
+    const parsed = typeof normalized === "string" ? parseFloat(normalized) : Number(normalized);
     if (isNaN(parsed as any)) return null;
     return parsed;
 }, z.number().nullable()).optional();

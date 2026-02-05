@@ -53,6 +53,7 @@ function CategorySection({ title, categoryKey, description, categoryIndex }: {
 
     return (
         <div className="space-y-6">
+            <input type="hidden" {...register(`nearby_places.${categoryIndex}.category`)} value={categoryKey} />
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{title}</h3>
@@ -109,8 +110,7 @@ function CategorySection({ title, categoryKey, description, categoryIndex }: {
                                 <div className="flex items-center gap-2">
                                     <span className="text-[10px] font-bold text-[#a3a3a3] min-w-8">LAT</span>
                                     <input
-                                        type="number"
-                                        step="any"
+                                        type="text"
                                         {...register(`nearby_places.${categoryIndex}.items.${index}.coordinates.0` as any)}
                                         placeholder="41.1458"
                                         className="flex-1 bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none font-medium"
@@ -119,8 +119,7 @@ function CategorySection({ title, categoryKey, description, categoryIndex }: {
                                 <div className="flex items-center gap-2 border-l border-[#f0f0f0] dark:border-admin-dark-border pl-4">
                                     <span className="text-[10px] font-bold text-[#a3a3a3] min-w-8">LNG</span>
                                     <input
-                                        type="number"
-                                        step="any"
+                                        type="text"
                                         {...register(`nearby_places.${categoryIndex}.items.${index}.coordinates.1` as any)}
                                         placeholder="-8.6139"
                                         className="flex-1 bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none font-medium"
