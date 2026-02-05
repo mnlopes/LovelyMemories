@@ -1,18 +1,91 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon } from "lucide-react";
+import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { TrafficTimeline } from "@/components/admin/TrafficTimeline";
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState<'general' | 'translations'>('general');
+    const router = useRouter();
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+    const [activeTab, setActiveTab] = useState<'general' | 'translations' | 'analytics'>('general');
+
     const [isTranslating, setIsTranslating] = useState(false);
     const [provider, setProvider] = useState<'gemini' | 'openai'>('gemini');
     const [geminiKey, setGeminiKey] = useState('');
     const [openAIKey, setOpenAIKey] = useState('');
     const [forceUpdate, setForceUpdate] = useState(true);
     const [lastResult, setLastResult] = useState<{ success: boolean; message: string } | null>(null);
+
+    const [maintenanceMode, setMaintenanceMode] = useState<boolean>(false);
+    const [isUpdatingMaintenance, setIsUpdatingMaintenance] = useState(false);
+    const [resendStatus, setResendStatus] = useState<'checking' | 'connected' | 'restricted' | 'error' | null>(null);
+    const [resendError, setResendError] = useState<string | null>(null);
+
+    const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error' | null>(null);
+    const [dbLatency, setDbLatency] = useState<string | null>(null);
+    const [isFlushingCache, setIsFlushingCache] = useState(false);
+
+    // Analytics State
+    const [analyticsStats, setAnalyticsStats] = useState<{ liveVisitors: number, topCountries: any[] } | null>(null);
+    const [recentLogs, setRecentLogs] = useState<any[]>([]);
+    const [chartData, setChartData] = useState<number[]>(Array(60).fill(0));
+    const [timeRange, setTimeRange] = useState<'60m' | '6h' | '12h' | '24h'>('60m');
+    const [totalDbLogs, setTotalDbLogs] = useState<number | null>(null);
+    const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+    const [logLimit, setLogLimit] = useState(35);
+    const [isPurgingLogs, setIsPurgingLogs] = useState(false);
+    const [selectedLog, setSelectedLog] = useState<any | null>(null);
+    const [isLive, setIsLive] = useState(true);
+    const [showAdminLogs, setShowAdminLogs] = useState(false);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.push("/login");
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.role !== 'super_admin') {
+                const locale = window.location.pathname.split('/')[1] || 'en';
+                router.push(`/${locale}/admin/properties`);
+            } else {
+                setIsAuthorized(true);
+            }
+        };
+        checkAuth();
+    }, [router]);
+
+    // Load system settings
+    useEffect(() => {
+        if (isAuthorized) {
+            const loadSettings = async () => {
+                try {
+                    const { getSystemSetting } = await import('@/app/actions/settings');
+                    const maintenance = await getSystemSetting('maintenance_mode');
+                    setMaintenanceMode(!!maintenance);
+
+                    // Initial checks
+                    handleCheckResend();
+                    handleCheckDB();
+                } catch (error) {
+                    console.error("Failed to load settings:", error);
+                }
+            };
+            loadSettings();
+        }
+    }, [isAuthorized]);
 
     // Load keys from storage
     useEffect(() => {
@@ -23,7 +96,7 @@ export default function SettingsPage() {
             const oKey = localStorage.getItem('openai_api_key');
             if (oKey) setOpenAIKey(oKey);
         }
-    }, [provider]); // Depend on provider to ensure sync if needed, though running once is fine, key logic handles it.
+    }, [provider]);
 
     const handleKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
@@ -35,6 +108,141 @@ export default function SettingsPage() {
             localStorage.setItem('openai_api_key', val);
         }
     };
+
+    const handleToggleMaintenance = async () => {
+        setIsUpdatingMaintenance(true);
+        try {
+            const { updateSystemSetting } = await import('@/app/actions/settings');
+            const newStatus = !maintenanceMode;
+            const result = await updateSystemSetting('maintenance_mode', newStatus);
+
+            if (result.success) {
+                setMaintenanceMode(newStatus);
+                toast.success(newStatus ? "Maintenance Mode Activated" : "Maintenance Mode Deactivated");
+            } else {
+                toast.error("Failed to update maintenance mode");
+            }
+        } catch (error) {
+            toast.error("An error occurred");
+            console.error(error);
+        } finally {
+            setIsUpdatingMaintenance(false);
+        }
+    };
+
+    const handleCheckResend = async () => {
+        setResendStatus('checking');
+        try {
+            const { checkResendStatus } = await import('@/app/actions/settings');
+            const result = await checkResendStatus();
+            if (result.success) {
+                setResendStatus(result.type as any || 'connected');
+                setResendError(null);
+            } else {
+                setResendStatus('error');
+                setResendError(result.error || "Invalid API Key");
+            }
+        } catch (error) {
+            setResendStatus('error');
+            setResendError("Connection check failed");
+        }
+    };
+
+    const handleCheckDB = async () => {
+        setDbStatus('checking');
+        try {
+            const { checkDatabaseStatus } = await import('@/app/actions/settings');
+            const result = await checkDatabaseStatus();
+            if (result.success) {
+                setDbStatus('connected');
+                setDbLatency(result.latency || null);
+            } else {
+                setDbStatus('error');
+            }
+        } catch (error) {
+            setDbStatus('error');
+        }
+    };
+
+    const handleFlushCache = async () => {
+        setIsFlushingCache(true);
+        const loadingToast = toast.loading("Invoking global revalidation...");
+        try {
+            const { flushGlobalCache } = await import('@/app/actions/settings');
+            const result = await flushGlobalCache();
+            if (result.success) {
+                toast.success("Global Cache Flushed", { id: loadingToast });
+            } else {
+                toast.error(result.error || "Failed to flush cache", { id: loadingToast });
+            }
+        } catch (error) {
+            toast.error("Unexpected error occurred", { id: loadingToast });
+        } finally {
+            setIsFlushingCache(false);
+        }
+    };
+
+    const loadAnalytics = async (customLimit?: number) => {
+        setIsLoadingAnalytics(true);
+        try {
+            const { getVisitorStats, getRecentVisits, getTrafficData, getLogCount } = await import('@/app/actions/settings');
+            const statsRes = await getVisitorStats(showAdminLogs);
+            const logsRes = await getRecentVisits(customLimit || logLimit, showAdminLogs);
+            const chartRes = await getTrafficData(timeRange, showAdminLogs);
+            const countRes = await getLogCount();
+
+            if (statsRes.success) setAnalyticsStats(statsRes as any);
+            if (logsRes.success) setRecentLogs(logsRes.logs || []);
+            if (chartRes.success) setChartData(chartRes.data || []);
+            if (countRes.success) setTotalDbLogs(countRes.count ?? null);
+        } catch (error) {
+            console.error("Failed to load analytics:", error);
+        } finally {
+            setIsLoadingAnalytics(false);
+        }
+    };
+
+    const handleClearLogs = async () => {
+        // Visual clear only as requested
+        setRecentLogs([]);
+        toast.success("Logs cleared visually. Database still holds historical records.");
+    };
+
+    const handlePurgeLogs = async () => {
+        if (!confirm("This will permanently delete ALL logs older than 7 days from the database. Proceed?")) return;
+
+        setIsPurgingLogs(true);
+        const loadingToast = toast.loading("Purging historical logs...");
+        try {
+            const { purgeLogs } = await import('@/app/actions/settings');
+            const result = await purgeLogs(7);
+            if (result.success) {
+                toast.success("Logs pruned successfully", { id: loadingToast });
+                loadAnalytics();
+            } else {
+                toast.error(result.error || "Failed to purge logs", { id: loadingToast });
+            }
+        } catch (error) {
+            toast.error("Unexpected error", { id: loadingToast });
+        } finally {
+            setIsPurgingLogs(false);
+        }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard");
+    };
+
+    useEffect(() => {
+        if (activeTab === 'analytics' && isAuthorized) {
+            loadAnalytics();
+            if (isLive) {
+                const interval = setInterval(() => loadAnalytics(), 15000); // 15s when live
+                return () => clearInterval(interval);
+            }
+        }
+    }, [activeTab, isAuthorized, timeRange, isLive, showAdminLogs]);
 
     const onAutoTranslate = async () => {
         setLastResult(null);
@@ -68,6 +276,14 @@ export default function SettingsPage() {
         }
     };
 
+    if (isAuthorized === null) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#171717]"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="p-8 max-w-7xl mx-auto">
             <div className="flex items-center gap-4 mb-8">
@@ -99,6 +315,16 @@ export default function SettingsPage() {
                 >
                     Translations
                     {activeTab === 'translations' && (
+                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#171717] dark:bg-white rounded-t-full"></span>
+                    )}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('analytics')}
+                    className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'analytics' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                >
+                    Analytics
+                    {activeTab === 'analytics' && (
                         <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#171717] dark:bg-white rounded-t-full"></span>
                     )}
                 </button>
@@ -238,17 +464,569 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 </div>
-            )
-            }
+            )}
 
-            {
-                activeTab === 'general' && (
-                    <div className="flex flex-col items-center justify-center h-64 text-[#a3a3a3] bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border transition-colors duration-300">
-                        <p className="text-lg font-medium text-admin-dark-text-primary">General Settings</p>
-                        <p className="text-sm mt-2">Global system configurations will appear here.</p>
+            {activeTab === 'general' && (
+                <div className="space-y-8 max-w-4xl">
+                    {/* Maintenance Mode Section */}
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
+                                    <div className={cn("size-2 rounded-full", maintenanceMode ? "bg-rose-500 animate-pulse" : "bg-emerald-500")} />
+                                    Maintenance Mode
+                                </h3>
+                                <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary max-w-md">
+                                    When active, the public site will be restricted. Only administrators will have access to manage the platform.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleToggleMaintenance}
+                                disabled={isUpdatingMaintenance}
+                                className={cn(
+                                    "px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2",
+                                    maintenanceMode
+                                        ? "bg-rose-600 text-white hover:bg-rose-700 hover:shadow-lg hover:shadow-rose-500/20"
+                                        : "bg-[#f5f5f5] dark:bg-white/5 text-[#171717] dark:text-white hover:bg-[#eaeaea] dark:hover:bg-white/10"
+                                )}
+                            >
+                                {isUpdatingMaintenance ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : maintenanceMode ? (
+                                    "Deactivate Maintenance"
+                                ) : (
+                                    "Activate Maintenance"
+                                )}
+                            </button>
+                        </div>
+
+                        {maintenanceMode && (
+                            <div className="mt-6 p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 rounded-xl flex items-start gap-3">
+                                <div className="text-rose-600 dark:text-rose-400 mt-0.5">⚠️</div>
+                                <div className="text-xs text-rose-800 dark:text-rose-300 leading-relaxed font-medium">
+                                    <b>Warning:</b> The "Panic Button" is ON. Visitors will see the maintenance landing page. This is useful for critical updates or security patches.
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )
-            }
-        </div >
+
+                    {/* External Services Status */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Resend Status */}
+                        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-6 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300 flex flex-col justify-between">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                                        <Mail className="size-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-[#171717] dark:text-admin-dark-text-primary">Email Service</h4>
+                                        <p className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-widest">Resend Infrastructure</p>
+                                    </div>
+                                </div>
+                                <div className={cn(
+                                    "px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border transition-all",
+                                    resendStatus === 'connected' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20" :
+                                        resendStatus === 'restricted' ? "bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-100 dark:border-sky-500/20" :
+                                            resendStatus === 'error' ? "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/20" :
+                                                "bg-gray-50 dark:bg-white/5 text-gray-500 border-gray-100 dark:border-white/10"
+                                )}>
+                                    {resendStatus === 'restricted' ? 'Restricted' : (resendStatus || 'Offline')}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between mt-4 gap-4">
+                                <div className="flex-1">
+                                    {resendStatus === 'error' && resendError && (
+                                        <p className="text-[10px] text-rose-500 font-medium truncate italic">{resendError}</p>
+                                    )}
+                                    {resendStatus === 'restricted' && (
+                                        <p className="text-[10px] text-sky-500 font-medium italic">Validated (Sending Only)</p>
+                                    )}
+                                    {resendStatus === 'connected' && (
+                                        <p className="text-[10px] text-emerald-500 font-medium italic">All systems operational</p>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={handleCheckResend}
+                                    disabled={resendStatus === 'checking'}
+                                    className="text-[10px] font-black uppercase tracking-widest text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white transition-colors"
+                                >
+                                    {resendStatus === 'checking' ? 'Testing...' : 'Test Connection'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Database Health Card */}
+                        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-6 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300 flex flex-col justify-between">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center text-violet-600 dark:text-violet-400">
+                                        <Loader2 className={cn("size-5", dbStatus === 'checking' && "animate-spin")} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-[#171717] dark:text-admin-dark-text-primary">Database Health</h4>
+                                        <p className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-widest">Supabase Engine</p>
+                                    </div>
+                                </div>
+                                <div className={cn(
+                                    "px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border transition-all",
+                                    dbStatus === 'connected' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20" :
+                                        dbStatus === 'error' ? "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/20" :
+                                            "bg-gray-50 dark:bg-white/5 text-gray-500 border-gray-100 dark:border-white/10"
+                                )}>
+                                    {dbStatus || 'Offline'}
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-4">
+                                <p className="text-[10px] text-[#a3a3a3] font-medium italic">
+                                    {dbStatus === 'connected' ? `Connection active (${dbLatency})` : 'System managed link.'}
+                                </p>
+                                <button
+                                    onClick={handleCheckDB}
+                                    disabled={dbStatus === 'checking'}
+                                    className="text-[10px] font-black uppercase tracking-widest text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white transition-colors"
+                                >
+                                    Ping
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Site Performance & Cache */}
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
+                                    <Sparkles className="size-5 text-amber-500" />
+                                    Site Performance
+                                </h3>
+                                <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary max-w-md">
+                                    Force a global revalidation of all cached routes. Use this after bulk updates or when changes aren't immediately visible.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleFlushCache}
+                                disabled={isFlushingCache}
+                                className="px-6 py-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl font-bold text-sm hover:bg-amber-500/20 transition-all flex items-center gap-2"
+                            >
+                                {isFlushingCache ? <Loader2 className="size-4 animate-spin" /> : <Globe className="size-4" />}
+                                Flush Global Cache
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Database Maintenance Section */}
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
+                                    <Trash2 className="size-5 text-red-500" />
+                                    Data Retention & Purge
+                                </h3>
+                                <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary max-w-md">
+                                    Manage the size of your visitor logs database. Total records currently stored: <b className="text-black dark:text-white">{totalDbLogs !== null ? totalDbLogs.toLocaleString() : '...'}</b>
+                                </p>
+                            </div>
+                            <button
+                                onClick={handlePurgeLogs}
+                                disabled={isPurgingLogs}
+                                className="px-6 py-2.5 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-xl font-bold text-sm hover:bg-red-500/20 transition-all flex items-center gap-2"
+                            >
+                                {isPurgingLogs ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                                Purge Logs ({'>'} 7 days)
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Informational Card */}
+                    <div className="p-6 rounded-2xl bg-[#fafafa]/50 dark:bg-admin-dark-bg/50 border border-[#f5f5f5] dark:border-admin-dark-border">
+                        <h4 className="text-xs font-bold text-[#171717] dark:text-white uppercase tracking-widest mb-3">About these settings</h4>
+                        <p className="text-xs text-[#a3a3a3] leading-relaxed">
+                            Maintenance mode and service checks are critical tools for the Super Admin. Changes made here affect the public availability of the site in real-time. Use with caution.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'analytics' && (
+                <div className="space-y-8 animate-in fade-in duration-500">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-white uppercase tracking-tighter">Real-time Performance</h2>
+                        <div className="flex bg-[#171717] dark:bg-admin-dark-surface p-1 rounded-xl border border-white/5 shadow-inner">
+                            {(['60m', '6h', '12h', '24h'] as const).map((r) => (
+                                <button
+                                    key={r}
+                                    onClick={() => setTimeRange(r)}
+                                    className={cn(
+                                        "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                                        timeRange === r
+                                            ? "bg-white text-black shadow-lg"
+                                            : "text-white/40 hover:text-white"
+                                    )}
+                                >
+                                    {r}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Activity Timeline (Vercel Style) */}
+                    <div className="mb-4">
+                        <TrafficTimeline data={chartData} range={timeRange} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Live Visitors Counter */}
+                        <div className="bg-[#171717] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl group hover:border-white/10 transition-all">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                                    <Activity className="size-5" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-white/40 uppercase text-[9px] tracking-[0.2em]">Live Visitors</h4>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-3xl font-black text-white tracking-tighter">
+                                            {analyticsStats?.liveVisitors || 0}
+                                        </p>
+                                        <div className="size-2 rounded-full bg-emerald-500 animate-pulse mt-1" />
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-white/30 font-medium italic">Real-time unique sessions (last 5min)</p>
+                        </div>
+
+                        {/* Top Country Mini-Card */}
+                        <div className="bg-[#171717] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl group hover:border-white/10 transition-all">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                                    <Globe className="size-5" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-white/40 uppercase text-[9px] tracking-[0.2em]">Top Destination</h4>
+                                    <p className="text-xl font-bold text-white tracking-tight">
+                                        {analyticsStats?.topCountries?.[0]?.name || 'Unknown'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                                {analyticsStats?.topCountries?.slice(0, 3).map((c: any) => (
+                                    <span key={c.name} className="px-1.5 py-0.5 rounded-[4px] bg-white/5 text-[8px] font-black text-white/60 uppercase tracking-widest">
+                                        {c.name}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Traffic Flow Mini-Card */}
+                        <div className="bg-[#171717] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl group hover:border-white/10 transition-all">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                                    <Users className="size-5" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-white/40 uppercase text-[9px] tracking-[0.2em]">Traffic Flow</h4>
+                                    <p className="text-xl font-bold text-white tracking-tight">Active Stream</p>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-white/30 font-medium italic">Monitoring visitor interactions</p>
+                        </div>
+                    </div>
+
+                    {/* Detailed Log Table - HIGH DENSITY */}
+                    <div className="bg-[#171717] dark:bg-admin-dark-surface rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+                        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+                            <h3 className="font-bold text-white flex items-center gap-2 text-sm uppercase tracking-tighter">
+                                <BarChart3 className="size-4 text-sky-500" />
+                                Activity Logs
+                            </h3>
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-4 border-r border-white/5 pr-6">
+                                    <button
+                                        onClick={() => setIsLive(!isLive)}
+                                        className={cn(
+                                            "flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all text-[9px] font-bold uppercase tracking-widest",
+                                            isLive
+                                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                                                : "bg-white/5 border-white/10 text-white/40 hover:text-white"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "size-1.5 rounded-full",
+                                            isLive ? "bg-emerald-500 animate-pulse" : "bg-white/20"
+                                        )} />
+                                        {isLive ? 'Live' : 'Paused'}
+                                    </button>
+
+                                    <button
+                                        onClick={() => setShowAdminLogs(!showAdminLogs)}
+                                        className={cn(
+                                            "flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all text-[9px] font-bold uppercase tracking-widest",
+                                            showAdminLogs
+                                                ? "bg-amber-500/10 border-amber-500/20 text-amber-500"
+                                                : "bg-white/5 border-white/10 text-white/40 hover:text-white"
+                                        )}
+                                    >
+                                        <Users className="size-3" />
+                                        {showAdminLogs ? 'Admins' : 'Visitors'}
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={handleClearLogs}
+                                        disabled={isPurgingLogs || recentLogs.length === 0}
+                                        className="text-[9px] font-bold uppercase tracking-widest text-red-500 hover:text-red-600 disabled:opacity-30 flex items-center gap-2 transition-all"
+                                    >
+                                        {isPurgingLogs ? <Loader2 className="size-3 animate-spin" /> : <Trash2 className="size-3" />}
+                                        Clear Screen
+                                    </button>
+                                    <div className="h-4 w-[1px] bg-white/10" />
+                                    <button
+                                        onClick={() => loadAnalytics()}
+                                        className="text-[9px] font-bold uppercase tracking-widest text-sky-400 hover:opacity-70 flex items-center gap-2 transition-all font-mono"
+                                    >
+                                        {isLoadingAnalytics ? <Loader2 className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
+                                        REFRESH
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto font-mono">
+                            <table className="w-full text-left table-fixed">
+                                <thead className="bg-[#f5f5f5] dark:bg-white/5 border-b border-white/10">
+                                    <tr>
+                                        <th className="w-[120px] px-4 py-2 text-[9px] font-black text-[#a3a3a3] uppercase tracking-widest">Time</th>
+                                        <th className="w-[180px] px-4 py-2 text-[9px] font-black text-[#a3a3a3] uppercase tracking-widest">Source</th>
+                                        <th className="px-4 py-2 text-[9px] font-black text-[#a3a3a3] uppercase tracking-widest">Request Path</th>
+                                        <th className="w-[60px] px-4 py-2 text-[9px] font-black text-[#a3a3a3] uppercase tracking-widest text-right">Loc</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {recentLogs.map((log: any) => {
+                                        const isAdmin = log.is_admin_view;
+                                        const role = log.user_role || 'visitor';
+
+                                        return (
+                                            <tr
+                                                key={log.id}
+                                                onClick={() => setSelectedLog(log)}
+                                                className={cn(
+                                                    "hover:bg-white/[0.05] transition-colors group cursor-pointer border-l-[3px]",
+                                                    isAdmin ? "border-violet-500" : "border-emerald-500",
+                                                    selectedLog?.id === log.id && "bg-white/[0.08]"
+                                                )}
+                                            >
+                                                <td className="px-4 py-1.5 whitespace-nowrap">
+                                                    <span className="text-[10px] text-[#737373]">
+                                                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-1.5 whitespace-nowrap overflow-hidden">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-[#a3a3a3] min-w-[18px]">
+                                                            {log.country === 'Unknown' || !log.country ? 'DEV' : log.country}
+                                                        </span>
+                                                        <span className="text-[10px] font-bold text-white/90 truncate">
+                                                            {log.city === 'Unknown' || !log.city ? 'Localhost' : log.city}
+                                                        </span>
+                                                        {role !== 'visitor' && (
+                                                            <span className={cn(
+                                                                "px-1 py-[1px] rounded-[2px] text-[7px] font-black",
+                                                                role === 'super_admin' ? "bg-amber-100 text-amber-700" : "bg-violet-100 text-violet-700"
+                                                            )}>
+                                                                {role.charAt(0)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-1.5 overflow-hidden">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={cn(
+                                                            "text-[9px] font-bold px-1 rounded-[2px]",
+                                                            isAdmin ? "text-violet-400 bg-violet-400/10" : "text-emerald-400 bg-emerald-400/10"
+                                                        )}>
+                                                            {isAdmin ? 'SYS' : 'GET'}
+                                                        </span>
+                                                        <span className="text-[10px] text-white/60 truncate font-mono tracking-tight">
+                                                            {log.path || '/'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-1.5 text-right whitespace-nowrap">
+                                                    <span className="text-[9px] font-bold text-[#a3a3a3]">{log.locale}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {recentLogs.length > 0 && (
+                                        <tr>
+                                            <td colSpan={4} className="px-4 py-4 text-center bg-white/[0.01]">
+                                                <button
+                                                    onClick={() => {
+                                                        const newLimit = logLimit + 50;
+                                                        setLogLimit(newLimit);
+                                                        loadAnalytics(newLimit);
+                                                    }}
+                                                    className="text-[9px] font-black uppercase tracking-widest text-white border border-white/10 px-6 py-2 rounded-lg hover:bg-white hover:text-[#171717] transition-all shadow-sm"
+                                                >
+                                                    {isLoadingAnalytics ? "Loading Logs..." : `Show More (+50 Rows)`}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {recentLogs.length === 0 && !isLoadingAnalytics && (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-12 text-center text-[#404040] text-xs font-mono italic">
+                                                Listening for traffic...
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Vercel-style Log Detail Panel */}
+            {activeTab === 'analytics' && selectedLog && (
+                <div className="fixed top-0 right-0 w-[450px] h-full bg-[#0a0a0a] border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] z-50 animate-in slide-in-from-right duration-300 overflow-y-auto">
+                    <div className="sticky top-0 bg-[#0a0a0a]/90 backdrop-blur-md z-10 p-6 border-b border-white/5 flex items-center justify-between">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className={cn(
+                                    "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                    selectedLog.status >= 400 ? "bg-red-500/20 text-red-500" : "bg-emerald-500/20 text-emerald-500"
+                                )}>
+                                    {selectedLog.method || 'GET'} {selectedLog.status || 200}
+                                </span>
+                                <span className="text-[10px] font-bold text-white/40 font-mono">{selectedLog.id.slice(0, 8)}</span>
+                            </div>
+                            <h3 className="text-white font-mono text-xs truncate max-w-[300px]">
+                                {selectedLog.path || '/'}
+                            </h3>
+                        </div>
+                        <button
+                            onClick={() => setSelectedLog(null)}
+                            className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/40 hover:text-white"
+                        >
+                            <X className="size-5" />
+                        </button>
+                    </div>
+
+                    <div className="p-8 space-y-10">
+                        {/* Status Section */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="size-2 rounded-full bg-emerald-500" />
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Request started</span>
+                                <span className="text-[10px] font-bold text-white/40 ml-auto font-mono">
+                                    {new Date(selectedLog.created_at).toUTCString()}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-6">
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Path</label>
+                                <span className="text-[11px] text-sky-400 font-mono break-all leading-relaxed bg-white/5 px-2 py-1 rounded-md">{selectedLog.path}</span>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Host</label>
+                                <span className="text-[11px] text-white/80 font-mono break-all leading-relaxed">{selectedLog.host || 'Unknown'}</span>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">User Agent</label>
+                                <span className="text-[10px] text-white/50 leading-relaxed font-mono bg-white/[0.02] p-3 rounded-lg border border-white/5">
+                                    {selectedLog.user_agent}
+                                </span>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Referer</label>
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <span className="text-[11px] text-white/40 font-mono truncate italic">
+                                        {selectedLog.referer || 'Direct'}
+                                    </span>
+                                </div>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Request ID</label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-white/40 font-mono break-all leading-relaxed bg-white/5 px-2 py-1 rounded-md flex-1">
+                                        {selectedLog.request_id || 'N/A'}
+                                    </span>
+                                    {selectedLog.request_id && (
+                                        <button
+                                            onClick={() => copyToClipboard(selectedLog.request_id)}
+                                            className="p-1.5 hover:bg-white/10 rounded-md text-white/20 hover:text-white transition-colors"
+                                        >
+                                            <Edit3 className="size-3" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Location & Routing Section */}
+                        <div className="pt-8 border-t border-white/5 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <MapPin className="size-4 text-sky-400" />
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Network \ Routing</span>
+                            </div>
+
+                            <div className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-4">
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Region</label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-white/80 uppercase font-mono">{selectedLog.region || 'Local'}</span>
+                                    <span className="text-[10px] text-white/20 font-mono">({selectedLog.city}, {selectedLog.country})</span>
+                                </div>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Device</label>
+                                <span className="text-[10px] font-bold text-white/80 uppercase font-mono">{selectedLog.device_type || 'Unknown'}</span>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">IP Address</label>
+                                <span className="text-[10px] font-bold text-white/40 font-mono">{selectedLog.ip_address}</span>
+                            </div>
+                        </div>
+
+                        {/* Function Invocation Section */}
+                        <div className="pt-8 border-t border-white/5 space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="size-2 rounded-full bg-violet-500" />
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Context Information</span>
+                            </div>
+
+                            <div className="grid grid-cols-[120px_1fr] gap-x-4 gap-y-6">
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">User Role</label>
+                                <span className={cn(
+                                    "px-2 py-0.5 rounded text-[10px] font-black uppercase w-fit",
+                                    selectedLog.user_role === 'super_admin' ? "bg-amber-500/20 text-amber-500" : "bg-white/10 text-white/40"
+                                )}>
+                                    {selectedLog.user_role || 'visitor'}
+                                </span>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Is Admin View</label>
+                                <span className="text-[10px] font-bold text-white/60 font-mono">
+                                    {selectedLog.is_admin_view ? 'TRUE' : 'FALSE'}
+                                </span>
+
+                                <label className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Locale</label>
+                                <span className="text-[10px] font-bold text-sky-400 font-mono uppercase">
+                                    {selectedLog.locale}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Interaction Trace */}
+                        <div className="pt-8 border-t border-white/5">
+                            <div className="p-4 rounded-xl bg-violet-500/5 border border-violet-500/10 flex items-start gap-3">
+                                <RefreshCw className="size-4 text-violet-400 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-bold text-violet-300 uppercase tracking-wider">Middleware Execution</p>
+                                    <p className="text-[10px] text-violet-300/60 leading-relaxed">
+                                        This log was captured via Edge Middleware with `event.waitUntil` for zero-latency impact on the user experience.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

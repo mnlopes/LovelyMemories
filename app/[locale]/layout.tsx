@@ -1,8 +1,10 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { Toaster } from 'sonner';
 import { getMessages } from 'next-intl/server';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { Montserrat } from "next/font/google";
 import "../globals.css";
 // import "../icons.css"; // Moved to SVG components (LegacyIcon)
@@ -51,16 +53,16 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir}>
       <body className={`${montserrat.variable} antialiased`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <Toaster position="top-right" richColors expand={true} style={{ zIndex: 200000, top: '120px' }} />
+          <Toaster
+            position="top-right"
+            richColors
+            expand={true}
+            theme="system"
+            style={{ zIndex: 999999 }}
+          />
           <Preloader />
           <ScrollAnimations />
-          <Navbar />
-          <PageTransition>
-            {children}
-          </PageTransition>
-          <Footer />
-          <GuestSelectorWrapper />
-          <DateSelectorWrapper />
+          {children}
         </NextIntlClientProvider>
       </body>
     </html>

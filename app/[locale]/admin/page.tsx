@@ -2,8 +2,45 @@
 
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, MoreHorizontal, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
 
 export default function AdminOverview() {
+    const router = useRouter();
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.push("/login");
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.role !== 'super_admin') {
+                const locale = window.location.pathname.split('/')[1] || 'en';
+                router.push(`/${locale}/admin/properties`);
+            } else {
+                setIsAuthorized(true);
+            }
+        };
+        checkAuth();
+    }, [router]);
+
+    if (isAuthorized === null) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#171717]"></div>
+            </div>
+        );
+    }
     const upcomingBookings = [
         { id: 1, name: "Julianna Henderson", property: "Skyline Penthouse", dates: "Nov 12 - Nov 18", guests: "2 Adults", status: "Check-in", image: "https://images.unsplash.com/photo-1544161515-4af6b1d4640b?q=80&w=2070&auto=format&fit=crop" },
         { id: 2, name: "Marcus Wright", property: "Liberty Lofts #402", dates: "Nov 15 - Nov 22", guests: "1 Adult", status: "Pending", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop" },

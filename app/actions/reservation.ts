@@ -1,15 +1,15 @@
 "use server";
 
 import { z } from "zod";
-import { supabase } from "@/lib/supabase";
+import { supabase, getSupabaseAdmin } from "@/lib/supabase";
 import { getPropertyBySlug } from "@/lib/services";
 
 // Schema for reservation validation
 const ReservationSchema = z.object({
     // Contact Info
-    fullName: z.string().min(3, "Full name must be at least 3 characters"),
-    email: z.string().email("Invalid email address"),
-    phone: z.string().min(9, "Invalid phone number"), // Required and min 9 digits
+    fullName: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+    email: z.string().email("Endereço de email inválido"),
+    phone: z.string().min(9, "Número de telefone inválido"),
 
     // Property Info
     propertySlug: z.string(),
@@ -28,29 +28,39 @@ const ReservationSchema = z.object({
     bookingCode: z.string().nullish().or(z.literal("")),
 
     // Payment / Total
-    totalPrice: z.number().nullish(),
-    basePrice: z.number().nullish(),
-    cleaningFee: z.number().nullish(),
-    breakfastTotal: z.number().nullish(),
-    transferTotal: z.number().nullish(),
-    paymentMethod: z.string().nullish().or(z.literal("")),
+    totalPrice: z.number().min(0),
+    basePrice: z.number().min(0),
+    cleaningFee: z.number().min(0),
+    breakfastTotal: z.number().min(0),
+    transferTotal: z.number().min(0),
+    paymentMethod: z.string().min(1, "Método de pagamento obrigatório"),
 
-    // Billing Address (Optional)
+    // Billing Address (Required if address is provided, otherwise optional)
     address: z.string().nullish().or(z.literal("")),
     city: z.string().nullish().or(z.literal("")),
     zip: z.string().nullish().or(z.literal("")),
     country: z.string().nullish().or(z.literal("")),
     vat: z.string().nullish().or(z.literal("")),
-}).passthrough(); // Allow unknown fields for now to prevent breaking on UI state changes
+}).refine((data) => {
+    // If any billing field is provided (or if we have a flag from frontend), 
+    // we require the core billing fields
+    const hasBillingInfo = !!(data.address || data.city || data.zip || data.country);
+    if (hasBillingInfo) {
+        return !!(data.address && data.city && data.zip && data.country);
+    }
+    return true;
+}, {
+    message: "Todos os campos de faturação são obrigatórios quando a faturação está ativa.",
+    path: ["address"] // Generic path for the refinement error
+});
 
 export async function processReservation(data: z.infer<typeof ReservationSchema>) {
     // 1. Basic Schema Validation
     const result = ReservationSchema.safeParse(data);
 
     if (!result.success) {
-        console.error('Validation Error in processReservation:', result.error.format());
         const errorMsg = result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
-        return { success: false, error: `Invalid data submitted: ${errorMsg}` };
+        return { success: false, error: `Dados inválidos: ${errorMsg}` };
     }
 
     // 2. Extra Security: Check Honeypot
@@ -62,12 +72,12 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
     // 3. Extra Security: Verify Property Existence & Capacity
     const property = await getPropertyBySlug(data.propertySlug);
     if (!property) {
-        return { success: false, error: "Invalid property selected." };
+        return { success: false, error: "Propriedade inválida selecionada." };
     }
 
     const totalGuests = data.adults + data.children + data.infants;
     if (totalGuests > property.guests) {
-        return { success: false, error: `This property only accommodates up to ${property.guests} guests.` };
+        return { success: false, error: `Esta propriedade apenas acomoda até ${property.guests} hóspedes.` };
     }
 
     // 4. Extra Security: Date Integrity
@@ -77,15 +87,15 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
     today.setHours(0, 0, 0, 0);
 
     if (isNaN(dateIn.getTime()) || isNaN(dateOut.getTime())) {
-        return { success: false, error: "Invalid date format." };
+        return { success: false, error: "Formato de data inválido." };
     }
 
     if (dateIn < today) {
-        return { success: false, error: "Check-in date cannot be in the past." };
+        return { success: false, error: "A data de check-in não pode ser no passado." };
     }
 
     if (dateOut <= dateIn) {
-        return { success: false, error: "Check-out date must be after check-in date." };
+        return { success: false, error: "A data de check-out deve ser após a data de check-in." };
     }
 
     // 5. Generate Reference ID
@@ -93,8 +103,10 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         ? `LM-${data.bookingCode.toUpperCase()}`
         : `LM-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
-    // 6. Save to Supabase
-    // We try to catch specific missing column errors to provide better guidance
+    // Determine initial status based on payment method
+    const status = data.paymentMethod === 'wire' ? 'pending' : 'confirmed';
+
+    // 6. Save to Supabase (using Admin Client to bypass RLS for guest insertions)
     const reservationData: any = {
         property_id: property.id,
         check_in: data.checkIn,
@@ -102,64 +114,70 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         adults: data.adults,
         children: data.children,
         infants: data.infants,
-        total_price: data.totalPrice || 0,
-        status: 'pending',
-        payment_method: data.paymentMethod || 'wire',
-        reference_id: referenceId, // Standard name
-        // The following might be missing in some DB versions
+        total_price: data.totalPrice,
+        status: status, // Dynamically set status based on payment method
+        payment_method: data.paymentMethod,
+        reference_id: referenceId,
         guest_name: data.fullName,
         guest_email: data.email,
         guest_phone: data.phone,
         arrival_time: data.arrivalTime,
-        special_requests: data.specialRequests
+        special_requests: data.specialRequests,
+        base_price: data.basePrice,
+        cleaning_fee: data.cleaningFee,
+        breakfast_total: data.breakfastTotal,
+        transfer_total: data.transferTotal,
+        billing_address: data.address,
+        billing_city: data.city,
+        billing_zip: data.zip,
+        billing_country: data.country,
+        billing_vat: data.vat
     };
 
-    const { error: dbError } = await supabase
+    const adminSupabase = await getSupabaseAdmin();
+    const { data: insertedRes, error: dbError } = await adminSupabase
         .from('reservations')
-        .insert(reservationData);
+        .insert(reservationData)
+        .select('id')
+        .single();
 
     if (dbError) {
-        console.error('CRITICAL: Database Error saving reservation:', dbError);
+        console.error('CRITICAL: Database Error saving reservation:', JSON.stringify(dbError, null, 2));
 
-        // Fallback for older schema (missing guest info or different reference name)
-        if (dbError.message.includes('column "guest_name" does not exist') ||
-            dbError.message.includes('column "reference_id" does not exist')) {
-
-            console.warn('Attempting fallback save with minimal schema...');
-
-            const minimalData: any = {
-                property_id: property.id,
-                check_in: data.checkIn,
-                check_out: data.checkOut,
-                adults: data.adults,
-                children: data.children,
-                infants: data.infants,
-                total_price: data.totalPrice || 0,
-                status: 'pending',
-                payment_method: data.paymentMethod || 'wire',
-                reference: referenceId // Try 'reference' instead of 'reference_id'
+        // Handle specific "Column Not Found" error to guide the user to sync their DB
+        if (dbError.code === '42703') {
+            return {
+                success: false,
+                error: "Erro de sistema: A base de dados precisa de ser sincronizada (Colunas em falta). Por favor, contacte o administrador."
             };
-
-            const { error: fallbackError } = await supabase
-                .from('reservations')
-                .insert(minimalData);
-
-            if (!fallbackError) {
-                console.log('Fallback reservation saved successfully (Warning: Guest contact info was NOT stored in DB)');
-                return {
-                    success: true,
-                    ref: referenceId,
-                    warning: "Reservation saved but contact info was only sent via email (schema update needed)."
-                };
-            }
-
-            console.error('Fallback also failed:', fallbackError);
         }
 
-        return { success: false, error: "Failed to save reservation to database. Please contact support." };
+        return { success: false, error: "Não foi possível guardar a reserva na base de dados. Por favor, tente novamente." };
     }
 
     console.log("Secure reservation processed and saved for:", data.fullName, "Ref:", referenceId);
+
+    // 7. Log Activity
+    try {
+        const { logActivity } = await import("./audit");
+        if (insertedRes) {
+            await logActivity(
+                null, // Actor is Guest (Unknown)
+                'CREATE',
+                'RESERVATION',
+                insertedRes.id,
+                {
+                    title: `Nova reserva: ${data.fullName}`,
+                    guest_name: data.fullName,
+                    email: data.email,
+                    property: data.propertySlug,
+                    ref: referenceId
+                }
+            );
+        }
+    } catch (logErr) {
+        console.error("Failed to audit log new reservation:", logErr);
+    }
 
     // 7. Trigger Email Notifications (Async - don't block response)
     try {
@@ -218,4 +236,66 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         success: true,
         ref: referenceId
     };
+}
+
+/**
+ * Delete a reservation (Super Admin and Admin only)
+ */
+export async function deleteReservation(id: string) {
+    // 1. Authenticate and check role
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: profile } = await serverSupabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || (profile.role !== 'super_admin' && profile.role !== 'admin')) {
+        throw new Error('Not authorized to delete reservations');
+    }
+
+    // 2. Perform deletion
+    // Fetch generic info for log first if needed (optional, just ID is fine since it's deleted)
+    const { error } = await serverSupabase
+        .from('reservations')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error("Error deleting reservation:", error);
+        throw error;
+    }
+
+    // 3. Log Activity
+    const { logActivity } = await import("./audit");
+    await logActivity(
+        user.id,
+        'DELETE',
+        'RESERVATION',
+        id,
+        { id }
+    );
+
+    return { success: true };
 }

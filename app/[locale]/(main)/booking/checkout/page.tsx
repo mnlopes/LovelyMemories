@@ -162,60 +162,57 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         setZipError(""); // Clear zip error when country changes
     };
 
-    const validateAddress = () => {
-        const newErrors: Record<string, string> = {};
-        let validZip = true;
-
-        if (!formData.country) newErrors.country = t('errors.countryRequired');
-        if (!formData.address) newErrors.address = t('errors.addressRequired');
-        if (!formData.city) newErrors.city = t('errors.cityRequired');
-        if (!formData.zip) newErrors.zip = t('errors.zipRequired');
-
-        if (formData.country) {
-            // Case-insensitive lookup for known countries
-            const countryEntry = Object.values(ADDRESS_DATA).find(c => c.name.toLowerCase() === formData.country.toLowerCase());
-
-            if (countryEntry && formData.zip) {
-                if (!countryEntry.zipRegex.test(formData.zip)) {
-                    setZipError(t('errors.invalidFormat', { format: countryEntry.zipFormat, country: countryEntry.name }));
-                    validZip = false;
-                } else {
-                    setZipError("");
-                }
-            } else if (countryEntry && !formData.zip) {
-                // Zip is required and checked above, but if we are here it means generic check passed but logic flows.
-            }
-        }
-
-        setFieldErrors(prev => ({ ...prev, ...newErrors }));
-        return Object.keys(newErrors).length === 0 && validZip;
-    };
 
     const validateStep = (currentStep: number) => {
         const newErrors: Record<string, string> = {};
 
         if (currentStep === 1) {
-            if (!formData.fullName || formData.fullName.length < 3) {
+            if (!formData.fullName || formData.fullName.trim().length < 3) {
                 newErrors.fullName = t('errors.nameError');
             }
             if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
                 newErrors.email = t('errors.emailError');
             }
-            if (!formData.phone || formData.phone.length < 9) {
+            if (!formData.phone || formData.phone.trim().length < 9) {
                 newErrors.phone = t('errors.phoneError');
             }
 
-            // Validate address fields ONLY if billing is shown
+            // Validate billing fields if the toggle is ON
             if (showBilling) {
-                const addressValid = validateAddress();
-                if (!addressValid) {
-                    return false;
+                if (!formData.country) newErrors.country = t('errors.countryRequired');
+                if (!formData.city) newErrors.city = t('errors.cityRequired');
+                if (!formData.address) newErrors.address = t('errors.addressRequired');
+                if (!formData.zip) {
+                    newErrors.zip = t('errors.zipRequired');
+                } else if (formData.country) {
+                    // Country-specific ZIP validation
+                    const countryEntry = Object.values(ADDRESS_DATA).find(c => c.name.toLowerCase() === formData.country.toLowerCase());
+                    if (countryEntry && !countryEntry.zipRegex.test(formData.zip)) {
+                        newErrors.zip = t('errors.invalidFormat', {
+                            format: countryEntry.zipFormat,
+                            country: countryEntry.name
+                        });
+                    }
                 }
             }
         }
 
+        if (currentStep === 3) {
+            if (!formData.paymentMethod) {
+                setError(t('errors.paymentMethodRequired'));
+                return false;
+            }
+        }
+
         setFieldErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+
+        // If there are errors, scroll to the first one or top
+        if (Object.keys(newErrors).length > 0) {
+            window.scrollTo({ top: 100, behavior: 'smooth' });
+            return false;
+        }
+
+        return true;
     };
 
     // Derived booking data
@@ -992,7 +989,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                                 name="zip"
                                                                 value={formData.zip}
                                                                 onChange={handleInputChange}
-                                                                onBlur={validateAddress}
+                                                                onBlur={() => {
+                                                                    if (formData.country && formData.zip) {
+                                                                        const countryEntry = Object.values(ADDRESS_DATA).find(c => c.name.toLowerCase() === formData.country.toLowerCase());
+                                                                        if (countryEntry && !countryEntry.zipRegex.test(formData.zip)) {
+                                                                            setZipError(t('errors.invalidFormat', { format: countryEntry.zipFormat, country: countryEntry.name }));
+                                                                        } else {
+                                                                            setZipError("");
+                                                                        }
+                                                                    }
+                                                                }}
                                                                 type="text"
                                                                 className={`w-full h-14 bg-white border rounded-2xl px-5 focus:border-[#B08D4A] outline-none transition-all focus:shadow-lg focus:shadow-gray-200/50 ${fieldErrors.zip || zipError
                                                                     ? 'border-[#9B1D20] bg-[#9B1D20]/5 text-[#9B1D20]'

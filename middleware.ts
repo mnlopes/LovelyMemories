@@ -1,84 +1,125 @@
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-// --- DEMO MODE CONFIGURATION ---
-// Set to true to restrict access to only Home, Owner, and About Us pages for client demo.
-// Set to false to enable all pages.
-const DEMO_MODE = false;
-const DEMO_ALLOWED_PATHS = ['/', '/owner', '/about-us'];
-// -------------------------------
+export default async function middleware(request: NextRequest, event: NextFetchEvent) {
+    const { pathname } = request.nextUrl;
 
-export default async function middleware(request: NextRequest) {
-    if (DEMO_MODE) {
-        const { pathname } = request.nextUrl;
+    // 1. Skip assets/API early
+    const isAsset = pathname.includes('.') || pathname.startsWith('/_next');
+    const isApi = pathname.startsWith('/api');
+    const isPrefetch = request.headers.get('purpose') === 'prefetch' || request.headers.get('x-middleware-prefetch') === '1';
 
-        // Skip assets/api check (redundant with matcher but safe)
-        if (pathname.startsWith('/api') || pathname.includes('.')) {
-            return createMiddleware(routing)(request);
-        }
-
-        // Normalize path by removing locale
-        const locales = routing.locales.join('|');
-        const localeRegex = new RegExp(`^/(${locales})(/|$)`);
-
-        let normalizedPath = pathname.replace(localeRegex, '/');
-        if (normalizedPath.length > 1 && normalizedPath.endsWith('/')) {
-            normalizedPath = normalizedPath.slice(0, -1);
-        }
-
-        // Allow allowed paths
-        const isAllowed = DEMO_ALLOWED_PATHS.some(allowed =>
-            normalizedPath === allowed || normalizedPath.startsWith(allowed + '/')
-        );
-
-        if (!isAllowed) {
-            // Redirect to home
-            return NextResponse.redirect(new URL('/', request.url));
-        }
+    // Capture main hits: Initial Page Loads (HTML) + Navigations (RSC)
+    // We skip assets, APIs and background prefetches
+    if (isAsset || isApi || isPrefetch) {
+        return createMiddleware(routing)(request);
     }
 
-    // 1. Handle Locale Middleware
-    const response = createMiddleware(routing)(request);
-
-    // 2. Handle Supabase Session Refresh (Safe Mode)
+    // 2. Setup Auth & Get User Info
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-        // If keys are missing (e.g. during Vercel initial setup), skip auth refresh to avoid crash.
-        // This means auth won't work, but the site won't 500.
-        return response;
+    let userRole = 'visitor';
+    let userId: string | undefined = undefined;
+
+    try {
+        if (supabaseUrl && supabaseAnonKey && serviceKey) {
+            const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+                cookies: {
+                    getAll() { return request.cookies.getAll() },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+                    },
+                },
+            });
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                userId = user.id;
+                const roleRes = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${user.id}&select=role`, {
+                    headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` },
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(2000) // Don't hang for more than 2s
+                });
+                if (roleRes.ok) {
+                    const roleData = await roleRes.json();
+                    userRole = roleData?.[0]?.role || 'authenticated';
+                }
+            }
+        }
+    } catch (authErr) {
+        console.error("[Visitor Log] Auth Check Error (skipping):", authErr);
     }
 
-    const supabase = createServerClient(
-        supabaseUrl,
-        supabaseAnonKey,
-        {
-            cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value;
-                },
-                set(name: string, value: string, options: any) {
-                    request.cookies.set({ name, value, ...options });
-                    response.cookies.set({ name, value, ...options });
-                },
-                remove(name: string, options: any) {
-                    request.cookies.set({ name, value: '', ...options });
-                    response.cookies.set({ name, value: '', ...options });
-                },
+    // 3. Visitor Logging (Enhanced with IP and Navigation tracking)
+    const isAdminPath = pathname.includes('/admin') || pathname.includes('/login') || pathname.includes('/set-password');
+    if (supabaseUrl && serviceKey) {
+        const country = request.headers.get('x-vercel-ip-country') || 'Unknown';
+        const city = request.headers.get('x-vercel-ip-city') || 'Unknown';
+        const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+        const userAgent = request.headers.get('user-agent') || 'Unknown';
+        const referer = request.headers.get('referer') || 'Direct';
+        const host = request.headers.get('host') || 'localhost';
+        const requestId = request.headers.get('x-vercel-id') || crypto.randomUUID();
+        const region = (request.headers.get('x-vercel-id') || '').split(':')[0] || 'Local';
+        const deviceType = userAgent.includes('Mobi') ? 'Mobile' : 'Desktop';
+
+        const pathParts = pathname.split('/');
+        const locale = routing.locales.includes(pathParts[1] as any) ? pathParts[1] : routing.defaultLocale;
+
+        // Use event.waitUntil to ensure the log is sent even after the response is delivered
+        const logPromise = fetch(`${supabaseUrl}/rest/v1/visitor_logs`, {
+            method: 'POST',
+            headers: {
+                'apikey': serviceKey,
+                'Authorization': `Bearer ${serviceKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
             },
+            body: JSON.stringify({
+                path: pathname, locale, country, city,
+                ip_address: ip,
+                user_agent: userAgent, user_id: userId,
+                user_role: userRole,
+                is_admin_view: isAdminPath,
+                referer,
+                request_id: requestId,
+                method: request.method,
+                host,
+                region,
+                device_type: deviceType
+            })
+        }).catch(err => console.error("[Visitor Log] Error:", err));
+
+        event.waitUntil(logPromise);
+    }
+
+    // 4. Maintenance Check
+    const isMaintenancePage = pathname.includes('/maintenance');
+    if (!isMaintenancePage && !isAdminPath && supabaseUrl && serviceKey) {
+        const res = await fetch(`${supabaseUrl}/rest/v1/system_settings?key=eq.maintenance_mode&select=value`, {
+            headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}`, 'X-Timestamp': Date.now().toString() },
+            cache: 'no-store'
+        });
+        const data = await res.json();
+        if (data?.[0]?.value === true && !(userRole === 'admin' || userRole === 'super_admin')) {
+            const pathParts = pathname.split('/');
+            const locale = routing.locales.includes(pathParts[1] as any) ? pathParts[1] : routing.defaultLocale;
+            const response = NextResponse.redirect(new URL(`/${locale}/maintenance`, request.url), 307);
+            response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+            return response;
         }
-    );
+    }
 
-    // This refreshes the session if needed
-    await supabase.auth.getUser();
-
+    // 5. Final Response
+    const response = createMiddleware(routing)(request);
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
     return response;
 }
 
 export const config = {
-    // Match only internationalized pathnames
-    matcher: ['/', '/(en|pt|he)/:path*']
+    matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.).*)'],
 };

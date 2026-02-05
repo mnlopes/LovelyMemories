@@ -13,6 +13,9 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const dynamic = 'force-dynamic';
 
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
+
 export default async function AdminLayout({
     children,
     params
@@ -22,6 +25,7 @@ export default async function AdminLayout({
 }) {
     const { locale } = await params;
     const cookieStore = await cookies();
+    const messages = await getMessages();
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,15 +56,27 @@ export default async function AdminLayout({
         redirect(`/${locale}`);
     }
 
+    // Restriction: Only Super Admin can see the Overview, Reports and Settings
+    // If Admin/Editor lands on /admin, redirect them to /admin/properties
+    const isSuperAdmin = profile.role === 'super_admin';
+    const isRootAdminPage = true; // Since this layout wraps all /admin pages, we need to check the actual path
+
+    // However, layouts in Next.js don't easily give the current path in server components without tricks
+    // But we can check if the children being rendered is the overview page? 
+    // Actually, it's easier to handle this in the page.tsx itself or a middleware.
+    // Let's stick to the UI hiding for now, but if the user wants strict URL protection:
+
+    // I will add a check in the AdminOverview (page.tsx) and future report pages.
+
     return (
         <AdminThemeProvider>
             <div className={`${plusJakartaSans.variable} font-sans`}>
-                <div className="flex h-screen overflow-hidden bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-admin-dark-text-primary antialiased transition-all duration-500">
+                <div className="flex h-screen overflow-hidden bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-admin-dark-text-primary antialiased">
                     {/* Fixed Sidebar */}
                     <AdminSidebar />
 
                     {/* Main Content Area */}
-                    <main className="flex-1 overflow-y-auto bg-[#fafafa]/50 dark:bg-admin-dark-surface/50 flex flex-col transition-all duration-500">
+                    <main className="flex-1 overflow-y-auto bg-[#fafafa] dark:bg-admin-dark-bg flex flex-col">
                         <AdminHeader user={user} profile={profile} />
                         <div className="p-10 w-full space-y-16">
                             <div className="w-full">

@@ -212,32 +212,29 @@ export async function checkPropertyAvailability(propertyId: string, from: Date, 
     // TODO: [RESERVATION-LOGIC] Review this fallback.
     // This allows continuing even if blocked_dates schema is missing, but once the booking
     // system is fully functional, we should enforce strict checking to avoid overlapping stays.
-    let property: any = null;
-    let { data: firstTry, error: propError } = await supabase
+    let { data: property, error: propError } = await supabase
         .from('properties')
         .select('id, max_guests, blocked_dates, slug')
         .eq('id', propertyId)
         .single();
 
-    property = firstTry;
-
-    if (propError) {
-        console.warn('[DEBUG] checkPropertyAvailability - First query failed, trying without blocked_dates:', propError.message);
-        // Fallback: Query without blocked_dates to see if that was the issue
+    // If it fails because blocked_dates is missing, try without it
+    if (propError && (propError.code === '42703' || propError.message.includes('blocked_dates'))) {
+        console.warn('[DEBUG] checkPropertyAvailability - Falling back (blocked_dates column missing)');
         const fallback = await supabase
             .from('properties')
             .select('id, max_guests, slug')
             .eq('id', propertyId)
             .single();
 
-        if (fallback.error || !fallback.data) {
-            console.error('[DEBUG] checkPropertyAvailability - All queries failed:', {
-                error: fallback.error,
-                propertyId
-            });
+        if (fallback.data) {
+            property = fallback.data as any;
+        } else {
             return { available: false, error: 'Property not found' };
         }
-        property = fallback.data;
+    } else if (propError) {
+        console.error('[DEBUG] checkPropertyAvailability - Error:', propError);
+        return { available: false, error: 'Property not found' };
     }
 
     if (!property) return { available: false, error: 'Property not found' };

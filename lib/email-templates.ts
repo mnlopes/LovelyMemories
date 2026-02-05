@@ -62,6 +62,7 @@ export const bookingAdminEmail = (data: any) => `
         <p style="margin: 5px 0;"><strong>Propriedade:</strong> ${data.property_title}</p>
         <p style="margin: 5px 0;"><strong>Datas:</strong> ${data.check_in} a ${data.check_out}</p>
         <p style="margin: 5px 0;"><strong>Hóspedes:</strong> ${data.adults} adultos, ${data.children} crianças, ${data.infants} bebés</p>
+        ${data.arrival_time ? `<p style="margin: 5px 0;"><strong>Hora de Chegada Estimada:</strong> ${data.arrival_time}</p>` : ''}
         
         <div style="background: #fdfaf5; border: 1px solid #f0e6d2; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <p style="margin: 0 0 10px 0; font-weight: bold; color: #B08D4A;">Detalhamento de Custos:</p>
@@ -124,6 +125,7 @@ export const bookingGuestConfirmationEmail = (data: any) => `
             <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
             <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
             <tr><td style="padding: 5px 0; color: #999;">Hóspedes:</td><td style="padding: 5px 0;">${data.adults} adultos, ${data.children} crianças, ${data.infants} bebés</td></tr>
+            ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">Chegada Estimada:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
         </table>
         
         <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">

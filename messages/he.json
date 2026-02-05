@@ -4,7 +4,7 @@
         "overview": "סקירה כללית",
         "properties": "נכסים",
         "bookings": "הזמנות",
-        "tenants": "דיירים",
+        "tenants": "צוות וגישה",
         "concierge": "קונסיירג'",
         "reports": "דוחות",
         "finances": "כספים",
@@ -22,7 +22,7 @@
         "bedrooms": "חדרי שינה",
         "beds": "מיטות",
         "baths": "חדרי רחצה",
-        "activeTenants": "דיירים פעילים",
+        "activeTenants": "צוות פעיל",
         "viewDetails": "צפה בפרטים"
     },
     "Navbar": {

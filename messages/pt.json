@@ -4,7 +4,7 @@
         "overview": "Visão Geral",
         "properties": "Propriedades",
         "bookings": "Reservas",
-        "tenants": "Inquilinos",
+        "tenants": "Equipa & Acesso",
         "concierge": "Concierge",
         "reports": "Relatórios",
         "finances": "Finanças",
@@ -22,7 +22,7 @@
         "bedrooms": "Quartos",
         "beds": "Camas",
         "baths": "Banheiros",
-        "activeTenants": "Inquilinos Ativos",
+        "activeTenants": "Equipa Ativa",
         "viewDetails": "Ver Detalhes"
     },
     "Navbar": {
@@ -49,7 +49,13 @@
         "welcomeBack": "Bem-vindo de volta",
         "joinUs": "Junte-se à Lovely Memories",
         "loginDesc": "Introduza as suas credenciais para aceder à sua conta",
-        "signUpDesc": "Crie a sua conta para gerir as suas estadias"
+        "signUpDesc": "Crie a sua conta para gerir as suas estadias",
+        "setPassword": "Definir Palavra-passe",
+        "setPasswordDesc": "Escolha uma password segura para a sua nova conta",
+        "confirmPassword": "Confirmar Palavra-passe",
+        "savePassword": "Guardar e Entrar",
+        "passwordMismatch": "As passwords não coincidem",
+        "successPassword": "Password definida com sucesso!"
     },
     "Footer": {
         "getInTouch": "Fale Connosco",

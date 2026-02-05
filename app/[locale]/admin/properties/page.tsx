@@ -11,6 +11,7 @@ export default function AdminProperties() {
     const locale = (params?.locale as string) || 'en';
     const [properties, setProperties] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [role, setRole] = useState<string | null>(null);
 
     // Search & Filter
     const [searchQuery, setSearchQuery] = useState("");
@@ -35,16 +36,29 @@ export default function AdminProperties() {
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        async function fetchProperties() {
+        async function fetchData() {
+            // Fetch Properties
             const { data } = await supabase
                 .from('properties')
                 .select('*')
                 .order('created_at', { ascending: false });
 
             if (data) setProperties(data);
+
+            // Fetch user role
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                if (profile) setRole(profile.role);
+            }
+
             setIsLoading(false);
         }
-        fetchProperties();
+        fetchData();
     }, []);
 
     // Close menu on outside click
@@ -69,18 +83,22 @@ export default function AdminProperties() {
         setProperties(prev => prev.map(p => p.id === id ? { ...p, status: newStatus, is_active: newStatus === 'active' } : p));
         setOpenMenuId(null);
 
-        const { error } = await supabase
-            .from('properties')
-            .update({
-                status: newStatus,
-                is_active: newStatus === 'active'
-            })
-            .eq('id', id);
+        // Server Action
+        const { updatePropertyStatus } = await import("@/app/actions/property");
+        const res = await updatePropertyStatus(id, newStatus);
 
-        if (error) {
+        if (!res.success) {
             // Revert on error
             setProperties(prev => prev.map(p => p.id === id ? { ...p, status: oldStatus, is_active: oldStatus === 'active' } : p));
-            console.error('Error updating status:', error);
+            console.error('Error updating status:', res.error);
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                title: 'Update Failed',
+                message: res.error || 'Failed to update status',
+                actionLabel: 'Close',
+                onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+            });
         }
     };
 
@@ -88,7 +106,7 @@ export default function AdminProperties() {
         setOpenMenuId(null);
         setModalConfig({
             isOpen: true,
-            type: 'error', // Use red style for danger
+            type: 'error',
             title: 'Delete Property?',
             message: 'Are you sure you want to delete this property? This action cannot be undone.',
             actionLabel: 'Yes, Delete',
@@ -99,14 +117,12 @@ export default function AdminProperties() {
     const handleDelete = async (id: string) => {
         setModalConfig(prev => ({ ...prev, type: 'loading', title: 'Deleting...', message: 'Removing property...' }));
 
-        const { error } = await supabase
-            .from('properties')
-            .delete()
-            .eq('id', id);
+        const { deleteProperty } = await import("@/app/actions/property");
+        const res = await deleteProperty(id);
 
-        if (error) {
-            // Check for Foreign Key Constraint
-            if (error.code === '23503') {
+        if (!res.success) {
+            // Check for Foreign Key Constraint code if passed
+            if (res.code === '23503') {
                 setModalConfig({
                     isOpen: true,
                     type: 'error',
@@ -120,7 +136,7 @@ export default function AdminProperties() {
                     isOpen: true,
                     type: 'error',
                     title: 'Error Deleting',
-                    message: `An unexpected error occurred: ${error.message}`,
+                    message: res.error || 'An unexpected error occurred.',
                     actionLabel: 'Close',
                     onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
                 });
@@ -333,13 +349,15 @@ export default function AdminProperties() {
                                                             </>
                                                         );
                                                     })()}
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); confirmDelete(property.id); }}
-                                                        className="w-full text-left px-3 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg flex items-center gap-2 transition-colors"
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                        Delete Property
-                                                    </button>
+                                                    {(role === 'admin' || role === 'super_admin') && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); confirmDelete(property.id); }}
+                                                            className="w-full text-left px-3 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg flex items-center gap-2 transition-colors"
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                            Delete Property
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}

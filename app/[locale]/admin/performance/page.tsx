@@ -1,8 +1,34 @@
-export const dynamic = 'force-dynamic';
-
 import { BarChart3, TrendingUp, PieChart, LineChart } from "lucide-react";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function AdminPerformancePage() {
+export default async function AdminPerformancePage(props: { params: Promise<{ locale: string }> }) {
+    const { locale } = await props.params;
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                get(name: string) { return cookieStore.get(name)?.value },
+            },
+        }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) redirect(`/${locale}/login`);
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.role !== 'super_admin') {
+        redirect(`/${locale}/admin/properties`);
+    }
+
     return (
         <div className="space-y-10 pb-20">
             {/* Header */}

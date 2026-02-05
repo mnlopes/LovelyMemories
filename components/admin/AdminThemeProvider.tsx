@@ -41,7 +41,6 @@ export const AdminThemeProvider = ({ children }: { children: React.ReactNode }) 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>
             {children}
-            <Toaster position="top-right" richColors theme={theme} />
         </ThemeContext.Provider>
     );
 };

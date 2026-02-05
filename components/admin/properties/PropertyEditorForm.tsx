@@ -16,6 +16,7 @@ import AmenitiesTab from "./AmenitiesTab";
 import PoliciesTab from "./PoliciesTab";
 import { upsertProperty } from "@/app/actions/property";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
+import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 
 interface PropertyEditorFormProps {
     initialData?: Partial<PropertyFormData>;
@@ -206,6 +207,8 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         { id: 'location', label: 'Location' },
         { id: 'policies', label: 'Policies', hideForBuildings: true },
         { id: 'pricing', label: 'Pricing & Availability', hideForBuildings: true },
+        // Only show history if not creating new property
+        ...(isEditing ? [{ id: 'history', label: 'History' }] : [])
     ].filter(tab => {
         if (effectiveMode === 'building') {
             return !tab.hideForBuildings;
@@ -362,7 +365,18 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             />
                         )}
 
-                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies'].includes(activeTab) && (
+                        {activeTab === 'history' && initialData?.id && (
+                            <div className="max-w-3xl">
+                                <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100">Property Audit Log</h3>
+                                <ActivityTimeline
+                                    resourceType="PROPERTY"
+                                    resourceId={initialData.id as string}
+                                    limit={50}
+                                />
+                            </div>
+                        )}
+
+                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'history'].includes(activeTab) && (
                             <div className="flex flex-col items-center justify-center h-64 text-[#a3a3a3]">
                                 <p className="text-lg font-bold dark:text-admin-dark-text-primary">Coming Soon: {tabs.find(t => t.id === activeTab)?.label} Editor</p>
                                 <p className="text-sm mt-2">This module is part of the next update.</p>

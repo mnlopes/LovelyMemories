@@ -82,7 +82,7 @@ export const AdminPropertyCard = ({ property }: AdminPropertyCardProps) => {
                             <div className="flex -space-x-2">
                                 {[1, 2, 3].map(i => (
                                     <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-[#192537]/10 flex items-center justify-center text-[10px] font-bold text-[#192537]">
-                                        T{i}
+                                        M{i}
                                     </div>
                                 ))}
                             </div>

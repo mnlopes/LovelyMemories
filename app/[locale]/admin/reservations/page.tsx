@@ -1,14 +1,21 @@
 "use client";
 
-import { Calendar, Search, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown } from "lucide-react";
+import { Calendar, Search, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown, Check, Ban } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
+import { deleteReservation } from "@/app/actions/reservation";
+import { updateReservationStatus } from "@/app/actions/admin-reservation-actions";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import { DateRangePicker } from "@/components/admin/ui/DateRangePicker";
 import { DateRange } from "react-day-picker";
 import { isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { cn } from "@/lib/utils";
+
+import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
+import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
+import { History } from "lucide-react";
 
 export default function AdminReservationsPage() {
     const params = useParams();
@@ -16,9 +23,33 @@ export default function AdminReservationsPage() {
     const [view, setView] = useState<'calendar' | 'list'>('list');
     const [reservations, setReservations] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [role, setRole] = useState<string | null>(null);
+
+    // History Modal State
+    const [historyModalOpen, setHistoryModalOpen] = useState(false);
+    const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
+
+    // Detail Sheet State
+    const [detailSheetReservation, setDetailSheetReservation] = useState<any | null>(null);
+
+    // Fetch user role
+    useEffect(() => {
+        const fetchRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                if (profile) setRole(profile.role);
+            }
+        };
+        fetchRole();
+    }, []);
 
     // Sorting State
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'check_in', direction: 'desc' });
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'created_at', direction: 'desc' });
 
     // Search
     const [searchQuery, setSearchQuery] = useState("");
@@ -62,7 +93,7 @@ export default function AdminReservationsPage() {
             supabase
                 .from('reservations')
                 .select('*')
-                .order('check_in', { ascending: false }),
+                .order('created_at', { ascending: false }),
             supabase
                 .from('properties')
                 .select('id, title')
@@ -162,21 +193,8 @@ export default function AdminReservationsPage() {
     const handleDelete = async (id: string) => {
         setModalConfig(prev => ({ ...prev, type: 'loading', title: 'Deleting...', message: 'Removing reservation...' }));
 
-        const { error } = await supabase
-            .from('reservations')
-            .delete()
-            .eq('id', id);
-
-        if (error) {
-            setModalConfig({
-                isOpen: true,
-                type: 'error',
-                title: 'Error Deleting',
-                message: `Could not delete reservation: ${error.message}`,
-                actionLabel: 'Close',
-                onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
-            });
-        } else {
+        try {
+            await deleteReservation(id);
             setReservations(prev => prev.filter(r => r.id !== id));
             setModalConfig({
                 isOpen: true,
@@ -186,7 +204,43 @@ export default function AdminReservationsPage() {
                 actionLabel: 'Done',
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
+        } catch (error: any) {
+            setModalConfig({
+                isOpen: true,
+                type: 'error',
+                title: 'Error Deleting',
+                message: `Could not delete reservation: ${error.message || 'Unknown error'}`,
+                actionLabel: 'Close',
+                onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+            });
         }
+    };
+
+    const handleStatusUpdate = async (id: string, newStatus: 'confirmed' | 'cancelled') => {
+        setOpenMenuId(null);
+        setModalConfig({
+            isOpen: true,
+            type: newStatus === 'confirmed' ? 'success' : 'warning',
+            title: newStatus === 'confirmed' ? 'Aprovar Reserva?' : 'Rejeitar Reserva?',
+            message: newStatus === 'confirmed'
+                ? 'Tem a certeza que deseja aprovar esta reserva e confirmar o pagamento?'
+                : 'Tem a certeza que deseja rejeitar esta reserva?',
+            actionLabel: newStatus === 'confirmed' ? 'Sim, Aprovar' : 'Sim, Rejeitar',
+            onAction: async () => {
+                const toastId = toast.loading(`A atualizar reserva...`);
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) throw new Error("Não autenticado");
+
+                    await updateReservationStatus(id, newStatus, user.id);
+                    toast.success(`Reserva ${newStatus === 'confirmed' ? 'confirmada' : 'cancelada'} com sucesso!`, { id: toastId });
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    fetchData();
+                } catch (error: any) {
+                    toast.error(`Erro ao atualizar reserva: ${error.message}`, { id: toastId });
+                }
+            }
+        });
     };
 
     const formatDate = (dateString: string) => {
@@ -218,7 +272,12 @@ export default function AdminReservationsPage() {
             const dateB = new Date(b.check_in).getTime();
             return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
         }
-        return 0; // Default no sort if needed, but we default to check_in
+        if (sortConfig.key === 'created_at') {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+        }
+        return 0; // Default no sort if needed
     });
 
     return (
@@ -287,9 +346,15 @@ export default function AdminReservationsPage() {
                         <thead>
                             <tr className="border-b border-[#f5f5f5] dark:border-admin-dark-border">
                                 <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Guest & Property</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest cursor-pointer group/header" onClick={() => handleSort('created_at')}>
+                                    <div className="flex items-center gap-2">
+                                        Booking Date
+                                        <ArrowUpDown className={`size-3 transition-colors ${sortConfig.key === 'created_at' ? 'text-[#171717] dark:text-white' : 'text-[#a3a3a3] group-hover/header:text-[#171717] dark:group-hover/header:text-white'}`} />
+                                    </div>
+                                </th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest cursor-pointer group/header" onClick={() => handleSort('check_in')}>
                                     <div className="flex items-center gap-2">
-                                        Dates
+                                        Stay Dates
                                         <ArrowUpDown className={`size-3 transition-colors ${sortConfig.key === 'check_in' ? 'text-[#171717] dark:text-white' : 'text-[#a3a3a3] group-hover/header:text-[#171717] dark:group-hover/header:text-white'}`} />
                                     </div>
                                 </th>
@@ -310,17 +375,20 @@ export default function AdminReservationsPage() {
                                     </td>
                                 </tr>
                             ) : filteredReservations.map((reservation) => (
-                                <tr key={reservation.id} className="group hover:bg-[#fafafa]/50 dark:hover:bg-admin-dark-bg/50 transition-colors">
+                                <tr
+                                    key={reservation.id}
+                                    onClick={() => setDetailSheetReservation(reservation)}
+                                    className={cn(
+                                        "group transition-all cursor-pointer border-b border-[#f5f5f5] dark:border-admin-dark-border relative",
+                                        detailSheetReservation?.id === reservation.id
+                                            ? "bg-gold-100/50 dark:bg-gold-500/10 shadow-[inset_4px_0_0_0_#c5a059]"
+                                            : "hover:bg-[#fafafa]/50 dark:hover:bg-admin-dark-bg/50"
+                                    )}
+                                >
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-4">
                                             <div className="size-10 rounded-full bg-[#f5f5f5] dark:bg-admin-dark-bg flex items-center justify-center text-[#171717] dark:text-admin-dark-text-primary shadow-sm border border-[#eeeeee] dark:border-admin-dark-border relative">
                                                 <User className="size-5 stroke-[1.5px]" />
-                                                {isNew(reservation.created_at) && (
-                                                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500"></span>
-                                                    </span>
-                                                )}
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
@@ -334,6 +402,12 @@ export default function AdminReservationsPage() {
                                                     {reservation.properties?.name || 'Unknown Property'}
                                                 </div>
                                             </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{formatDate(reservation.created_at)}</span>
+                                            <span className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-tighter">Reservado em</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
@@ -366,12 +440,12 @@ export default function AdminReservationsPage() {
                                             ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/30'
                                             : reservation.status === 'pending'
                                                 ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
-                                                : 'bg-[#fafafa] dark:bg-admin-dark-bg text-[#a3a3a3] border border-[#eeeeee] dark:border-admin-dark-border'
+                                                : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
                                             }`}>
                                             {reservation.status || 'Pending'}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6 text-right font-medium relative">
+                                    <td className="px-8 py-6 text-right font-medium relative" onClick={(e) => e.stopPropagation()}>
                                         <button
                                             id={`menu-trigger-${reservation.id}`}
                                             onClick={(e) => {
@@ -384,12 +458,47 @@ export default function AdminReservationsPage() {
                                         </button>
 
                                         {/* Dropdown Menu */}
-                                        {openMenuId === reservation.id && (
+                                        {openMenuId === reservation.id && (role === 'admin' || role === 'super_admin') && (
                                             <div
                                                 ref={menuRef}
                                                 className="absolute right-8 top-12 w-48 bg-white dark:bg-admin-dark-surface rounded-xl shadow-xl border border-[#f5f5f5] dark:border-admin-dark-border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
                                             >
                                                 <div className="p-1">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(null);
+                                                            setSelectedReservationId(reservation.id);
+                                                            setHistoryModalOpen(true);
+                                                        }}
+                                                        className="w-full text-left px-3 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors"
+                                                    >
+                                                        <History className="size-4" />
+                                                        View History
+                                                    </button>
+
+                                                    {reservation.status === 'pending' && (
+                                                        <>
+                                                            <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleStatusUpdate(reservation.id, 'confirmed'); }}
+                                                                className="w-full text-left px-3 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <Check className="size-4" />
+                                                                Approve Reservation
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleStatusUpdate(reservation.id, 'cancelled'); }}
+                                                                className="w-full text-left px-3 py-2.5 text-xs font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <Ban className="size-4" />
+                                                                Reject Reservation
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
+
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); confirmDelete(reservation.id); }}
                                                         className="w-full text-left px-3 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg flex items-center gap-2 transition-colors"
@@ -416,6 +525,38 @@ export default function AdminReservationsPage() {
                 message={modalConfig.message}
                 actionLabel={modalConfig.actionLabel}
                 onAction={modalConfig.onAction}
+            />
+
+            {/* History Modal */}
+            {historyModalOpen && selectedReservationId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-admin-dark-surface w-full max-w-2xl max-h-[80vh] rounded-2xl shadow-xl flex flex-col">
+                        <div className="p-6 border-b border-gray-100 dark:border-admin-dark-border flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Reservation History</h3>
+                            <button
+                                onClick={() => setHistoryModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                            >
+                                <span className="sr-only">Close</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto">
+                            <ActivityTimeline
+                                resourceType="RESERVATION"
+                                resourceId={selectedReservationId}
+                                limit={20}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Detail Sheet */}
+            <ReservationDetailSheet
+                reservation={detailSheetReservation}
+                onClose={() => setDetailSheetReservation(null)}
             />
         </div>
     );

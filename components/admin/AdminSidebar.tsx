@@ -1,48 +1,81 @@
 "use client";
 
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, Sparkles, Settings } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, Sparkles, Settings, Activity } from "lucide-react";
 import { Link, usePathname } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export const AdminSidebar = () => {
     const pathname = usePathname();
     const t = useTranslations('AdminSidebar');
+    const [role, setRole] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                if (profile) setRole(profile.role);
+            }
+        };
+        fetchRole();
+    }, []);
 
     const menuSections = [
         {
             title: t('management'),
             items: [
-                { icon: LayoutDashboard, label: t('overview'), path: "/admin" },
+                // Only show Overview to Super Admins
+                ...(role === 'super_admin' ? [
+                    { icon: LayoutDashboard, label: t('overview'), path: "/admin" }
+                ] : []),
                 { icon: Hotel, label: t('properties'), path: "/admin/properties" },
                 { icon: Calendar, label: t('bookings'), path: "/admin/reservations" },
-                { icon: Users, label: t('tenants'), path: "/admin/users" },
+                // Only show Users/Tenants to Admins and Super Admins
+                ...(role === 'admin' || role === 'super_admin' ? [
+                    { icon: Users, label: t('tenants'), path: "/admin/users" }
+                ] : []),
                 { icon: Sparkles, label: t('concierge'), path: "/admin/concierge" },
             ]
         },
-        {
-            title: t('reports'),
-            items: [
-                { icon: Wallet, label: t('finances'), path: "/admin/finances" },
-                { icon: BarChart3, label: t('performance'), path: "/admin/performance" },
-            ]
-        },
-        {
-            title: "System",
-            items: [
-                { icon: Settings, label: "Settings", path: "/admin/settings" },
-            ]
-        }
+        // Only show Reports to Super Admins
+        ...(role === 'super_admin' ? [
+            {
+                title: t('reports'),
+                items: [
+                    { icon: Wallet, label: t('finances'), path: "/admin/finances" },
+                    { icon: BarChart3, label: t('performance'), path: "/admin/performance" },
+                ]
+            }
+        ] : []),
+        // Only show System/Settings to Super Admins (and Activity to Admins)
+        ...(role === 'super_admin' || role === 'admin' ? [
+            {
+                title: "System",
+                items: [
+                    { icon: Activity, label: "Activity", path: "/admin/activity" },
+                    // Settings only for Super Admin
+                    ...(role === 'super_admin' ? [
+                        { icon: Settings, label: "Settings", path: "/admin/settings" }
+                    ] : [])
+                ]
+            }
+        ] : [])
     ];
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        window.location.href = "/";
+        const locale = window.location.pathname.split('/')[1] || 'en';
+        window.location.href = `/${locale}/login`;
     };
 
     return (
-        <aside className="w-72 bg-white dark:bg-linear-to-b dark:from-admin-dark-bg dark:to-[#050505] border-r border-[#f5f5f5] dark:border-admin-dark-border flex flex-col shrink-0 h-screen sticky top-0 z-50 transition-all duration-300">
+        <aside className="w-72 bg-white dark:bg-admin-dark-bg border-r border-[#f5f5f5] dark:border-admin-dark-border flex flex-col shrink-0 h-screen sticky top-0 z-50">
             {/* Logo Area */}
             <div className="p-8 flex flex-col items-center gap-2 text-center">
                 <div className="w-40 h-auto flex items-center justify-center p-2">

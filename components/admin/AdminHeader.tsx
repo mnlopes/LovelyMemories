@@ -3,13 +3,14 @@
 import { Search, Bell, User, Sun, Moon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAdminTheme } from "./AdminThemeProvider";
+import { NotificationsPopover } from "./NotificationsPopover";
 
 export const AdminHeader = ({ user, profile }: any) => {
     const t = useTranslations('AdminHeader');
     const { theme, toggleTheme } = useAdminTheme();
 
     return (
-        <header className="h-20 bg-white/80 dark:bg-admin-dark-bg/80 backdrop-blur-md border-b border-[#f5f5f5] dark:border-admin-dark-border flex items-center justify-between px-10 sticky top-0 z-20 transition-all duration-300">
+        <header className="h-20 bg-white dark:bg-admin-dark-bg border-b border-[#f5f5f5] dark:border-admin-dark-border flex items-center justify-between px-10 sticky top-0 z-20">
             <div />
 
             {/* Actions */}
@@ -27,10 +28,7 @@ export const AdminHeader = ({ user, profile }: any) => {
                     )}
                 </button>
 
-                <button className="p-2.5 rounded-xl text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-[#fafafa] dark:hover:bg-white/10 relative transition-all group border border-transparent dark:hover:border-white/20">
-                    <Bell className="size-5 stroke-[1.5px]" />
-                    <span className="absolute top-2 right-2 size-2 bg-gold-400 rounded-full border border-white dark:border-admin-dark-bg shadow-sm"></span>
-                </button>
+                <NotificationsPopover lastReadAt={profile?.last_read_notifications_at || null} />
 
                 <div className="flex items-center gap-4 group cursor-pointer pl-4 border-l border-[#f5f5f5] dark:border-white/10">
                     <div className="text-right">

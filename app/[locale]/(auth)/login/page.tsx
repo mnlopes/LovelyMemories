@@ -61,7 +61,7 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#FCFCFC] pt-32 pb-20 flex items-center justify-center px-4">
+        <main className="min-h-screen bg-[#FCFCFC] pt-32 pb-20 flex items-center justify-center px-4 relative overflow-hidden">
             {/* Background Decorations */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#B09E80]/5 rounded-full blur-[120px] -mr-64 -mt-64 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#192537]/5 rounded-full blur-[120px] -ml-64 -mb-64 pointer-events-none" />
@@ -73,11 +73,11 @@ export default function LoginPage() {
             >
                 {/* Logo / Header */}
                 <div className="text-center mb-10">
-                    <Link href="/">
+                    <Link href="/" className="inline-block group">
                         <img
                             src="/legacy/home/images/logo.svg"
                             alt="Lovely Memories"
-                            className="h-16 mx-auto mb-6 brightness-0 transition-all duration-300"
+                            className="h-16 mx-auto mb-6 brightness-0 transition-all duration-300 group-hover:scale-105 group-active:scale-95"
                             style={{ filter: 'brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(1210%) hue-rotate(188deg) brightness(96%) contrast(97%)' }}
                         />
                     </Link>
@@ -176,12 +176,6 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                {/* Footer Info */}
-                <div className="mt-8 text-center">
-                    <p className="text-[#192537]/30 text-xs uppercase tracking-widest font-bold">
-                        Lovely Memories © 2026
-                    </p>
-                </div>
             </motion.div>
         </main>
     );
