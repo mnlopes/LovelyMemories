@@ -58,7 +58,8 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     const isAdminPath = pathname.includes('/admin') || pathname.includes('/login') || pathname.includes('/set-password');
     if (supabaseUrl && serviceKey) {
         const country = request.headers.get('x-vercel-ip-country') || 'Unknown';
-        const city = request.headers.get('x-vercel-ip-city') || 'Unknown';
+        const rawCity = request.headers.get('x-vercel-ip-city') || 'Unknown';
+        const city = decodeURIComponent(rawCity);
         const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
         const userAgent = request.headers.get('user-agent') || 'Unknown';
         const referer = request.headers.get('referer') || 'Direct';
