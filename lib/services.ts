@@ -391,7 +391,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
             region: region,
             country: 'Portugal',
             address: visualData.address || p.address || actualParent?.address || units[0]?.address || '',
-            coordinates: safeCoords(visualData.lat || p.lat, visualData.lng || p.lng, actualParent?.lat || 0, actualParent?.lng || 0)
+            coordinates: safeCoords(visualData.lat || p.lat, visualData.lng || p.lng, actualParent?.lat || 41.1579, actualParent?.lng || -8.6291)
         },
         image: (typeof visualData.images?.[0] === 'string' ? visualData.images[0] : visualData.images?.find((img: any) => img.is_main)?.url) || visualData.property_images?.find((img: any) => img.is_main)?.url || propertyImages[0],
         images: propertyImages,
@@ -415,7 +415,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
                 ...cat,
                 items: cat.items?.map((item: any) => ({
                     ...item,
-                    coordinates: item.coordinates ? [isValidCoord(item.coordinates[0]) ? item.coordinates[0] : 0, isValidCoord(item.coordinates[1]) ? item.coordinates[1] : 0] : null
+                    coordinates: item.coordinates ? safeCoords(item.coordinates[0], item.coordinates[1], 41.1579, -8.6291) : null
                 }))
             }))
             : (legacyProperty?.nearbyPlaces || []),
