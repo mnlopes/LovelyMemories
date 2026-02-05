@@ -65,13 +65,27 @@ export function TrafficTimeline({ data, range }: TrafficTimelineProps) {
                 })}
             </div>
 
-            <div className="mt-4 flex justify-between border-t border-white/5 pt-3">
-                <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                    {new Date(Date.now() - rangeMs[range]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+            <div className="mt-4 flex justify-between border-t border-white/5 pt-3 relative">
+                {[0, 0.25, 0.5, 0.75, 1].map((portion) => {
+                    const time = new Date(Date.now() - rangeMs[range] * (1 - portion));
+                    const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    return (
+                        <div
+                            key={portion}
+                            className={cn(
+                                "flex flex-col items-center",
+                                portion === 0 ? "items-start" : portion === 1 ? "items-end" : ""
+                            )}
+                            style={portion > 0 && portion < 1 ? { position: 'absolute', left: `${portion * 100}%`, transform: 'translateX(-50%)' } : {}}
+                        >
+                            <div className="w-px h-1 bg-white/10 mb-1" />
+                            <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">
+                                {timeStr}
+                            </span>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
