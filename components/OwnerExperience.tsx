@@ -140,7 +140,7 @@ export const OwnerExperience = () => {
                             className="space-y-10"
                         >
                             <div className="space-y-8">
-                                <h3 className="text-4xl md:text-5xl font-playfair font-bold text-white leading-tight">
+                                <h3 className="text-3xl md:text-4xl font-playfair font-bold text-white leading-tight">
                                     {t('title')}
                                 </h3>
 
