@@ -100,6 +100,11 @@ export function HomeCalendarPopover({
     // Calculate nights for range mode
     // nights removed
 
+    // Normalize disabledDates to an array for safe iteration/some calls
+    const normalizedDisabledDates = Array.isArray(disabledDates)
+        ? disabledDates
+        : (disabledDates ? [disabledDates] : []);
+
     // Reset month view when opened
     useEffect(() => {
         if (isOpen) {
@@ -222,7 +227,7 @@ export function HomeCalendarPopover({
                                         const t = startOfToday();
                                         if (d <= t) return true;
 
-                                        const isMiddleNight = (disabledDates || []).some((item: any) => {
+                                        const isMiddleNight = (normalizedDisabledDates).some((item: any) => {
                                             if (item?.from && item?.to) {
                                                 const from = startOfDay(item.from);
                                                 const to = startOfDay(item.to);
@@ -232,7 +237,7 @@ export function HomeCalendarPopover({
                                             return false;
                                         });
 
-                                        const isInRange = (disabledDates || []).some((item: any) => {
+                                        const isInRange = (normalizedDisabledDates).some((item: any) => {
                                             if (item?.from && item?.to) {
                                                 return isSameDay(startOfDay(item.from), d) || isSameDay(startOfDay(item.to), d);
                                             }
@@ -294,7 +299,7 @@ export function HomeCalendarPopover({
                                         const checkInDays: Date[] = [];
                                         const checkOutDays: Date[] = [];
 
-                                        (disabledDates || []).forEach((d: any) => {
+                                        (normalizedDisabledDates).forEach((d: any) => {
                                             if (d?.from && d?.to) {
                                                 checkInDays.push(d.from);
                                                 checkOutDays.push(d.to);
@@ -319,7 +324,7 @@ export function HomeCalendarPopover({
                                             // Selecting END: block check-out days + enforce overlap prevention
                                             base.push(...checkOutDays);
 
-                                            const nextBlocked = (disabledDates || [])
+                                            const nextBlocked = (normalizedDisabledDates)
                                                 .map((d: any) => d?.from || (d instanceof Date ? d : null))
                                                 .filter((d: any) => d && d > selectedRange.from!)
                                                 .sort((a: any, b: any) => a!.getTime() - b!.getTime())[0];
@@ -358,7 +363,7 @@ export function HomeCalendarPopover({
                                         booked: (date) => {
                                             const d = startOfDay(date);
                                             const middleNights: Date[] = [];
-                                            (disabledDates || []).forEach((item: any) => {
+                                            (normalizedDisabledDates).forEach((item: any) => {
                                                 if (item?.from && item?.to) {
                                                     let curr = addDays(startOfDay(item.from), 1);
                                                     while (curr < startOfDay(item.to)) {
@@ -378,7 +383,7 @@ export function HomeCalendarPopover({
                                             if (d <= t) return false;
 
                                             if (selectedRange?.from && (!selectedRange.to || isSameDay(selectedRange.from, selectedRange.to))) {
-                                                const nextFrom = (disabledDates || [])
+                                                const nextFrom = (normalizedDisabledDates)
                                                     .map((item: any) => item?.from || (item instanceof Date ? item : null))
                                                     .filter((f: any) => f && startOfDay(f) > startOfDay(selectedRange.from!))
                                                     .sort((a: any, b: any) => a.getTime() - b.getTime())[0];

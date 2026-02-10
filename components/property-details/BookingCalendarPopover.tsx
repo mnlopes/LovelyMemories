@@ -40,6 +40,11 @@ export function BookingCalendarPopover({
     const [isShaking, setIsShaking] = useState(false);
     const popoverRef = React.useRef<HTMLDivElement>(null);
 
+    // Normalize disabledDates to an array for safe iteration/some calls
+    const normalizedDisabledDates = Array.isArray(disabledDates)
+        ? disabledDates
+        : (disabledDates ? [disabledDates] : []);
+
     // Robust local midnight normalization helper
     const normalize = (d: any): number => {
         if (!d) return 0;
@@ -159,7 +164,7 @@ export function BookingCalendarPopover({
                                     }
 
                                     if (range?.from && range?.to) {
-                                        const hasOverlap = (disabledDates || []).some(item => {
+                                        const hasOverlap = (normalizedDisabledDates).some(item => {
                                             const dRange = item as DateRange;
                                             if (dRange.from && dRange.to) {
                                                 const blockFrom = normalize(dRange.from);
@@ -202,7 +207,7 @@ export function BookingCalendarPopover({
                                     const checkInDays: number[] = [];
                                     const checkOutDays: number[] = [];
 
-                                    (disabledDates || []).forEach(item => {
+                                    (normalizedDisabledDates).forEach(item => {
                                         const range = item as DateRange;
                                         if (range?.from && range?.to) {
                                             const start = normalize(range.from);
@@ -227,7 +232,7 @@ export function BookingCalendarPopover({
                                         return checkInDays.some(cid => cid === dTime);
                                     } else {
                                         if (checkOutDays.some(cod => cod === dTime)) return true;
-                                        const nextFrom = (disabledDates || [])
+                                        const nextFrom = (normalizedDisabledDates)
                                             .map(item => normalize((item as DateRange).from))
                                             .filter(f => f > fromTime)
                                             .sort((a, b) => a - b)[0];
@@ -271,7 +276,7 @@ export function BookingCalendarPopover({
 
                                         if (selectedRange?.from) {
                                             const fromTime = normalize(selectedRange.from);
-                                            const nextFromTime = (disabledDates || [])
+                                            const nextFromTime = (normalizedDisabledDates)
                                                 .map(item => normalize((item as DateRange).from))
                                                 .filter(f => f > fromTime)
                                                 .sort((a, b) => a - b)[0];
@@ -282,7 +287,7 @@ export function BookingCalendarPopover({
                                     },
                                     booked: (() => {
                                         const stayNights: Date[] = [];
-                                        (disabledDates || []).forEach(d => {
+                                        (normalizedDisabledDates).forEach(d => {
                                             const range = d as DateRange;
                                             if (range?.from && range?.to) {
                                                 // START ONE DAY AFTER 'from' to keep the check-in day visually clean
