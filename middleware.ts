@@ -14,7 +14,7 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     // Capture main hits: Initial Page Loads (HTML) + Navigations (RSC)
     // We skip assets, APIs and background prefetches
     if (isAsset || isApi || isPrefetch) {
-        return createMiddleware(routing)(request);
+        return NextResponse.next();
     }
 
     // 2. Setup Auth & Get User Info

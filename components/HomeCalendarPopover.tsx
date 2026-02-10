@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DayPicker, DateRange, useNavigation, useDayPicker, CaptionProps } from "react-day-picker";
-import { format, differenceInDays, startOfToday, addMonths, subMonths } from "date-fns";
+import { format, differenceInDays, startOfToday, addMonths, subMonths, subDays, addDays, isSameDay, startOfDay } from "date-fns";
 import { pt, enGB } from "date-fns/locale";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
@@ -217,7 +217,30 @@ export function HomeCalendarPopover({
                                     numberOfMonths={numberOfMonths}
                                     month={month}
                                     onMonthChange={setMonth}
-                                    disabled={disabledDates || { before: today }}
+                                    disabled={(date) => {
+                                        const d = startOfDay(date);
+                                        const t = startOfToday();
+                                        if (d <= t) return true;
+
+                                        const isMiddleNight = (disabledDates || []).some((item: any) => {
+                                            if (item?.from && item?.to) {
+                                                const from = startOfDay(item.from);
+                                                const to = startOfDay(item.to);
+                                                return d > from && d < to;
+                                            }
+                                            if (item instanceof Date) return isSameDay(startOfDay(item), d);
+                                            return false;
+                                        });
+
+                                        const isInRange = (disabledDates || []).some((item: any) => {
+                                            if (item?.from && item?.to) {
+                                                return isSameDay(startOfDay(item.from), d) || isSameDay(startOfDay(item.to), d);
+                                            }
+                                            return false;
+                                        });
+
+                                        return isMiddleNight || isInRange;
+                                    }}
                                     locale={dateLocale}
                                     components={{
                                         Caption: () => null,
@@ -238,14 +261,18 @@ export function HomeCalendarPopover({
                                         day_selected: "bg-transparent",
                                         day_today: "text-[#B08D4A] font-bold",
                                         day_outside: "text-gray-300 opacity-20",
-                                        day_disabled: "text-gray-200 opacity-10 cursor-not-allowed",
+                                        day_disabled: "text-navy-900/40 cursor-not-allowed",
                                         day_hidden: "invisible",
+                                    }}
+                                    modifiers={{
+                                        past: (date) => startOfDay(date) <= startOfToday(),
                                     }}
                                     modifiersClassNames={{
                                         selected: "!bg-[#B08D4A] !text-white hover:!bg-[#92743a]",
                                         today: "text-[#B08D4A] font-bold",
                                         outside: "text-gray-300 opacity-20",
-                                        disabled: "text-gray-200 opacity-10 cursor-not-allowed",
+                                        disabled: "text-navy-900/40 cursor-not-allowed",
+                                        past: "day_past",
                                     }}
                                     showOutsideDays={false}
                                     weekStartsOn={1}
@@ -258,7 +285,52 @@ export function HomeCalendarPopover({
                                     numberOfMonths={numberOfMonths}
                                     month={month}
                                     onMonthChange={setMonth}
-                                    disabled={disabledDates || { before: today }}
+                                    disabled={(() => {
+                                        const base = [];
+                                        base.push({ before: today });
+
+                                        // Process disabledRanges into granular sets
+                                        const middleNights: Date[] = [];
+                                        const checkInDays: Date[] = [];
+                                        const checkOutDays: Date[] = [];
+
+                                        (disabledDates || []).forEach((d: any) => {
+                                            if (d?.from && d?.to) {
+                                                checkInDays.push(d.from);
+                                                checkOutDays.push(d.to);
+
+                                                let current = addDays(d.from, 1);
+                                                while (current < d.to) {
+                                                    middleNights.push(new Date(current));
+                                                    current = addDays(current, 1);
+                                                }
+                                            } else if (d instanceof Date) {
+                                                middleNights.push(d);
+                                            }
+                                        });
+
+                                        // Always block middle nights
+                                        base.push(...middleNights);
+
+                                        if (selectionMode === 'range' && (!selectedRange?.from || (selectedRange.to && selectedRange.from.getTime() !== selectedRange.to.getTime()))) {
+                                            // Selecting START: block check-in days
+                                            base.push(...checkInDays);
+                                        } else if (selectionMode === 'range' && selectedRange?.from) {
+                                            // Selecting END: block check-out days + enforce overlap prevention
+                                            base.push(...checkOutDays);
+
+                                            const nextBlocked = (disabledDates || [])
+                                                .map((d: any) => d?.from || (d instanceof Date ? d : null))
+                                                .filter((d: any) => d && d > selectedRange.from!)
+                                                .sort((a: any, b: any) => a!.getTime() - b!.getTime())[0];
+
+                                            if (nextBlocked) {
+                                                base.push({ after: nextBlocked } as any);
+                                            }
+                                        }
+
+                                        return base;
+                                    })()}
                                     locale={dateLocale}
                                     components={{
                                         Caption: () => null,
@@ -279,14 +351,51 @@ export function HomeCalendarPopover({
                                         day_selected: "bg-transparent",
                                         day_today: "text-[#B08D4A] font-bold",
                                         day_outside: "text-gray-300 opacity-20",
-                                        day_disabled: "text-gray-200 opacity-10 cursor-not-allowed",
+                                        day_disabled: "text-navy-900/40 cursor-not-allowed",
                                         day_hidden: "invisible",
+                                    }}
+                                    modifiers={{
+                                        booked: (date) => {
+                                            const d = startOfDay(date);
+                                            const middleNights: Date[] = [];
+                                            (disabledDates || []).forEach((item: any) => {
+                                                if (item?.from && item?.to) {
+                                                    let curr = addDays(startOfDay(item.from), 1);
+                                                    while (curr < startOfDay(item.to)) {
+                                                        middleNights.push(new Date(curr));
+                                                        curr = addDays(curr, 1);
+                                                    }
+                                                } else if (item instanceof Date) {
+                                                    middleNights.push(startOfDay(item));
+                                                }
+                                            });
+                                            return middleNights.some(mn => isSameDay(mn, d));
+                                        },
+                                        past: (date) => startOfDay(date) <= startOfToday(),
+                                        blocked: (date) => {
+                                            const d = startOfDay(date);
+                                            const t = startOfToday();
+                                            if (d <= t) return false;
+
+                                            if (selectedRange?.from && (!selectedRange.to || isSameDay(selectedRange.from, selectedRange.to))) {
+                                                const nextFrom = (disabledDates || [])
+                                                    .map((item: any) => item?.from || (item instanceof Date ? item : null))
+                                                    .filter((f: any) => f && startOfDay(f) > startOfDay(selectedRange.from!))
+                                                    .sort((a: any, b: any) => a.getTime() - b.getTime())[0];
+
+                                                if (nextFrom && d > startOfDay(nextFrom)) return true;
+                                            }
+                                            return false;
+                                        }
                                     }}
                                     modifiersClassNames={{
                                         selected: "!bg-[#B08D4A] !text-white hover:!bg-[#92743a]",
                                         today: "text-[#B08D4A] font-bold",
                                         outside: "text-gray-300 opacity-20",
-                                        disabled: "text-gray-200 opacity-10 cursor-not-allowed",
+                                        disabled: "text-navy-900/40 cursor-not-allowed",
+                                        booked: "day_booked",
+                                        past: "day_past",
+                                        blocked: "day_blocked",
                                     }}
                                     showOutsideDays={false}
                                     weekStartsOn={1}
@@ -316,7 +425,30 @@ export function HomeCalendarPopover({
                                 display: block !important;
                                 margin: 0 !important;
                                 padding: 0 !important;
+                                gap: 0 !important;
                             }
+
+                            .day_past {
+                                opacity: 0.25 !important;
+                            }
+
+                            .day_blocked button,
+                            .day_blocked [role="button"] {
+                                text-decoration: line-through !important;
+                                text-decoration-color: rgba(0,0,0,0.5) !important;
+                                text-decoration-thickness: 1.5px !important;
+                                color: #192537 !important;
+                                opacity: 0.5 !important;
+                                cursor: not-allowed !important;
+                            }
+
+                            .day_past button,
+                            .day_past [role="button"] {
+                                color: #9ca3af !important;
+                                cursor: not-allowed !important;
+                            }
+                            
+                            /* Range Styles (Bar) */
                             
                             /* Header and Body rows should be 7-column grids */
                             .rdp-weekdays, .rdp-week, tr {
@@ -398,6 +530,24 @@ export function HomeCalendarPopover({
                                 background-color: #B08D4A !important;
                                 color: white !important;
                                 border-radius: 50% !important;
+                            }
+
+                            /* Booked (Reserved) Days Styling - Light Red Ball */
+                            .day_booked {
+                                background-color: #fef2f2 !important;
+                                color: #991b1b !important;
+                                opacity: 1 !important;
+                                border: 1.5px solid #fee2e2 !important;
+                                border-radius: 50% !important;
+                            }
+                            
+                            .day_booked button,
+                            .day_booked [role="button"] {
+                                color: #000000 !important;
+                                font-weight: 500 !important;
+                                text-decoration: line-through !important;
+                                text-decoration-thickness: 1px !important;
+                                opacity: 0.6 !important;
                             }
                         `}</style>
                     </motion.div>

@@ -39,18 +39,40 @@ export default async function PropertyEditorPage({
 
         const { data, error } = await supabase
             .from('properties')
-            .select('*')
+            .select('*, pricing_rules(*)')
             .eq('id', id)
             .single();
 
         if (error || !data) {
-            console.error("Error fetching property:", error);
-            // If it's a GUID format but not found, 404. 
-            // If it's "config" or strictly 'new', we handled that.
-            if (id !== 'new') return notFound();
-        }
+            console.error("Error fetching property with pricing rules:", error);
+            // Fallback: try without pricing rules if the relation fails (e.g. if record missing in pricing_rules)
+            const { data: fallbackData } = await supabase
+                .from('properties')
+                .select('*')
+                .eq('id', id)
+                .single();
 
-        propertyData = data;
+            if (fallbackData) {
+                propertyData = fallbackData;
+            } else {
+                if (id !== 'new') return notFound();
+            }
+        } else {
+            // Flatten pricing rules into the main object for the form
+            // Supabase may return it as an array or object depending on relationship inference
+            const rulesArray = data.pricing_rules;
+            const rules = Array.isArray(rulesArray) ? rulesArray[0] : rulesArray;
+
+            const { pricing_rules: _, ...rest } = data;
+            propertyData = {
+                ...rest,
+                min_nights: rules?.min_nights,
+                cleaning_fee: rules?.cleaning_fee,
+                weekly_discount_percent: rules?.weekly_discount_percent,
+                monthly_discount_percent: rules?.monthly_discount_percent,
+                city_tax_per_night: rules?.city_tax_per_night
+            };
+        }
     }
 
     return (

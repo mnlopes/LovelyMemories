@@ -18,9 +18,11 @@ export const Preloader = () => {
         setIsLoading(true);
         window.scrollTo(0, 0);
 
+        const delay = pathname?.includes('/owner') ? 2000 : 1000;
+
         const timer = setTimeout(() => {
             setIsLoading(false);
-        }, 1000); // 1s loading time for transitions
+        }, delay);
 
         return () => clearTimeout(timer);
     }, [pathname]);

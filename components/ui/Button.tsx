@@ -20,10 +20,11 @@ export const Button = ({ children, className, variant = "primary", icon = false,
 
     return (
         <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={props.disabled ? {} : { scale: 1.02 }}
+            whileTap={props.disabled ? {} : { scale: 0.98 }}
             className={cn(
                 "px-8 py-4 rounded-full font-semibold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer",
+                "disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed disabled:pointer-events-none",
                 variants[variant],
                 className
             )}

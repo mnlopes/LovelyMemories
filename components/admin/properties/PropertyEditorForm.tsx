@@ -14,6 +14,7 @@ import RoomsTab from "./RoomsTab";
 import HierarchyTab from "./HierarchyTab";
 import AmenitiesTab from "./AmenitiesTab";
 import PoliciesTab from "./PoliciesTab";
+import PricingAvailabilityTab from "./PricingAvailabilityTab";
 import { upsertProperty } from "@/app/actions/property";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
@@ -110,9 +111,16 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 text: {
                     en: "Baby cot and high chair are available on request at no extra cost.",
                     pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",
-                    he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות נוספת."
+                    he: "מיטת תינוק e כיסא alta estão disponíveis mediante pedido, sem custo extra."
                 }
-            }
+            },
+            price_per_night: initialData?.price_per_night ?? 0,
+            original_price: initialData?.original_price ?? null,
+            min_nights: (initialData as any)?.min_nights ?? 2,
+            cleaning_fee: (initialData as any)?.cleaning_fee ?? 85,
+            weekly_discount_percent: (initialData as any)?.weekly_discount_percent ?? 5,
+            monthly_discount_percent: (initialData as any)?.monthly_discount_percent ?? 15,
+            city_tax_per_night: (initialData as any)?.city_tax_per_night ?? 2,
         } as any
     });
 
@@ -368,6 +376,8 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             />
                         )}
 
+                        {activeTab === 'pricing' && <PricingAvailabilityTab />}
+
                         {activeTab === 'history' && initialData?.id && (
                             <div className="max-w-3xl">
                                 <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100">Property Audit Log</h3>
@@ -379,7 +389,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             </div>
                         )}
 
-                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'history'].includes(activeTab) && (
+                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'pricing', 'history'].includes(activeTab) && (
                             <div className="flex flex-col items-center justify-center h-64 text-[#a3a3a3]">
                                 <p className="text-lg font-bold dark:text-admin-dark-text-primary">Coming Soon: {tabs.find(t => t.id === activeTab)?.label} Editor</p>
                                 <p className="text-sm mt-2">This module is part of the next update.</p>

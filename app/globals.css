@@ -26,15 +26,87 @@
     --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.08);
     --shadow-elevated: 0 20px 50px rgba(0, 0, 0, 0.12);
 
-    /* Admin Dark Mode Palette */
-    --color-admin-dark-bg: #0a0a0a;
-    --color-admin-dark-surface: #171717;
-    --color-admin-dark-border: #262626;
-    --color-admin-dark-text-primary: #ededed;
-    --color-admin-dark-text-secondary: #a3a3a3;
-
     --shadow-premium: 0 4px 20px rgba(0, 0, 0, 0.4);
     --shadow-gold-glow: 0 0 15px rgba(197, 160, 89, 0.15);
+
+    /* Map Semantic Variables to Tailwind Utilities */
+    --color-admin-bg: var(--admin-bg);
+    --color-admin-surface: var(--admin-surface);
+    --color-admin-border: var(--admin-border);
+    --color-admin-text-primary: var(--admin-text-primary);
+    --color-admin-text-secondary: var(--admin-text-secondary);
+    --color-admin-accent: var(--admin-accent);
+
+    /* Legacy compatibility tokens mappings */
+    --color-admin-dark-bg: var(--admin-bg);
+    --color-admin-dark-surface: var(--admin-surface);
+    --color-admin-dark-border: var(--admin-border);
+    --color-admin-dark-text-primary: var(--admin-text-primary);
+    --color-admin-dark-text-secondary: var(--admin-text-secondary);
+}
+
+/* Base Admin Semantic Tokens - DEFAULT (Light) */
+:root {
+    --admin-bg: #fafafa;
+    --admin-surface: #ffffff;
+    --admin-border: #e8e8e8;
+    /* Slightly darker for better visibility of grid lines */
+    --admin-text-primary: #111111;
+    --admin-text-secondary: #888888;
+    --admin-accent: #b08d4a;
+
+    /* Legacy compatibility tokens mappings */
+    --color-admin-dark-bg: var(--admin-bg);
+    --color-admin-dark-surface: var(--admin-surface);
+    --color-admin-dark-border: var(--admin-border);
+    --color-admin-dark-text-primary: var(--admin-text-primary);
+    --color-admin-dark-text-secondary: var(--admin-text-secondary);
+}
+
+/* --- ADMIN THEME OVERRIDES --- */
+
+/* DEFAULT (Light) */
+:root,
+html[data-admin-theme="light"] {
+    --admin-bg: #fafafa;
+    --admin-surface: #ffffff;
+    --admin-border: #e8e8e8;
+    --admin-text-primary: #111111;
+    --admin-text-secondary: #888888;
+    --admin-accent: #b08d4a;
+}
+
+/* 1. CREME LIGHT (Off-white / Soft Cream) */
+html[data-admin-theme="creme"] {
+    --admin-bg: #f7f4ec;
+    --admin-surface: #fffefc;
+    --admin-border: #efe9d8;
+    --admin-text-primary: #4a4636;
+    --admin-text-secondary: #8a8471;
+    --admin-accent: #8c734b;
+}
+
+/* 2. SOFT DARK (Charcoal / Softer Dark) */
+html[data-admin-theme="soft-dark"],
+html.dark[data-admin-theme="soft-dark"] {
+    --admin-bg: #121214;
+    --admin-surface: #1e1e21;
+    --admin-border: #2a2a2e;
+    --admin-text-primary: #e0e0e0;
+    --admin-text-secondary: #949494;
+    --admin-accent: #b09e80;
+}
+
+/* 3. DEEP DARK (Deep Black) */
+html.dark:not([data-admin-theme]),
+html[data-admin-theme="dark"],
+html.dark[data-admin-theme="dark"] {
+    --admin-bg: #000000;
+    --admin-surface: #0a0a0a;
+    --admin-border: #1a1a1a;
+    --admin-text-primary: #ffffff;
+    --admin-text-secondary: #a3a3a3;
+    --admin-accent: #c5a059;
 }
 
 .premium-glow-dark {

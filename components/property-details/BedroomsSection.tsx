@@ -168,8 +168,8 @@ export function BedroomsSection({
                             <Bed className="h-6 w-6 text-[#B08D4A]" />
                         </div>
                         <div>
-                            <p className="font-bold text-navy-950 text-lg">{countBedrooms} {t('bedroomsCount', { count: countBedrooms })}</p>
-                            <p className="text-sm text-navy-900/50 font-medium">{countBeds} {t('bedsCount', { count: countBeds })}</p>
+                            <p className="font-bold text-navy-950 text-lg">{t('bedroomsCount', { count: countBedrooms })}</p>
+                            <p className="text-sm text-navy-900/50 font-medium">{t('bedsCount', { count: countBeds })}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-[#E1E6EC] shadow-sm hover:shadow-md transition-shadow">
@@ -177,7 +177,7 @@ export function BedroomsSection({
                             <Bath className="h-6 w-6 text-[#B08D4A]" />
                         </div>
                         <div>
-                            <p className="font-bold text-navy-950 text-lg">{countBathrooms} {t('bathroomsCount', { count: countBathrooms })}</p>
+                            <p className="font-bold text-navy-950 text-lg">{t('bathroomsCount', { count: countBathrooms })}</p>
                             <p className="text-sm text-navy-900/50 font-medium">{t('enSuite') || "En-suite"}</p>
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -11,7 +12,8 @@ interface FormData {
     fullName: string;
     email: string;
     phone: string;
-    address: string;
+    typology: string;
+    perks: string;
     location: string;
     website: string; // Honeypot
 }
@@ -22,7 +24,8 @@ export const OwnerHero = () => {
         fullName: "",
         email: "",
         phone: "",
-        address: "",
+        typology: "",
+        perks: "",
         location: "",
         website: "",
     });
@@ -51,15 +54,13 @@ export const OwnerHero = () => {
                 body: JSON.stringify({
                     ...formData,
                     phoneNumber: formData.phone,
-                    plan: 'base',
-                    numProperties: '1'
                 }),
             });
 
             if (response.ok) {
                 toast.success(t('form.success'));
                 setIsSuccess(true);
-                setFormData({ fullName: "", email: "", phone: "", address: "", location: "", website: "" });
+                setFormData({ fullName: "", email: "", phone: "", typology: "", perks: "", location: "", website: "" });
             } else if (response.status === 429) {
                 const data = await response.json();
                 const msg = data.message || "Por favor aguarde uns minutos antes de tentar novamente.";
@@ -203,11 +204,12 @@ export const OwnerHero = () => {
                                                 className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
                                             />
                                             <Input
-                                                name="address"
-                                                placeholder={t('form.address')}
-                                                value={formData.address}
+                                                name="typology"
+                                                placeholder={t('form.typology')}
+                                                value={formData.typology}
                                                 onChange={handleChange}
                                                 className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                                required
                                             />
                                             <Input
                                                 name="location"
@@ -215,6 +217,14 @@ export const OwnerHero = () => {
                                                 value={formData.location}
                                                 onChange={handleChange}
                                                 className="h-14 bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
+                                                required
+                                            />
+                                            <Textarea
+                                                name="perks"
+                                                placeholder={t('form.perks')}
+                                                value={formData.perks}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, perks: e.target.value }))}
+                                                className="min-h-[140px] bg-gray-50/50 border-gray-100 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20 py-4 resize-none"
                                             />
                                             {/* HONEYPOT FIELD (Hidden) */}
                                             <input

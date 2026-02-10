@@ -10,12 +10,44 @@ import { revalidatePath } from "next/cache";
  */
 export async function updateReservationStatus(
     id: string,
-    newStatus: 'pending' | 'confirmed' | 'cancelled',
-    adminId: string
+    newStatus: 'pending' | 'confirmed' | 'cancelled'
 ) {
+    // 1. Authenticate and check role
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: profile } = await serverSupabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || (profile.role !== 'super_admin' && profile.role !== 'admin')) {
+        throw new Error('Not authorized to update reservations');
+    }
+
     const adminSupabase = await getSupabaseAdmin();
 
-    // 1. Fetch current reservation for change comparison or detailed logging
+    // 2. Fetch current reservation for change comparison or detailed logging
     const { data: current, error: fetchError } = await adminSupabase
         .from('reservations')
         .select('*, properties(title)')
@@ -26,7 +58,7 @@ export async function updateReservationStatus(
         throw new Error("Reserva não encontrada.");
     }
 
-    // 2. Perform the update
+    // 3. Perform the update
     const { error: updateError } = await adminSupabase
         .from('reservations')
         .update({ status: newStatus })
@@ -37,10 +69,10 @@ export async function updateReservationStatus(
         throw new Error("Erro ao atualizar o estado da reserva.");
     }
 
-    // 3. Log Activity
+    // 4. Log Activity
     try {
         await logActivity(
-            adminId,
+            user.id,
             'UPDATE',
             'RESERVATION',
             id,
@@ -56,7 +88,7 @@ export async function updateReservationStatus(
         console.error("Failed to log status update activity:", logErr);
     }
 
-    // 4. Invalidate cache to reflect changes in UI
+    // 5. Invalidate cache to reflect changes in UI
     revalidatePath('/[locale]/admin/reservations', 'page');
     revalidatePath('/[locale]/admin/reservations/[id]', 'page');
 

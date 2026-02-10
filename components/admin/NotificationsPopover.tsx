@@ -70,20 +70,20 @@ export function NotificationsPopover({ lastReadAt }: NotificationsPopoverProps) 
         <div className="relative" ref={containerRef}>
             <button
                 onClick={handleToggle}
-                className="p-2.5 rounded-xl text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-[#fafafa] dark:hover:bg-white/10 relative transition-all group border border-transparent dark:hover:border-white/20"
+                className="p-2.5 rounded-xl text-admin-text-secondary hover:text-admin-text-primary hover:bg-admin-bg relative transition-all group border border-transparent hover:border-admin-border"
             >
-                <Bell className={cn("size-5 stroke-[1.5px]", isOpen ? "text-black dark:text-white" : "")} />
+                <Bell className={cn("size-5 stroke-[1.5px]", isOpen ? "text-admin-text-primary" : "")} />
 
                 {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-admin-dark-bg shadow-sm animate-pulse"></span>
+                    <span className="absolute top-2 right-2 size-2.5 bg-red-500 rounded-full border-2 border-admin-surface shadow-sm animate-pulse"></span>
                 )}
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-14 w-80 bg-white dark:bg-admin-dark-surface rounded-2xl shadow-xl border border-[#f5f5f5] dark:border-admin-dark-border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="px-4 py-3 border-b border-[#f5f5f5] dark:border-admin-dark-border flex justify-between items-center bg-[#fafafa]/50 dark:bg-white/5">
-                        <h3 className="font-bold text-sm text-[#171717] dark:text-white">Notifications</h3>
-                        <span className="text-[10px] uppercase font-bold text-[#a3a3a3] tracking-wider">Recent Alerts</span>
+                <div className="absolute right-0 top-14 w-80 bg-admin-surface rounded-2xl shadow-xl border border-admin-border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-3 border-b border-admin-border flex justify-between items-center bg-admin-bg/50">
+                        <h3 className="font-bold text-sm text-admin-text-primary">Notifications</h3>
+                        <span className="text-[10px] uppercase font-bold text-admin-text-secondary tracking-wider">Recent Alerts</span>
                     </div>
 
                     <div className="max-h-[300px] overflow-y-auto">
@@ -92,9 +92,9 @@ export function NotificationsPopover({ lastReadAt }: NotificationsPopoverProps) 
                         ) : notifications.length === 0 ? (
                             <div className="p-6 text-center text-xs text-[#a3a3a3]">No recent alerts.</div>
                         ) : (
-                            <div className="divide-y divide-[#f5f5f5] dark:divide-admin-dark-border">
+                            <div className="divide-y divide-admin-border">
                                 {notifications.map(notif => (
-                                    <div key={notif.id} className="p-4 hover:bg-[#fafafa] dark:hover:bg-white/5 transition-colors cursor-pointer" onClick={() => {
+                                    <div key={notif.id} className="p-4 hover:bg-admin-bg transition-colors cursor-pointer" onClick={() => {
                                         if (notif.resource_type === 'RESERVATION') {
                                             router.push(`/admin/reservations`);
                                             setIsOpen(false);
@@ -103,10 +103,10 @@ export function NotificationsPopover({ lastReadAt }: NotificationsPopoverProps) 
                                         <div className="flex gap-3">
                                             <div className="mt-1 size-2 rounded-full bg-blue-500 shrink-0" />
                                             <div>
-                                                <p className="text-xs font-bold text-[#171717] dark:text-white">
+                                                <p className="text-xs font-bold text-admin-text-primary">
                                                     New Reservation
                                                 </p>
-                                                <p className="text-xs text-[#a3a3a3] mt-0.5 line-clamp-2">
+                                                <p className="text-xs text-admin-text-secondary mt-0.5 line-clamp-2">
                                                     {notif.details?.guest_name ? `${notif.details.guest_name} booked a stay.` : 'A new reservation was created.'}
                                                 </p>
                                                 <p className="text-[10px] text-[#d4d4d4] mt-1.5 font-medium">
@@ -121,8 +121,8 @@ export function NotificationsPopover({ lastReadAt }: NotificationsPopoverProps) 
                     </div>
 
                     {notifications.length > 0 && (
-                        <div className="p-2 border-t border-[#f5f5f5] dark:border-admin-dark-border bg-[#fafafa]/50 dark:bg-white/5 text-center">
-                            <button className="text-[10px] font-bold text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white transition-colors" onClick={() => router.push('/admin/activity')}>
+                        <div className="p-2 border-t border-admin-border bg-admin-bg/50 text-center">
+                            <button className="text-[10px] font-bold text-admin-text-secondary hover:text-admin-text-primary transition-colors" onClick={() => router.push('/admin/activity')}>
                                 View All Activity
                             </button>
                         </div>

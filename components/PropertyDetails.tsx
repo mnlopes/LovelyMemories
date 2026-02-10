@@ -8,8 +8,10 @@ import { DateRange } from "react-day-picker";
 import { differenceInDays, format } from "date-fns";
 import { Link } from '@/i18n/routing';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, MapPin } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronRight, X } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/Button';
+import { parseDateLocal } from '@/lib/utils';
 
 // Helper to safely extract string from potential localized object
 const getLocalizedStr = (val: any, locale: string = 'en'): string => {
@@ -52,6 +54,7 @@ interface PropertyDetailsProps {
 export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
+    const gridT = useTranslations('PropertiesGrid');
     const router = useRouter();
     const locale = useLocale();
 
@@ -63,6 +66,8 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
     const [childrenCount, setChildren] = React.useState(0);
     const [infants, setInfants] = React.useState(0);
     const [availabilityStatus, setAvailabilityStatus] = React.useState<{ available: boolean; loading: boolean; error?: string }>({ available: true, loading: false });
+    const [isDescriptionOpen, setIsDescriptionOpen] = React.useState(false);
+    const [isHighlightsOpen, setIsHighlightsOpen] = React.useState(false);
 
     React.useEffect(() => {
         const fetchAll = async () => {
@@ -82,8 +87,8 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                     const toStr = params.get('to');
                     if (fromStr && toStr) {
                         setSelectedRange({
-                            from: new Date(fromStr),
-                            to: new Date(toStr)
+                            from: parseDateLocal(fromStr),
+                            to: parseDateLocal(toStr)
                         });
                     }
 
@@ -194,7 +199,17 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                 <Link
                     href={(() => {
                         const params = new URLSearchParams(window.location.search);
-                        if (params.get('location') || params.get('from') || params.get('to')) {
+                        const hasSearchFilters =
+                            params.get('location') ||
+                            params.get('from') ||
+                            params.get('to') ||
+                            params.get('adults') ||
+                            params.get('children') ||
+                            params.get('infants') ||
+                            params.get('building') ||
+                            params.get('fromsearch') === '1';
+
+                        if (hasSearchFilters) {
                             return `/search?${params.toString()}`;
                         }
                         return `/properties`;
@@ -226,7 +241,10 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                         <Breadcrumb
                             items={[
                                 { label: t('properties'), href: '/properties' },
-                                { label: property.region, href: `/properties?region=${property.region}` }
+                                {
+                                    label: property.region ? gridT(`regions.${property.region.toLowerCase()}`) : gridT('regions.porto'),
+                                    href: `/properties?region=${property.region?.toLowerCase() || 'porto'}`
+                                }
                             ]}
                         />
 
@@ -263,31 +281,71 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                         <div className="mt-8 space-y-6">
                             {(() => {
                                 // 1. Try localized arrays from service transformation
-                                if (locale === 'pt' && Array.isArray(property.description_pt) && property.description_pt.length > 0) return property.description_pt;
-                                if (locale === 'en' && Array.isArray(property.description_en) && property.description_en.length > 0) return property.description_en;
-
+                                let paragraphs: string[] = [];
+                                if (locale === 'pt' && Array.isArray(property.description_pt) && property.description_pt.length > 0) paragraphs = property.description_pt;
+                                else if (locale === 'en' && Array.isArray(property.description_en) && property.description_en.length > 0) paragraphs = property.description_en;
                                 // 2. Try the general description field (might be legacy array or new raw object)
-                                if (Array.isArray(property.description)) return property.description;
-
+                                else if (Array.isArray(property.description)) paragraphs = property.description;
                                 // 3. Try to localize and split if it's a string/object
-                                const localized = getLocalizedStr(property.description, locale);
-                                if (localized) return localized.split('\n').filter(Boolean);
+                                else {
+                                    const localized = getLocalizedStr(property.description, locale);
+                                    if (localized) paragraphs = localized.split('\n').filter(Boolean);
+                                }
 
-                                return [];
-                            })().map((paragraph: string, index: number) => (
-                                <p key={index} className="text-navy-900/70 leading-relaxed text-base md:text-lg">
-                                    {paragraph}
-                                </p>
-                            ))}
+                                if (paragraphs.length === 0) return null;
+
+                                const fullText = paragraphs.join('\n\n');
+                                const shouldTruncate = fullText.length > 300;
+                                const displayText = shouldTruncate ? fullText.substring(0, 300) : fullText;
+
+                                return (
+                                    <>
+                                        <div className="text-navy-900/70 leading-relaxed text-base md:text-lg whitespace-pre-wrap">
+                                            {displayText}
+                                            {shouldTruncate && "..."}
+                                        </div>
+                                        {shouldTruncate && (
+                                            <button
+                                                onClick={() => setIsDescriptionOpen(true)}
+                                                className="text-[#B08D4A] font-bold text-sm tracking-wider uppercase hover:underline flex items-center gap-2 mt-2"
+                                            >
+                                                {t('readMore') || "Read More"}
+                                                <ChevronRight className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                    </>
+                                );
+                            })()}
                         </div>
 
                         {/* What to Expect Section */}
-                        <section className="mt-10 pt-8 border-t border-[#E1E6EC]">
-                            <h2 className="text-2xl font-bold text-navy-950 mb-4">{t('whatToExpect')}</h2>
-                            <p className="text-navy-900/70 leading-relaxed text-base md:text-lg mb-8 max-w-4xl">
-                                {getLocalizedStr(property.highlights_intro, locale) || t('whatToExpectIntro')}
-                            </p>
-                        </section>
+                        {(() => {
+                            const intro = getLocalizedStr(property.highlights_intro, locale);
+                            // Only show if intro exists and isn't just a placeholder or empty
+                            if (!intro || intro.trim() === "") return null;
+
+                            const shouldTruncate = intro.length > 300;
+                            const displayText = shouldTruncate ? intro.substring(0, 300) : intro;
+
+                            return (
+                                <section className="mt-10 pt-8 border-t border-[#E1E6EC]">
+                                    <h2 className="text-2xl font-bold text-navy-950 mb-4">{t('whatToExpect')}</h2>
+                                    <div className="text-navy-900/70 leading-relaxed text-base md:text-lg mb-4 max-w-4xl whitespace-pre-wrap">
+                                        {displayText}
+                                        {shouldTruncate && "..."}
+                                    </div>
+                                    {shouldTruncate && (
+                                        <button
+                                            onClick={() => setIsHighlightsOpen(true)}
+                                            className="text-[#B08D4A] font-bold text-sm tracking-wider uppercase hover:underline flex items-center gap-2"
+                                        >
+                                            {t('readMore') || "Read More"}
+                                            <ChevronRight className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </section>
+                            );
+                        })()}
 
                         {/* Highlights */}
                         <HighlightsSection propertyId={property.id} highlights={property.highlights} />
@@ -347,10 +405,12 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                     <div className="hidden lg:block relative">
                         <div className="sticky top-24 2xl:top-32">
                             <BookingCard
+                                propertyId={property.id}
                                 slug={property.slug}
                                 price={property.price.perNight}
                                 originalPrice={property.price.originalPrice}
                                 discount={property.price.discount}
+                                pricingRules={property.policies?.pricing}
                                 extraPrices={property.servicesPrice}
                                 selectedExtras={selectedExtras}
                                 onToggleExtra={handleToggleExtra}
@@ -362,6 +422,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                                 setChildren={setChildren}
                                 infants={infants}
                                 setInfants={setInfants}
+                                maxGuests={property.guests}
                                 availabilityStatus={availabilityStatus}
                             />
                         </div>
@@ -411,6 +472,100 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                     </Button>
                 </div>
             </div >
+
+            {/* Modals */}
+            <AnimatePresence>
+                {/* Description Modal */}
+                {isDescriptionOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsDescriptionOpen(false)}
+                            className="fixed inset-0 z-[200] bg-navy-950/40 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="fixed inset-x-4 top-[10%] bottom-[10%] lg:inset-auto lg:left-1/2 lg:top-[120px] lg:-translate-x-1/2 lg:w-[800px] lg:max-h-[80vh] z-[210] bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col shadow-[#0a1128]/20"
+                        >
+                            <div className="flex items-center justify-between p-8 border-b border-gray-100">
+                                <h2 className="text-2xl font-bold text-navy-950 font-montserrat">{t('aboutThisHome') || "About this home"}</h2>
+                                <button
+                                    onClick={() => setIsDescriptionOpen(false)}
+                                    className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-navy-950 hover:bg-gray-100 transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-8 lg:p-10 luxury-scrollbar text-left space-y-6">
+                                {(() => {
+                                    let paragraphs: string[] = [];
+                                    if (locale === 'pt' && Array.isArray(property.description_pt) && property.description_pt.length > 0) paragraphs = property.description_pt;
+                                    else if (locale === 'en' && Array.isArray(property.description_en) && property.description_en.length > 0) paragraphs = property.description_en;
+                                    else if (Array.isArray(property.description)) paragraphs = property.description;
+                                    else {
+                                        const localized = getLocalizedStr(property.description, locale);
+                                        if (localized) paragraphs = localized.split('\n').filter(Boolean);
+                                    }
+                                    return paragraphs.map((paragraph, index) => (
+                                        <p key={index} className="text-navy-900/70 leading-relaxed text-base md:text-lg">
+                                            {paragraph}
+                                        </p>
+                                    ));
+                                })()}
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+
+                {/* Highlights Modal */}
+                {isHighlightsOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsHighlightsOpen(false)}
+                            className="fixed inset-0 z-[200] bg-navy-950/40 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="fixed inset-x-4 top-[10%] bottom-[10%] lg:inset-auto lg:left-1/2 lg:top-[120px] lg:-translate-x-1/2 lg:w-[800px] lg:max-h-[80vh] z-[210] bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col shadow-[#0a1128]/20"
+                        >
+                            <div className="flex items-center justify-between px-8 py-6 border-b border-navy-50">
+                                <h3 className="text-2xl font-bold text-navy-950 font-montserrat">{t('whatToExpect')}</h3>
+                                <button
+                                    onClick={() => setIsHighlightsOpen(false)}
+                                    className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-navy-950 hover:bg-gray-100 transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-8 lg:p-10 luxury-scrollbar text-left">
+                                <p className="text-navy-900/70 leading-relaxed text-base md:text-lg whitespace-pre-wrap">
+                                    {getLocalizedStr(property.highlights_intro, locale)}
+                                </p>
+                            </div>
+
+                            <div className="p-6 bg-navy-50/50 border-t border-navy-50">
+                                <Button
+                                    onClick={() => setIsHighlightsOpen(false)}
+                                    variant="luxury"
+                                    className="w-full lg:w-auto"
+                                >
+                                    {t('close') || "Close"}
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div >
     );
 };

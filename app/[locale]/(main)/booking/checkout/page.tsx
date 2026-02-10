@@ -321,8 +321,31 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     }
 
     const nights = checkIn && checkOut ? Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const pricingRules = property.policies?.pricing || {
+        cleaning_fee: 85,
+        weekly_discount_percent: 5,
+        monthly_discount_percent: 15
+    };
+
     const basePrice = nights * property.price.perNight;
-    const cleaningFee = 85;
+    const cleaningFee = pricingRules.cleaning_fee;
+    const cityTaxPerNight = pricingRules.city_tax_per_night || 2.00;
+
+    // Determine Discount
+    let activeDiscountPercent = 0;
+    if (nights >= 28) {
+        activeDiscountPercent = pricingRules.monthly_discount_percent;
+    } else if (nights >= 7) {
+        activeDiscountPercent = pricingRules.weekly_discount_percent;
+    }
+
+    const discountAmount = activeDiscountPercent > 0 ? Math.round(basePrice * (activeDiscountPercent / 100)) : 0;
+
+    // City Tax Calculation (Tourist Tax)
+    // Adults + Children, max 7 nights
+    const taxableGuests = adults + children;
+    const taxableNights = Math.min(nights, 7);
+    const cityTaxTotal = cityTaxPerNight * taxableGuests * taxableNights;
 
     // Extras Calculation
     const breakfastPrice = extraPrices?.breakfast || 15;
@@ -333,7 +356,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const breakfastTotal = selectedExtras?.breakfast ? (breakfastPrice * (adults + children + infants) * breakfastDays) : 0;
     const transferTotal = selectedExtras?.transfer ? (transferPrice * (isRoundTrip ? 2 : 1)) : 0;
 
-    const total = basePrice + cleaningFee + breakfastTotal + transferTotal;
+    const total = basePrice - discountAmount + cleaningFee + cityTaxTotal + breakfastTotal + transferTotal;
     const vat = total * 0.23;
 
     const formatDate = (dateString: string) => {
@@ -392,8 +415,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     totalPrice: total,
                     basePrice: basePrice,
                     cleaningFee: cleaningFee,
+                    discountAmount: discountAmount,
+                    cityTaxTotal: cityTaxTotal,
                     breakfastTotal: breakfastTotal,
                     transferTotal: transferTotal,
+                    transferType: selectedExtras?.transferType,
                     paymentMethod: formData.paymentMethod
                 });
 
@@ -510,10 +536,22 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                     <span className="font-medium text-navy-900/60">{t('sidebar.subtotal')}:</span>
                                     <span className="font-bold text-navy-950">€{basePrice}</span>
                                 </div>
+                                {discountAmount > 0 && (
+                                    <div className="flex justify-between text-sm text-[#2d8653]">
+                                        <span className="font-medium">{nights >= 28 ? t('sidebar.monthlyDiscount') : t('sidebar.weeklyDiscount')}:</span>
+                                        <span className="font-bold">−€{discountAmount}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm">
                                     <span className="font-medium text-navy-900/60">{t('success.cleaningFee')}</span>
                                     <span className="font-bold text-navy-950">€{cleaningFee}</span>
                                 </div>
+                                {cityTaxTotal > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="font-medium text-navy-900/60">{t('sidebar.cityTax') || "City Tax"}:</span>
+                                        <span className="font-bold text-navy-950">€{cityTaxTotal}</span>
+                                    </div>
+                                )}
 
                                 {/* Additional Services */}
                                 {selectedExtras?.breakfast && (
@@ -583,6 +621,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         guests={`${t('sidebar.adults', { count: adults })}${children > 0 ? `, ${t('sidebar.children', { count: children })}` : ''}${infants > 0 ? `, ${t('sidebar.infants', { count: infants })}` : ''}`}
                         basePrice={basePrice}
                         cleaningFee={cleaningFee}
+                        discountAmount={discountAmount}
+                        cityTaxTotal={cityTaxTotal}
                         breakfastTotal={breakfastTotal}
                         transferTotal={transferTotal}
                         total={total}
@@ -1339,10 +1379,22 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         <span className="text-navy-900/80 font-medium">{t('sidebar.subtotal')} ({t('sidebar.nights', { count: nights })})</span>
                                         <span className="font-bold">€{basePrice}</span>
                                     </div>
+                                    {discountAmount > 0 && (
+                                        <div className="flex justify-between text-sm text-[#2d8653]">
+                                            <span className="font-medium">{nights >= 28 ? t('sidebar.monthlyDiscount') : t('sidebar.weeklyDiscount')}</span>
+                                            <span className="font-bold">−€{discountAmount}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between text-sm">
                                         <span className="text-navy-900/80 font-medium">{t('sidebar.cleaning')}</span>
                                         <span className="font-bold">€{cleaningFee}</span>
                                     </div>
+                                    {cityTaxTotal > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-navy-900/80 font-medium">{t('sidebar.cityTax') || "City Tax"}</span>
+                                            <span className="font-bold">€{cityTaxTotal}</span>
+                                        </div>
+                                    )}
 
                                     {/* Extras Display */}
                                     {(selectedExtras?.breakfast || selectedExtras?.transfer) && (

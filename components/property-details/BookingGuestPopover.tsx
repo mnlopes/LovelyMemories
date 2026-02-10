@@ -14,6 +14,7 @@ interface BookingGuestPopoverProps {
     setChildren: (count: number) => void;
     infants: number;
     setInfants: (count: number) => void;
+    maxGuests?: number;
     placement?: 'side' | 'bottom' | 'bottom-start' | 'bottom-end' | 'bottom-center' | 'top-start' | 'top-end' | 'top-center';
 }
 
@@ -26,10 +27,15 @@ export function BookingGuestPopover({
     setChildren,
     infants,
     setInfants,
+    maxGuests = 10,
     placement = 'side',
 }: BookingGuestPopoverProps) {
     const t = useTranslations('PropertyDetail');
     const popoverRef = useRef<HTMLDivElement>(null);
+
+    // Calculate current count (infants don't count towards max)
+    const currentGuestCount = adults + children;
+    const isAtMaxCapacity = currentGuestCount >= maxGuests;
 
     // Click outside listener for desktop
     useEffect(() => {
@@ -132,7 +138,8 @@ export function BookingGuestPopover({
                                     <button
                                         type="button"
                                         onClick={() => setAdults(adults + 1)}
-                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all active:scale-90"
+                                        disabled={isAtMaxCapacity}
+                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all disabled:opacity-20 disabled:cursor-not-allowed active:scale-90"
                                     >
                                         <Plus className="h-4 w-4" />
                                     </button>
@@ -163,7 +170,8 @@ export function BookingGuestPopover({
                                     <button
                                         type="button"
                                         onClick={() => setChildren(children + 1)}
-                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all active:scale-90"
+                                        disabled={isAtMaxCapacity}
+                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all disabled:opacity-20 disabled:cursor-not-allowed active:scale-90"
                                     >
                                         <Plus className="h-4 w-4" />
                                     </button>
@@ -194,7 +202,8 @@ export function BookingGuestPopover({
                                     <button
                                         type="button"
                                         onClick={() => setInfants(infants + 1)}
-                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all active:scale-90"
+                                        disabled={infants >= 6}
+                                        className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all disabled:opacity-20 disabled:cursor-not-allowed active:scale-90"
                                     >
                                         <Plus className="h-4 w-4" />
                                     </button>

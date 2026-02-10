@@ -105,9 +105,14 @@ export const propertySchema = z.object({
     bathrooms: z.coerce.number().min(0).default(0),
     area: z.coerce.number().optional().nullable(),
 
-    // Pricing
+    // Pricing Rules (Relational table pricing_rules)
     price_per_night: z.coerce.number().min(0).default(0),
     original_price: z.coerce.number().optional().nullable(),
+    min_nights: z.coerce.number().min(1).default(2),
+    cleaning_fee: z.coerce.number().min(0).default(85),
+    weekly_discount_percent: z.coerce.number().min(0).max(100).default(5),
+    monthly_discount_percent: z.coerce.number().min(0).max(100).default(15),
+    city_tax_per_night: z.coerce.number().min(0).optional().nullable(),
 
     // Flags
     status: z.enum(['active', 'coming_soon', 'hidden']).default('active'),

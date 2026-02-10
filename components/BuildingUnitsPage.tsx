@@ -55,7 +55,17 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                         href={(() => {
                             if (typeof window !== 'undefined') {
                                 const params = new URLSearchParams(window.location.search);
-                                if (params.get('location') || params.get('from') || params.get('to')) {
+                                const hasSearchFilters =
+                                    params.get('location') ||
+                                    params.get('from') ||
+                                    params.get('to') ||
+                                    params.get('adults') ||
+                                    params.get('children') ||
+                                    params.get('infants') ||
+                                    params.get('building') ||
+                                    params.get('fromsearch') === '1';
+
+                                if (hasSearchFilters) {
                                     return `/search?${params.toString()}`;
                                 }
                             }
@@ -165,13 +175,13 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                                                 <div className="flex items-center gap-1.5">
                                                     <Users className="text-[#AD9C7E] w-4 h-4 shrink-0" />
                                                     <p className="text-[#192537] text-[12px] font-medium whitespace-nowrap">
-                                                        <span className="font-bold">{safeCount(unit.guests)}</span> {td('guestsCount', { count: safeCount(unit.guests) })}
+                                                        <span className="font-bold">{safeCount(unit.guests)}</span> {safeCount(unit.guests) === 1 ? t('guest') : t('guests')}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <Bed className="text-[#AD9C7E] w-4 h-4 shrink-0" />
                                                     <p className="text-[#192537] text-[12px] font-medium whitespace-nowrap">
-                                                        <span className="font-bold">{safeCount(unit.bedrooms)}</span> {td('bedroomsCount', { count: safeCount(unit.bedrooms) })}
+                                                        <span className="font-bold">{safeCount(unit.bedrooms)}</span> {safeCount(unit.bedrooms) === 1 ? t('bedroom') : t('bedrooms')}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
@@ -183,7 +193,7 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                                                 <div className="flex items-center gap-1.5">
                                                     <Bath className="text-[#AD9C7E] w-4 h-4 shrink-0" />
                                                     <p className="text-[#192537] text-[12px] font-medium whitespace-nowrap">
-                                                        <span className="font-bold">{safeCount(unit.bathrooms)}</span> {td('bathroomsCount', { count: safeCount(unit.bathrooms) })}
+                                                        <span className="font-bold">{safeCount(unit.bathrooms)}</span> {safeCount(unit.bathrooms) === 1 ? t('bathroom') : t('bathrooms')}
                                                     </p>
                                                 </div>
                                             </div>

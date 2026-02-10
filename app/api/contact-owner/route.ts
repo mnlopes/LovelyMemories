@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { fullName, email, phoneNumber, address, location, plan, numProperties, website } = body;
+        const { fullName, email, phoneNumber, typology, perks, location, plan, numProperties, website } = body;
 
         // 1. HONEYPOT CHECK
         // If the hidden 'website' field is filled, it's a bot.

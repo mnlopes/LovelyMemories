@@ -101,8 +101,24 @@ function SearchResultsContent() {
         const fetchProperties = async () => {
             setIsLoading(true);
             try {
-                const buildingParam = searchParams.get('building');
-                const data = await getProperties(buildingParam || undefined);
+                // Use new searchProperties service
+                const { searchProperties } = await import('@/lib/services');
+
+                const from = searchParams.get('from') ? new Date(searchParams.get('from')!) : undefined;
+                const to = searchParams.get('to') ? new Date(searchParams.get('to')!) : undefined;
+                const adults = parseInt(searchParams.get('adults') || '1', 10);
+                const children = parseInt(searchParams.get('children') || '0', 10);
+                const location = searchParams.get('location') || undefined;
+                const building = searchParams.get('building') || undefined;
+
+                const data = await searchProperties({
+                    location,
+                    guests: adults + children,
+                    from,
+                    to,
+                    buildingSlug: building
+                });
+
                 setProperties(data);
             } catch (error) {
                 console.error('Error fetching properties:', error);
@@ -170,20 +186,9 @@ function SearchResultsContent() {
     const appliedChildren = parseInt(searchParams.get('children') || '0', 10);
     const appliedOccupancy = appliedAdults + appliedChildren;
 
-    const filteredProperties = properties.filter(p => {
-        // 1. Location Filter
-        const matchesLocation = !appliedLocation ||
-            p.location.city.toLowerCase().includes(appliedLocation.toLowerCase()) ||
-            p.location.region.toLowerCase().includes(appliedLocation.toLowerCase());
-
-        // 2. Guest Capacity Filter
-        const matchesGuests = (p.guests || 0) >= appliedOccupancy;
-
-        // 3. Date Filter (Placeholder for now)
-        const matchesDates = true;
-
-        return matchesLocation && matchesGuests && matchesDates;
-    });
+    // Filtering is now handled by the searchProperties service
+    // We can keep specific client-side refinements if needed, but for now we trust the service.
+    const filteredProperties = properties;
 
     const sortedProperties = [...filteredProperties].sort((a, b) => {
         if (!a.isComingSoon && b.isComingSoon) return -1;
@@ -354,15 +359,19 @@ function SearchResultsContent() {
                             >
                                 <div
                                     onClick={() => {
+                                        if (property.isReserved) return;
                                         if (property.unitsCount >= 2) {
                                             const params = new URLSearchParams(searchParams.toString());
                                             params.set('building', property.slug);
+                                            params.set('fromsearch', '1');
                                             router.push(`/${locale}/search?${params.toString()}`);
                                         } else {
-                                            router.push(`/${locale}/properties/${property.singleUnitSlug || property.slug}?${searchParams.toString()}`);
+                                            const params = new URLSearchParams(searchParams.toString());
+                                            params.set('fromsearch', '1');
+                                            router.push(`/${locale}/properties/${property.singleUnitSlug || property.slug}?${params.toString()}`);
                                         }
                                     }}
-                                    className="block relative aspect-[1/1] w-full overflow-hidden cursor-pointer"
+                                    className={`block relative aspect-[1/1] w-full overflow-hidden ${property.isReserved ? 'cursor-not-allowed grayscale-[0.3] contrast-[0.9]' : 'cursor-pointer'}`}
                                 >
                                     <Image
                                         src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
@@ -380,12 +389,28 @@ function SearchResultsContent() {
                                             </div>
                                         </div>
                                     )}
+                                    {/* Reserved Overlay */}
+                                    {property.isReserved && (
+                                        <div className="absolute inset-0 bg-[#192537]/70 backdrop-blur-[2px] z-40 flex flex-col items-center justify-center transition-all duration-500">
+                                            <div className="flex flex-col items-center justify-center transform -translate-y-4">
+                                                <div className="w-[1px] h-8 bg-[#edc37c] mb-4"></div>
+                                                <span className="text-white text-xs font-bold tracking-[0.3em] uppercase mb-1 drop-shadow-md">
+                                                    Unavailable
+                                                </span>
+                                                <span className="text-[#edc37c] font-serif text-3xl italic drop-shadow-lg font-medium">
+                                                    Reserved
+                                                </span>
+                                                <div className="w-[1px] h-8 bg-[#edc37c] mt-4"></div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 opacity-90 pointer-events-none"></div>
-                                    <div className="absolute bottom-0 left-0 w-full p-6 z-20 text-center pointer-events-none">
-                                        <h6 className="text-white font-sans font-bold text-2xl mb-1 leading-tight tracking-tight drop-shadow-md">
+                                    <div className={`absolute bottom-0 left-0 w-full p-6 text-center pointer-events-none ${property.isReserved ? 'z-50' : 'z-20'}`}>
+                                        <h6 className={`text-white font-sans font-bold text-2xl mb-1 leading-tight tracking-tight drop-shadow-md ${property.isReserved ? 'opacity-60' : ''}`}>
                                             {getLocalizedStr(property.title, locale)}
                                         </h6>
-                                        <p className="text-white/80 text-sm font-light uppercase tracking-[0.2em]">
+                                        <p className={`text-white/80 text-sm font-light uppercase tracking-[0.2em] ${property.isReserved ? 'opacity-60' : ''}`}>
                                             {getLocalizedStr(property.subtitle, locale)}
                                         </p>
                                     </div>
@@ -404,8 +429,8 @@ function SearchResultsContent() {
                                         </p>
                                     </div>
 
-                                    <div className="flex flex-col items-center justify-center py-4 border-b border-gray-100 min-h-[5.5rem] px-4">
-                                        {property.is_multi_unit ? (
+                                    <div className="flex flex-col items-center justify-center py-3 border-b border-gray-100 min-h-[5rem] px-4">
+                                        {property.unitsCount >= 2 ? (
                                             <div className="flex items-center gap-2">
                                                 <Building2 className="text-[#AD9C7E] w-[18px] h-[18px]" />
                                                 <p className="text-[#192537] text-sm font-bold">
@@ -442,33 +467,40 @@ function SearchResultsContent() {
                                         )}
                                     </div>
 
-                                    <div className="pt-2 text-center">
-                                        {property.unitsCount >= 2 ? (
-                                            <button
-                                                onClick={() => {
-                                                    const params = new URLSearchParams(searchParams.toString());
-                                                    params.set('building', property.slug);
-                                                    router.push(`/${locale}/search?${params.toString()}`);
-                                                }}
-                                                className="inline-block text-[#b09e80] font-bold uppercase tracking-widest text-xs hover:text-[#9e8c6d] transition-colors cursor-pointer"
-                                            >
-                                                {t('discoverMore') || 'Discover More'}
-                                            </button>
-                                        ) : (
-                                            <Link
-                                                href={`/properties/${property.singleUnitSlug || property.slug}?${searchParams.toString()}`}
-                                                className="inline-block text-[#b09e80] font-bold uppercase tracking-widest text-xs hover:text-[#9e8c6d] transition-colors cursor-pointer"
-                                            >
-                                                {(() => {
-                                                    try {
-                                                        return tp('viewDetails');
-                                                    } catch (e) {
-                                                        return 'View Details';
-                                                    }
-                                                })()}
-                                            </Link>
-                                        )}
-                                    </div>
+                                </div>
+
+                                {/* Disable buttons/links if reserved */}
+                                <div className={`pt-0 pb-4 text-center ${property.isReserved ? 'opacity-30 pointer-events-none' : ''}`}>
+                                    {property.unitsCount >= 2 ? (
+                                        <button
+                                            onClick={() => {
+                                                const params = new URLSearchParams(searchParams.toString());
+                                                params.set('building', property.slug);
+                                                params.set('fromsearch', '1');
+                                                router.push(`/${locale}/search?${params.toString()}`);
+                                            }}
+                                            className="inline-block text-[#b09e80] font-bold uppercase tracking-widest text-xs hover:text-[#9e8c6d] transition-colors cursor-pointer"
+                                        >
+                                            {t('discoverMore') || 'Discover More'}
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href={`/properties/${property.singleUnitSlug || property.slug}?${(() => {
+                                                const p = new URLSearchParams(searchParams.toString());
+                                                p.set('fromsearch', '1');
+                                                return p.toString();
+                                            })()}`}
+                                            className="inline-block text-[#b09e80] font-bold uppercase tracking-widest text-xs hover:text-[#9e8c6d] transition-colors cursor-pointer"
+                                        >
+                                            {(() => {
+                                                try {
+                                                    return tp('viewDetails');
+                                                } catch (e) {
+                                                    return 'View Details';
+                                                }
+                                            })()}
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         ))}

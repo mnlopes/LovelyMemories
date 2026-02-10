@@ -196,6 +196,20 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                     )}
                 </div>
 
+                {/* Room Subtitle (Override for "Social Area" / "Luxury Bath") */}
+                <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
+                        Room Subtitle / Label ({activeLang.toUpperCase()})
+                        <span className="ml-2 lowercase font-medium opacity-60">Overrides "Área Social" / "Banho de Luxo"</span>
+                    </label>
+                    <input
+                        {...register(`rooms.${index}.beds.${activeLang}` as any)}
+                        dir={dir}
+                        placeholder="e.g. 1 Double Bed / Guest Lounge"
+                        className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-2 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                    />
+                </div>
+
                 {/* Localized Details */}
                 <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Localized details ({activeLang.toUpperCase()})</label>

@@ -33,30 +33,33 @@ export function HomeTruthsSection({ propertyId, truths, checkIn }: HomeTruthsSec
                 <div>
                     <h3 className="text-lg font-medium mb-3 text-navy-950">{t('goodToKnow')}</h3>
                     <div className="space-y-2">
-                        {truths.map((truth, index) => (
-                            <div
-                                key={index}
-                                className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-xl border border-transparent"
-                            >
-                                <div className="w-8 h-8 rounded-full bg-[#B08D4A]/10 flex items-center justify-center flex-shrink-0">
-                                    <AlertTriangle className="h-4 w-4 text-[#B08D4A]" />
-                                </div>
-                                <p className="text-navy-900/70 leading-relaxed pt-1">
-                                    {(() => {
-                                        // Skip calling tp.raw for UUIDs to avoid Dev Overlay warnings
-                                        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(propertyId);
-                                        if (isUuid) return getLocalizedStr(truth, locale);
+                        {(() => {
+                            // Handle both array and localized object formats
+                            let truthsArray = truths;
 
-                                        try {
-                                            const raw = tp.raw(`${propertyId}.homeTruths`);
-                                            return getLocalizedStr(Array.isArray(raw) ? raw[index] : truth, locale);
-                                        } catch (e) {
-                                            return getLocalizedStr(truth, locale);
-                                        }
-                                    })()}
-                                </p>
-                            </div>
-                        ))}
+                            // If truths is an object with language keys, extract the correct language
+                            if (truths && typeof truths === 'object' && !Array.isArray(truths)) {
+                                truthsArray = truths[locale] || truths['en'] || truths['pt'] || [];
+                            }
+
+                            if (!Array.isArray(truthsArray)) {
+                                return null;
+                            }
+
+                            return truthsArray.map((truth: any, index: number) => (
+                                <div
+                                    key={index}
+                                    className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-xl border border-transparent"
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-[#B08D4A]/10 flex items-center justify-center flex-shrink-0">
+                                        <AlertTriangle className="h-4 w-4 text-[#B08D4A]" />
+                                    </div>
+                                    <p className="text-navy-900/70 leading-relaxed pt-1">
+                                        {typeof truth === 'string' ? truth : getLocalizedStr(truth, locale)}
+                                    </p>
+                                </div>
+                            ));
+                        })()}
                     </div>
                 </div>
 

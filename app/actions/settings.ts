@@ -78,7 +78,8 @@ export async function updateSystemSetting(key: string, value: any) {
         throw new Error('Unauthorized: Only Super Admins can change system settings');
     }
 
-    const { error } = await serverSupabase
+    const adminSupabase = await getSupabaseAdmin();
+    const { error } = await adminSupabase
         .from('system_settings')
         .upsert({
             key,

@@ -10,6 +10,19 @@ const getLocalizedStr = (val: any): string => {
         return typeof preferred === 'string' ? preferred : '';
     }
     return '';
+    return '';
+};
+
+// Helper to safely extract number from potential localized object
+const getNumber = (val: any) => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') return parseFloat(val) || 0;
+    if (typeof val === 'object' && val !== null) {
+        // Try known language keys or just take the first value
+        const num = val.en || val.pt || val.he || Object.values(val)[0] || '0';
+        return typeof num === 'number' ? num : parseFloat(String(num)) || 0;
+    }
+    return 0;
 };
 
 export async function getLocations() {
@@ -88,6 +101,7 @@ export async function getPropertyBySlug(slug: string) {
           *,
           locations (*),
           property_images (*),
+          pricing_rules (*),
           parent:parent_id (*, locations (*))
         `)
         .eq('slug', slug)
@@ -191,6 +205,137 @@ export async function getBuildingWithUnits(slug: string) {
     };
 }
 
+export async function searchProperties(params: {
+    location?: string,
+    guests: number,
+    from?: Date,
+    to?: Date,
+    buildingSlug?: string
+}) {
+    const { location, guests, from, to, buildingSlug } = params;
+
+    // 1. Fetch ALL active properties (raw) to handle unit-level logic
+    const { data: allProps, error } = await supabase
+        .from('properties')
+        .select('*, locations(*), property_images(*)')
+        .eq('is_active', true)
+        .neq('status', 'hidden');
+
+    if (error || !allProps) {
+        console.error('Error searching properties:', error);
+        return [];
+    }
+
+    // Identify the building if filtering by building
+    let targetBuildingId: string | null = null;
+    if (buildingSlug) {
+        const building = allProps.find(p => p.slug === buildingSlug);
+        if (building) targetBuildingId = building.id;
+    }
+
+    // 2. Identify Bookable Candidates (Leaf Nodes)
+    // - Units (parent_id != null)
+    // - Standalone (parent_id == null && is_multi_unit == false)
+    let candidates = allProps.filter(p => {
+        // If we are in "Building Mode", we ONLY want units from that specific building
+        if (targetBuildingId) {
+            return p.parent_id === targetBuildingId;
+        }
+
+        // Generic search: only bookable leaves
+        if (p.parent_id) return true; // It's a unit
+        if (!p.is_multi_unit) return true; // It's a standalone house
+        return false; // It's a building container (not directly bookable)
+    });
+
+    // 3. Filter by Location
+    if (location && location.trim()) {
+        const locLower = location.toLowerCase().trim();
+        candidates = candidates.filter(p => {
+            const city = (p.locations?.name_en || p.city || '').toLowerCase();
+            const region = (p.region || '').toLowerCase();
+            return city.includes(locLower) || region.includes(locLower);
+        });
+    }
+
+    // 4. Filter by Capacity
+    candidates = candidates.filter(p => {
+        const maxGuests = getNumber(p.max_guests);
+        return maxGuests >= guests;
+    });
+
+    // 5. Check Availability (if dates provided)
+    // Instead of filtering out unavailable, we flag them.
+    if (from && to) {
+        const { verifyAvailability } = await import('./pricing');
+
+        // Run specific availability checks in parallel
+        const checks = candidates.map(async (p) => {
+            const result = await verifyAvailability(p.id, from, to);
+            // If not available, mark as reserved
+            if (!result.available) {
+                p.isReserved = true;
+            }
+            return p;
+        });
+
+        await Promise.all(checks);
+        // We keep ALL candidates, but some now have isReserved = true
+    }
+
+    // 6. Map back to Display Properties (Root Nodes) or return units directly
+    if (buildingSlug) {
+        return candidates.map(p => {
+            const transformed = transformProperty(p, allProps);
+            transformed.isReserved = p.isReserved || false;
+            return transformed;
+        }).sort((a, b) => {
+            if (a.isReserved && !b.isReserved) return 1;
+            if (!a.isReserved && b.isReserved) return -1;
+            return 0;
+        });
+    }
+
+    const resultIds = new Set<string>();
+    candidates.forEach(p => {
+        if (p.parent_id) {
+            resultIds.add(p.parent_id);
+        } else {
+            resultIds.add(p.id);
+        }
+    });
+
+    // 7. transform and return results
+    const distinctRoots = allProps.filter(p => resultIds.has(p.id));
+
+    return distinctRoots.map(p => {
+        const transformed = transformProperty(p, allProps);
+
+        // Propagate isReserved check to the root/display property
+        if (p.is_multi_unit && !p.parent_id) {
+            // For buildings: It is reserved ONLY IF all matching child units are reserved.
+            const buildingUnits = candidates.filter(c => c.parent_id === p.id);
+
+            if (buildingUnits.length > 0) {
+                const allUnitsReserved = buildingUnits.every(u => u.isReserved);
+                transformed.isReserved = allUnitsReserved;
+            } else {
+                transformed.isReserved = false;
+            }
+        } else {
+            // Standalone or Single Unit
+            const candidate = candidates.find(c => c.id === p.id);
+            transformed.isReserved = candidate?.isReserved || false;
+        }
+
+        return transformed;
+    }).sort((a, b) => {
+        // Sort: Available first, Reserved last
+        if (a.isReserved && !b.isReserved) return 1;
+        if (!a.isReserved && b.isReserved) return -1;
+        return 0;
+    });
+}
 
 export async function getConciergeServices() {
     const { data, error } = await supabase
@@ -206,47 +351,21 @@ export async function getConciergeServices() {
 }
 
 export async function checkPropertyAvailability(propertyId: string, from: Date, to: Date, guests: number = 1) {
-    // 1. Fetch property to check limits
     console.log('[DEBUG] checkPropertyAvailability:', { propertyId, from: from.toISOString(), to: to.toISOString(), guests });
 
-    // TODO: [RESERVATION-LOGIC] Review this fallback.
-    // This allows continuing even if blocked_dates schema is missing, but once the booking
-    // system is fully functional, we should enforce strict checking to avoid overlapping stays.
-    let { data: property, error: propError } = await supabase
+    // 1. Procurar propriedade para verificar limites
+    const { data: property, error: propError } = await supabase
         .from('properties')
-        .select('id, max_guests, blocked_dates, slug')
+        .select('id, max_guests, slug')
         .eq('id', propertyId)
         .single();
 
-    // If it fails because blocked_dates is missing, try without it
-    if (propError && (propError.code === '42703' || propError.message.includes('blocked_dates'))) {
-        console.warn('[DEBUG] checkPropertyAvailability - Falling back (blocked_dates column missing)');
-        const fallback = await supabase
-            .from('properties')
-            .select('id, max_guests, slug')
-            .eq('id', propertyId)
-            .single();
-
-        if (fallback.data) {
-            property = fallback.data as any;
-        } else {
-            return { available: false, error: 'Property not found' };
-        }
-    } else if (propError) {
+    if (propError || !property) {
         console.error('[DEBUG] checkPropertyAvailability - Error:', propError);
         return { available: false, error: 'Property not found' };
     }
 
-    if (!property) return { available: false, error: 'Property not found' };
-
-    console.log('[DEBUG] checkPropertyAvailability - Found Property:', {
-        id: property.id,
-        slug: property.slug,
-        maxGuests: property.max_guests
-    });
-
-    // 2. Check guest capacity
-    // max_guests can be a number or a JSON object depending on the migration state
+    // 2. Verificar capacidade de hóspedes
     const maxGuestsVal = typeof property.max_guests === 'object' ?
         (property.max_guests.en || property.max_guests.pt || 0) :
         property.max_guests;
@@ -254,25 +373,14 @@ export async function checkPropertyAvailability(propertyId: string, from: Date, 
     const maxGuests = parseInt(String(maxGuestsVal)) || 0;
 
     if (guests > maxGuests) {
-        return { available: false, error: 'Exceeds maximum guests' };
+        return { available: false, error: 'errorMaxGuests' };
     }
 
-    // 3. Check blocked dates (Mock logic for now using JSONB field if available)
-    const blockedDates: string[] = property.blocked_dates || [];
-    const requestedStart = from.getTime();
-    const requestedEnd = to.getTime();
+    // 3. Verificar bloqueios na nova tabela blocked_dates
+    const { verifyAvailability } = await import("./pricing");
+    const availability = await verifyAvailability(propertyId, from, to);
 
-    // SIMPLE CHECK: If any blocked date is between requestedStart and requestedEnd
-    const isBlocked = blockedDates.some(dateStr => {
-        const blockedTime = new Date(dateStr).getTime();
-        return blockedTime >= requestedStart && blockedTime <= requestedEnd;
-    });
-
-    if (isBlocked) {
-        return { available: false, error: 'Dates no longer available' };
-    }
-
-    return { available: true };
+    return availability;
 }
 
 // Helper to merge nearby places from child and parent
@@ -356,17 +464,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
         ];
     };
 
-    // Helper to extract number from potential JSON object (legacy data fix)
-    const getNumber = (val: any) => {
-        if (typeof val === 'number') return val;
-        if (typeof val === 'string') return parseFloat(val) || 0;
-        if (typeof val === 'object' && val !== null) {
-            // Try known language keys or just take the first value
-            const num = val.en || val.pt || val.he || Object.values(val)[0] || '0';
-            return typeof num === 'number' ? num : parseFloat(String(num)) || 0;
-        }
-        return 0;
-    };
+
 
     return {
         ...p,
@@ -386,6 +484,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
         bedrooms: getNumber(visualData.bedrooms || p.bedrooms),
         beds: getNumber(visualData.beds || p.beds),
         bathrooms: getNumber(visualData.bathrooms || p.bathrooms),
+        region: region,
         location: {
             city: city,
             region: region,
@@ -439,9 +538,15 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
                 text: "Moderate",
                 refundText: "50% refund",
                 deadline: "7 days"
+            },
+            pricing: p.pricing_rules?.[0] || p.pricing_rules || {
+                min_nights: 2,
+                cleaning_fee: 85,
+                weekly_discount_percent: 5,
+                monthly_discount_percent: 15
             }
         },
-        homeTruths: visualData.home_truths || p.home_truths || visualData.good_to_know || p.good_to_know || [],
+        homeTruths: (visualData.good_to_know || p.good_to_know || visualData.home_truths || p.home_truths || []),
         amenities: visualData.amenities || p.amenities || [],
         isComingSoon
     };

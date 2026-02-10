@@ -31,8 +31,11 @@ const ReservationSchema = z.object({
     totalPrice: z.number().min(0),
     basePrice: z.number().min(0),
     cleaningFee: z.number().min(0),
+    discountAmount: z.number().min(0).optional(),
     breakfastTotal: z.number().min(0),
     transferTotal: z.number().min(0),
+    transferType: z.enum(['one_way', 'round_trip']).nullish(),
+    cityTaxTotal: z.number().min(0).optional(),
     paymentMethod: z.string().min(1, "Método de pagamento obrigatório"),
 
     // Billing Address (Required if address is provided, otherwise optional)
@@ -80,22 +83,29 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         return { success: false, error: `Esta propriedade apenas acomoda até ${property.guests} hóspedes.`, warning: undefined, ref: undefined };
     }
 
-    // 4. Extra Security: Date Integrity
+    // 4. Extra Security: Integrated Availability & Pricing Engine
     const dateIn = new Date(data.checkIn);
     const dateOut = new Date(data.checkOut);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
-    if (isNaN(dateIn.getTime()) || isNaN(dateOut.getTime())) {
-        return { success: false, error: "Formato de data inválido.", warning: undefined, ref: undefined };
+    // Verificação de Disponibilidade (Bloqueios, Reservas e Meia-Noite)
+    const { verifyAvailability, calculateReservationPrice } = await import("@/lib/pricing");
+    const availability = await verifyAvailability(property.id, dateIn, dateOut);
+
+    if (!availability.available) {
+        return { success: false, error: availability.error || "Datas indisponíveis.", warning: undefined, ref: undefined };
     }
 
-    if (dateIn < today) {
-        return { success: false, error: "A data de check-in não pode ser no passado.", warning: undefined, ref: undefined };
-    }
+    // Cálculo Seguro de Preços (Server-side)
+    const pricing = await calculateReservationPrice({
+        propertyId: property.id,
+        checkIn: dateIn,
+        checkOut: dateOut,
+        adults: data.adults,
+        children: data.children
+    });
 
-    if (dateOut <= dateIn) {
-        return { success: false, error: "A data de check-out deve ser após a data de check-in.", warning: undefined, ref: undefined };
+    if ('error' in pricing) {
+        return { success: false, error: pricing.error, warning: undefined, ref: undefined };
     }
 
     // 5. Generate Reference ID
@@ -106,6 +116,10 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
     // Determine initial status based on payment method
     const status = data.paymentMethod === 'wire' ? 'pending' : 'confirmed';
 
+    // Cálculo Seguro de Preços Final (Estadia + Limpeza + Extras)
+    // pricing.totalPrice já inclui (base - desconto + limpeza + city_tax)
+    const FINAL_TOTAL = pricing.totalPrice + data.breakfastTotal + data.transferTotal;
+
     // 6. Save to Supabase (using Admin Client to bypass RLS for guest insertions)
     const reservationData: any = {
         property_id: property.id,
@@ -114,8 +128,8 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         adults: data.adults,
         children: data.children,
         infants: data.infants,
-        total_price: data.totalPrice,
-        status: status, // Dynamically set status based on payment method
+        total_price: FINAL_TOTAL,
+        status: status,
         payment_method: data.paymentMethod,
         reference_id: referenceId,
         guest_name: data.fullName,
@@ -123,10 +137,13 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         guest_phone: data.phone,
         arrival_time: data.arrivalTime,
         special_requests: data.specialRequests,
-        base_price: data.basePrice,
-        cleaning_fee: data.cleaningFee,
+        base_price: pricing.basePrice,
+        cleaning_fee: pricing.cleaningFee,
+        discount_amount: pricing.discountAmount,
+        city_tax_total: pricing.cityTaxTotal, // Novo campo para histórico
         breakfast_total: data.breakfastTotal,
         transfer_total: data.transferTotal,
+        transfer_type: data.transferType,
         billing_address: data.address,
         billing_city: data.city,
         billing_zip: data.zip,
@@ -280,8 +297,8 @@ export async function deleteReservation(id: string) {
     }
 
     // 2. Perform deletion
-    // Fetch generic info for log first if needed (optional, just ID is fine since it's deleted)
-    const { error } = await serverSupabase
+    const adminSupabase = await getSupabaseAdmin();
+    const { error } = await adminSupabase
         .from('reservations')
         .delete()
         .eq('id', id);

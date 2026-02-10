@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
+import { MultiCalendarView } from "@/components/admin/reservations/MultiCalendarView";
 import { History } from "lucide-react";
 
 export default function AdminReservationsPage() {
@@ -22,8 +23,13 @@ export default function AdminReservationsPage() {
     const locale = (params?.locale as string) || 'en';
     const [view, setView] = useState<'calendar' | 'list'>('list');
     const [reservations, setReservations] = useState<any[]>([]);
+    const [blockedDates, setBlockedDates] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [role, setRole] = useState<string | null>(null);
+
+    // Multi-Calendar Data
+    const [propertiesMap, setPropertiesMap] = useState<{ [key: string]: any }>({});
+    const [propertyImagesMap, setPropertyImagesMap] = useState<{ [key: string]: string }>({});
 
     // History Modal State
     const [historyModalOpen, setHistoryModalOpen] = useState(false);
@@ -88,15 +94,18 @@ export default function AdminReservationsPage() {
     };
 
     const fetchData = async () => {
-        // Fetch reservations and properties separately to avoid join issues
-        const [reservationsResult, propertiesResult] = await Promise.all([
+        // Fetch reservations, properties, and blocked dates
+        const [reservationsResult, propertiesResult, blockedDatesResult] = await Promise.all([
             supabase
                 .from('reservations')
                 .select('*')
                 .order('created_at', { ascending: false }),
             supabase
                 .from('properties')
-                .select('id, title')
+                .select('id, title, subtitle, images, city, address, bedrooms, bathrooms, max_guests'),
+            supabase
+                .from('blocked_dates')
+                .select('*')
         ]);
 
         if (reservationsResult.error) {
@@ -108,16 +117,48 @@ export default function AdminReservationsPage() {
             console.error("Error fetching properties:", propertiesResult.error);
         }
 
-        const propertiesMap = (propertiesResult.data || []).reduce((acc: any, prop: any) => {
-            acc[prop.id] = prop.title?.[locale] || prop.title?.en || 'Untitled Property';
-            return acc;
-        }, {});
+        if (blockedDatesResult.error) {
+            console.error("Error fetching blocked dates:", blockedDatesResult.error);
+        }
+
+        const newPropertiesMap: { [key: string]: any } = {};
+        const newPropertyImagesMap: { [key: string]: string } = {};
+
+        const getTranslation = (field: any, currentLocale: string) => {
+            if (!field) return '';
+            if (typeof field === 'string') return field;
+            if (typeof field === 'object') {
+                return field[currentLocale] || field.en || Object.values(field)[0] || '';
+            }
+            return '';
+        };
+
+        (propertiesResult.data || []).forEach((prop: any) => {
+            const title = getTranslation(prop.title, locale) || 'Untitled Property';
+            const subtitle = getTranslation(prop.subtitle, locale);
+            const city = getTranslation(prop.city, locale);
+            const mainImage = prop.images?.[0]?.url || (typeof prop.images?.[0] === 'string' ? prop.images[0] : "");
+
+            newPropertiesMap[prop.id] = {
+                ...prop,
+                title,
+                subtitle,
+                city,
+                mainImage
+            };
+
+            if (mainImage && mainImage.trim().length > 0) {
+                newPropertyImagesMap[prop.id] = mainImage;
+            }
+        });
+
+        setPropertiesMap(newPropertiesMap);
+        setPropertyImagesMap(newPropertyImagesMap);
+        setBlockedDates(blockedDatesResult.data || []);
 
         const enhancedReservations = (reservationsResult.data || []).map((res: any) => ({
             ...res,
-            properties: {
-                name: propertiesMap[res.property_id] || 'Unknown Property'
-            }
+            property_name: newPropertiesMap[res.property_id]?.title || 'Unknown Property'
         }));
 
         setReservations(enhancedReservations);
@@ -232,7 +273,7 @@ export default function AdminReservationsPage() {
                     const { data: { user } } = await supabase.auth.getUser();
                     if (!user) throw new Error("Não autenticado");
 
-                    await updateReservationStatus(id, newStatus, user.id);
+                    await updateReservationStatus(id, newStatus);
                     toast.success(`Reserva ${newStatus === 'confirmed' ? 'confirmada' : 'cancelada'} com sucesso!`, { id: toastId });
                     setModalConfig(prev => ({ ...prev, isOpen: false }));
                     fetchData();
@@ -253,7 +294,7 @@ export default function AdminReservationsPage() {
         const query = searchQuery.toLowerCase();
         const guestName = (res.guest_name || '').toLowerCase();
         const guestEmail = (res.guest_email || '').toLowerCase();
-        const propName = (res.properties?.name || '').toLowerCase();
+        const propName = (res.property_name || '').toLowerCase();
 
         const matchesSearch = guestName.includes(query) || guestEmail.includes(query) || propName.includes(query);
 
@@ -324,21 +365,15 @@ export default function AdminReservationsPage() {
             )}
 
             {view === 'calendar' ? (
-                /* Calendar Placeholder */
-                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-hidden shadow-sm min-h-[600px] flex flex-col transition-colors duration-300">
-                    <div className="px-8 py-6 border-b border-[#f5f5f5] dark:border-admin-dark-border flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">Calendar</h3>
-                        </div>
-                    </div>
-                    <div className="flex-1 bg-[#fafafa]/50 dark:bg-admin-dark-bg/50 p-8 flex flex-col items-center justify-center gap-4">
-                        <div className="size-16 rounded-2xl bg-[#f4f7f4] dark:bg-admin-dark-bg flex items-center justify-center text-[#718571] dark:text-admin-dark-text-secondary mb-2 border border-[#e7ece7] dark:border-admin-dark-border">
-                            <Calendar className="size-8 stroke-[1.5px]" />
-                        </div>
-                        <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">Calendar View Coming Soon</h3>
-                        <p className="text-[#a3a3a3] text-sm max-w-xs text-center">Switch to <b>List View</b> to see your {reservations.length} bookings.</p>
-                    </div>
-                </div>
+                /* Calendar View */
+                <MultiCalendarView
+                    reservations={reservations}
+                    properties={propertiesMap}
+                    propertyImages={propertyImagesMap}
+                    locale={locale}
+                    blockedDates={blockedDates}
+                    onRefresh={fetchData}
+                />
             ) : (
                 /* List View */
                 <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-visible shadow-sm min-h-[400px] transition-colors duration-300">
@@ -399,7 +434,7 @@ export default function AdminReservationsPage() {
                                                 </div>
                                                 <div className="flex items-center gap-1 mt-0.5 text-xs text-[#a3a3a3]">
                                                     <Home className="size-3" />
-                                                    {reservation.properties?.name || 'Unknown Property'}
+                                                    {reservation.property_name || 'Unknown Property'}
                                                 </div>
                                             </div>
                                         </div>
@@ -557,6 +592,7 @@ export default function AdminReservationsPage() {
             <ReservationDetailSheet
                 reservation={detailSheetReservation}
                 onClose={() => setDetailSheetReservation(null)}
+                onRefresh={fetchData}
             />
         </div>
     );

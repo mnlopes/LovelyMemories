@@ -143,15 +143,15 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
     return (
         <div className={cn("space-y-6 relative ml-2", className)}>
             {/* Controls Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm sticky top-0 z-20">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-admin-surface p-4 rounded-xl border border-admin-border shadow-sm sticky top-0 z-20">
                 <div className="flex items-center gap-3">
                     <div className="flex flex-col">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-1">Filter by Day</label>
+                        <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">Filter by Day</label>
                         <input
                             type="date"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 outline-none transition-all dark:text-white"
+                            className="bg-admin-bg border border-admin-border rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-admin-accent outline-none transition-all text-admin-text-primary"
                         />
                     </div>
                     {selectedDate && (
@@ -167,13 +167,13 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                 {userRole === 'super_admin' && (
                     <div className="flex flex-wrap items-center gap-6">
                         <div className="flex flex-col items-end">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-1">Retention Policy</label>
+                            <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">Retention Policy</label>
                             <div className="flex items-center gap-2">
-                                <select 
+                                <select
                                     value={retentionDays}
                                     onChange={(e) => handleRetentionChange(Number(e.target.value))}
                                     disabled={isUpdatingRetention}
-                                    className="bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 outline-none transition-all dark:text-white appearance-none cursor-pointer disabled:opacity-50"
+                                    className="bg-admin-bg border border-admin-border rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-admin-accent outline-none transition-all text-admin-text-primary appearance-none cursor-pointer disabled:opacity-50"
                                 >
                                     <option value={30}>30 Days</option>
                                     <option value={90}>90 Days</option>
@@ -184,31 +184,31 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                         </div>
 
                         <div className="flex flex-col items-end">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-1">Cleanup Time</label>
+                            <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">Cleanup Time</label>
                             <div className="flex items-center gap-2">
-                                <input 
+                                <input
                                     type="time"
                                     step="3600" // Only hours for simplicity in cron conversion
                                     value={cleanupTime}
                                     onChange={(e) => handleCleanupTimeChange(e.target.value)}
                                     disabled={isUpdatingRetention}
-                                    className="bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-gold-500 outline-none transition-all dark:text-white disabled:opacity-50"
+                                    className="bg-admin-bg border border-admin-border rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-admin-accent outline-none transition-all text-admin-text-primary disabled:opacity-50"
                                 />
-                                {isUpdatingRetention && <div className="size-3 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />}
+                                {isUpdatingRetention && <div className="size-3 border-2 border-admin-accent border-t-transparent rounded-full animate-spin" />}
                             </div>
                         </div>
                     </div>
                 )}
             </div>
 
-            <div className="absolute left-[19px] top-4 bottom-4 w-[2px] bg-gray-100 dark:bg-zinc-800" />
+            <div className="absolute left-[19px] top-4 bottom-4 w-[2px] bg-admin-border" />
 
             {logs.length === 0 ? (
                 <div className="p-12 text-center">
-                    <div className="size-12 bg-gray-50 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-zinc-800">
-                        <Activity className="text-gray-300" size={20} />
+                    <div className="size-12 bg-admin-bg rounded-full flex items-center justify-center mx-auto mb-4 border border-admin-border">
+                        <Activity className="text-admin-text-secondary/30" size={20} />
                     </div>
-                    <p className="text-gray-400 italic text-sm">No activity found for this selection.</p>
+                    <p className="text-admin-text-secondary italic text-sm">No activity found for this selection.</p>
                 </div>
             ) : logs.map((log) => {
                 const Icon = getActionIcon(log.action_type);
@@ -218,7 +218,7 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                 return (
                     <div key={log.id} className="relative flex gap-4 group">
                         <div className={cn(
-                            "relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-4 border-white dark:border-zinc-950",
+                            "relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-4 border-admin-surface",
                             colorClass
                         )}>
                             <Icon size={16} className="text-white" />
@@ -226,27 +226,27 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
 
                         <div className="flex-1 py-1">
                             <div className="flex justify-between items-start mb-1">
-                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                                <div className="font-medium text-admin-text-primary">
                                     {formatDescription(log)}
                                 </div>
-                                <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                                <span className="text-xs text-admin-text-secondary whitespace-nowrap ml-2">
                                     {format(date, "MMM d, HH:mm")}
                                 </span>
                             </div>
 
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                            <div className="text-sm text-admin-text-secondary">
+                                <span className="font-semibold text-admin-text-primary">
                                     {log.actor?.full_name || log.actor?.email || "System"}
                                 </span>
                                 {" • "}
-                                <span className="capitalize text-xs bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                                <span className="capitalize text-xs bg-admin-bg px-2 py-0.5 rounded-full border border-admin-border">
                                     {log.actor?.role?.replace('_', ' ') || 'Unknown Role'}
                                 </span>
                             </div>
 
                             {/* Optional: Render details diff or metadata */}
                             {log.details && Object.keys(log.details).length > 0 && (
-                                <div className="mt-2 text-xs bg-gray-50 dark:bg-zinc-900/50 p-2 rounded border border-gray-100 dark:border-zinc-800">
+                                <div className="mt-2 text-xs bg-admin-bg/50 p-2 rounded border border-admin-border">
                                     {/* Handle common details patterns */}
                                     {renderDetails(log.details)}
                                 </div>

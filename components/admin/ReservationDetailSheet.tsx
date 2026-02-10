@@ -13,9 +13,10 @@ import { toast } from "sonner";
 interface ReservationDetailSheetProps {
     reservation: any | null;
     onClose: () => void;
+    onRefresh?: () => void;
 }
 
-export function ReservationDetailSheet({ reservation, onClose }: ReservationDetailSheetProps) {
+export function ReservationDetailSheet({ reservation, onClose, onRefresh }: ReservationDetailSheetProps) {
     const params = useParams();
     const locale = (params?.locale as string) || 'en';
     const [isNavigating, setIsNavigating] = useState(false);
@@ -32,11 +33,9 @@ export function ReservationDetailSheet({ reservation, onClose }: ReservationDeta
 
         setIsUpdating(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Não autenticado");
-
-            await updateReservationStatus(reservation.id, newStatus, user.id);
+            await updateReservationStatus(reservation.id, newStatus);
             toast.success(`Reserva ${newStatus === 'confirmed' ? 'confirmada' : 'cancelada'} com sucesso!`);
+            if (onRefresh) onRefresh();
             onClose();
         } catch (error: any) {
             toast.error(`Erro ao atualizar reserva: ${error.message}`);
@@ -78,12 +77,12 @@ export function ReservationDetailSheet({ reservation, onClose }: ReservationDeta
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed right-0 top-0 h-full w-full max-w-xl bg-white dark:bg-admin-dark-surface shadow-2xl z-[101] flex flex-col overflow-hidden"
+                className="fixed right-0 top-0 h-full w-full max-w-xl bg-admin-surface shadow-2xl z-[101] flex flex-col overflow-hidden"
             >
                 {/* Header */}
-                <div className="p-6 border-b border-[#f5f5f5] dark:border-admin-dark-border flex items-center justify-between bg-white dark:bg-admin-dark-surface sticky top-0 z-10">
+                <div className="p-6 border-b border-admin-border flex items-center justify-between bg-admin-surface sticky top-0 z-10">
                     <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-3">
                             <span className={cn(
                                 "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border",
                                 reservation.status === 'confirmed' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/30" :
@@ -93,154 +92,160 @@ export function ReservationDetailSheet({ reservation, onClose }: ReservationDeta
                                 {reservation.reference_id || 'Booking Details'}
                             </span>
                             <span className={cn(
-                                "inactive-dot size-2 rounded-full",
+                                "inactive-dot size-2 rounded-full shrink-0",
                                 reservation.status === 'confirmed' ? "bg-emerald-500" :
                                     reservation.status === 'pending' ? "bg-yellow-500" : "bg-rose-500"
                             )} />
+                            <h2 className="text-lg font-bold text-admin-text-primary truncate">
+                                {reservation.guest_name || 'Guest Details'}
+                            </h2>
                         </div>
-                        <h2 className="text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                            {reservation.guest_name || 'Guest Details'}
-                        </h2>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-[#fafafa] dark:hover:bg-white/10 rounded-xl text-[#a3a3a3] transition-colors"
+                        className="p-2 hover:bg-admin-bg rounded-xl text-admin-text-secondary transition-colors"
                     >
                         <X className="size-6" />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                    {/* Main Info Blocks */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 rounded-2xl bg-[#fafafa]/50 dark:bg-admin-dark-bg/50 border border-[#f5f5f5] dark:border-admin-dark-border">
-                            <div className="flex items-center gap-2 text-[#a3a3a3] mb-2 font-bold text-[10px] uppercase tracking-wider">
-                                <Calendar className="size-3" /> Stay Dates
+                    {/* Main Grid: Trip & Guest Info */}
+                    <div className="grid grid-cols-1 gap-4">
+                        {/* Dates & Property Combined */}
+                        <div className="p-3 rounded-2xl bg-[#fafafa]/50 dark:bg-admin-dark-bg/50 border border-[#f5f5f5] dark:border-admin-dark-border flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-lg">
+                                    <Calendar className="size-4" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-admin-text-secondary uppercase font-bold">Estadia</p>
+                                    <p className="text-sm font-bold text-admin-text-primary">
+                                        {formatDate(reservation.check_in)} - {formatDate(reservation.check_out)}
+                                    </p>
+                                </div>
                             </div>
-                            <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                                {formatDate(reservation.check_in)} - {formatDate(reservation.check_out)}
-                            </p>
+                            <div className="h-8 w-px bg-[#f5f5f5] dark:bg-admin-dark-border mx-2" />
+                            <div className="flex items-center gap-3 text-right">
+                                <div>
+                                    <p className="text-[10px] text-admin-text-secondary uppercase font-bold">Propriedade</p>
+                                    <p className="text-sm font-bold text-admin-text-primary truncate max-w-[150px]">
+                                        {reservation.properties?.title?.[locale] || reservation.properties?.title?.en || reservation.properties?.title?.pt || reservation.properties?.name || 'Unknown'}
+                                    </p>
+                                </div>
+                                <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 rounded-lg">
+                                    <Home className="size-4" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-[#fafafa]/50 dark:bg-admin-dark-bg/50 border border-[#f5f5f5] dark:border-admin-dark-border">
-                            <div className="flex items-center gap-2 text-[#a3a3a3] mb-2 font-bold text-[10px] uppercase tracking-wider">
-                                <Home className="size-3" /> Property
+
+                        {/* Guest Contact & Services */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Contact Info */}
+                            <div className="p-3 rounded-2xl border border-admin-border space-y-2">
+                                <p className="text-[10px] text-admin-text-secondary uppercase font-bold tracking-wider">Contactos</p>
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="size-3 text-[#a3a3a3]" />
+                                        <span className="text-xs font-medium truncate" title={reservation.guest_email}>{reservation.guest_email || 'No email'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Phone className="size-3 text-[#a3a3a3]" />
+                                        <span className="text-xs font-medium">{reservation.guest_phone || 'No phone'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="size-3 text-[#a3a3a3]" />
+                                        <span className="text-xs font-medium">{reservation.arrival_time || 'N/A'}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary truncate">
-                                {reservation.properties?.title?.[locale] || reservation.properties?.title?.en || reservation.properties?.title?.pt || reservation.properties?.name || 'Unknown Property'}
-                            </p>
+
+                            {/* Services Compact */}
+                            <div className="p-3 rounded-2xl border border-admin-border space-y-2">
+                                <p className="text-[10px] text-admin-text-secondary uppercase font-bold tracking-wider">Extras</p>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-[#a3a3a3]">Pequeno-almoço</span>
+                                        <span className={cn("font-bold px-1.5 py-0.5 rounded", reservation.breakfast_total > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500")}>
+                                            {reservation.breakfast_total > 0 ? "Sim" : "Não"}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-[#a3a3a3]">Transfer</span>
+                                        <div className="flex items-center gap-2">
+                                            {reservation.transfer_total > 0 && reservation.transfer_type && (
+                                                <span className="text-[9px] font-bold uppercase tracking-widest text-[#B08D4A] bg-[#B08D4A]/5 px-2 py-0.5 rounded border border-[#B08D4A]/10">
+                                                    {reservation.transfer_type === 'round_trip' ? 'Round Trip' : 'One Way'}
+                                                </span>
+                                            )}
+                                            <span className={cn("font-bold px-1.5 py-0.5 rounded", reservation.transfer_total > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500")}>
+                                                {reservation.transfer_total > 0 ? "Sim" : "Não"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Services & Extras */}
-                    <section className="space-y-4">
-                        <h3 className="text-xs font-bold text-[#a3a3a3] uppercase tracking-[0.2em]">Serviços & Extras</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className={cn(
-                                "p-3 rounded-xl border flex items-center justify-between",
-                                (reservation.breakfast_total > 0)
-                                    ? "bg-gold-50/20 border-gold-200 dark:bg-gold-500/10 dark:border-gold-500/20"
-                                    : "bg-gray-50/50 border-gray-100 dark:bg-white/5 dark:border-white/10"
-                            )}>
-                                <div className="flex items-center gap-2">
-                                    <div className={cn("size-2 rounded-full", (reservation.breakfast_total > 0) ? "bg-gold-500" : "bg-gray-300 dark:bg-white/20")} />
-                                    <span className="text-xs font-bold dark:text-white">Pequeno-almoço</span>
-                                </div>
-                                <span className="text-[10px] font-black uppercase text-[#a3a3a3] dark:text-[#a3a3a3]">
-                                    {(reservation.breakfast_total > 0) ? "Pedido" : "Não"}
-                                </span>
-                            </div>
-                            <div className={cn(
-                                "p-3 rounded-xl border flex items-center justify-between",
-                                (reservation.transfer_total > 0)
-                                    ? "bg-sky-50/20 border-sky-200 dark:bg-sky-500/10 dark:border-sky-500/20"
-                                    : "bg-gray-50/50 border-gray-100 dark:bg-white/5 dark:border-white/10"
-                            )}>
-                                <div className="flex items-center gap-2">
-                                    <div className={cn("size-2 rounded-full", (reservation.transfer_total > 0) ? "bg-sky-500" : "bg-gray-300 dark:bg-white/20")} />
-                                    <span className="text-xs font-bold dark:text-white">Transfer</span>
-                                </div>
-                                <span className="text-[10px] font-black uppercase text-[#a3a3a3] dark:text-[#a3a3a3]">
-                                    {(reservation.transfer_total > 0) ? "Pedido" : "Não"}
-                                </span>
-                            </div>
+                    {/* Price Breakdown (Compact) */}
+                    <div className="mt-2 p-4 rounded-2xl border border-admin-border space-y-2 bg-admin-bg/30">
+                        <div className="flex justify-between text-xs">
+                            <span className="text-admin-text-secondary">Estadia</span>
+                            <span className="font-medium text-admin-text-primary">{formatCurrency(reservation.base_price || 0)}</span>
                         </div>
-                    </section>
-
-                    {/* Guest Section */}
-                    <section className="space-y-4">
-                        <h3 className="text-xs font-bold text-[#a3a3a3] uppercase tracking-[0.2em]">Guest Information</h3>
-                        <div className="space-y-3">
-                            <div className="flex flex-wrap gap-4">
-                                <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-                                    <div className="size-8 rounded-lg bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                                        <Mail className="size-4" />
-                                    </div>
-                                    <span className="text-sm text-[#171717] dark:text-admin-dark-text-primary truncate">{reservation.guest_email || 'No email'}</span>
-                                </div>
-                                <div className="flex items-center gap-3 flex-1 min-w-[150px]">
-                                    <div className="size-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                                        <Phone className="size-4" />
-                                    </div>
-                                    <span className="text-sm text-[#171717] dark:text-admin-dark-text-primary whitespace-nowrap">{reservation.guest_phone || 'No phone'}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="size-8 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400">
-                                    <Clock className="size-4" />
-                                </div>
-                                <span className="text-sm text-[#171717] dark:text-admin-dark-text-primary">
-                                    {reservation.arrival_time ? `Est. Arrival: ${reservation.arrival_time}` : 'Arrival time not specified'}
-                                </span>
-                            </div>
+                        <div className="flex justify-between text-xs">
+                            <span className="text-admin-text-secondary">Taxa de Limpeza</span>
+                            <span className="font-medium text-admin-text-primary">{formatCurrency(reservation.cleaning_fee || 0)}</span>
                         </div>
-                    </section>
-
-                    {/* Price Breakdown */}
-                    <section className="space-y-4">
-                        <h3 className="text-xs font-bold text-[#a3a3a3] uppercase tracking-[0.2em]">Price Breakdown</h3>
-                        <div className="p-5 rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border space-y-3">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-[#a3a3a3]">Estadia</span>
-                                <span className="font-bold text-[#171717] dark:text-admin-dark-text-primary font-medium">{formatCurrency(reservation.base_price || 0)}</span>
+                        {reservation.city_tax_total > 0 && (
+                            <div className="flex justify-between text-xs">
+                                <span className="text-admin-text-secondary">Taxa Municipal</span>
+                                <span className="font-medium text-admin-text-primary">{formatCurrency(reservation.city_tax_total)}</span>
                             </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-[#a3a3a3]">Taxa de Limpeza</span>
-                                <span className="font-bold text-[#171717] dark:text-admin-dark-text-primary font-medium">{formatCurrency(reservation.cleaning_fee || 0)}</span>
+                        )}
+                        {reservation.discount_amount > 0 && (
+                            <div className="flex justify-between text-xs text-emerald-600">
+                                <span>Desconto</span>
+                                <span className="font-bold">−{formatCurrency(reservation.discount_amount)}</span>
                             </div>
-                            {(reservation.breakfast_total > 0) && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-[#a3a3a3]">Pequeno-almoço</span>
-                                    <span className="font-bold text-[#171717] dark:text-admin-dark-text-primary">{formatCurrency(reservation.breakfast_total)}</span>
-                                </div>
-                            )}
-                            {(reservation.transfer_total > 0) && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-[#a3a3a3]">Transfer</span>
-                                    <span className="font-bold text-[#171717] dark:text-admin-dark-text-primary">{formatCurrency(reservation.transfer_total)}</span>
-                                </div>
-                            )}
-                            <div className="h-px bg-[#f5f5f5] dark:bg-admin-dark-border my-2" />
-                            <div className="flex justify-between items-end">
-                                <span className="text-xs font-bold text-[#171717] dark:text-white uppercase tracking-wider">Total</span>
-                                <span className="text-2xl font-black text-[#171717] dark:text-white">{formatCurrency(reservation.total_price || 0)}</span>
+                        )}
+                        {(reservation.breakfast_total > 0) && (
+                            <div className="flex justify-between text-xs">
+                                <span className="text-admin-text-secondary">P. Almoço</span>
+                                <span className="font-medium text-admin-text-primary">{formatCurrency(reservation.breakfast_total)}</span>
                             </div>
+                        )}
+                        {(reservation.transfer_total > 0) && (
+                            <div className="flex justify-between text-xs">
+                                <span className="text-admin-text-secondary">Transfer</span>
+                                <span className="font-medium text-admin-text-primary">{formatCurrency(reservation.transfer_total)}</span>
+                            </div>
+                        )}
+                        <div className="h-px bg-admin-border my-1" />
+                        <div className="flex justify-between items-end">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-admin-text-secondary">Total</span>
+                            <span className="text-xl font-black text-admin-text-primary">{formatCurrency(reservation.total_price || 0)}</span>
                         </div>
-                    </section>
+                    </div>
 
-                    {/* Guest Breakdown (Explicit) */}
+                    {/* Guest Breakdown (Compact) */}
                     <section className="space-y-4">
-                        <h3 className="text-xs font-bold text-[#a3a3a3] uppercase tracking-[0.2em]">Guest Breakdown</h3>
-                        <div className="flex gap-4">
-                            {[
-                                reservation.adults > 0 && { label: 'Adultos', count: reservation.adults },
-                                reservation.children > 0 && { label: 'Crianças', count: reservation.children },
-                                reservation.infants > 0 && { label: 'Bebés', count: reservation.infants }
-                            ].filter(Boolean).map((item: any) => (
-                                <div key={item.label} className="px-3 py-2 rounded-xl border border-[#f5f5f5] dark:border-admin-dark-border text-center flex-1">
-                                    <p className="text-lg font-black text-[#171717] dark:text-white">{item.count}</p>
-                                    <p className="text-[10px] text-[#a3a3a3] uppercase font-bold">{item.label}</p>
-                                </div>
-                            ))}
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-admin-bg/50 border border-admin-border">
+                            <div className="flex items-center gap-2 text-admin-text-secondary font-bold text-[10px] uppercase tracking-wider">
+                                <User className="size-3" /> Hóspedes
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {[
+                                    reservation.adults > 0 && `${reservation.adults} Adultos`,
+                                    reservation.children > 0 && `${reservation.children} Crianças`,
+                                    reservation.infants > 0 && `${reservation.infants} Bebés`
+                                ].filter(Boolean).map((text: any, i) => (
+                                    <span key={i} className="px-2 py-1 rounded bg-admin-surface border border-admin-border text-xs font-bold text-admin-text-primary shadow-sm">
+                                        {text}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     </section>
 
@@ -279,7 +284,7 @@ export function ReservationDetailSheet({ reservation, onClose }: ReservationDeta
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-6 border-t border-[#f5f5f5] dark:border-admin-dark-border bg-white dark:bg-admin-dark-surface space-y-3">
+                <div className="p-6 border-t border-admin-border bg-admin-surface space-y-3">
                     {reservation.status === 'pending' && !confirmingStatus && (
                         <div className="grid grid-cols-2 gap-3 mb-3">
                             <button
@@ -343,12 +348,6 @@ export function ReservationDetailSheet({ reservation, onClose }: ReservationDeta
                             <FileText className="size-4" />
                         )}
                         {isNavigating ? 'A Carregar...' : 'Ver Página Completa'}
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="w-full py-3.5 rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border text-xs font-bold text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white transition-colors uppercase tracking-[0.2em]"
-                    >
-                        Fechar
                     </button>
                 </div>
             </motion.div>

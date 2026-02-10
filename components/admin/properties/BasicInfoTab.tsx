@@ -191,6 +191,19 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                     ]}
                                 />
                             )}
+
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
+                                    Property Area (m²)
+                                </label>
+                                <input
+                                    type="text"
+                                    {...register("area")}
+                                    placeholder="e.g. 85"
+                                    className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none"
+                                />
+                                {errors.area && <p className="text-xs text-red-500 font-bold">{errors.area.message}</p>}
+                            </div>
                         </div>
 
                         <div className="space-y-6 pt-2">

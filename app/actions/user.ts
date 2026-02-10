@@ -231,7 +231,8 @@ export async function updateUserRole(userId: string, newRole: string) {
         }
     }
 
-    const { error } = await supabase
+    const adminSupabase = await getSupabaseAdmin();
+    const { error } = await adminSupabase
         .from('profiles')
         .update({ role: newRole, updated_at: new Date().toISOString() })
         .eq('id', userId);

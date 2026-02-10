@@ -511,6 +511,12 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ lo
                                         <span className="text-[#a3a3a3] font-medium">Taxa de Limpeza</span>
                                         <span className="font-bold text-[#171717] dark:text-white">{formatCurrency(reservation.cleaning_fee || 0)}</span>
                                     </div>
+                                    {reservation.city_tax_total > 0 && (
+                                        <div className="p-6 flex justify-between items-center text-sm">
+                                            <span className="text-[#a3a3a3] font-medium">Taxa Municipal (City Tax)</span>
+                                            <span className="font-bold text-[#171717] dark:text-white">{formatCurrency(reservation.city_tax_total)}</span>
+                                        </div>
+                                    )}
                                     {reservation.breakfast_total > 0 && (
                                         <div className="p-6 flex justify-between items-center text-sm bg-gold-50/5">
                                             <div className="flex items-center gap-2">

@@ -10,10 +10,12 @@ import { pt, enGB } from "date-fns/locale";
 import { BookingCalendarPopover } from "./BookingCalendarPopover";
 import { BookingGuestPopover } from "./BookingGuestPopover";
 import { AnimatePresence, motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
+import { getPropertyAvailabilityDates } from "@/app/actions/property-actions";
+import { parseDateLocal } from "@/lib/utils";
 
 interface BookingCardProps {
+    propertyId: string;
     slug: string;
     price: number;
     originalPrice?: number;
@@ -37,14 +39,22 @@ interface BookingCardProps {
     setChildren: (count: number) => void;
     infants: number;
     setInfants: (count: number) => void;
+    maxGuests?: number;
     availabilityStatus: { available: boolean; loading: boolean; error?: string };
+    pricingRules?: {
+        min_nights: number;
+        cleaning_fee: number;
+        weekly_discount_percent: number;
+        monthly_discount_percent: number;
+        city_tax_per_night: number;
+    };
 }
 
 export function BookingCard({
+    propertyId,
     slug,
     price,
     originalPrice,
-    discount,
     extraPrices,
     selectedExtras,
     onToggleExtra,
@@ -56,7 +66,15 @@ export function BookingCard({
     setChildren,
     infants,
     setInfants,
-    availabilityStatus
+    maxGuests = 10,
+    availabilityStatus,
+    pricingRules = {
+        min_nights: 2,
+        cleaning_fee: 85,
+        weekly_discount_percent: 5,
+        monthly_discount_percent: 15,
+        city_tax_per_night: 2
+    }
 }: BookingCardProps) {
     const t = useTranslations('PropertyDetail');
     const router = useRouter();
@@ -66,6 +84,24 @@ export function BookingCard({
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [isGuestSelectorOpen, setIsGuestSelectorOpen] = useState(false);
     const [isReserving, setIsReserving] = useState(false);
+    const [unavailableDates, setUnavailableDates] = useState<DateRange[]>([]);
+
+    useEffect(() => {
+        if (!propertyId) return;
+        const fetchDates = async () => {
+            const result = await getPropertyAvailabilityDates(propertyId);
+            if (result.success && result.dates) {
+                // Ensure we convert strings back to Date if they were serialized
+                // and avoid UTC shifts using our local-safe parser.
+                const processedDates = result.dates.map((d: any) => ({
+                    from: d.from ? parseDateLocal(d.from) : undefined,
+                    to: d.to ? parseDateLocal(d.to) : undefined
+                }));
+                setUnavailableDates(processedDates);
+            }
+        };
+        fetchDates();
+    }, [propertyId]);
 
     const guestCount = adults + childrenCount + infants;
 
@@ -143,9 +179,30 @@ export function BookingCard({
     // Default to 1 night if nothing selected for display purposes, but total is 0
     const displayedNights = nights > 0 ? nights : 1;
 
-    // Core Price
-    const subtotal = price * nights;
-    const discountAmount = discount ? Math.round(subtotal * (discount / 100)) : 0;
+    // Core Price Logic (Mirroring lib/pricing.ts)
+    const nightsStay = nights > 0 ? nights : 0;
+    const baseSubtotal = price * nightsStay;
+
+    // Determine Discount
+    let activeDiscountPercent = 0;
+    let discountLabel = "";
+
+    if (nightsStay >= 28) {
+        activeDiscountPercent = pricingRules.monthly_discount_percent;
+        discountLabel = t('monthlyDiscount') || "Monthly Discount";
+    } else if (nightsStay >= 7) {
+        activeDiscountPercent = pricingRules.weekly_discount_percent;
+        discountLabel = t('weeklyDiscount') || "Weekly Discount";
+    }
+
+    const discountAmount = activeDiscountPercent > 0 ? Math.round(baseSubtotal * (activeDiscountPercent / 100)) : 0;
+
+    // City Tax Calculation (Tourist Tax)
+    // Adults + Children, max 7 nights
+    const cityTaxPerNight = pricingRules.city_tax_per_night ?? 2.00;
+    const taxableGuests = adults + childrenCount;
+    const taxableNights = Math.min(nightsStay, 7);
+    const cityTaxTotal = cityTaxPerNight * taxableGuests * taxableNights;
 
     // Extras Calculation
     const breakfastPrice = extraPrices?.breakfast || 15;
@@ -158,7 +215,8 @@ export function BookingCard({
     const transferMultiplier = selectedExtras?.transferType === 'round_trip' ? 2 : 1;
     const transferTotal = selectedExtras?.transfer ? (transferPrice * transferMultiplier) : 0;
 
-    const total = subtotal - discountAmount + breakfastTotal + transferTotal;
+    const cleaningFee = pricingRules.cleaning_fee;
+    const total = baseSubtotal - discountAmount + cleaningFee + cityTaxTotal + breakfastTotal + transferTotal;
 
     const formatDateRange = () => {
         const dateLocale = locale === 'pt' ? pt : enGB;
@@ -345,16 +403,16 @@ export function BookingCard({
                 {/* Price Breakdown */}
                 <div className="space-y-2 mb-4 text-sm">
                     <div className="flex justify-between">
-                        <span className="text-navy-900/60">€{price} × {nights} {t('nightsCount', { count: nights })}</span>
-                        <span className="font-semibold text-navy-950">€{subtotal}</span>
+                        <span className="text-navy-900/60">€{price} × {t('nightsCount', { count: nightsStay })}</span>
+                        <span className="font-semibold text-navy-950">€{baseSubtotal}</span>
                     </div>
-                    {(discount || 0) > 0 && discountAmount > 0 && (
+                    {activeDiscountPercent > 0 && discountAmount > 0 && (
                         <div className="flex justify-between text-[#2d8653]">
                             <span className="flex items-center gap-2">
                                 <span className="inline-block px-2 py-0.5 bg-green-50 text-[#2d8653] text-[10px] font-bold uppercase rounded-full">
-                                    {discount}% off
+                                    {activeDiscountPercent}% off
                                 </span>
-                                {t('weeklyDiscount')}
+                                {discountLabel}
                             </span>
                             <span className="font-bold">−€{discountAmount}</span>
                         </div>
@@ -405,11 +463,20 @@ export function BookingCard({
 
                     <div className="flex justify-between">
                         <span className="text-navy-900/60">{t('cleaningFee')}</span>
-                        <span className="text-[#2d8653] font-bold">{t('included')}</span>
+                        {cleaningFee === 0 ? (
+                            <span className="text-[#2d8653] font-bold">{t('included')}</span>
+                        ) : (
+                            <span className="font-semibold text-navy-950">€{cleaningFee}</span>
+                        )}
                     </div>
+
                     <div className="flex justify-between">
-                        <span className="text-navy-900/60">{t('taxes')}</span>
-                        <span className="text-[#2d8653] font-bold">{t('included')}</span>
+                        <span className="text-navy-900/60">{t('cityTax')}</span>
+                        {cityTaxTotal === 0 ? (
+                            <span className="text-[#2d8653] font-bold">{t('included')}</span>
+                        ) : (
+                            <span className="font-semibold text-navy-950">€{cityTaxTotal}</span>
+                        )}
                     </div>
                     <div className="h-px bg-gray-100 my-2" />
                     <div className="flex justify-between items-baseline mb-1">
@@ -440,8 +507,8 @@ export function BookingCard({
                             <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex gap-3 text-red-600">
                                 <X className="w-5 h-5 flex-shrink-0" />
                                 <div className="text-xs">
-                                    <p className="font-bold uppercase tracking-tight mb-0.5">Not Available</p>
-                                    <p className="opacity-80">{availabilityStatus.error || 'This property is not bookable for the selected criteria.'}</p>
+                                    <p className="font-bold uppercase tracking-tight mb-0.5">{t('notAvailable')}</p>
+                                    <p className="opacity-80">{availabilityStatus.error ? t(availabilityStatus.error) : 'This property is not bookable for the selected criteria.'}</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -452,7 +519,7 @@ export function BookingCard({
                 <Button
                     variant="luxury"
                     className="w-full h-14 text-base font-bold rounded-full hover:scale-[1.02] transition-transform flex items-center justify-center gap-3"
-                    disabled={isReserving || (!availabilityStatus.available && !availabilityStatus.loading && !!selectedRange?.from) || availabilityStatus.loading}
+                    disabled={isReserving || (!availabilityStatus.available && !availabilityStatus.loading && !!selectedRange?.from) || availabilityStatus.loading || nights === 0}
                     onClick={handleReserve}
                 >
                     {availabilityStatus.loading ? (
@@ -466,9 +533,9 @@ export function BookingCard({
                             {t('reserving') || "Preparing checkout..."}
                         </>
                     ) : !availabilityStatus.available && !!selectedRange?.from ? (
-                        <span>{t('reserveNow') || "Reserve now"}</span> // Keep text but button is disabled
+                        <span>{t('notAvailable') || "Not available"}</span>
                     ) : (
-                        (!selectedRange?.from || !selectedRange?.to)
+                        (!selectedRange?.from || !selectedRange?.to || nights === 0)
                             ? (t('checkAvailability') || "Check availability")
                             : (t('reserveNow') || "Reserve now")
                     )}
@@ -508,14 +575,18 @@ export function BookingCard({
                 setChildren={setChildren}
                 infants={infants}
                 setInfants={setInfants}
+                maxGuests={maxGuests}
             />
 
+            {/* Calendar Popover */}
             {/* Calendar Popover */}
             <BookingCalendarPopover
                 isOpen={isCalendarOpen}
                 onClose={() => setIsCalendarOpen(false)}
                 selectedRange={selectedRange}
                 onSelect={onDateChange || (() => { })}
+                disabledDates={unavailableDates}
+                minNights={pricingRules?.min_nights || 1}
             />
         </div >
     );

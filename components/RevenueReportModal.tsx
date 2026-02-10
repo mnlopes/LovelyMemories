@@ -6,6 +6,7 @@ import { X, ChevronDown } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { toast } from 'sonner';
 import { Input } from './ui/Input';
+import { Textarea } from './ui/Textarea';
 
 interface RevenueReportModalProps {
     isOpen: boolean;
@@ -23,7 +24,8 @@ export const RevenueReportModal: React.FC<RevenueReportModalProps> = ({ isOpen, 
         fullName: '',
         email: '',
         phoneNumber: '',
-        address: '',
+        typology: '',
+        perks: '',
         location: '',
         plan: initialPlan || 'base',
         numProperties: '1',
@@ -84,7 +86,17 @@ export const RevenueReportModal: React.FC<RevenueReportModalProps> = ({ isOpen, 
             if (response.ok) {
                 setIsSuccess(true);
                 onSuccess?.();
-                setFormData(prev => ({ ...prev, website: '' })); // Reset honeypot
+                setFormData({
+                    fullName: '',
+                    email: '',
+                    phoneNumber: '',
+                    typology: '',
+                    perks: '',
+                    location: '',
+                    plan: initialPlan || 'base',
+                    numProperties: '1',
+                    website: ''
+                });
                 setTimeout(() => {
                     onClose();
                     setIsSuccess(false);
@@ -175,11 +187,11 @@ export const RevenueReportModal: React.FC<RevenueReportModalProps> = ({ isOpen, 
 
                                     <Input
                                         type="text"
-                                        placeholder={t('form.address')}
+                                        placeholder={t('form.typology')}
                                         required
                                         className="h-14 bg-white border-gray-200 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
-                                        value={formData.address}
-                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                        value={formData.typology}
+                                        onChange={(e) => setFormData({ ...formData, typology: e.target.value })}
                                     />
 
                                     <Input
@@ -189,6 +201,13 @@ export const RevenueReportModal: React.FC<RevenueReportModalProps> = ({ isOpen, 
                                         className="h-14 bg-white border-gray-200 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20"
                                         value={formData.location}
                                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    />
+
+                                    <Textarea
+                                        placeholder={t('form.perks')}
+                                        className="min-h-[120px] bg-white border-gray-200 focus:border-[#b29a7a] focus:ring-[#b29a7a]/20 py-4 resize-none"
+                                        value={formData.perks}
+                                        onChange={(e) => setFormData({ ...formData, perks: e.target.value })}
                                     />
 
                                     {/* HONEYPOT FIELD (Hidden) */}

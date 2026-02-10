@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DayPicker, DateRange } from "react-day-picker";
-import { format, differenceInDays, startOfToday } from "date-fns";
+import { format, differenceInDays, startOfToday, subDays, addDays, isSameDay, startOfDay } from "date-fns";
 import { pt, enGB } from "date-fns/locale";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
@@ -17,6 +17,8 @@ interface BookingCalendarPopoverProps {
     selectedRange: DateRange | undefined;
     placement?: 'side' | 'bottom-start' | 'bottom-end' | 'bottom-center' | 'top-start' | 'top-end' | 'top-center';
     numberOfMonths?: number;
+    disabledDates?: (Date | DateRange)[];
+    minNights?: number;
 }
 
 export function BookingCalendarPopover({
@@ -26,6 +28,8 @@ export function BookingCalendarPopover({
     selectedRange,
     placement = 'side',
     numberOfMonths = 2,
+    disabledDates,
+    minNights = 1,
 }: BookingCalendarPopoverProps) {
     const t = useTranslations('PropertyDetail');
     const params = useParams();
@@ -33,12 +37,20 @@ export function BookingCalendarPopover({
     const dateLocale = localeCode === 'pt' ? pt : enGB;
 
     const [month, setMonth] = useState<Date>(new Date());
-    const today = startOfToday();
+    const [isShaking, setIsShaking] = useState(false);
     const popoverRef = React.useRef<HTMLDivElement>(null);
+
+    // Robust local midnight normalization helper
+    const normalize = (d: any): number => {
+        if (!d) return 0;
+        const dateObj = (d instanceof Date) ? d : new Date(d);
+        // We create a fresh local Date at 00:00:00 to be absolutely sure
+        return new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime();
+    };
 
     // Calculate nights
     const nights = selectedRange?.from && selectedRange?.to
-        ? differenceInDays(selectedRange.to, selectedRange.from)
+        ? Math.round((normalize(selectedRange.to) - normalize(selectedRange.from)) / 86400000)
         : 0;
 
     // Reset month view when opened
@@ -114,11 +126,15 @@ export function BookingCalendarPopover({
                                             ? `${format(selectedRange.from, 'd MMM', { locale: dateLocale })} - ${format(selectedRange.to, 'd MMM', { locale: dateLocale })}`
                                             : (t('selectDates') || 'Select dates')}
                                     </h3>
-                                    <p className="text-sm text-navy-900/40 font-medium">
+                                    <motion.p
+                                        animate={isShaking ? { x: [-5, 5, -5, 5, 0], color: "#ef4444" } : { x: 0, color: "#9ca3af" }}
+                                        transition={{ duration: 0.4 }}
+                                        className={`text-sm font-medium transition-colors ${isShaking ? 'text-red-500 font-bold' : 'text-navy-900/40'}`}
+                                    >
                                         {nights > 0
-                                            ? `${nights} ${t('nightsCount', { count: nights })}`
-                                            : t('minStay') || 'Minimum stay 2 nights'}
-                                    </p>
+                                            ? t('nightsCount', { count: nights })
+                                            : t('minNightsWarning', { count: minNights || 1 })}
+                                    </motion.p>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <button
@@ -132,15 +148,93 @@ export function BookingCalendarPopover({
                         )}
 
                         {/* Calendar Area */}
-                        <div className={`${isCompact ? 'p-3' : 'p-6 lg:p-8'} flex justify-center bg-white overflow-hidden luxury-calendar`}>
+                        <div className={`${isCompact ? 'p-3' : 'p-6 lg:p-8'} flex justify-center bg-white luxury-calendar`}>
                             <DayPicker
                                 mode="range"
                                 selected={selectedRange}
-                                onSelect={onSelect}
+                                onSelect={(range) => {
+                                    if (range?.from && !range.to) {
+                                        onSelect(range);
+                                        return;
+                                    }
+
+                                    if (range?.from && range?.to) {
+                                        const hasOverlap = (disabledDates || []).some(item => {
+                                            const dRange = item as DateRange;
+                                            if (dRange.from && dRange.to) {
+                                                const blockFrom = normalize(dRange.from);
+                                                const blockTo = normalize(dRange.to);
+                                                const selectedFrom = normalize(range.from);
+                                                const selectedTo = normalize(range.to);
+
+                                                return blockFrom < selectedTo && blockTo > selectedFrom;
+                                            }
+                                            return false;
+                                        });
+
+                                        if (hasOverlap) {
+                                            setIsShaking(true);
+                                            setTimeout(() => setIsShaking(false), 500);
+                                            onSelect({ from: range.from, to: undefined });
+                                            return;
+                                        }
+
+                                        if (minNights > 1 && normalize(range.from) !== normalize(range.to)) {
+                                            const diff = Math.round((normalize(range.to) - normalize(range.from)) / 86400000);
+                                            if (diff < minNights) {
+                                                setIsShaking(true);
+                                                setTimeout(() => setIsShaking(false), 500);
+                                                return;
+                                            }
+                                        }
+                                    }
+                                    onSelect(range);
+                                }}
                                 numberOfMonths={numberOfMonths}
                                 month={month}
                                 onMonthChange={setMonth}
-                                disabled={{ before: today }}
+                                disabled={(date) => {
+                                    const dTime = normalize(date);
+                                    const todayTime = normalize(new Date());
+                                    if (dTime <= todayTime) return true;
+
+                                    const middleNights: number[] = [];
+                                    const checkInDays: number[] = [];
+                                    const checkOutDays: number[] = [];
+
+                                    (disabledDates || []).forEach(item => {
+                                        const range = item as DateRange;
+                                        if (range?.from && range?.to) {
+                                            const start = normalize(range.from);
+                                            const end = normalize(range.to);
+                                            checkInDays.push(start);
+                                            checkOutDays.push(end);
+                                            let curr = start;
+                                            while (curr < end) {
+                                                middleNights.push(curr);
+                                                curr += 86400000;
+                                            }
+                                        } else if (item instanceof Date) {
+                                            middleNights.push(normalize(item));
+                                        }
+                                    });
+
+                                    const fromTime = selectedRange?.from ? normalize(selectedRange.from) : 0;
+                                    const isSelectingStart = !selectedRange?.from || (selectedRange.to && fromTime !== normalize(selectedRange.to));
+
+                                    if (isSelectingStart) {
+                                        if (middleNights.some(mn => mn === dTime)) return true;
+                                        return checkInDays.some(cid => cid === dTime);
+                                    } else {
+                                        if (checkOutDays.some(cod => cod === dTime)) return true;
+                                        const nextFrom = (disabledDates || [])
+                                            .map(item => normalize((item as DateRange).from))
+                                            .filter(f => f > fromTime)
+                                            .sort((a, b) => a - b)[0];
+                                        if (nextFrom && dTime > nextFrom) return true;
+                                    }
+                                    return false;
+                                }}
                                 locale={dateLocale}
                                 classNames={{
                                     root: "luxury-calendar-root",
@@ -165,8 +259,55 @@ export function BookingCalendarPopover({
                                     range_middle: "luxury-range-middle !text-[#B08D4A]",
                                     selected: "date-is-selected",
                                     today: "luxury-today text-[#B08D4A] font-bold",
-                                    outside: "text-gray-300 opacity-20",
-                                    disabled: "text-gray-200 opacity-10 cursor-not-allowed",
+                                    outside: "text-gray-400 opacity-40",
+                                    disabled: "rdp-day_disabled text-gray-400 cursor-not-allowed",
+                                }}
+                                modifiers={{
+                                    past: (date) => normalize(date) <= normalize(new Date()),
+                                    blocked: (date) => {
+                                        const d = normalize(date);
+                                        const t = normalize(new Date());
+                                        if (d <= t) return false;
+
+                                        if (selectedRange?.from) {
+                                            const fromTime = normalize(selectedRange.from);
+                                            const nextFromTime = (disabledDates || [])
+                                                .map(item => normalize((item as DateRange).from))
+                                                .filter(f => f > fromTime)
+                                                .sort((a, b) => a - b)[0];
+
+                                            if (nextFromTime && d > nextFromTime) return true;
+                                        }
+                                        return false;
+                                    },
+                                    booked: (() => {
+                                        const stayNights: Date[] = [];
+                                        (disabledDates || []).forEach(d => {
+                                            const range = d as DateRange;
+                                            if (range?.from && range?.to) {
+                                                // START ONE DAY AFTER 'from' to keep the check-in day visually clean
+                                                let curr = normalize(range.from) + 86400000;
+                                                const end = normalize(range.to);
+                                                while (curr < end) {
+                                                    stayNights.push(new Date(curr));
+                                                    curr += 86400000;
+                                                }
+                                            } else if (d instanceof Date) {
+                                                // Single blocks remain as is
+                                                stayNights.push(new Date(normalize(d)));
+                                            }
+                                        });
+                                        return stayNights;
+                                    })(),
+                                    selected_start: (date) => !!selectedRange?.from && normalize(date) === normalize(selectedRange.from),
+                                    selected_end: (date) => !!selectedRange?.to && normalize(date) === normalize(selectedRange.to),
+                                }}
+                                modifiersClassNames={{
+                                    booked: "rdp-day_booked",
+                                    past: "rdp-day_past",
+                                    blocked: "rdp-day_blocked",
+                                    selected_start: "luxury-range-start",
+                                    selected_end: "luxury-range-end"
                                 }}
                                 components={{
                                     Chevron: ({ orientation }) => orientation === "left" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />,
@@ -188,10 +329,7 @@ export function BookingCalendarPopover({
 
                         {/* Custom overrides for luxury range appearance */}
                         <style jsx global>{`
-                            .luxury-calendar-root {
-                                width: 100%;
-                            }
-                            /* Strict Grid & Layout */
+                            .luxury-calendar-root { width: 100%; }
                             .rdp-weekdays, .rdp-week {
                                 display: grid !important;
                                 grid-template-columns: repeat(7, 1fr) !important;
@@ -199,8 +337,6 @@ export function BookingCalendarPopover({
                                 margin: 0 !important;
                                 padding: 0 !important;
                             }
-                            
-                            /* The Day Cell: 100% Clickable & Isolated Stack */
                             .rdp-day-custom {
                                 position: relative !important;
                                 width: 100% !important;
@@ -213,16 +349,12 @@ export function BookingCalendarPopover({
                                 justify-content: center !important;
                                 background: transparent !important;
                                 cursor: pointer;
-                                isolate: isolate; /* Create a controlled stacking context */
+                                isolate: isolate;
                                 color: #192537 !important;
                                 font-weight: 500;
                                 border: 0 !important;
-                                outline: 0 !important;
-                                box-shadow: none !important;
                                 -webkit-tap-highlight-color: transparent !important;
-                                transition: none !important; /* Prevent ghosting during state changes */
                             }
-
                             .luxury-calendar-root .rdp-day_button {
                                 width: 100% !important;
                                 height: 100% !important;
@@ -230,33 +362,15 @@ export function BookingCalendarPopover({
                                 display: flex !important;
                                 align-items: center !important;
                                 justify-content: center !important;
-                                margin: 0 !important;
-                                padding: 0 !important;
                             }
-                            
-                            /* Total Focus & Shadow Eradication (Global Reset) */
                             .luxury-calendar-root *,
                             .luxury-calendar-root button,
-                            .luxury-calendar-root button:focus,
-                            .luxury-calendar-root button:active,
-                            .luxury-calendar-root button:focus-visible,
-                            .luxury-calendar-root [role="gridcell"],
-                            .luxury-calendar-root [role="gridcell"] button,
                             .rdp-day-custom,
-                            .rdp-day-custom:focus, 
-                            .rdp-day-custom:active, 
-                            .rdp-day-custom:focus-visible {
+                            .rdp-day-custom:focus {
                                 outline: 0 !important;
-                                outline-offset: 0 !important;
-                                border: 0 !important;
                                 box-shadow: none !important;
                                 background-color: transparent !important;
-                                -webkit-appearance: none !important;
-                                appearance: none !important;
-                                transition: none !important; /* Kill all transition delays */
                             }
-                            
-                            /* Layer 1: Selection Bar Underlay (Bottom) */
                             .luxury-range-middle::before,
                             .luxury-range-start::before,
                             .luxury-range-end::before {
@@ -266,13 +380,9 @@ export function BookingCalendarPopover({
                                 background-color: #FDF8F0;
                                 z-index: -2;
                             }
-                            
-                            /* Rounded Caps for the Selection Bar Underlay */
                             .luxury-range-start::before { border-radius: 100px 0 0 100px !important; }
                             .luxury-range-end::before { border-radius: 0 100px 100px 0 !important; }
                             .luxury-range-start.luxury-range-end::before { border-radius: 100px !important; }
-
-                            /* Layer 2: The "Ball" (Hover OR Selected Start/End) (Middle) */
                             .rdp-day-custom::after {
                                 content: '';
                                 position: absolute;
@@ -287,14 +397,10 @@ export function BookingCalendarPopover({
                                 transition: all 0.2s ease;
                                 pointer-events: none;
                             }
-                            
-                            /* Soft Gold Hover Ball */
                             .rdp-day-custom:hover:not(.disabled)::after {
                                 opacity: 1;
-                                background-color: rgba(176, 141, 74, 0.08); /* Soft Gold */
+                                background-color: rgba(176, 141, 74, 0.08);
                             }
-                            
-                            /* Solid Gold Ball for Selected Start/End */
                             .luxury-range-start::after,
                             .luxury-range-end::after {
                                 opacity: 1 !important;
@@ -303,23 +409,29 @@ export function BookingCalendarPopover({
                                 border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
                                 z-index: -1 !important;
                             }
-
-                            /* Layer 3: Text Content (Top - Guaranteed by isolate + negative z-index) */
-                            .luxury-range-start,
-                            .luxury-range-end {
-                                color: white !important;
-                                font-weight: 700 !important;
+                            .luxury-range-start, .luxury-range-end { color: white !important; font-weight: 700 !important; }
+                            .luxury-range-middle { color: #B08D4A !important; font-weight: 700 !important; }
+                            .rdp-day_booked:not(.date-is-selected) { background-color: transparent !important; position: relative !important; width: 100% !important; }
+                            .rdp-day_past { opacity: 0.25 !important; }
+                            .rdp-day_blocked button { text-decoration: line-through !important; opacity: 0.5 !important; cursor: not-allowed !important; }
+                            .rdp-day_disabled button { color: #9ca3af !important; cursor: not-allowed !important; }
+                            .rdp-day_booked:not(.date-is-selected)::after {
+                                content: '';
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                background-color: #fef2f2 !important;
+                                border: 1.2px solid #fee2e2 !important;
+                                width: 40px;
+                                height: 40px;
+                                border-radius: 50%;
+                                z-index: -1 !important;
                             }
-                            
-                            .luxury-range-middle {
-                                color: #B08D4A !important;
-                                font-weight: 700 !important;
-                            }
-
-                            /* Today's indicator */
-                            .luxury-today {
-                                position: relative;
-                            }
+                            .rdp-day_booked button { text-decoration: line-through !important; opacity: 0.6 !important; }
+                            /* Remove line-through for valid turnaround checkout targets */
+                            .rdp-day-custom:not(.rdp-day_disabled) button { text-decoration: none !important; }
+                            .luxury-today { position: relative; }
                             .luxury-today:not(.luxury-range-start):not(.luxury-range-end)::after {
                                 content: '';
                                 position: absolute;
@@ -332,33 +444,10 @@ export function BookingCalendarPopover({
                                 border-radius: 50%;
                                 opacity: 0.6;
                             }
-                            
-                            /* Hide scrollbar */
-                            .luxury-calendar::-webkit-scrollbar { display: none; }
-                            .luxury-calendar { -ms-overflow-style: none; scrollbar-width: none; }
-
                             @media (max-width: 1024px) {
                                 .rdp-day-custom { height: 44px !important; }
-                                .rdp-day-custom::after {
-                                    width: 38px;
-                                    height: 38px;
-                                }
+                                .rdp-day-custom::after { width: 38px; height: 38px; }
                             }
-
-                            /* Compact mode overrides */
-                            ${isCompact ? `
-                                .rdp-day-custom {
-                                    height: 36px !important;
-                                    min-height: 36px !important;
-                                }
-                                .rdp-day-custom::after {
-                                    width: 30px !important;
-                                    height: 30px !important;
-                                }
-                                .luxury-calendar-root .rdp-day_button {
-                                    min-height: 36px !important;
-                                }
-                            ` : ''}
                         `}</style>
                     </motion.div>
                 </>

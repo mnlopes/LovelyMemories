@@ -109,9 +109,12 @@ export async function upsertProperty(data: PropertyFormData) {
 
     try {
         // 0.5 Fetch existing data for Diffing (if update)
+        const { getSupabaseAdmin } = await import('@/lib/supabase');
+        const adminSupabase = await getSupabaseAdmin();
+
         let previousData: any = null;
         if (validatedData.id) {
-            const { data: current } = await supabase
+            const { data: current } = await adminSupabase
                 .from('properties')
                 .select('*')
                 .eq('id', validatedData.id)
@@ -122,24 +125,46 @@ export async function upsertProperty(data: PropertyFormData) {
         let query;
         if (validatedData.id) {
             // UPDATE
-            query = supabase
+            query = adminSupabase
                 .from('properties')
                 .update(payload)
                 .eq('id', validatedData.id);
         } else {
             // INSERT
-            query = supabase
+            query = adminSupabase
                 .from('properties')
                 .insert([payload]);
         }
 
-        const { data: record, error } = await query.select('id, slug').single();
+        const { data: record, error } = await query.select('id, slug, title, price_per_night').single();
 
         if (error) {
             console.error("Supabase Error:", error);
             return {
                 success: false,
                 error: `Database error: ${error.message}`
+            };
+        }
+
+        // 2.5 Upsert Pricing Rules
+        const { error: pricingError } = await adminSupabase
+            .from('pricing_rules')
+            .upsert({
+                property_id: record.id,
+                base_price_per_night: record.price_per_night,
+                min_nights: validatedData.min_nights,
+                cleaning_fee: validatedData.cleaning_fee,
+                weekly_discount_percent: validatedData.weekly_discount_percent,
+                monthly_discount_percent: validatedData.monthly_discount_percent,
+                city_tax_per_night: validatedData.city_tax_per_night,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'property_id' });
+
+        if (pricingError) {
+            console.error("Pricing Rules Error:", pricingError);
+            return {
+                success: false,
+                error: `Property saved, but pricing rules failed: ${pricingError.message}`
             };
         }
 
@@ -272,6 +297,13 @@ export async function upsertProperty(data: PropertyFormData) {
 
         // 4. Revalidate paths to show fresh data
         revalidatePath("/admin/properties");
+        if (record?.id) {
+            revalidatePath(`/admin/properties/${record.id}`);
+            // Also revalidate the localized versions if possible
+            revalidatePath(`/pt/admin/properties/${record.id}`);
+            revalidatePath(`/en/admin/properties/${record.id}`);
+        }
+
         if (record?.slug) {
             revalidatePath(`/${record.slug}`);
             revalidatePath(`/en/properties/${record.slug}`); // Force en check

@@ -18,6 +18,12 @@ async function runTests() {
         children: 0,
         infants: 0,
         website: "", // Empty honeypot
+        totalPrice: 485,
+        basePrice: 400,
+        cleaningFee: 85,
+        breakfastTotal: 0,
+        transferTotal: 0,
+        paymentMethod: "wire"
     };
 
     // Test 1: Valid Reservation
@@ -32,43 +38,43 @@ async function runTests() {
     console.log("Result:", !result2.success && result2.error === "Bot activity detected." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
-    // Test 3: Property Capacity Protection
+    // Test 3: Property Capacity Protection (10 guests for a 4-guest house)
     console.log("Test 3: Property Capacity Protection (10 guests for a 4-guest house)");
     const result3 = await processReservation({ ...commonData, adults: 10 });
-    console.log("Result:", !result3.success && result3.error?.includes("accommodates up to") ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result3.success && result3.error?.includes("acomoda até") ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     // Test 4: Property Existence
     console.log("Test 4: Fake Property Slug");
     const result4 = await processReservation({ ...commonData, propertySlug: "hacker-palace" });
-    console.log("Result:", !result4.success && result4.error === "Invalid property selected." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result4.success && result4.error === "Propriedade inválida selecionada." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     // Test 5: Date Logic (Reverse dates)
     console.log("Test 5: Check-out before Check-in");
     const result5 = await processReservation({ ...commonData, checkIn: "2026-06-15", checkOut: "2026-06-10" });
-    console.log("Result:", !result5.success && result5.error === "Check-out date must be after check-in date." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result5.success && result5.error === "A data de check-out deve ser após a data de check-in." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     // Test 6: Past Date
     console.log("Test 6: Past Date check-in");
     const result6 = await processReservation({ ...commonData, checkIn: "2020-01-01" });
-    console.log("Result:", !result6.success && result6.error === "Check-in date cannot be in the past." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result6.success && result6.error === "A data de check-in não pode ser no passado." ? "✅ BLOCKED CORRECTLY" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     console.log("Test 7: Zod - Invalid Email Format");
     const result7 = await processReservation({ ...commonData, email: "not-an-email" });
-    console.log("Result:", !result7.success && result7.error?.includes("Invalid data submitted") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result7.success && result7.error?.includes("Dados inválidos") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     console.log("Test 8: Zod - Name too short");
     const result8 = await processReservation({ ...commonData, fullName: "Ab" });
-    console.log("Result:", !result8.success && result8.error?.includes("Invalid data submitted") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result8.success && result8.error?.includes("Dados inválidos") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     console.log("Test 9: Zod - Phone too short");
     const result9 = await processReservation({ ...commonData, phone: "123" });
-    console.log("Result:", !result9.success && result9.error?.includes("Invalid data submitted") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
+    console.log("Result:", !result9.success && result9.error?.includes("Dados inválidos") ? "✅ BLOCKED CORRECTLY (Zod)" : "❌ FAILED TO BLOCK");
     console.log("-".repeat(30));
 
     console.log("\n=== SECURITY VERIFICATION COMPLETE ===");

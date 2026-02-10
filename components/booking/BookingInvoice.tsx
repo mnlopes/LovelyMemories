@@ -14,6 +14,8 @@ interface BookingInvoiceProps {
     guests: string;
     basePrice: number;
     cleaningFee: number;
+    discountAmount?: number;
+    cityTaxTotal?: number;
     breakfastTotal?: number;
     transferTotal?: number;
     total: number;
@@ -36,6 +38,8 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
     guests,
     basePrice,
     cleaningFee,
+    discountAmount = 0,
+    cityTaxTotal = 0,
     breakfastTotal = 0,
     transferTotal = 0,
     total,
@@ -164,6 +168,18 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                                 <td style={{ padding: '16px 24px', fontWeight: '500' }}>{t('success.cleaningFee')}</td>
                                 <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 'bold' }}>€{cleaningFee}</td>
                             </tr>
+                            {discountAmount > 0 && (
+                                <tr style={{ borderBottom: '1px solid #f3f4f6', color: '#2d8653' }}>
+                                    <td style={{ padding: '16px 24px', fontWeight: '500' }}>{nights >= 28 ? t('sidebar.monthlyDiscount') : t('sidebar.weeklyDiscount')}</td>
+                                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 'bold' }}>−€{discountAmount}</td>
+                                </tr>
+                            )}
+                            {cityTaxTotal > 0 && (
+                                <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                    <td style={{ padding: '16px 24px', fontWeight: '500' }}>{t('sidebar.cityTax') || "City Tax"}</td>
+                                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 'bold' }}>€{cityTaxTotal}</td>
+                                </tr>
+                            )}
                             {breakfastTotal > 0 && (
                                 <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                                     <td style={{ padding: '16px 24px', fontWeight: '500' }}>{t('sidebar.breakfast')}</td>

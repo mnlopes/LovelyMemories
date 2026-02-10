@@ -15,10 +15,11 @@ export const adminLeadEmail = (data: any) => `
             <p><strong>Name:</strong> ${data.fullName}</p>
             <p><strong>Email:</strong> ${data.email}</p>
             <p><strong>Phone:</strong> ${data.phoneNumber}</p>
-            <p><strong>Address:</strong> ${data.address || 'N/A'}</p>
+            <p><strong>Typology:</strong> ${data.typology}</p>
+            <p><strong>Extra Perks:</strong> ${data.perks}</p>
             <p><strong>Location:</strong> ${data.location}</p>
-            <p><strong>Selected Plan:</strong> ${data.plan.toUpperCase()}</p>
-            <p><strong>Number of Properties:</strong> ${data.numProperties}</p>
+            ${data.plan ? `<p><strong>Selected Plan:</strong> ${data.plan.toUpperCase()}</p>` : ''}
+            ${data.numProperties ? `<p><strong>Number of Properties:</strong> ${data.numProperties}</p>` : ''}
         </div>
         
         <p style="font-size: 12px; color: #999;">Este email foi enviado automaticamente pelo formulário do Revenue Report da pagina Owner.</p>

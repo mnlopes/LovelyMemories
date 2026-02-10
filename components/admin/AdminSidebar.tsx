@@ -1,10 +1,12 @@
 "use client";
 
+import { type ClassValue, clsx } from "clsx";
 import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, Sparkles, Settings, Activity } from "lucide-react";
 import { Link, usePathname } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export const AdminSidebar = () => {
     const pathname = usePathname();
@@ -68,6 +70,8 @@ export const AdminSidebar = () => {
         ] : [])
     ];
 
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
     const handleLogout = async () => {
         await supabase.auth.signOut();
         const locale = window.location.pathname.split('/')[1] || 'en';
@@ -75,25 +79,35 @@ export const AdminSidebar = () => {
     };
 
     return (
-        <aside className="w-72 bg-white dark:bg-admin-dark-bg border-r border-[#f5f5f5] dark:border-admin-dark-border flex flex-col shrink-0 h-screen sticky top-0 z-50">
+        <aside
+            className={`bg-admin-surface border-r border-admin-border flex flex-col shrink-0 h-screen sticky top-0 z-50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-72'}`}
+        >
             {/* Logo Area */}
-            <div className="p-8 flex flex-col items-center gap-2 text-center">
-                <div className="w-40 h-auto flex items-center justify-center p-2">
+            <div className={`flex flex-col items-center justify-center transition-all duration-300 ${isCollapsed ? 'p-4' : 'p-8 gap-2 text-center'}`}>
+                <div className={`flex items-center justify-center transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-40 h-auto p-2'}`}>
                     <img
                         src="/legacy/home/images/logo.svg"
                         alt="Lovely Memories"
                         className="w-full h-full object-contain dark:brightness-0 dark:invert transition-all duration-500"
                     />
                 </div>
-                <h1 className="text-xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">Lovely Memories</h1>
+                {!isCollapsed && (
+                    <h1 className="text-xl font-bold tracking-tight text-admin-text-primary whitespace-nowrap overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+                        Lovely Memories
+                    </h1>
+                )}
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-6 space-y-8">
+            <nav className={`flex-1 space-y-8 overflow-y-auto custom-scrollbar ${isCollapsed ? 'px-3' : 'px-6'}`}>
                 {menuSections.map((section) => (
                     <div key={section.title}>
-                        <div className="px-3 mb-4">
-                            <p className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-[0.2em]">{section.title}</p>
+                        <div className={`mb-4 transition-all duration-300 ${isCollapsed ? 'px-0 text-center' : 'px-3'}`}>
+                            {!isCollapsed ? (
+                                <p className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-[0.2em] whitespace-nowrap">{section.title}</p>
+                            ) : (
+                                <div className="h-px w-8 bg-admin-border mx-auto" />
+                            )}
                         </div>
                         <div className="space-y-1">
                             {section.items.map((item) => {
@@ -102,15 +116,28 @@ export const AdminSidebar = () => {
                                     <Link
                                         key={item.path}
                                         href={item.path}
-                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${isActive
-                                            ? 'bg-[#fafafa] dark:bg-white/5 text-[#171717] dark:text-admin-dark-text-primary border border-transparent dark:border-white/10 shadow-sm'
-                                            : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-[#fafafa] dark:hover:bg-white/5'
-                                            }`}
+                                        className={cn(
+                                            "flex items-center transition-all group relative",
+                                            isCollapsed ? "justify-center p-3 rounded-xl" : "gap-3 px-3 py-2.5 rounded-xl",
+                                            isActive
+                                                ? "bg-admin-bg text-admin-text-primary border border-admin-border shadow-sm"
+                                                : "text-admin-text-secondary hover:text-admin-text-primary hover:bg-admin-bg"
+                                        )}
+                                        title={isCollapsed ? item.label : undefined}
                                     >
-                                        <item.icon className={`size-5 stroke-[1.5px] transition-colors ${isActive ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] group-hover:text-[#171717] dark:group-hover:text-white'}`} />
-                                        <span className="text-sm font-bold tracking-tight">{item.label}</span>
-                                        {isActive && (
-                                            <div className="ml-auto size-1.5 rounded-full bg-[#171717] dark:bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+                                        <item.icon className={cn("size-5 stroke-[1.5px] transition-colors shrink-0", isActive ? "text-admin-accent" : "text-admin-text-secondary group-hover:text-admin-text-primary")} />
+
+                                        {!isCollapsed && (
+                                            <span className="text-sm font-bold tracking-tight whitespace-nowrap overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200">
+                                                {item.label}
+                                            </span>
+                                        )}
+
+                                        {isActive && !isCollapsed && (
+                                            <div className="ml-auto size-1.5 rounded-full bg-admin-accent shadow-sm" />
+                                        )}
+                                        {isActive && isCollapsed && (
+                                            <div className="absolute right-1 top-1 size-1.5 rounded-full bg-admin-accent shadow-sm" />
                                         )}
                                     </Link>
                                 );
@@ -121,14 +148,25 @@ export const AdminSidebar = () => {
             </nav>
 
             {/* Footer Area */}
-            <div className="p-6">
+            <div className={`p-6 border-t border-admin-border ${isCollapsed ? 'px-2 items-center' : ''}`}>
+                {/* Collapse Toggle */}
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className={`w-full flex items-center transition-colors text-admin-text-secondary hover:text-admin-text-primary ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2 text-xs font-medium'}`}
+                    title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                >
+                    <LayoutGrid className="size-4" />
+                    {!isCollapsed && <span>{isCollapsed ? "Expand" : "Collapse View"}</span>}
+                </button>
+
                 {/* Logout Button */}
                 <button
                     onClick={handleLogout}
-                    className="mt-6 w-full flex items-center gap-3 px-3 py-2 text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white transition-colors text-xs font-medium"
+                    className={`mt-2 w-full flex items-center transition-colors text-red-500 hover:bg-red-500/10 rounded-lg ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2 text-xs font-bold'}`}
+                    title={t('signOut')}
                 >
                     <LogOut className="size-4" />
-                    {t('signOut')}
+                    {!isCollapsed && <span>{t('signOut')}</span>}
                 </button>
             </div>
         </aside>

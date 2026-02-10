@@ -69,23 +69,25 @@ export default async function AdminLayout({
     // I will add a check in the AdminOverview (page.tsx) and future report pages.
 
     return (
-        <AdminThemeProvider>
-            <div className={`${plusJakartaSans.variable} font-sans`}>
-                <div className="flex h-screen overflow-hidden bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-admin-dark-text-primary antialiased">
-                    {/* Fixed Sidebar */}
-                    <AdminSidebar />
+        <NextIntlClientProvider messages={messages} locale={locale}>
+            <AdminThemeProvider>
+                <div className={`${plusJakartaSans.variable} font-sans antialiased text-admin-text-primary`}>
+                    <div className="flex h-screen overflow-hidden bg-admin-surface">
+                        {/* Fixed Sidebar */}
+                        <AdminSidebar />
 
-                    {/* Main Content Area */}
-                    <main className="flex-1 overflow-y-auto bg-[#fafafa] dark:bg-admin-dark-bg flex flex-col">
-                        <AdminHeader user={user} profile={profile} />
-                        <div className="p-10 w-full space-y-16">
-                            <div className="w-full">
-                                {children}
+                        {/* Main Content Area */}
+                        <main className="flex-1 overflow-y-auto bg-admin-bg flex flex-col">
+                            <AdminHeader user={user} profile={profile} />
+                            <div className="p-10 w-full space-y-16">
+                                <div className="w-full">
+                                    {children}
+                                </div>
                             </div>
-                        </div>
-                    </main>
+                        </main>
+                    </div>
                 </div>
-            </div>
-        </AdminThemeProvider>
+            </AdminThemeProvider>
+        </NextIntlClientProvider>
     );
 }
