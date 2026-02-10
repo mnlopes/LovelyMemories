@@ -144,7 +144,7 @@ export const OwnerExperience = () => {
                                     {t('title')}
                                 </h3>
 
-                                <div className="space-y-6 text-gray-300">
+                                <div className="space-y-6 text-gray-300 text-justify">
                                     <p className="text-lg font-light leading-relaxed">
                                         {t('desc')}
                                     </p>
@@ -161,9 +161,9 @@ export const OwnerExperience = () => {
                             whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8, delay: 0.4 }}
-                            className="bg-white/5 backdrop-blur-md p-8 md:p-10 rounded-[30px] border border-white/10 max-w-lg"
+                            className="bg-white/5 backdrop-blur-md p-8 md:p-10 rounded-[30px] border border-white/10 max-w-lg mx-auto"
                         >
-                            <h4 className="text-white text-2xl font-bold mb-6">
+                            <h4 className="text-white text-2xl font-bold mb-6 text-center">
                                 {t('trust.title')}
                             </h4>
 
