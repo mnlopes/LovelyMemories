@@ -4,6 +4,7 @@ import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 export default async function middleware(request: NextRequest, event: NextFetchEvent) {
+    const startTime = Date.now();
     const { pathname } = request.nextUrl;
 
     // 1. Skip assets/API early
@@ -55,7 +56,7 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     }
 
     // 3. Visitor Logging (Enhanced with IP and Navigation tracking)
-    const isAdminPath = pathname.includes('/admin') || pathname.includes('/login') || pathname.includes('/set-password');
+    const isAdminPath = pathname.includes('/admin') || pathname.includes('/owner') || pathname.includes('/login') || pathname.includes('/set-password');
     if (supabaseUrl && serviceKey) {
         const country = request.headers.get('x-vercel-ip-country') || 'Unknown';
         const rawCity = request.headers.get('x-vercel-ip-city') || 'Unknown';
@@ -118,6 +119,72 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     // 5. Final Response
     const response = createMiddleware(routing)(request);
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+
+    // --- NEXE CONTROL ROOM TRACKER ---
+    try {
+        const nexeUrl = process.env.NEXE_ANALYTICS_URL || 'http://localhost:3000/api/logs/ingest';
+
+        // Extract basic info that we need right now
+        const status = response.status || 200;
+        const host = request.headers.get('host') || 'lovelymemories.pt';
+        const method = request.method;
+        const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+        const countryCode = request.headers.get('x-vercel-ip-country') || '❓';
+        const userAgent = request.headers.get('user-agent') || 'Unknown';
+
+        event.waitUntil(
+            (async () => {
+                try {
+                    let countryName = 'Unknown';
+                    if (countryCode !== '❓') {
+                        try {
+                            const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+                            countryName = dn.of(countryCode) || countryCode;
+                        } catch (e) {
+                            countryName = countryCode;
+                        }
+                    }
+
+                    let device = 'Desktop';
+                    if (/bot|crawler|spider|crawling|bingbot|googlebot|vercel/i.test(userAgent)) device = 'Bot';
+                    else if (/mobile|android|iphone|ipad|ipod/i.test(userAgent)) device = 'Mobile';
+
+                    const responseTime = Date.now() - startTime;
+
+                    const pathParts = pathname.split('/');
+                    const locale = routing.locales.includes(pathParts[1] as any) ? pathParts[1] : routing.defaultLocale;
+
+                    const logPayload = {
+                        url: host,
+                        method: method,
+                        path: pathname,
+                        status: status,
+                        response_time: responseTime,
+                        ip: ip,
+                        country: countryName,
+                        country_code: countryCode,
+                        device: device,
+                        user_agent: userAgent,
+                        user_role: (userRole || 'visitor').toUpperCase(),
+                        is_admin_view: isAdminPath,
+                        locale: locale
+                    };
+
+                    await fetch(nexeUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(logPayload)
+                    });
+                } catch (trackerErr) {
+                    console.error("[Nexe Tracker] Async Error:", trackerErr);
+                }
+            })()
+        );
+    } catch (syncErr) {
+        console.error("[Nexe Tracker] Sync Error:", syncErr);
+    }
+    // ---------------------------------
+
     return response;
 }
 
