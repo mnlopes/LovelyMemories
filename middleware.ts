@@ -121,69 +121,59 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
 
     // --- NEXE CONTROL ROOM TRACKER ---
-    const isRSC = request.headers.get('rsc') === '1';
-    const isNextRouterPrefetch = request.headers.get('next-router-prefetch') === '1';
-    const isPrefetchPurpose = request.headers.get('purpose') === 'prefetch';
+    // 1. Filtrar Spam (Prefetch e Background)
+    const isPrefetchTracker = request.headers.get('purpose') === 'prefetch' ||
+        request.headers.get('x-middleware-prefetch') === '1' ||
+        request.headers.get('next-router-prefetch') === '1' ||
+        request.headers.get('sec-fetch-dest') === 'empty' ||
+        request.headers.get('rsc') === '1';
 
-    if (!isRSC && !isNextRouterPrefetch && !isPrefetchPurpose) {
-        const responseTime = Date.now() - startTime;
-        const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
-        const countryCode = request.headers.get('x-vercel-ip-country') || '🤷‍♂️';
-        const cityHeader = request.headers.get('x-vercel-ip-city');
-        const city = cityHeader ? decodeURIComponent(cityHeader) : null;
+    if (!isPrefetchTracker) { // O pedido é uma navegação do utilizador real (HTML navigation)
 
-        // Determine device
-        let device = 'Desktop';
-        const userAgent = request.headers.get('user-agent') || '';
-        if (/bot|crawler|spider|crawling|bingbot|googlebot|vercel/i.test(userAgent)) device = 'Bot';
-        else if (/mobile|android|iphone|ipad|ipod/i.test(userAgent)) device = 'Mobile';
+        // 2. Extrair a Cidade (Usa a tua lógica existente que já funciona para extrair o Porto/Lisboa, etc)
+        const rawCity = request.headers.get('x-vercel-ip-city');
+        let finalCity = rawCity ? decodeURIComponent(rawCity) : 'Unknown';
 
-        // Determine browser
-        let browser: string | null = null;
-        if (userAgent) {
-            if (/Firefox|FxiOS/i.test(userAgent)) browser = 'Firefox';
-            else if (/Edge|Edg/i.test(userAgent)) browser = 'Edge';
-            else if (/OPR|Opera/i.test(userAgent)) browser = 'Opera';
-            else if (/Chrome|CriOS/i.test(userAgent)) browser = 'Chrome';
-            else if (/Safari/i.test(userAgent)) browser = 'Safari';
-        }
+        // 3. Detetar Browser Manualmente (Super Rápido)
+        const ua = request.headers.get("user-agent") || "";
+        let browserName = "Unknown";
+        if (ua.includes("Firefox")) browserName = "Firefox";
+        else if (ua.includes("Edg")) browserName = "Edge";
+        else if (ua.includes("Chrome")) browserName = "Chrome";
+        else if (ua.includes("Safari") && !ua.includes("Chrome")) browserName = "Safari";
+        else if (ua.includes("Opera") || ua.includes("OPR")) browserName = "Opera";
 
-        let countryName = 'Unknown';
-        if (countryCode !== '🤷‍♂️') {
-            try {
-                const dn = new Intl.DisplayNames(['en'], { type: 'region' });
-                countryName = dn.of(countryCode) || countryCode;
-            } catch (e) {
-                countryName = countryCode;
-            }
-        }
-
+        // Calcular locale para o Tracker
         const pathParts = pathname.split('/');
         const locale = routing.locales.includes(pathParts[1] as any) ? pathParts[1] : routing.defaultLocale;
 
+        // 4. Disparar para a Nexe (Silencioso)
         const nexePromise = fetch("https://nexe-control-room.vercel.app/api/logs/ingest", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 url: "lovelymemories.pt",
-                method: request.method || "GET",
-                path: pathname,
+                method: request.method,
+                path: request.nextUrl.pathname,
                 status: response.status || 200,
-                response_time: responseTime,
-                ip: ip,
-                country: countryName,
-                country_code: countryCode,
-                city: city,
-                user_agent: userAgent || 'Unknown',
-                browser: browser,
-                device: device,
+                response_time: Date.now() - startTime,
+                ip: request.headers.get("x-forwarded-for")?.split(',')[0] || request.headers.get("x-real-ip") || "Unknown",
+                country: request.headers.get("x-vercel-ip-country") || "Unknown",
+                country_code: request.headers.get("x-vercel-ip-country") || "??",
+                city: finalCity,
+                browser: browserName,
+                user_agent: ua,
+                device: ua.includes("Mobile") || ua.includes("Android") || ua.includes("iPhone") ? "Mobile" : "Desktop",
                 user_role: (userRole || "VISITOR").toUpperCase(),
                 is_admin_view: isAdminPath,
                 locale: locale
             })
-        }).catch((err) => console.log("Erro a enviar para a Nexe:", err));
+        }).catch(err => console.log("Nexe Error:", err));
 
-        event.waitUntil(nexePromise);
+        // Previne que o Vercel Serverless mate o processo enquanto faz o fetch
+        if (typeof event?.waitUntil === 'function') {
+            event.waitUntil(nexePromise);
+        }
     }
     // ---------------------------------
 
