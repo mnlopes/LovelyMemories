@@ -132,13 +132,9 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     // Só avança se for uma pessoa verdadeira e não for um prefetch
     if (!isPrefetchTracker && !isBot) {
 
-        // 2. Extrair a Cidade (Focado exclusivamente no header Vercel Injetado)
-        let cityStr = request.headers.get("x-vercel-ip-city");
-        if (cityStr) {
-            try { cityStr = decodeURIComponent(cityStr); } catch (e) { }
-        } else {
-            cityStr = null;
-        }
+        // 2. Extrair a Cidade (Usando rigorosamente a mesma lógica do Visitor Logger)
+        const rawCityParams = request.headers.get('x-vercel-ip-city') || 'Unknown';
+        const finalCity = decodeURIComponent(rawCityParams);
 
         // 3. Detetar Browser Manualmente (100% Funcional e Simples)
         const ua = request.headers.get("user-agent") || "";
@@ -162,10 +158,11 @@ export default async function middleware(request: NextRequest, event: NextFetchE
                 method: request.method,
                 path: request.nextUrl.pathname,
                 status: response.status || 200,
+                response_time: Date.now() - startTime,
                 ip: request.headers.get("x-forwarded-for")?.split(',')[0] || request.headers.get("x-real-ip") || "Unknown",
                 country: request.headers.get("x-vercel-ip-country") || "Unknown",
                 country_code: request.headers.get("x-vercel-ip-country") || "??",
-                city: cityStr,
+                city: finalCity,
                 browser: browserName,
                 user_agent: ua,
                 device: ua.includes("Mobile") || ua.includes("Android") || ua.includes("iPhone") ? "Mobile" : "Desktop",
