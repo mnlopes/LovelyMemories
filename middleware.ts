@@ -121,50 +121,70 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
 
     // --- NEXE CONTROL ROOM TRACKER ---
-    const responseTime = Date.now() - startTime;
-    const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
-    const countryCode = request.headers.get('x-vercel-ip-country') || '🤷‍♂️';
+    const isRSC = request.headers.get('rsc') === '1';
+    const isNextRouterPrefetch = request.headers.get('next-router-prefetch') === '1';
+    const isPrefetchPurpose = request.headers.get('purpose') === 'prefetch';
 
-    // Determine device
-    let device = 'Desktop';
-    const userAgent = request.headers.get('user-agent') || 'Unknown';
-    if (/bot|crawler|spider|crawling|bingbot|googlebot|vercel/i.test(userAgent)) device = 'Bot';
-    else if (/mobile|android|iphone|ipad|ipod/i.test(userAgent)) device = 'Mobile';
+    if (!isRSC && !isNextRouterPrefetch && !isPrefetchPurpose) {
+        const responseTime = Date.now() - startTime;
+        const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+        const countryCode = request.headers.get('x-vercel-ip-country') || '🤷‍♂️';
+        const cityHeader = request.headers.get('x-vercel-ip-city');
+        const city = cityHeader ? decodeURIComponent(cityHeader) : null;
 
-    let countryName = 'Unknown';
-    if (countryCode !== '🤷‍♂️') {
-        try {
-            const dn = new Intl.DisplayNames(['en'], { type: 'region' });
-            countryName = dn.of(countryCode) || countryCode;
-        } catch (e) {
-            countryName = countryCode;
+        // Determine device
+        let device = 'Desktop';
+        const userAgent = request.headers.get('user-agent') || '';
+        if (/bot|crawler|spider|crawling|bingbot|googlebot|vercel/i.test(userAgent)) device = 'Bot';
+        else if (/mobile|android|iphone|ipad|ipod/i.test(userAgent)) device = 'Mobile';
+
+        // Determine browser
+        let browser: string | null = null;
+        if (userAgent) {
+            if (/Firefox|FxiOS/i.test(userAgent)) browser = 'Firefox';
+            else if (/Edge|Edg/i.test(userAgent)) browser = 'Edge';
+            else if (/OPR|Opera/i.test(userAgent)) browser = 'Opera';
+            else if (/Chrome|CriOS/i.test(userAgent)) browser = 'Chrome';
+            else if (/Safari/i.test(userAgent)) browser = 'Safari';
         }
+
+        let countryName = 'Unknown';
+        if (countryCode !== '🤷‍♂️') {
+            try {
+                const dn = new Intl.DisplayNames(['en'], { type: 'region' });
+                countryName = dn.of(countryCode) || countryCode;
+            } catch (e) {
+                countryName = countryCode;
+            }
+        }
+
+        const pathParts = pathname.split('/');
+        const locale = routing.locales.includes(pathParts[1] as any) ? pathParts[1] : routing.defaultLocale;
+
+        const nexePromise = fetch("https://nexe-control-room.vercel.app/api/logs/ingest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                url: "lovelymemories.pt",
+                method: request.method || "GET",
+                path: pathname,
+                status: response.status || 200,
+                response_time: responseTime,
+                ip: ip,
+                country: countryName,
+                country_code: countryCode,
+                city: city,
+                user_agent: userAgent || 'Unknown',
+                browser: browser,
+                device: device,
+                user_role: (userRole || "VISITOR").toUpperCase(),
+                is_admin_view: isAdminPath,
+                locale: locale
+            })
+        }).catch((err) => console.log("Erro a enviar para a Nexe:", err));
+
+        event.waitUntil(nexePromise);
     }
-
-    const pathParts = pathname.split('/');
-    const locale = routing.locales.includes(pathParts[1] as any) ? pathParts[1] : routing.defaultLocale;
-
-    const nexePromise = fetch("https://nexe-control-room.vercel.app/api/logs/ingest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            url: "lovelymemories.pt",
-            method: request.method || "GET",
-            path: pathname,
-            status: response.status || 200,
-            response_time: responseTime,
-            ip: ip,
-            country: countryName,
-            country_code: countryCode,
-            user_agent: userAgent,
-            device: device,
-            user_role: (userRole || "VISITOR").toUpperCase(),
-            is_admin_view: isAdminPath,
-            locale: locale
-        })
-    }).catch((err) => console.log("Erro a enviar para a Nexe:", err));
-
-    event.waitUntil(nexePromise);
     // ---------------------------------
 
     return response;
