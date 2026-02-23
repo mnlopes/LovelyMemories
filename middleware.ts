@@ -121,25 +121,31 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
 
     // --- NEXE CONTROL ROOM TRACKER ---
-    // 1. Filtrar Spam (Prefetch e Background)
-    const isPrefetchTracker = request.headers.get('purpose') === 'prefetch' ||
+    // 1. Filtragem Máxima (Prefetch + Bots Automáticos)
+    const uaRaw = (request.headers.get("user-agent") || "").toLowerCase();
+    const isBot = uaRaw.includes("bot") || uaRaw.includes("vercel") || uaRaw.includes("screenshot") || uaRaw.includes("favicon") || uaRaw.includes("spider");
+    const isPrefetchTracker =
+        request.headers.get('purpose') === 'prefetch' ||
         request.headers.get('x-middleware-prefetch') === '1' ||
-        request.headers.get('next-router-prefetch') === '1' ||
-        request.headers.get('sec-fetch-dest') === 'empty' ||
-        request.headers.get('rsc') === '1';
+        request.headers.get('next-router-prefetch') === '1';
 
-    if (!isPrefetchTracker) { // O pedido é uma navegação do utilizador real (HTML navigation)
+    // Só avança se for uma pessoa verdadeira e não for um prefetch
+    if (!isPrefetchTracker && !isBot) {
 
-        // 2. Extrair a Cidade (Usa a tua lógica existente que já funciona para extrair o Porto/Lisboa, etc)
-        const rawCity = request.headers.get('x-vercel-ip-city');
-        let finalCity = rawCity ? decodeURIComponent(rawCity) : 'Unknown';
+        // 2. Extrair a Cidade (Focado exclusivamente no header Vercel Injetado)
+        let cityStr = request.headers.get("x-vercel-ip-city");
+        if (cityStr) {
+            try { cityStr = decodeURIComponent(cityStr); } catch (e) { }
+        } else {
+            cityStr = null;
+        }
 
-        // 3. Detetar Browser Manualmente (Super Rápido)
+        // 3. Detetar Browser Manualmente (100% Funcional e Simples)
         const ua = request.headers.get("user-agent") || "";
-        let browserName = "Unknown";
-        if (ua.includes("Firefox")) browserName = "Firefox";
+        let browserName = null;
+        if (ua.includes("Firefox") && !ua.includes("Seamonkey")) browserName = "Firefox";
         else if (ua.includes("Edg")) browserName = "Edge";
-        else if (ua.includes("Chrome")) browserName = "Chrome";
+        else if (ua.includes("Chrome") || ua.includes("CriOS")) browserName = "Chrome";
         else if (ua.includes("Safari") && !ua.includes("Chrome")) browserName = "Safari";
         else if (ua.includes("Opera") || ua.includes("OPR")) browserName = "Opera";
 
@@ -156,11 +162,10 @@ export default async function middleware(request: NextRequest, event: NextFetchE
                 method: request.method,
                 path: request.nextUrl.pathname,
                 status: response.status || 200,
-                response_time: Date.now() - startTime,
                 ip: request.headers.get("x-forwarded-for")?.split(',')[0] || request.headers.get("x-real-ip") || "Unknown",
                 country: request.headers.get("x-vercel-ip-country") || "Unknown",
                 country_code: request.headers.get("x-vercel-ip-country") || "??",
-                city: finalCity,
+                city: cityStr,
                 browser: browserName,
                 user_agent: ua,
                 device: ua.includes("Mobile") || ua.includes("Android") || ua.includes("iPhone") ? "Mobile" : "Desktop",
@@ -170,7 +175,7 @@ export default async function middleware(request: NextRequest, event: NextFetchE
             })
         }).catch(err => console.log("Nexe Error:", err));
 
-        // Previne que o Vercel Serverless mate o processo enquanto faz o fetch
+        // Previne que a Vercel mate a execução antes do envio
         if (typeof event?.waitUntil === 'function') {
             event.waitUntil(nexePromise);
         }
