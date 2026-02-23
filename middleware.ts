@@ -132,13 +132,22 @@ export default async function middleware(request: NextRequest, event: NextFetchE
     // Só avança se for uma pessoa verdadeira e não for um prefetch
     if (!isPrefetchTracker && !isBot) {
 
-        // 2. Extrair a Cidade (Usando rigorosamente a mesma lógica do Visitor Logger)
-        const rawCityParams = request.headers.get('x-vercel-ip-city') || 'Unknown';
-        const finalCity = decodeURIComponent(rawCityParams);
+        // 2. Extrair a Cidade + Edge Region (ex: "cdg1 (Zambujeira do Mar, PT)")
+        const vercelId = request.headers.get('x-vercel-id') || '';
+        const edgeNode = vercelId.split(':')[0] || 'dev'; // Apanha o "cdg1", "lhr1", "iad1", etc.
+
+        const rawCityParams = request.headers.get('x-vercel-ip-city');
+        const decodedCity = rawCityParams ? decodeURIComponent(rawCityParams) : '';
+        const countryCode = request.headers.get('x-vercel-ip-country') || 'Unknown';
+
+        let finalCity = edgeNode.toUpperCase();
+        if (decodedCity) {
+            finalCity = `${edgeNode.toUpperCase()} (${decodedCity}, ${countryCode})`;
+        }
 
         // 3. Detetar Browser Manualmente (100% Funcional e Simples)
-        const ua = request.headers.get("user-agent") || "";
-        let browserName = null;
+        const ua = request.headers.get("user-agent") || "Unknown";
+        let browserName = "Unknown";
         if (ua.includes("Firefox") && !ua.includes("Seamonkey")) browserName = "Firefox";
         else if (ua.includes("Edg")) browserName = "Edge";
         else if (ua.includes("Chrome") || ua.includes("CriOS")) browserName = "Chrome";
@@ -159,13 +168,13 @@ export default async function middleware(request: NextRequest, event: NextFetchE
                 path: request.nextUrl.pathname,
                 status: response.status || 200,
                 response_time: Date.now() - startTime,
-                ip: request.headers.get("x-forwarded-for")?.split(',')[0] || request.headers.get("x-real-ip") || "Unknown",
+                ip: request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(',')[0] || "127.0.0.1",
                 country: request.headers.get("x-vercel-ip-country") || "Unknown",
-                country_code: request.headers.get("x-vercel-ip-country") || "??",
-                city: finalCity,
-                browser: browserName,
+                country_code: countryCode,
+                city: finalCity, // Vai ex: "CDG1 (Zambujeira do Mar, PT)" ou só "CDG1"
+                browser: browserName, // Envia o nosso nome limpo: "Chrome", "Safari", etc.
                 user_agent: ua,
-                device: ua.includes("Mobile") || ua.includes("Android") || ua.includes("iPhone") ? "Mobile" : "Desktop",
+                device: ua.includes("Mobi") || ua.includes("Android") || ua.includes("iPhone") ? "Mobile" : "Desktop",
                 user_role: (userRole || "VISITOR").toUpperCase(),
                 is_admin_view: isAdminPath,
                 locale: locale
