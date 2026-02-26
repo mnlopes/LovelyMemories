@@ -3,7 +3,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Star, MessageSquareQuote } from "lucide-react";
-import { urlFor } from "@/sanity/lib/image";
 
 interface Review {
     name: string;
@@ -11,19 +10,19 @@ interface Review {
     date: string;
     rating: number;
     text: string;
-    avatar?: any;
+    avatar?: string;
 }
 
 interface Agent {
     name?: string;
     role?: string;
-    image?: any;
+    image?: string;
     email?: string;
     phone?: string;
 }
 
 interface ReviewsSectionProps {
-    agent: Agent;
+    agent: Agent | null;
     reviews: Review[];
 }
 
@@ -73,7 +72,7 @@ export function ReviewsSection({ agent, reviews }: ReviewsSectionProps) {
                                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
                                     {review.avatar ? (
                                         <img
-                                            src={urlFor(review.avatar).width(100).height(100).url()}
+                                            src={review.avatar}
                                             alt={review.name}
                                             className="w-full h-full object-cover"
                                         />
@@ -119,7 +118,7 @@ export function ReviewsSection({ agent, reviews }: ReviewsSectionProps) {
                             <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0">
                                 {agent.image && (
                                     <img
-                                        src={urlFor(agent.image).width(64).height(64).url()}
+                                        src={agent.image}
                                         alt={agent.name}
                                         className="w-full h-full object-cover"
                                     />
