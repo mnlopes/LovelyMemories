@@ -4,10 +4,12 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Plus, MoreHorizontal, Search, Filter, Building2, Home, Trash2, Eye, EyeOff } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 
 export default function AdminProperties() {
     const params = useParams();
+    const t = useTranslations('AdminProperties');
     const locale = (params?.locale as string) || 'en';
     const [properties, setProperties] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -94,9 +96,9 @@ export default function AdminProperties() {
             setModalConfig({
                 isOpen: true,
                 type: 'error',
-                title: 'Update Failed',
-                message: res.error || 'Failed to update status',
-                actionLabel: 'Close',
+                title: t('modals.updateFailed'),
+                message: res.error || t('modals.failedMessage'),
+                actionLabel: t('modals.close'),
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
         }
@@ -107,15 +109,15 @@ export default function AdminProperties() {
         setModalConfig({
             isOpen: true,
             type: 'error',
-            title: 'Delete Property?',
-            message: 'Are you sure you want to delete this property? This action cannot be undone.',
-            actionLabel: 'Yes, Delete',
+            title: t('modals.deleteTitle'),
+            message: t('modals.deleteMessage'),
+            actionLabel: t('modals.deleteConfirm'),
             onAction: () => handleDelete(id)
         });
     };
 
     const handleDelete = async (id: string) => {
-        setModalConfig(prev => ({ ...prev, type: 'loading', title: 'Deleting...', message: 'Removing property...' }));
+        setModalConfig(prev => ({ ...prev, type: 'loading', title: t('modals.deleting'), message: t('modals.removing') }));
 
         const { deleteProperty } = await import("@/app/actions/property");
         const res = await deleteProperty(id);
@@ -126,18 +128,18 @@ export default function AdminProperties() {
                 setModalConfig({
                     isOpen: true,
                     type: 'error',
-                    title: 'Cannot Delete Property',
-                    message: 'This property has associated reservations or booking data. Please archive/hide it instead of deleting.',
-                    actionLabel: 'Close',
+                    title: t('modals.cannotDelete'),
+                    message: t('modals.cannotDeleteMessage'),
+                    actionLabel: t('modals.close'),
                     onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
                 });
             } else {
                 setModalConfig({
                     isOpen: true,
                     type: 'error',
-                    title: 'Error Deleting',
-                    message: res.error || 'An unexpected error occurred.',
-                    actionLabel: 'Close',
+                    title: t('modals.errorDeleting'),
+                    message: res.error || t('modals.unexpectedError'),
+                    actionLabel: t('modals.close'),
                     onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
                 });
             }
@@ -147,9 +149,9 @@ export default function AdminProperties() {
             setModalConfig({
                 isOpen: true,
                 type: 'success',
-                title: 'Property Deleted',
-                message: 'The property has been successfully removed.',
-                actionLabel: 'Done',
+                title: t('modals.deletedTitle'),
+                message: t('modals.deletedMessage'),
+                actionLabel: t('modals.done'),
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
         }
@@ -172,8 +174,8 @@ export default function AdminProperties() {
             {/* Header */}
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">Properties</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium">Manage your portfolio of {properties.length} estates</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    <p className="text-[#a3a3a3] mt-2 font-medium">{t('subtitle', { count: properties.length })}</p>
                 </div>
                 <div className="flex gap-3">
                     <button
@@ -181,14 +183,14 @@ export default function AdminProperties() {
                         className="px-5 py-2.5 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded text-sm font-semibold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2"
                     >
                         <Building2 className="size-4" />
-                        Add Building
+                        {t('addBuilding')}
                     </button>
                     <button
                         onClick={() => window.location.href = `/${locale}/admin/properties/new`}
                         className="px-5 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded text-sm font-semibold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2"
                     >
                         <Home className="size-4" />
-                        Add Property
+                        {t('addProperty')}
                     </button>
                 </div>
             </div>
@@ -199,7 +201,7 @@ export default function AdminProperties() {
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4 group-focus-within:text-[#171717] dark:group-focus-within:text-white transition-colors" />
                     <input
                         type="text"
-                        placeholder="Search by name or location..."
+                        placeholder={t('searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 pl-11 pr-4 py-2.5 rounded-xl text-sm focus:ring-1 focus:ring-gold-400 dark:focus:ring-white/20 outline-none shadow-sm dark:text-admin-dark-text-primary transition-all placeholder:text-[#a3a3a3] font-medium"
@@ -214,11 +216,11 @@ export default function AdminProperties() {
                             }`}
                     >
                         <Building2 className="size-4" />
-                        Buildings Only
+                        {t('buildingsOnly')}
                     </button>
                     <button className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 rounded-xl text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-white/10 transition-all shadow-sm">
                         <Filter className="size-4" />
-                        Filters
+                        {t('filters')}
                     </button>
                 </div>
             </div>
@@ -228,26 +230,26 @@ export default function AdminProperties() {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="border-b border-[#f5f5f5] dark:border-admin-dark-border">
-                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Property Details</th>
-                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Location</th>
-                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Pricing</th>
-                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Status</th>
-                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest text-right">Action</th>
+                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.details')}</th>
+                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.location')}</th>
+                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.pricing')}</th>
+                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.status')}</th>
+                            <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest text-right">{t('table.action')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#f5f5f5] dark:divide-admin-dark-border">
                         {isLoading ? (
                             <tr>
-                                <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm italic">Loading properties...</td>
+                                <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm italic">{t('table.loading')}</td>
                             </tr>
                         ) : filteredProperties.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm">No properties found.</td>
+                                <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm">{t('table.empty')}</td>
                             </tr>
                         ) : filteredProperties.map((property) => {
                             const title = property.title?.[locale] || property.title?.en || 'Untitled';
                             const mainImage = property.images?.find((img: any) => img.is_main)?.url || property.images?.[0]?.url;
-                            const subtitle = property.is_multi_unit ? 'Building' : `${property.type || 'Standard'} • ${property.bedrooms || 0} BR`;
+                            const subtitle = property.is_multi_unit ? t('badge.building') : `${property.type || 'Standard'} • ${property.bedrooms || 0} BR`;
 
                             return (
                                 <tr key={property.id} className="group hover:bg-[#fafafa]/50 dark:hover:bg-white/[0.02] transition-all duration-300">
@@ -262,7 +264,7 @@ export default function AdminProperties() {
                                                     <p className="font-bold text-[#171717] dark:text-admin-dark-text-primary group-hover:text-gold-400 dark:group-hover:text-white transition-colors">{title}</p>
                                                     {property.is_multi_unit && (
                                                         <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-[9px] font-bold uppercase tracking-wider border border-blue-200 dark:border-blue-500/30">
-                                                            Building
+                                                            {t('badge.building')}
                                                         </span>
                                                     )}
                                                 </div>
@@ -276,17 +278,17 @@ export default function AdminProperties() {
                                     <td className="px-8 py-6">
                                         <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary whitespace-nowrap">
                                             €{property.price_per_night || 0}
-                                            <span className="text-[10px] text-[#a3a3a3] dark:text-admin-dark-text-secondary font-normal ml-1 italic">/ night</span>
+                                            <span className="text-[10px] text-[#a3a3a3] dark:text-admin-dark-text-secondary font-normal ml-1 italic">{t('table.perNight')}</span>
                                         </p>
                                     </td>
                                     <td className="px-8 py-6">
                                         {(() => {
                                             const status = property.status || (property.is_active ? 'active' : 'hidden');
                                             const config = {
-                                                active: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/30', dot: 'bg-emerald-500', label: 'Active' },
-                                                coming_soon: { bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-500/30', dot: 'bg-amber-500', label: 'Coming Soon' },
-                                                hidden: { bg: 'bg-gray-50 dark:bg-gray-500/10', text: 'text-gray-400 dark:text-admin-dark-text-secondary', border: 'border-gray-100 dark:border-white/10', dot: 'bg-gray-400', label: 'Hidden' }
-                                            }[status as 'active' | 'coming_soon' | 'hidden'] || { bg: 'bg-gray-50', text: 'text-gray-400', border: 'border-gray-100', dot: 'bg-gray-400', label: 'Unknown' };
+                                                active: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-200 dark:border-emerald-500/30', dot: 'bg-emerald-500', label: t('status.active') },
+                                                coming_soon: { bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-700 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-500/30', dot: 'bg-amber-500', label: t('status.comingSoon') },
+                                                hidden: { bg: 'bg-gray-50 dark:bg-gray-500/10', text: 'text-gray-400 dark:text-admin-dark-text-secondary', border: 'border-gray-100 dark:border-white/10', dot: 'bg-gray-400', label: t('status.hidden') }
+                                            }[status as 'active' | 'coming_soon' | 'hidden'] || { bg: 'bg-gray-50', text: 'text-gray-400', border: 'border-gray-100', dot: 'bg-gray-400', label: t('status.unknown') };
 
                                             return (
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.05em] ${config.bg} ${config.text} border ${config.border} shadow-sm transition-all duration-300`}>
@@ -325,7 +327,7 @@ export default function AdminProperties() {
                                                                         className="w-full text-left px-3 py-2 text-xs font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg flex items-center gap-2 transition-colors"
                                                                     >
                                                                         <Eye className="size-4 text-emerald-500" />
-                                                                        Set as Active
+                                                                        {t('actions.setActive')}
                                                                     </button>
                                                                 )}
                                                                 {status !== 'coming_soon' && (
@@ -334,7 +336,7 @@ export default function AdminProperties() {
                                                                         className="w-full text-left px-3 py-2 text-xs font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg flex items-center gap-2 transition-colors"
                                                                     >
                                                                         <Eye className="size-4 text-amber-500" />
-                                                                        Set as Coming Soon
+                                                                        {t('actions.setComingSoon')}
                                                                     </button>
                                                                 )}
                                                                 {status !== 'hidden' && (
@@ -343,7 +345,7 @@ export default function AdminProperties() {
                                                                         className="w-full text-left px-3 py-2 text-xs font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg rounded-lg flex items-center gap-2 transition-colors"
                                                                     >
                                                                         <EyeOff className="size-4 text-gray-400" />
-                                                                        Hide Property
+                                                                        {t('actions.hide')}
                                                                     </button>
                                                                 )}
                                                             </>
@@ -355,7 +357,7 @@ export default function AdminProperties() {
                                                             className="w-full text-left px-3 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg flex items-center gap-2 transition-colors"
                                                         >
                                                             <Trash2 className="size-4" />
-                                                            Delete Property
+                                                            {t('actions.delete')}
                                                         </button>
                                                     )}
                                                 </div>

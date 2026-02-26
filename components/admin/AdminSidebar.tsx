@@ -1,17 +1,25 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, Sparkles, Settings, Activity } from "lucide-react";
-import { Link, usePathname } from "@/i18n/routing";
+import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, Sparkles, Settings, Activity, KeyRound } from "lucide-react";
+import { Link } from "@/i18n/routing";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { AdminLanguageSwitcher } from "./AdminLanguageSwitcher";
 
 export const AdminSidebar = () => {
     const pathname = usePathname();
     const t = useTranslations('AdminSidebar');
     const [role, setRole] = useState<string | null>(null);
+
+    const checkActive = (path: string) => {
+        const pathParts = pathname.split('/');
+        const currentPathWithoutLocale = '/' + pathParts.slice(2).join('/');
+        return currentPathWithoutLocale === path || (path === '/admin' && currentPathWithoutLocale === '/admin');
+    };
 
     useEffect(() => {
         const fetchRole = async () => {
@@ -40,7 +48,8 @@ export const AdminSidebar = () => {
                 { icon: Calendar, label: t('bookings'), path: "/admin/reservations" },
                 // Only show Users/Tenants to Admins and Super Admins
                 ...(role === 'admin' || role === 'super_admin' ? [
-                    { icon: Users, label: t('tenants'), path: "/admin/users" }
+                    { icon: Users, label: t('tenants'), path: "/admin/users" },
+                    { icon: KeyRound, label: t('owners'), path: "/admin/owners" }
                 ] : []),
                 { icon: Sparkles, label: t('concierge'), path: "/admin/concierge" },
             ]
@@ -111,7 +120,7 @@ export const AdminSidebar = () => {
                         </div>
                         <div className="space-y-1">
                             {section.items.map((item) => {
-                                const isActive = pathname === item.path || (item.path === '/admin' && pathname === '/admin');
+                                const isActive = checkActive(item.path);
                                 return (
                                     <Link
                                         key={item.path}
@@ -149,6 +158,11 @@ export const AdminSidebar = () => {
 
             {/* Footer Area */}
             <div className={`p-6 border-t border-admin-border ${isCollapsed ? 'px-2 items-center' : ''}`}>
+                {/* Language Switcher */}
+                <div className="mb-2">
+                    <AdminLanguageSwitcher isCollapsed={isCollapsed} />
+                </div>
+
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}

@@ -2,14 +2,12 @@ import { supabase } from './supabase';
 import { Property, ConciergeService, PROPERTIES } from './data';
 
 // Helper to safely extract string from potential localized object
-const getLocalizedStr = (val: any): string => {
+const getLocalizedStr = (val: any, lang: string = 'en'): string => {
     if (!val) return '';
     if (typeof val === 'string') return val;
     if (typeof val === 'object') {
-        const preferred = val['en'] || val['pt'] || Object.values(val)[0];
-        return typeof preferred === 'string' ? preferred : '';
+        return val[lang] || val['en'] || val['pt'] || Object.values(val)[0] || '';
     }
-    return '';
     return '';
 };
 
@@ -447,7 +445,10 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
     const city = visualData.locations?.name_en || visualData.city || p.locations?.name_en || p.city || actualParent?.locations?.name_en || actualParent?.city || units[0]?.locations?.name_en || '';
     const region = visualData.region || p.region || city;
 
-    const getDesc = (record: any, lang: string) => record.description?.[lang] ? record.description[lang].split('\n').filter((line: string) => line.trim() !== '') : [];
+    const getLines = (val: any, lang: string) => {
+        const content = val?.[lang] || val?.['en'] || val?.['pt'] || '';
+        return typeof content === 'string' ? content.split('\n').filter((line: string) => line.trim() !== '') : [];
+    };
 
     // Coordinate validation
     const isValidCoord = (c: number) => typeof c === 'number' && !isNaN(c) && Math.abs(c) < 500;
@@ -464,21 +465,25 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
         ];
     };
 
-
+    // Multilingual helpers
+    const t = (val: any) => ({
+        en: getLocalizedStr(val, 'en'),
+        pt: getLocalizedStr(val, 'pt'),
+        he: getLocalizedStr(val, 'he'),
+    });
 
     return {
         ...p,
         id: p.id,
         slug: visualData.slug || p.slug, // Crucial for booking correct unit
-        title: visualData.title || p.title || '',
-        title_en: visualData.title?.en || p.title?.en || '',
-        title_pt: visualData.title?.pt || p.title?.pt || '',
-        subtitle: visualData.subtitle || p.subtitle || '',
-        subtitle_en: visualData.subtitle?.en || p.subtitle?.en || '',
-        subtitle_pt: visualData.subtitle?.pt || p.subtitle?.pt || '',
-        description: visualData.description || p.description || [],
-        description_en: getDesc(visualData, 'en'),
-        description_pt: getDesc(visualData, 'pt'),
+        title: t(visualData.title || p.title),
+        subtitle: t(visualData.subtitle || p.subtitle),
+        description: {
+            en: getLines(visualData.description || p.description, 'en'),
+            pt: getLines(visualData.description || p.description, 'pt'),
+            he: getLines(visualData.description || p.description, 'he'),
+        },
+        highlights_intro: t(visualData.highlights_intro || p.highlights_intro),
         guests: getNumber(visualData.max_guests || p.max_guests),
         area: getNumber(visualData.area || p.area),
         bedrooms: getNumber(visualData.bedrooms || p.bedrooms),
@@ -504,7 +509,10 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
             transfer: 55
         },
         types: visualData.types || p.types || [],
-        highlights: visualData.highlights || p.highlights || legacyProperty?.highlights || [],
+        highlights: (visualData.highlights || p.highlights || legacyProperty?.highlights || []).map((h: any) => ({
+            ...h,
+            text: t(h.text)
+        })),
         rooms: (visualData.rooms || visualData.room_config || p.rooms || p.room_config || legacyProperty?.rooms || []).map((room: any, idx: number) => ({
             ...room,
             image: room.image || legacyProperty?.rooms?.find((lr: any) => lr.name === room.name)?.image || legacyProperty?.rooms?.[idx]?.image || propertyImages[idx % propertyImages.length] || 'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=1200&q=80'
@@ -534,10 +542,10 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
                 smokingAllowed: false
             },
             checkIn: visualData.check_in || p.check_in || { arrivalStart: '15:00', departureEnd: '11:00' },
-            cancellation: visualData.cancellation || p.cancellation || {
-                text: "Moderate",
-                refundText: "50% refund",
-                deadline: "7 days"
+            cancellation: {
+                text: t(visualData.cancellation?.text || p.cancellation?.text || { en: "Moderate", pt: "Moderada", he: "מתון" }),
+                refundText: t(visualData.cancellation?.refundText || p.cancellation?.refundText || { en: "50% refund", pt: "50% reembolso", he: "50% החזר" }),
+                deadline: t(visualData.cancellation?.deadline || p.cancellation?.deadline || { en: "7 days", pt: "7 dias", he: "7 ימים" })
             },
             pricing: p.pricing_rules?.[0] || p.pricing_rules || {
                 min_nights: 2,
@@ -546,8 +554,17 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
                 monthly_discount_percent: 15
             }
         },
-        homeTruths: (visualData.good_to_know || p.good_to_know || visualData.home_truths || p.home_truths || []),
-        amenities: visualData.amenities || p.amenities || [],
+        homeTruths: (() => {
+            const raw = visualData.good_to_know || p.good_to_know || visualData.home_truths || p.home_truths || [];
+            return Array.isArray(raw) ? raw.map(t) : [];
+        })(),
+        amenities: (() => {
+            const raw = visualData.amenities || p.amenities || [];
+            return Array.isArray(raw) ? raw.map((cat: any) => ({
+                ...cat,
+                items: Array.isArray(cat.items) ? cat.items.map(t) : []
+            })) : [];
+        })(),
         isComingSoon
     };
 }

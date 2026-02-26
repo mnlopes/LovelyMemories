@@ -1,13 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight } from "lucide-react";
+import dynamic from "next/dynamic";
+const DemographicsMap = dynamic(() => import("@/components/admin/DemographicsMap").then(mod => mod.DemographicsMap), {
+    ssr: false,
+    loading: () => <div className="h-full w-full min-h-[300px] bg-[#111] animate-pulse rounded-2xl border border-white/5" />
+});
+import { AnalyticsPanels } from "@/components/admin/AnalyticsPanels";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { TrafficTimeline } from "@/components/admin/TrafficTimeline";
+import { useState, useEffect } from "react";
+import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight } from "lucide-react";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -31,7 +37,15 @@ export default function SettingsPage() {
     const [isFlushingCache, setIsFlushingCache] = useState(false);
 
     // Analytics State
-    const [analyticsStats, setAnalyticsStats] = useState<{ liveVisitors: number, topCountries: any[] } | null>(null);
+    const [analyticsStats, setAnalyticsStats] = useState<{
+        liveVisitors: number,
+        topCountries: any[],
+        mapData: any[], // New field for full map data
+        topDevices: any[],
+        topBrowsers: any[],
+        topSources: any[],
+        totalSample: number
+    } | null>(null);
     const [recentLogs, setRecentLogs] = useState<any[]>([]);
     const [chartData, setChartData] = useState<number[]>(Array(60).fill(0));
     const [timeRange, setTimeRange] = useState<'60m' | '6h' | '12h' | '24h'>('60m');
@@ -43,6 +57,39 @@ export default function SettingsPage() {
     const [isLive, setIsLive] = useState(true);
     const [showAdminLogs, setShowAdminLogs] = useState(false);
 
+    // ... (AUTH EFFECT - Skipped for brevity in replacement if unchanged, but included if needed) ...
+
+    // Auto-refresh logic (Polling)
+    useEffect(() => {
+        if (isAuthorized && isLive && activeTab === 'analytics') {
+            const interval = setInterval(() => {
+                loadAnalytics();
+            }, 5000); // Poll every 5 seconds
+
+            return () => clearInterval(interval);
+        }
+    }, [isAuthorized, isLive, activeTab, timeRange, showAdminLogs]);
+
+    const loadAnalytics = async (customLimit?: number) => {
+        // Don't show global loading spinner on background refreshes
+        // setIsLoadingAnalytics(true); 
+        try {
+            const { getVisitorStats, getRecentVisits, getTrafficData, getLogCount } = await import('@/app/actions/settings');
+            const statsRes = await getVisitorStats(showAdminLogs);
+            const logsRes = await getRecentVisits(customLimit || logLimit, showAdminLogs);
+            const chartRes = await getTrafficData(timeRange, showAdminLogs);
+            const countRes = await getLogCount();
+
+            if (statsRes.success) setAnalyticsStats(statsRes as any);
+            if (logsRes.success) setRecentLogs(logsRes.logs || []);
+            if (chartRes.success) setChartData(chartRes.data || []);
+            if (countRes.success) setTotalDbLogs(countRes.count ?? null);
+        } catch (error) {
+            console.error("Failed to load analytics:", error);
+        } finally {
+            setIsLoadingAnalytics(false);
+        }
+    };
     useEffect(() => {
         const checkAuth = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -182,25 +229,7 @@ export default function SettingsPage() {
         }
     };
 
-    const loadAnalytics = async (customLimit?: number) => {
-        setIsLoadingAnalytics(true);
-        try {
-            const { getVisitorStats, getRecentVisits, getTrafficData, getLogCount } = await import('@/app/actions/settings');
-            const statsRes = await getVisitorStats(showAdminLogs);
-            const logsRes = await getRecentVisits(customLimit || logLimit, showAdminLogs);
-            const chartRes = await getTrafficData(timeRange, showAdminLogs);
-            const countRes = await getLogCount();
 
-            if (statsRes.success) setAnalyticsStats(statsRes as any);
-            if (logsRes.success) setRecentLogs(logsRes.logs || []);
-            if (chartRes.success) setChartData(chartRes.data || []);
-            if (countRes.success) setTotalDbLogs(countRes.count ?? null);
-        } catch (error) {
-            console.error("Failed to load analytics:", error);
-        } finally {
-            setIsLoadingAnalytics(false);
-        }
-    };
 
     const handleClearLogs = async () => {
         // Visual clear only as requested
@@ -676,61 +705,48 @@ export default function SettingsPage() {
                         <TrafficTimeline data={chartData} range={timeRange} />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Live Visitors Counter */}
-                        <div className="bg-[#171717] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl group hover:border-white/10 transition-all">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                                    <Activity className="size-5" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white/40 uppercase text-[9px] tracking-[0.2em]">Live Visitors</h4>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-3xl font-black text-white tracking-tighter">
-                                            {analyticsStats?.liveVisitors || 0}
-                                        </p>
-                                        <div className="size-2 rounded-full bg-emerald-500 animate-pulse mt-1" />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        {/* Demographics Map (Takes 2 columns on large screens) */}
+                        <div className="lg:col-span-2 min-h-[300px]">
+                            <DemographicsMap
+                                data={analyticsStats?.mapData || []}
+                                className="h-full min-h-[300px]"
+                            />
+                        </div>
+
+                        {/* Live Visitors Card (Enhanced) */}
+                        <div className="bg-[#111] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl flex flex-col justify-center relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Activity className="size-24 text-emerald-500" />
+                            </div>
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20">
+                                        <Activity className="size-6" />
                                     </div>
+                                    <h4 className="font-bold text-white/40 uppercase text-xs tracking-[0.2em]">Live Visitors</h4>
                                 </div>
-                            </div>
-                            <p className="text-[10px] text-white/30 font-medium italic">Real-time unique sessions (last 5min)</p>
-                        </div>
 
-                        {/* Top Country Mini-Card */}
-                        <div className="bg-[#171717] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl group hover:border-white/10 transition-all">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                                    <Globe className="size-5" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white/40 uppercase text-[9px] tracking-[0.2em]">Top Destination</h4>
-                                    <p className="text-xl font-bold text-white tracking-tight">
-                                        {analyticsStats?.topCountries?.[0]?.name || 'Unknown'}
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-6xl font-black text-white tracking-tighter">
+                                        {analyticsStats?.liveVisitors || 0}
                                     </p>
+                                    <div className="size-3 rounded-full bg-emerald-500 animate-pulse mb-2 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
                                 </div>
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                                {analyticsStats?.topCountries?.slice(0, 3).map((c: any) => (
-                                    <span key={c.name} className="px-1.5 py-0.5 rounded-[4px] bg-white/5 text-[8px] font-black text-white/60 uppercase tracking-widest">
-                                        {c.name}
-                                    </span>
-                                ))}
+                                <p className="text-xs text-white/30 font-medium italic mt-2">Real-time unique sessions (last 5min)</p>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Traffic Flow Mini-Card */}
-                        <div className="bg-[#171717] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl group hover:border-white/10 transition-all">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                                    <Users className="size-5" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white/40 uppercase text-[9px] tracking-[0.2em]">Traffic Flow</h4>
-                                    <p className="text-xl font-bold text-white tracking-tight">Active Stream</p>
-                                </div>
-                            </div>
-                            <p className="text-[10px] text-white/30 font-medium italic">Monitoring visitor interactions</p>
-                        </div>
+                    {/* Detailed Panels (Devices, Sources, Browsers) */}
+                    <div className="mb-8">
+                        <AnalyticsPanels
+                            devices={analyticsStats?.topDevices || []}
+                            browsers={analyticsStats?.topBrowsers || []}
+                            sources={analyticsStats?.topSources || []}
+                            total={analyticsStats?.totalSample || 0}
+                        />
                     </div>
 
                     {/* Detailed Log Table - HIGH DENSITY */}

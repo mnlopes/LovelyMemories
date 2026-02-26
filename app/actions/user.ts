@@ -457,3 +457,190 @@ export async function deleteUser(userId: string) {
     return { success: true };
 }
 
+
+/**
+ * Fetch all users with the 'owner' role for property assignment
+ */
+export async function getOwners() {
+    const supabase = await getSupabase();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) throw new Error('Not authenticated');
+
+    // Get requester's profile to check role
+    const { data: requesterProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+
+    if (!requesterProfile || (requesterProfile.role !== 'super_admin' && requesterProfile.role !== 'admin')) {
+        throw new Error('Not authorized to view owners');
+    }
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('role', 'owner')
+        .order('full_name', { ascending: true });
+
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Fetch all owners with the count of assigned properties
+ */
+export async function getOwnersWithPropertyCounts() {
+    const supabase = await getSupabase();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) throw new Error('Not authenticated');
+
+    // Get requester's profile to check role
+    const { data: requesterProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+
+    if (!requesterProfile || (requesterProfile.role !== 'super_admin' && requesterProfile.role !== 'admin')) {
+        throw new Error('Not authorized to view owners');
+    }
+
+    const { data: owners, error: ownersError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'owner')
+        .order('full_name', { ascending: true });
+
+    if (ownersError) {
+        console.error('Error fetching owners:', ownersError);
+        throw new Error(`Failed to fetch owners: ${ownersError.message} (${ownersError.code})`);
+    }
+
+    // If no owners, return empty early
+    if (!owners || owners.length === 0) return [];
+
+    // Fetch properties to count them
+    const ownerIds = owners.map(o => o.id);
+    const { data: properties, error: propsError } = await supabase
+        .from('properties')
+        .select('owner_id')
+        .in('owner_id', ownerIds);
+
+    if (propsError) {
+        console.error('Error fetching property counts:', propsError);
+        // We can continue with 0 counts if this fails, but better to know
+    }
+
+    // Fetch creation dates from auth.users using Admin client
+    const adminSupabase = await getSupabaseAdmin();
+    // We cannot easily query auth.users with select().in() usually, 
+    // so we attempt to list users or just use updated_at as fallback if this is too complex/slow.
+    // However, for a list of owners, we can fetch them. 
+    // Trying the schema 'auth' approach which works with Service Role key.
+    const { data: authUsers, error: authError } = await adminSupabase
+        .schema('auth')
+        .from('users')
+        .select('id, created_at')
+        .in('id', ownerIds);
+
+    const createdAtMap: Record<string, string> = {};
+    if (authUsers) {
+        authUsers.forEach((u: any) => {
+            createdAtMap[u.id] = u.created_at;
+        });
+    } else if (authError) {
+        console.error('Error fetching auth users:', authError);
+    }
+
+    // Aggregate counts
+    const counts: Record<string, number> = {};
+    properties?.forEach((p) => {
+        if (p.owner_id) {
+            counts[p.owner_id] = (counts[p.owner_id] || 0) + 1;
+        }
+    });
+
+    // Map counts and dates to owners
+    return owners.map(owner => ({
+        ...owner,
+        created_at: createdAtMap[owner.id] || owner.updated_at, // Fallback to updated_at if fetch fails
+        property_count: counts[owner.id] || 0
+    }));
+}
+
+/**
+ * Fetch a specific owner with their assigned properties
+ */
+export async function getOwnerWithProperties(ownerId: string) {
+    const supabase = await getSupabase();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+    if (!currentUser) throw new Error('Not authenticated');
+
+    // Get requester's profile to check role
+    const { data: requesterProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+
+    if (!requesterProfile || (requesterProfile.role !== 'super_admin' && requesterProfile.role !== 'admin')) {
+        throw new Error('Not authorized to view owners');
+    }
+
+    // 1. Fetch Owner Profile
+    const { data: owner, error: ownerError } = await supabase
+        .from('profiles')
+        .select(`
+            id, 
+            full_name, 
+            email, 
+            phone,
+            role
+        `)
+        .eq('id', ownerId)
+        .eq('role', 'owner')
+        .single();
+
+    if (ownerError) {
+        console.error('Error fetching owner profile:', ownerError);
+        throw ownerError;
+    }
+
+    // 2. Fetch Assigned Properties
+    const { data: properties, error: propsError } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('owner_id', ownerId);
+
+    if (propsError) {
+        console.error('Error fetching owner properties:', propsError);
+        // We don't throw here, just return empty properties if this fails
+    }
+
+    return {
+        ...owner,
+        properties: properties || []
+    };
+}
+
+/**
+ * Get the current user's role
+ */
+export async function getCurrentUserRole() {
+    const supabase = await getSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    return profile?.role || null;
+}

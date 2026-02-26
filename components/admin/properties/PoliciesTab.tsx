@@ -1,4 +1,7 @@
+"use client";
+
 import { useFieldArray, useFormContext } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2, Clock, Info, ShieldCheck, Ban, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { useState } from "react";
@@ -9,13 +12,8 @@ interface PoliciesTabProps {
 }
 
 export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
+    const t = useTranslations('PropertyEditor');
     const { control, register, watch, getValues, setValue } = useFormContext<PropertyFormData>();
-
-    // Home Truths
-    const { fields: truthFields, append: appendTruth, remove: removeTruth, update: updateTruth } = useFieldArray({
-        control,
-        name: "home_truths",
-    });
 
     // House Rules: Custom
     const { fields: customFields, append: appendCustom, remove: removeCustom } = useFieldArray({
@@ -33,25 +31,12 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
     };
 
     const standardRules = [
-        { id: 'childrenAllowed', label: "Children Allowed", name: "house_rules.childrenAllowed" },
-        { id: 'infantsAllowed', label: "Infants Allowed", name: "house_rules.infantsAllowed" },
-        { id: 'petsAllowed', label: "Pets Allowed", name: "house_rules.petsAllowed" },
-        { id: 'partiesAllowed', label: "Parties/Events Allowed", name: "house_rules.partiesAllowed" },
-        { id: 'smokingAllowed', label: "Smoking Allowed", name: "house_rules.smokingAllowed" },
+        { id: 'childrenAllowed', label: t('policies.rules.childrenAllowed'), name: "house_rules.childrenAllowed" },
+        { id: 'infantsAllowed', label: t('policies.rules.infantsAllowed'), name: "house_rules.infantsAllowed" },
+        { id: 'petsAllowed', label: t('policies.rules.petsAllowed'), name: "house_rules.petsAllowed" },
+        { id: 'partiesAllowed', label: t('policies.rules.partiesAllowed'), name: "house_rules.partiesAllowed" },
+        { id: 'smokingAllowed', label: t('policies.rules.smokingAllowed'), name: "house_rules.smokingAllowed" },
     ];
-
-    const [newTruth, setNewTruth] = useState("");
-
-    const addTruth = () => {
-        if (!newTruth.trim()) return;
-
-        // Add as Localized Object
-        const payload = { en: "", pt: "", he: "" };
-        (payload as any)[activeLang] = newTruth.trim();
-
-        appendTruth(payload);
-        setNewTruth("");
-    };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -65,8 +50,8 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                                 <ShieldCheck className="size-5" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">House Rules</h3>
-                                <p className="text-xs text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">What is allowed?</p>
+                                <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('policies.houseRules')}</h3>
+                                <p className="text-xs text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">{t('policies.whatIsAllowed')}</p>
                             </div>
                         </div>
                         <button
@@ -100,6 +85,7 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                                 register={register}
                                 watch={watch}
                                 onRemove={() => removeCustom(index)}
+                                placeholder={t('policies.newRule')}
                             />
                         ))}
                     </div>
@@ -115,132 +101,42 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                             <Ban className="size-5" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">Cancellation</h3>
-                            <p className="text-xs text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">Refund Policy ({activeLang.toUpperCase()})</p>
+                            <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('policies.cancellation')}</h3>
+                            <p className="text-xs text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">{t('policies.refundPolicy', { lang: activeLang.toUpperCase() })}</p>
                         </div>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Policy Title</label>
-                            {(() => {
-                                const val = getValues('cancellation.text');
-                                const isString = typeof val === 'string';
-                                const displayVal = isString && val === '[object Object]' ? 'Moderate' : val;
-
-                                if (isString) {
-                                    return (
-                                        <div className="flex">
-                                            <input
-                                                {...register("cancellation.text")}
-                                                value={displayVal as string}
-                                                className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm opacity-70"
-                                                readOnly
-                                            />
-                                            <button
-                                                type="button"
-                                                className="ml-2 p-2 bg-gray-100 dark:bg-admin-dark-bg rounded-lg hover:bg-gray-200 dark:hover:bg-admin-dark-surface text-gray-500 dark:text-admin-dark-text-secondary transition-colors"
-                                                onClick={() => {
-                                                    const valToSet = displayVal as string;
-                                                    setValue('cancellation.text', { en: valToSet, pt: valToSet, he: valToSet });
-                                                }}
-                                            >
-                                                <Sparkles className="size-4" />
-                                            </button>
-                                        </div>
-                                    );
-                                } else {
-                                    return (
-                                        <input
-                                            {...register(`cancellation.text.${activeLang}` as any)}
-                                            dir={dir}
-                                            placeholder="e.g. Moderate"
-                                            className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
-                                        />
-                                    );
-                                }
-                            })()}
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('policies.policyTitle')}</label>
+                            <input
+                                key={`cancel-text-${activeLang}`}
+                                {...register(`cancellation.text.${activeLang}` as any)}
+                                dir={dir}
+                                placeholder="e.g. Moderate"
+                                className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                            />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Refund Details</label>
-                                {(() => {
-                                    const val = getValues('cancellation.refundText');
-                                    const isString = typeof val === 'string';
-                                    const displayVal = isString && val === '[object Object]' ? '50% refund' : val;
-
-                                    if (isString) {
-                                        return (
-                                            <div className="flex">
-                                                <input
-                                                    {...register("cancellation.refundText")}
-                                                    value={displayVal as string}
-                                                    className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm opacity-70"
-                                                    readOnly
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="ml-2 p-2 bg-gray-100 dark:bg-admin-dark-bg rounded-lg hover:bg-gray-200 dark:hover:bg-admin-dark-surface text-gray-500 dark:text-admin-dark-text-secondary transition-colors"
-                                                    onClick={() => {
-                                                        const valToSet = displayVal as string;
-                                                        setValue('cancellation.refundText', { en: valToSet, pt: valToSet, he: valToSet });
-                                                    }}
-                                                >
-                                                    <Sparkles className="size-4" />
-                                                </button>
-                                            </div>
-                                        );
-                                    } else {
-                                        return (
-                                            <input
-                                                {...register(`cancellation.refundText.${activeLang}` as any)}
-                                                dir={dir}
-                                                placeholder="e.g. 50% refund"
-                                                className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
-                                            />
-                                        );
-                                    }
-                                })()}
+                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('policies.refundDetails')}</label>
+                                <input
+                                    key={`cancel-refund-${activeLang}`}
+                                    {...register(`cancellation.refundText.${activeLang}` as any)}
+                                    dir={dir}
+                                    placeholder="e.g. 50% refund"
+                                    className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                                />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Deadline</label>
-                                {(() => {
-                                    const val = getValues('cancellation.deadline');
-                                    const isString = typeof val === 'string';
-                                    const displayVal = isString && val === '[object Object]' ? '7 days' : val;
-
-                                    if (isString) {
-                                        return (
-                                            <div className="flex">
-                                                <input
-                                                    {...register("cancellation.deadline")}
-                                                    value={displayVal as string}
-                                                    className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm opacity-70"
-                                                    readOnly
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="ml-2 p-2 bg-gray-100 dark:bg-admin-dark-bg rounded-lg hover:bg-gray-200 dark:hover:bg-admin-dark-surface text-gray-500 dark:text-admin-dark-text-secondary transition-colors"
-                                                    onClick={() => {
-                                                        const valToSet = displayVal as string;
-                                                        setValue('cancellation.deadline', { en: valToSet, pt: valToSet, he: valToSet });
-                                                    }}
-                                                >
-                                                    <Sparkles className="size-4" />
-                                                </button>
-                                            </div>
-                                        );
-                                    } else {
-                                        return (
-                                            <input
-                                                {...register(`cancellation.deadline.${activeLang}` as any)}
-                                                dir={dir}
-                                                placeholder="e.g. 7 days"
-                                                className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
-                                            />
-                                        );
-                                    }
-                                })()}
+                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('policies.deadline')}</label>
+                                <input
+                                    key={`cancel-deadline-${activeLang}`}
+                                    {...register(`cancellation.deadline.${activeLang}` as any)}
+                                    dir={dir}
+                                    placeholder="e.g. 7 days"
+                                    className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                                />
                             </div>
                         </div>
                     </div>
@@ -275,7 +171,7 @@ function RuleToggle({ label, name, register, watch, onRemove }: { label: string,
     );
 }
 
-function DynamicRuleToggle({ index, activeLang, dir, register, watch, onRemove }: { index: number, activeLang: string, dir: string, register: any, watch: any, onRemove: () => void }) {
+function DynamicRuleToggle({ index, activeLang, dir, register, watch, onRemove, placeholder }: { index: number, activeLang: string, dir: string, register: any, watch: any, onRemove: () => void, placeholder: string }) {
     const name = `house_rules.custom.${index}.allowed`;
     const value = watch(name);
     return (
@@ -290,9 +186,10 @@ function DynamicRuleToggle({ index, activeLang, dir, register, watch, onRemove }
             <div className="flex items-center gap-3 flex-1">
                 {value ? <CheckCircle2 className="size-4 text-[#171717] dark:text-[#B08D4A]" /> : <XCircle className="size-4 opacity-20" />}
                 <input
+                    key={`custom-rule-${index}-${activeLang}`}
                     {...register(`house_rules.custom.${index}.label.${activeLang}` as any)}
                     dir={dir}
-                    placeholder="New Rule..."
+                    placeholder={placeholder}
                     className="bg-transparent border-none p-0 text-sm font-bold focus:ring-0 outline-none w-full placeholder:text-[#a3a3a3] dark:placeholder:text-admin-dark-text-secondary"
                 />
             </div>

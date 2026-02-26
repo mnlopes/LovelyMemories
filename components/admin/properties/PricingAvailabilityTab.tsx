@@ -1,7 +1,7 @@
-
 "use client";
 
 import { useFormContext, useWatch, useFieldArray } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Euro, Calendar, Trash2, Plus, Info, Percent, Moon } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 
 export default function PricingAvailabilityTab() {
+    const t = useTranslations('PropertyEditor');
     const { register, control, formState: { errors } } = useFormContext<PropertyFormData>();
     const params = useParams();
     const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
@@ -57,7 +58,7 @@ export default function PricingAvailabilityTab() {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Block removed");
+            toast.success(t('pricing.blockRemoved'));
             fetchData();
         }
 
@@ -75,13 +76,13 @@ export default function PricingAvailabilityTab() {
                     <div className="space-y-6">
                         <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border flex items-center gap-2">
                             <Euro className="size-4" />
-                            Base de Preços
+                            {t('pricing.basePricing')}
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    Preço por Noite
+                                    {t('pricing.pricePerNight')}
                                 </label>
                                 <input
                                     type="number"
@@ -93,14 +94,14 @@ export default function PricingAvailabilityTab() {
 
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    Preço Original (Riscado)
+                                    {t('pricing.originalPrice')}
                                 </label>
                                 <input
                                     type="number"
                                     {...register("original_price")}
                                     className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] transition-all outline-none"
                                 />
-                                <p className="text-[10px] text-[#a3a3a3]">Opcional. Simula um desconto.</p>
+                                <p className="text-[10px] text-[#a3a3a3]">{t('pricing.optionalSimulate')}</p>
                             </div>
                         </div>
                     </div>
@@ -109,13 +110,13 @@ export default function PricingAvailabilityTab() {
                     <div className="space-y-6">
                         <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border flex items-center gap-2">
                             <Percent className="size-4" />
-                            Descontos Standard
+                            {t('pricing.standardDiscounts')}
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    Desconto Semanal (%)
+                                    {t('pricing.weeklyDiscount')}
                                 </label>
                                 <div className="relative">
                                     <input
@@ -125,12 +126,12 @@ export default function PricingAvailabilityTab() {
                                     />
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a3a3a3] font-bold">%</span>
                                 </div>
-                                <p className="text-[10px] text-[#a3a3a3]">Para 7+ noites.</p>
+                                <p className="text-[10px] text-[#a3a3a3]">{t('pricing.weeklyDesc')}</p>
                             </div>
 
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    Desconto Mensal (%)
+                                    {t('pricing.monthlyDiscount')}
                                 </label>
                                 <div className="relative">
                                     <input
@@ -140,7 +141,7 @@ export default function PricingAvailabilityTab() {
                                     />
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a3a3a3] font-bold">%</span>
                                 </div>
-                                <p className="text-[10px] text-[#a3a3a3]">Para 28+ noites.</p>
+                                <p className="text-[10px] text-[#a3a3a3]">{t('pricing.monthlyDesc')}</p>
                             </div>
                         </div>
                     </div>
@@ -150,41 +151,41 @@ export default function PricingAvailabilityTab() {
                 <div className="flex flex-col space-y-6 h-full">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border flex items-center gap-2">
                         <Info className="size-4" />
-                        Taxas e Regras Obrigatórias
+                        {t('pricing.feesAndRules')}
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider flex items-center gap-2">
                                 <Trash2 className="size-3" />
-                                Taxa de Limpeza (€)
+                                {t('pricing.cleaningFee')}
                             </label>
                             <input
                                 type="number"
                                 {...register("cleaning_fee" as any)}
                                 className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] transition-all outline-none"
                             />
-                            <p className="text-[10px] text-[#a3a3a3]">Taxa fixa cobrada por estadia.</p>
+                            <p className="text-[10px] text-[#a3a3a3]">{t('pricing.cleaningFeeDesc')}</p>
                         </div>
 
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider flex items-center gap-2">
                                 <Moon className="size-3" />
-                                Mínimo de Noites
+                                {t('pricing.minNights')}
                             </label>
                             <input
                                 type="number"
                                 {...register("min_nights" as any)}
                                 className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] transition-all outline-none"
                             />
-                            <p className="text-[10px] text-[#a3a3a3]">Padrão: 2 noites.</p>
+                            <p className="text-[10px] text-[#a3a3a3]">{t('pricing.minNightsDesc')}</p>
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider flex items-center gap-2">
                             <Percent className="size-3" />
-                            Taxa Turística / Pessoa / Noite
+                            {t('pricing.cityTax')}
                         </label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="relative">
@@ -196,15 +197,15 @@ export default function PricingAvailabilityTab() {
                                 />
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a3a3a3] font-bold">€</span>
                             </div>
-                            <p className="text-[10px] text-[#a3a3a3] flex items-center">Geralmente 2.00€ (máx. 7 noites).</p>
+                            <p className="text-[10px] text-[#a3a3a3] flex items-center">{t('pricing.cityTaxDesc')}</p>
                         </div>
                     </div>
 
                     {/* Visual spacer to align with left column if needed, or just a nice card-like box */}
                     <div className="mt-auto p-6 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] border-dashed dark:border-admin-dark-border rounded-2xl">
-                        <p className="text-[10px] text-[#a3a3a3] italic uppercase tracking-widest font-bold">Nota Informativa</p>
+                        <p className="text-[10px] text-[#a3a3a3] italic uppercase tracking-widest font-bold">{t('pricing.noteTitle')}</p>
                         <p className="text-[11px] text-[#a3a3a3] mt-2 leading-relaxed">
-                            Estas configurações são fundamentais para o cálculo automático de cada reserva e conformidade legal.
+                            {t('pricing.noteDesc')}
                         </p>
                     </div>
                 </div>
@@ -215,7 +216,7 @@ export default function PricingAvailabilityTab() {
                 <div className="space-y-8 max-w-2xl">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
                         <Calendar className="size-5" />
-                        Bloqueio Manual
+                        {t('pricing.manualBlocking')}
                     </h3>
 
                     <div className="p-8 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-3xl flex flex-col space-y-8">
@@ -224,9 +225,9 @@ export default function PricingAvailabilityTab() {
                                 <Calendar className="size-6 text-[#a3a3a3]" />
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary tracking-tight">Gestão Avançada de Calendário</p>
+                                <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary tracking-tight">{t('pricing.advancedManagement')}</p>
                                 <p className="text-xs text-[#a3a3a3] mt-1 max-w-[240px] leading-relaxed mx-auto">
-                                    O calendário visual para bloqueio de datas e preços sazonais estará disponível na próxima atualização.
+                                    {t('pricing.advancedDesc')}
                                 </p>
                             </div>
                             <BlockedDatesSheet
@@ -240,7 +241,7 @@ export default function PricingAvailabilityTab() {
                         {/* Active Blocks List */}
                         <div className="pt-8 border-t border-[#f5f5f5] dark:border-admin-dark-border w-full">
                             <h4 className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-wider mb-4">
-                                Bloqueios Ativos
+                                {t('pricing.activeBlocks')}
                             </h4>
                             <BlockedDatesList
                                 blockedDates={blockedDates}
@@ -256,9 +257,9 @@ export default function PricingAvailabilityTab() {
                 isOpen={deleteModalConfig.isOpen}
                 onClose={() => setDeleteModalConfig({ isOpen: false, blockId: null })}
                 type="warning"
-                title="Remover Bloqueio?"
-                message="Tem a certeza que quer desbloquear estas datas? Esta ação é irreversível."
-                actionLabel="Sim, remover"
+                title={t('pricing.removeBlockTitle')}
+                message={t('pricing.removeBlockConfirm')}
+                actionLabel={t('pricing.removeBlockAction')}
                 onAction={confirmDelete}
             />
         </div>

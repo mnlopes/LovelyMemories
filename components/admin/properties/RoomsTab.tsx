@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext, useFieldArray, useWatch, Control } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2, Bed, Bath, User, Layout, Image as ImageIcon, Ruler, Upload, Loader2, Baby } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { supabase } from "@/lib/supabase";
@@ -10,13 +11,6 @@ interface RoomsTabProps {
     activeLang: string;
     dir: 'ltr' | 'rtl';
 }
-
-const ROOM_TYPES = [
-    { value: 'bedroom', label: 'Bedroom', icon: Bed },
-    { value: 'bathroom', label: 'Bathroom', icon: Bath },
-    { value: 'communal', label: 'Communal Area', icon: User },
-    { value: 'other', label: 'Other', icon: Layout },
-] as const;
 
 interface RoomItemProps {
     index: number;
@@ -29,6 +23,7 @@ interface RoomItemProps {
 }
 
 function RoomItem({ index, activeLang, dir, remove, register, control, setValue }: RoomItemProps) {
+    const t = useTranslations('PropertyEditor');
     const [isUploading, setIsUploading] = useState(false);
 
     const roomType = useWatch({
@@ -82,20 +77,20 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-[#a3a3a3] dark:text-admin-dark-text-secondary gap-2 p-6">
                         <ImageIcon className="size-8 opacity-20" />
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-center">No image</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-center">{t('units.noImage')}</p>
                     </div>
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 gap-2">
                     <label className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white text-[#171717] rounded-lg text-xs font-bold hover:bg-gray-100 transition-all cursor-pointer shadow-xl">
                         {isUploading ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
-                        {isUploading ? 'Uploading...' : 'Upload Photo'}
+                        {isUploading ? t('units.uploading') : t('units.uploadPhoto')}
                         <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={isUploading} />
                     </label>
                     <div className="w-full px-2">
                         <input
                             type="text"
                             {...register(`rooms.${index}.image` as any)}
-                            placeholder="Or paste URL..."
+                            placeholder={t('units.pasteUrl')}
                             className="w-full bg-white/20 border border-white/30 rounded-lg px-2 py-1.5 text-[10px] text-white placeholder:text-white/60 outline-none backdrop-blur-sm"
                         />
                     </div>
@@ -107,8 +102,9 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                 <div className="flex items-start justify-between">
                     <div className="flex-1 flex gap-4">
                         <div className="space-y-1.5 flex-1">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Room Name ({activeLang.toUpperCase()})</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('units.roomName', { lang: activeLang.toUpperCase() })}</label>
                             <input
+                                key={`room-name-${index}-${activeLang}`}
                                 {...register(`rooms.${index}.name.${activeLang}` as any)}
                                 dir={dir}
                                 placeholder="e.g. Master Suite"
@@ -116,14 +112,15 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                             />
                         </div>
                         <div className="space-y-1.5 w-40">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Type</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('units.roomType')}</label>
                             <select
                                 {...register(`rooms.${index}.type` as any)}
                                 className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-3 py-2 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-bg focus:border-[#171717] dark:focus:border-white transition-all outline-none"
                             >
-                                {ROOM_TYPES.map(t => (
-                                    <option key={t.value} value={t.value}>{t.label}</option>
-                                ))}
+                                <option value="bedroom">{t('units.types.bedroom')}</option>
+                                <option value="bathroom">{t('units.types.bathroom')}</option>
+                                <option value="communal">{t('units.types.communal')}</option>
+                                <option value="other">{t('units.types.other')}</option>
                             </select>
                         </div>
                     </div>
@@ -141,10 +138,10 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                     {roomType === 'bedroom' && (
                         <>
                             <div className="space-y-3">
-                                <label className="text-sm font-semibold text-[#171717] dark:text-admin-dark-text-primary">Sleeping Setup</label>
+                                <label className="text-sm font-semibold text-[#171717] dark:text-admin-dark-text-primary">{t('units.sleepingSetup')}</label>
                                 <div className="flex gap-4">
                                     <div className="flex-1 space-y-1">
-                                        <p className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase">Beds</p>
+                                        <p className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase">{t('units.beds')}</p>
                                         <input
                                             type="number"
                                             {...register(`rooms.${index}.bedCount` as any)}
@@ -152,20 +149,20 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                                         />
                                     </div>
                                     <div className="flex-[2] space-y-1">
-                                        <p className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase">Type</p>
+                                        <p className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase">{t('units.roomType')}</p>
                                         <select
                                             {...register(`rooms.${index}.bedType` as any)}
                                             className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-2 text-[#171717] dark:text-admin-dark-text-primary text-sm outline-none focus:border-black dark:focus:border-white transition-all"
                                         >
-                                            <option value="double">Double Bed</option>
-                                            <option value="single">Single Bed</option>
-                                            <option value="sofa">Sofa Bed</option>
+                                            <option value="double">{t('units.bedTypes.double')}</option>
+                                            <option value="single">{t('units.bedTypes.single')}</option>
+                                            <option value="sofa">{t('units.bedTypes.sofa')}</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <label className="text-sm font-semibold text-[#171717] dark:text-admin-dark-text-primary">Features</label>
+                                <label className="text-sm font-semibold text-[#171717] dark:text-admin-dark-text-primary">{t('units.features')}</label>
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-bold text-transparent uppercase invisible">En-suite</p>
                                     <label className="flex items-center gap-3 p-3 bg-[#fafafa] dark:bg-admin-dark-bg rounded-xl border border-[#f5f5f5] dark:border-admin-dark-border cursor-pointer hover:bg-white dark:hover:bg-admin-dark-surface transition-all">
@@ -174,7 +171,7 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                                             {...register(`rooms.${index}.isEnsuite` as any)}
                                             className="size-4 rounded border-[#eaeaea] dark:border-admin-dark-border bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-white focus:ring-[#171717] dark:focus:ring-white"
                                         />
-                                        <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">En-suite Bathroom</span>
+                                        <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('units.enSuite')}</span>
                                     </label>
                                 </div>
                             </div>
@@ -183,14 +180,14 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
 
                     {roomType === 'bathroom' && (
                         <div className="space-y-3 col-span-2">
-                            <label className="text-sm font-semibold text-[#171717] dark:text-admin-dark-text-primary">Bathroom Features</label>
+                            <label className="text-sm font-semibold text-[#171717] dark:text-admin-dark-text-primary">{t('units.features')}</label>
                             <label className="flex items-center gap-3 p-3 bg-[#fafafa] dark:bg-admin-dark-bg rounded-xl border border-[#f5f5f5] dark:border-admin-dark-border cursor-pointer hover:bg-white dark:hover:bg-admin-dark-surface transition-all">
                                 <input
                                     type="checkbox"
                                     {...register(`rooms.${index}.isEnsuite` as any)}
                                     className="size-4 rounded border-[#eaeaea] dark:border-admin-dark-border bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-white focus:ring-[#171717] dark:focus:ring-white"
                                 />
-                                <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">Is this an En-suite?</span>
+                                <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('units.isEnsuite')}</span>
                             </label>
                         </div>
                     )}
@@ -199,10 +196,11 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                 {/* Room Subtitle (Override for "Social Area" / "Luxury Bath") */}
                 <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
-                        Room Subtitle / Label ({activeLang.toUpperCase()})
-                        <span className="ml-2 lowercase font-medium opacity-60">Overrides "Área Social" / "Banho de Luxo"</span>
+                        {t('units.roomSubtitle', { lang: activeLang.toUpperCase() })}
+                        <span className="ml-2 lowercase font-medium opacity-60">{t('units.subtitleDesc')}</span>
                     </label>
                     <input
+                        key={`room-beds-${index}-${activeLang}`}
                         {...register(`rooms.${index}.beds.${activeLang}` as any)}
                         dir={dir}
                         placeholder="e.g. 1 Double Bed / Guest Lounge"
@@ -212,12 +210,13 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
 
                 {/* Localized Details */}
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Localized details ({activeLang.toUpperCase()})</label>
+                    <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('units.detailsLabel', { lang: activeLang.toUpperCase() })}</label>
                     <textarea
+                        key={`room-details-${index}-${activeLang}`}
                         {...register(`rooms.${index}.details.${activeLang}` as any)}
                         dir={dir}
                         rows={2}
-                        placeholder="Showcase the best of this room..."
+                        placeholder={t('units.detailsPlaceholder')}
                         className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                     />
                 </div>
@@ -227,6 +226,7 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
 }
 
 export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
+    const t = useTranslations('PropertyEditor');
     const { control, register, setValue } = useFormContext<PropertyFormData>();
     const { fields, append, remove } = useFieldArray({
         control,
@@ -240,7 +240,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                 <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <User className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">Max Guests</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.maxGuests')}</label>
                     </div>
                     <input
                         type="number"
@@ -252,7 +252,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                 <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <Bed className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">Bedrooms</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.bedrooms')}</label>
                     </div>
                     <input
                         type="number"
@@ -264,7 +264,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                 <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <Layout className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">Total Beds</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.totalBeds')}</label>
                     </div>
                     <input
                         type="number"
@@ -276,7 +276,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                 <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <Bath className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">Bathrooms</label>
+                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.bathrooms')}</label>
                     </div>
                     <input
                         type="number"
@@ -286,7 +286,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                     />
                 </div>
             </div>
-            {/* Bed Size Guide & Baby Equipment Section */}
+            {/* Bed Size Guide \u0026 Baby Equipment Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-[#fafafa] dark:bg-admin-dark-bg rounded-[32px] border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm">
                 {/* Left: Bed Size Guide */}
                 <div className="space-y-6">
@@ -295,14 +295,14 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                             <Ruler className="size-5" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">Bed Size Guide</h3>
-                            <p className="text-[10px] text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">Standard dimensions</p>
+                            <h3 className="text-sm font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{t('units.bedSizeGuide')}</h3>
+                            <p className="text-[10px] text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">{t('units.standardDimensions')}</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Single</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('units.bedSingle')}</label>
                             <input
                                 {...register("bed_sizes.single")}
                                 placeholder="90 x 190 cm"
@@ -310,7 +310,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Double</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('units.bedDouble')}</label>
                             <input
                                 {...register("bed_sizes.double")}
                                 placeholder="140 x 190 cm"
@@ -318,7 +318,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">King</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('units.bedKing')}</label>
                             <input
                                 {...register("bed_sizes.king")}
                                 placeholder="160 x 200 cm"
@@ -326,7 +326,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">Super King</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('units.bedSuperKing')}</label>
                             <input
                                 {...register("bed_sizes.superKing")}
                                 placeholder="180 x 200 cm"
@@ -344,8 +344,8 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                                 <Baby className="size-5" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">Baby Equipment</h3>
-                                <p className="text-[10px] text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">Traveling with children</p>
+                                <h3 className="text-sm font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{t('units.babyEquipment')}</h3>
+                                <p className="text-[10px] text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">{t('units.travelingWithChildren')}</p>
                             </div>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -360,13 +360,14 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
 
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
-                            Description ({activeLang.toUpperCase()})
+                            {t('units.babyDescription', { lang: activeLang.toUpperCase() })}
                         </label>
                         <textarea
+                            key={`baby-text-${activeLang}`}
                             {...register(`baby_equipment.text.${activeLang}`)}
                             dir={dir}
                             rows={3}
-                            placeholder="Baby cot and high chair are available on request..."
+                            placeholder={t('units.babyPlaceholder')}
                             className={`w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                         />
                     </div>
@@ -377,8 +378,8 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">Rooms & Spaces</h3>
-                        <p className="text-sm text-[#a3a3a3] dark:text-admin-dark-text-secondary">Configure individual bedrooms, bathrooms and communal areas.</p>
+                        <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('units.roomsAndSpaces')}</h3>
+                        <p className="text-sm text-[#a3a3a3] dark:text-admin-dark-text-secondary">{t('units.roomsDesc')}</p>
                     </div>
                     <button
                         type="button"
@@ -394,7 +395,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                         className="flex items-center gap-2 px-4 py-2 bg-[#171717] dark:bg-white text-white dark:text-black rounded-xl text-sm font-bold hover:bg-black dark:hover:bg-gray-200 transition-all shadow-sm"
                     >
                         <Plus className="size-4" />
-                        Add Room
+                        {t('units.addRoom')}
                     </button>
                 </div>
 
@@ -418,8 +419,8 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                                 <Layout className="size-8 opacity-20" />
                             </div>
                             <div className="text-center">
-                                <p className="text-base font-bold text-[#171717] dark:text-admin-dark-text-primary">No rooms configured</p>
-                                <p className="text-sm max-w-xs mx-auto">Add bedrooms and bathrooms to show them clearly on the property page.</p>
+                                <p className="text-base font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('units.noRooms')}</p>
+                                <p className="text-sm max-w-xs mx-auto">{t('units.noRoomsDesc')}</p>
                             </div>
                             <button
                                 type="button"
@@ -434,7 +435,7 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                                 })}
                                 className="mt-2 px-6 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-xl text-sm font-bold hover:bg-black dark:hover:bg-gray-200 transition-all shadow-sm"
                             >
-                                Get Started
+                                {t('units.getStarted')}
                             </button>
                         </div>
                     )}

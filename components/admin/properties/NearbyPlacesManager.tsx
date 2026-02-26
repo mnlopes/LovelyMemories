@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext, useFieldArray } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2, MapPin, Footprints, Car } from "lucide-react";
 
 interface NearbyPlaceItem {
@@ -14,37 +15,38 @@ interface NearbyCategory {
     items: NearbyPlaceItem[];
 }
 
-export default function NearbyPlacesManager() {
-    const { control } = useFormContext();
-
-    // We assume these exist because they are initialized in PropertyEditorForm's defaultValues
-    // Index 0: essentials, Index 1: localAttractions
+export default function NearbyPlacesManager({ activeLang }: { activeLang: string }) {
+    const t = useTranslations('PropertyEditor');
 
     return (
         <div className="space-y-12">
             <CategorySection
-                title="Essentials"
+                title={t('location.essentials')}
                 categoryKey="essentials"
-                description="Supermarkets, pharmacies, hospitals, etc."
+                description={t('location.essentialsDesc')}
                 categoryIndex={0}
+                activeLang={activeLang}
             />
 
             <CategorySection
-                title="Points of Interest"
+                title={t('location.poi')}
                 categoryKey="localAttractions"
-                description="Museums, monuments, viewpoints, etc."
+                description={t('location.poiDesc')}
                 categoryIndex={1}
+                activeLang={activeLang}
             />
         </div>
     );
 }
 
-function CategorySection({ title, categoryKey, description, categoryIndex }: {
+function CategorySection({ title, categoryKey, description, categoryIndex, activeLang }: {
     title: string;
     categoryKey: string;
     description: string;
     categoryIndex: number;
+    activeLang: string;
 }) {
+    const t = useTranslations('PropertyEditor');
     const { control, register } = useFormContext();
     const { fields, append, remove } = useFieldArray({
         control,
@@ -65,7 +67,7 @@ function CategorySection({ title, categoryKey, description, categoryIndex }: {
                     className="flex items-center gap-2 px-3 py-1.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold hover:bg-black dark:hover:bg-gray-200 transition-all shadow-sm"
                 >
                     <Plus className="size-3.5" />
-                    Add {title}
+                    {t('location.addCategory', { title })}
                 </button>
             </div>
 
@@ -78,29 +80,30 @@ function CategorySection({ title, categoryKey, description, categoryIndex }: {
                         <div className="flex-1 space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">Name</label>
+                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">{t('location.itemName')}</label>
                                     <input
-                                        {...register(`nearby_places.${categoryIndex}.items.${index}.name`)}
-                                        placeholder="e.g. Clérigos Tower"
+                                        key={`nearby-name-${index}-${activeLang}`}
+                                        {...register(`nearby_places.${categoryIndex}.items.${index}.name.${activeLang}`)}
+                                        placeholder={t('location.itemPlaceholder')}
                                         className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-3 py-2 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] dark:focus:border-white transition-colors"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">Distance/Time</label>
+                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">{t('location.itemDistance')}</label>
                                     <input
                                         {...register(`nearby_places.${categoryIndex}.items.${index}.time`)}
-                                        placeholder="e.g. 10 min walk"
+                                        placeholder={t('location.distancePlaceholder')}
                                         className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-3 py-2 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] dark:focus:border-white transition-colors"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">Method</label>
+                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">{t('location.itemMethod')}</label>
                                     <select
                                         {...register(`nearby_places.${categoryIndex}.items.${index}.icon`)}
                                         className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-3 py-2 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] dark:focus:border-white transition-colors appearance-none"
                                     >
-                                        <option value="walk" className="dark:bg-admin-dark-surface">On foot</option>
-                                        <option value="car" className="dark:bg-admin-dark-surface">By car</option>
+                                        <option value="walk" className="dark:bg-admin-dark-surface">{t('location.walk')}</option>
+                                        <option value="car" className="dark:bg-admin-dark-surface">{t('location.car')}</option>
                                     </select>
                                 </div>
                             </div>
@@ -139,7 +142,7 @@ function CategorySection({ title, categoryKey, description, categoryIndex }: {
 
                 {fields.length === 0 && (
                     <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-[#f5f5f5] dark:border-admin-dark-border rounded-2xl text-[#a3a3a3] transition-colors">
-                        <p className="text-sm font-medium">No items added to {title}.</p>
+                        <p className="text-sm font-medium">{t('location.noItems', { title })}</p>
                     </div>
                 )}
             </div>

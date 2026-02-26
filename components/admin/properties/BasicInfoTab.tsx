@@ -3,6 +3,7 @@
 import { useFormContext, useWatch, useFieldArray } from "react-hook-form";
 import { FormSelect } from "@/components/admin/ui/FormSelect";
 import { Building2, Home, Eye, EyeOff, Clock, Plus, Trash2, Info, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +16,7 @@ interface BasicInfoTabProps {
 }
 
 export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProps) {
+    const t = useTranslations('PropertyEditor');
     const { register, control, setValue, getValues, formState: { errors } } = useFormContext<PropertyFormData>();
     const [parentOptions, setParentOptions] = useState<{ label: string; value: string }[]>([]);
 
@@ -66,20 +68,20 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
         switch (s) {
             case 'active':
                 return {
-                    label: 'Active',
+                    label: t('basic.status.active'),
                     icon: Eye,
                     className: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20'
                 };
             case 'coming_soon':
                 return {
-                    label: 'Coming Soon',
+                    label: t('basic.status.comingSoon'),
                     icon: Clock,
                     className: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
                 };
             case 'hidden':
             default:
                 return {
-                    label: 'Hidden',
+                    label: t('basic.status.hidden'),
                     icon: EyeOff,
                     className: 'bg-gray-50 dark:bg-admin-dark-bg text-gray-500 dark:text-admin-dark-text-secondary border-gray-100 dark:border-admin-dark-border'
                 };
@@ -117,6 +119,27 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
         }
     }, [isMultiUnit, setValue]);
 
+    // Fetch Owners
+    const [ownerOptions, setOwnerOptions] = useState<{ label: string; value: string }[]>([]);
+    useEffect(() => {
+        async function fetchOwners() {
+            try {
+                // Import dynamically to avoid server-action issues if not yet compatible
+                const { getOwners } = await import('@/app/actions/user');
+                const data = await getOwners();
+                if (data) {
+                    setOwnerOptions(data.map(u => ({
+                        label: `${u.full_name || u.email} (${u.email})`,
+                        value: u.id
+                    })));
+                }
+            } catch (error) {
+                console.error("Failed to fetch owners:", error);
+            }
+        }
+        fetchOwners();
+    }, []);
+
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
             {/* Hidden Fields */}
@@ -130,7 +153,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                 <div className="space-y-8">
                     <div className="flex items-center justify-between pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                         <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                            {mode === 'building' ? 'Building Name' : 'Identity'}
+                            {mode === 'building' ? t('types.building') : t('basic.identity')}
                         </h3>
 
                         <div className="flex items-center gap-3">
@@ -169,21 +192,22 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                         <div className="space-y-6">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    Internal Slug (URL)
+                                    {t('basic.slugLabel')}
                                 </label>
                                 <input
                                     {...register("slug")}
                                     placeholder="e.g. edificio-paraiso"
                                     className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none"
                                 />
-                                <p className="text-[10px] text-[#a3a3a3] font-medium">Identifier for the property URL.</p>
+                                <p className="text-[10px] text-[#a3a3a3] font-medium">{t('basic.slugDesc')}</p>
                                 {errors.slug && <p className="text-xs text-red-500 font-bold">{errors.slug.message}</p>}
                             </div>
 
                             {mode !== 'building' && (
                                 <FormSelect
-                                    label="Property Type"
+                                    label={t('basic.typeLabel')}
                                     {...register("type")}
+                                    placeholder={t('basic.typePlaceholder')}
                                     options={[
                                         { value: 'apartment', label: 'Apartment' },
                                         { value: 'villa', label: 'Villa' },
@@ -194,7 +218,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
 
                             <div className="space-y-1.5">
                                 <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    Property Area (m²)
+                                    {t('basic.areaLabel')}
                                 </label>
                                 <input
                                     type="text"
@@ -209,9 +233,23 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                         <div className="space-y-6 pt-2">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    {mode === 'building' ? 'Building Name' : 'Title'} ({activeLang.toUpperCase()})
+                                    {t('basic.ownerLabel') || "Property Owner"}
+                                </label>
+                                <FormSelect
+                                    label={t('basic.ownerLabel')}
+                                    {...register("owner_id")}
+                                    placeholder={t('basic.ownerPlaceholder') || "Select an owner..."}
+                                    options={ownerOptions}
+                                />
+                                <p className="text-[10px] text-[#a3a3a3] font-medium">Assign a specific owner to this property (optional).</p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
+                                    {t('basic.titleLabel', { lang: activeLang.toUpperCase() })}
                                 </label>
                                 <input
+                                    key={`title-${activeLang}`}
                                     {...register(`title.${activeLang}` as any)}
                                     dir={dir}
                                     placeholder={mode === 'building' ? "e.g. Paraíso 331" : "e.g. The Flower Power"}
@@ -222,9 +260,10 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                             {mode !== 'building' && (
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                        Subtitle ({activeLang.toUpperCase()})
+                                        {t('basic.subtitleLabel', { lang: activeLang.toUpperCase() })}
                                     </label>
                                     <input
+                                        key={`subtitle-${activeLang}`}
                                         {...register(`subtitle.${activeLang}` as any)}
                                         dir={dir}
                                         placeholder="e.g. Two Bedroom Home"
@@ -239,13 +278,14 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                 {/* Right Column: Description */}
                 <div className="space-y-8 flex flex-col">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
-                        Description
+                        {t('basic.description')}
                     </h3>
                     <div className="space-y-1.5 flex-1 flex flex-col">
                         <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
-                            Description ({activeLang.toUpperCase()})
+                            {t('basic.descriptionLabel', { lang: activeLang.toUpperCase() })}
                         </label>
                         <textarea
+                            key={`desc-${activeLang}`}
                             {...register(`description.${activeLang}` as any)}
                             dir={dir}
                             rows={14}
@@ -260,17 +300,18 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 border-t border-[#f5f5f5] dark:border-admin-dark-border pt-12 transition-colors">
                 <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
-                        Highlights Intro (What to expect)
+                        {mode === 'building' ? t('basic.identity') : t('basic.highlights')}
                     </h3>
                     <div className="space-y-1.5 flex-1 flex flex-col">
                         <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
-                            Intro Text ({activeLang.toUpperCase()})
+                            {t('basic.highlightsIntroLabel', { lang: activeLang.toUpperCase() })}
                         </label>
                         <textarea
+                            key={`hi-${activeLang}`}
                             {...register(`highlights_intro.${activeLang}` as any)}
                             dir={dir}
                             rows={8}
-                            placeholder="e.g. Our homes are handpicked and decorated to the highest standards..."
+                            placeholder="..."
                             className={`w-full flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                         />
                         <p className="text-[10px] text-[#a3a3a3] font-medium italic mt-2">Customizes the introduction text shown above the highlights carousel on the property page.</p>
@@ -289,17 +330,17 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                 {/* Good to Know / Home Truths */}
                 <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
-                        Good to Know
+                        {t('basic.goodToKnow')}
                     </h3>
                     <div className="space-y-4 pt-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">Add New Fact / Home Truth</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">{t('basic.homeTruths')}</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={newTruth}
                                     onChange={(e) => setNewTruth(e.target.value)}
-                                    placeholder="e.g. No elevator available..."
+                                    placeholder={t('basic.addTruth')}
                                     className="flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] transition-all"
                                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTruth())}
                                 />
@@ -309,32 +350,21 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                     className="px-6 py-3 bg-[#171717] dark:bg-white text-white dark:text-black rounded-xl text-xs font-bold hover:opacity-80 transition-all flex items-center gap-2"
                                 >
                                     <Plus className="size-3" />
-                                    Add
+                                    {t('basic.add')}
                                 </button>
                             </div>
                         </div>
 
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                             {truthFields.map((field, index) => {
-                                const actualItem = getValues(`home_truths.${index}` as any);
-                                const isLegacy = typeof actualItem === 'string';
-
                                 return (
                                     <div key={field.id} className="group p-3 bg-[#fafafa] dark:bg-admin-dark-bg rounded-xl border border-transparent hover:border-[#f5f5f5] flex items-center gap-3 transition-all">
                                         <div className="flex-1">
-                                            {isLegacy ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs text-[#171717] dark:text-admin-dark-text-primary opacity-60 flex-1">{actualItem}</span>
-                                                    <button type="button" onClick={() => updateTruth(index, { en: actualItem, pt: actualItem, he: actualItem })} className="text-[#a3a3a3] hover:text-[#171717]">
-                                                        <Sparkles className="size-3" />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <input
-                                                    {...register(`home_truths.${index}.${activeLang}` as any)}
-                                                    className="w-full bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none"
-                                                />
-                                            )}
+                                            <input
+                                                key={`truth-${index}-${activeLang}`}
+                                                {...register(`home_truths.${index}.${activeLang}` as any)}
+                                                className="w-full bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none"
+                                            />
                                         </div>
                                         <button
                                             type="button"
@@ -353,7 +383,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                 {/* Stay Hours */}
                 <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
-                        Stay Hours
+                        {t('basic.stayHours')}
                     </h3>
                     <div className="grid grid-cols-2 gap-6 pt-4">
                         <div className="space-y-1.5">

@@ -10,8 +10,11 @@ import { DeleteUserModal } from "@/components/admin/users/DeleteUserModal";
 import { supabase } from "@/lib/supabase";
 import { Trash2, Pencil } from "lucide-react";
 import { EditUserSidebar } from "@/components/admin/users/EditUserSidebar";
+import { useTranslations, useLocale } from "next-intl";
 
 export default function AdminUsersPage() {
+    const t = useTranslations("AdminUsers");
+    const locale = useLocale();
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -25,7 +28,8 @@ export default function AdminUsersPage() {
     const fetchProfiles = async () => {
         try {
             const data = await getProfiles();
-            const profilesList = (data as Profile[]) || [];
+            // Filter out owners from the Team page
+            const profilesList = (data as Profile[]).filter(p => p.role !== 'owner') || [];
             setProfiles(profilesList);
 
             const { data: { user } } = await supabase.auth.getUser();
@@ -34,7 +38,7 @@ export default function AdminUsersPage() {
                 if (myProfile) setCurrentUserProfile(myProfile);
             }
         } catch (error: any) {
-            toast.error("Error fetching profiles: " + error.message);
+            toast.error(t('notifications.fetchError', { error: error.message }));
         } finally {
             setLoading(false);
         }
@@ -48,9 +52,9 @@ export default function AdminUsersPage() {
         try {
             await updateUserRole(userId, newRole);
             setProfiles(profiles.map(p => p.id === userId ? { ...p, role: newRole as AppRole } : p));
-            toast.success("Role updated successfully");
+            toast.success(t('notifications.roleSuccess'));
         } catch (error: any) {
-            toast.error("Failed to update role: " + error.message);
+            toast.error(t('notifications.roleError', { error: error.message }));
         }
     };
 
@@ -66,6 +70,7 @@ export default function AdminUsersPage() {
 
     const getAvailableRolesForCurrent = () => {
         if (!currentUserProfile) return [];
+        // Only allow Team roles (no owners)
         if (currentUserProfile.role === 'super_admin') return ['super_admin', 'admin', 'editor', 'user'];
         if (currentUserProfile.role === 'admin') return ['admin', 'editor', 'user'];
         return [];
@@ -77,22 +82,28 @@ export default function AdminUsersPage() {
             admin: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30",
             editor: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30",
             user: "bg-gray-50 text-gray-600 border-gray-100 dark:bg-gray-500/10 dark:text-gray-400 dark:border-gray-500/30",
+            owner: "bg-[#FDFBF7] text-[#C5A059] border-[#C5A059]/20" // Premium gold for owner
         };
         return styles[role] || styles.user;
     };
 
-    const filteredProfiles = profiles.filter(profile =>
-        profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        profile.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProfiles = profiles.filter(profile => {
+        // Text Search
+        const matchesSearch = profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            profile.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        return true;
+    });
 
     return (
-        <div className="space-y-10 pb-20">
+        <div className="space-y-8 pb-20">
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">Team & Access</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium">Manage user profiles and hierarchical access roles.</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    <p className="text-[#a3a3a3] mt-2 font-medium">{t('description')}</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -100,18 +111,18 @@ export default function AdminUsersPage() {
                         className="px-5 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-semibold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2 shadow-sm"
                     >
                         <UserPlus className="size-4" />
-                        Invite Member
+                        {t('inviteButton')}
                     </button>
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-md">
+            {/* Search Only (Tabs Removed) */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="relative w-full md:w-auto md:min-w-[300px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4" />
                     <input
                         type="text"
-                        placeholder="Search by name or email..."
+                        placeholder={t('searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border pl-10 pr-4 py-2.5 rounded-xl text-sm focus:ring-1 focus:ring-[#8ca38c] outline-none shadow-sm placeholder:text-[#a3a3a3] text-[#171717] dark:text-admin-dark-text-primary transition-colors"
@@ -120,26 +131,26 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-hidden shadow-sm transition-colors duration-300">
+            <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
                 {loading ? (
                     <div className="py-20 flex flex-col items-center justify-center gap-4 text-[#a3a3a3]">
                         <Loader2 className="size-8 animate-spin" />
-                        <p className="text-sm font-medium">Loading members...</p>
+                        <p className="text-sm font-medium">{t('loadingMembers')}</p>
                     </div>
                 ) : filteredProfiles.length === 0 ? (
                     <div className="py-20 flex flex-col items-center justify-center gap-4 text-[#a3a3a3]">
                         <Users className="size-12 opacity-20" />
-                        <p className="text-sm font-medium">No members found.</p>
+                        <p className="text-sm font-medium">{t('noMembersFound')}</p>
                     </div>
                 ) : (
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-[#f5f5f5] dark:border-admin-dark-border bg-[#fafafa]/50 dark:bg-admin-dark-bg/50">
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">User Details</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Contact</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Account</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Access Role</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest text-right">Action</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.userDetails')}</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.contact')}</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.account')}</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.accessRole')}</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest text-right">{t('table.action')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#f5f5f5] dark:divide-admin-dark-border">
@@ -156,7 +167,7 @@ export default function AdminUsersPage() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-[#171717] dark:text-admin-dark-text-primary leading-tight">
-                                                    {profile.full_name || "New User"}
+                                                    {profile.full_name || t('newUser')}
                                                 </p>
                                                 <p className="text-xs text-[#a3a3a3] mt-0.5">{profile.email}</p>
                                             </div>
@@ -169,7 +180,7 @@ export default function AdminUsersPage() {
                                                 {profile.phone}
                                             </div>
                                         ) : (
-                                            <span className="text-xs text-[#a3a3a3] italic">No phone</span>
+                                            <span className="text-xs text-[#a3a3a3] italic">{t('noPhone')}</span>
                                         )}
                                     </td>
                                     <td className="px-8 py-6">
@@ -193,10 +204,10 @@ export default function AdminUsersPage() {
                                                 } ${getRoleBadge(profile.role)}`}
                                         >
                                             {getAvailableRolesForCurrent().map(r => (
-                                                <option key={r} value={r}>{r.replace('_', ' ')}</option>
+                                                <option key={r} value={r}>{t(`inviteModal.roles.${r}` as any)}</option>
                                             ))}
                                             {!getAvailableRolesForCurrent().includes(profile.role) && (
-                                                <option value={profile.role}>{profile.role.replace('_', ' ')}</option>
+                                                <option value={profile.role}>{t(`inviteModal.roles.${profile.role}` as any)}</option>
                                             )}
                                         </select>
                                     </td>
@@ -226,7 +237,7 @@ export default function AdminUsersPage() {
                                                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors"
                                                         >
                                                             <Pencil className="size-4" />
-                                                            Edit Member
+                                                            {t('editMember')}
                                                         </button>
                                                         <button
                                                             onClick={() => {
@@ -237,7 +248,7 @@ export default function AdminUsersPage() {
                                                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                                                         >
                                                             <Trash2 className="size-4" />
-                                                            Delete Member
+                                                            {t('deleteMember')}
                                                         </button>
                                                     </div>
                                                 </>
@@ -257,6 +268,7 @@ export default function AdminUsersPage() {
                 onClose={() => setIsInviteModalOpen(false)}
                 onSuccess={fetchProfiles}
                 currentUserRole={currentUserProfile?.role || 'user'}
+                allowedRoles={['super_admin', 'admin', 'editor', 'user']}
             />
 
             {/* Delete Confirmation Modal */}

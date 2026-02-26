@@ -18,7 +18,7 @@ export const OwnerCTA = () => {
                                 br: () => <br />
                             })}</h6>
                         </div>
-                        <a className="btn" href="/owner" target="_self">
+                        <a className="btn" href="/join" target="_self">
                             <p className="mb-0">{t('button')}</p>
                         </a>
                     </div>

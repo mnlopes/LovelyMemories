@@ -83,7 +83,7 @@ export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: bo
                             </h6>
                             <div className="pt-4">
                                 <Link
-                                    href="/owner"
+                                    href="/join"
                                     className="inline-block px-10 py-4 bg-white text-[#0A1128] rounded-full font-bold uppercase tracking-widest hover:bg-[#B09E80] hover:text-white transition-colors duration-300 shadow-lg text-sm md:text-base"
                                 >
                                     {t('button')}

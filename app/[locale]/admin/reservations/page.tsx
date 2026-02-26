@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { deleteReservation } from "@/app/actions/reservation";
 import { updateReservationStatus } from "@/app/actions/admin-reservation-actions";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
@@ -20,6 +21,7 @@ import { History } from "lucide-react";
 
 export default function AdminReservationsPage() {
     const params = useParams();
+    const t = useTranslations('AdminReservations');
     const locale = (params?.locale as string) || 'en';
     const [view, setView] = useState<'calendar' | 'list'>('list');
     const [reservations, setReservations] = useState<any[]>([]);
@@ -98,7 +100,7 @@ export default function AdminReservationsPage() {
         const [reservationsResult, propertiesResult, blockedDatesResult] = await Promise.all([
             supabase
                 .from('reservations')
-                .select('*')
+                .select('*, properties:property_id(*)')
                 .order('created_at', { ascending: false }),
             supabase
                 .from('properties')
@@ -158,7 +160,8 @@ export default function AdminReservationsPage() {
 
         const enhancedReservations = (reservationsResult.data || []).map((res: any) => ({
             ...res,
-            property_name: newPropertiesMap[res.property_id]?.title || 'Unknown Property'
+            property_name: newPropertiesMap[res.property_id]?.title || 'Unknown Property',
+            properties: (propertiesResult.data || []).find((p: any) => p.id === res.property_id) || res.properties
         }));
 
         setReservations(enhancedReservations);
@@ -180,8 +183,8 @@ export default function AdminReservationsPage() {
                 },
                 (payload) => {
                     console.log('Real-time insertion:', payload);
-                    toast.info("Nova reserva recebida!", {
-                        description: "A lista foi atualizada automaticamente.",
+                    toast.info(t('notifications.newReservation'), {
+                        description: t('notifications.listUpdated'),
                         duration: 5000,
                     });
                     fetchData();
@@ -224,15 +227,15 @@ export default function AdminReservationsPage() {
         setModalConfig({
             isOpen: true,
             type: 'error',
-            title: 'Delete Reservation?',
-            message: 'Are you sure you want to delete this reservation? This action cannot be undone.',
-            actionLabel: 'Yes, Delete',
+            title: t('modals.deleteTitle'),
+            message: t('modals.deleteMessage'),
+            actionLabel: t('modals.deleteConfirm'),
             onAction: () => handleDelete(id)
         });
     };
 
     const handleDelete = async (id: string) => {
-        setModalConfig(prev => ({ ...prev, type: 'loading', title: 'Deleting...', message: 'Removing reservation...' }));
+        setModalConfig(prev => ({ ...prev, type: 'loading', title: t('modals.deleting'), message: t('modals.removing') }));
 
         try {
             await deleteReservation(id);
@@ -240,18 +243,18 @@ export default function AdminReservationsPage() {
             setModalConfig({
                 isOpen: true,
                 type: 'success',
-                title: 'Reservation Deleted',
-                message: 'The reservation has been successfully removed.',
-                actionLabel: 'Done',
+                title: t('modals.deletedTitle'),
+                message: t('modals.deletedMessage'),
+                actionLabel: t('modals.done'),
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
         } catch (error: any) {
             setModalConfig({
                 isOpen: true,
                 type: 'error',
-                title: 'Error Deleting',
-                message: `Could not delete reservation: ${error.message || 'Unknown error'}`,
-                actionLabel: 'Close',
+                title: t('modals.errorDeleting'),
+                message: error.message || t('modals.unexpectedError'),
+                actionLabel: t('AdminProperties.modals.close'),
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
         }
@@ -262,23 +265,23 @@ export default function AdminReservationsPage() {
         setModalConfig({
             isOpen: true,
             type: newStatus === 'confirmed' ? 'success' : 'warning',
-            title: newStatus === 'confirmed' ? 'Aprovar Reserva?' : 'Rejeitar Reserva?',
+            title: newStatus === 'confirmed' ? t('modals.approveTitle') : t('modals.rejectTitle'),
             message: newStatus === 'confirmed'
-                ? 'Tem a certeza que deseja aprovar esta reserva e confirmar o pagamento?'
-                : 'Tem a certeza que deseja rejeitar esta reserva?',
-            actionLabel: newStatus === 'confirmed' ? 'Sim, Aprovar' : 'Sim, Rejeitar',
+                ? t('modals.approveMessage')
+                : t('modals.rejectMessage'),
+            actionLabel: newStatus === 'confirmed' ? t('modals.confirmApprove') : t('modals.confirmReject'),
             onAction: async () => {
-                const toastId = toast.loading(`A atualizar reserva...`);
+                const toastId = toast.loading(t('modals.updating'));
                 try {
                     const { data: { user } } = await supabase.auth.getUser();
                     if (!user) throw new Error("Não autenticado");
 
                     await updateReservationStatus(id, newStatus);
-                    toast.success(`Reserva ${newStatus === 'confirmed' ? 'confirmada' : 'cancelada'} com sucesso!`, { id: toastId });
+                    toast.success(newStatus === 'confirmed' ? t('modals.successApprove') : t('modals.successReject'), { id: toastId });
                     setModalConfig(prev => ({ ...prev, isOpen: false }));
                     fetchData();
                 } catch (error: any) {
-                    toast.error(`Erro ao atualizar reserva: ${error.message}`, { id: toastId });
+                    toast.error(`${t('modals.unexpectedError')}: ${error.message}`, { id: toastId });
                 }
             }
         });
@@ -326,8 +329,8 @@ export default function AdminReservationsPage() {
             {/* Header */}
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">Reservations</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium">Manage bookings and availability.</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    <p className="text-[#a3a3a3] mt-2 font-medium">{t('subtitle')}</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 flex transition-colors duration-300">
@@ -335,13 +338,13 @@ export default function AdminReservationsPage() {
                             onClick={() => setView('calendar')}
                             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${view === 'calendar' ? 'bg-[#171717] dark:bg-white text-white dark:text-black shadow-sm' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
                         >
-                            Calendar
+                            {t('calendar')}
                         </button>
                         <button
                             onClick={() => setView('list')}
                             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${view === 'list' ? 'bg-[#171717] dark:bg-white text-white dark:text-black shadow-sm' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
                         >
-                            List
+                            {t('list')}
                         </button>
                     </div>
                 </div>
@@ -354,7 +357,7 @@ export default function AdminReservationsPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4" />
                         <input
                             type="text"
-                            placeholder="Search by guest, email or property..."
+                            placeholder={t('searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-1 focus:ring-[#8ca38c] outline-none shadow-sm dark:text-admin-dark-text-primary transition-colors"
@@ -380,33 +383,33 @@ export default function AdminReservationsPage() {
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-[#f5f5f5] dark:border-admin-dark-border">
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Guest & Property</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.guestProperty')}</th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest cursor-pointer group/header" onClick={() => handleSort('created_at')}>
                                     <div className="flex items-center gap-2">
-                                        Booking Date
+                                        {t('table.bookingDate')}
                                         <ArrowUpDown className={`size-3 transition-colors ${sortConfig.key === 'created_at' ? 'text-[#171717] dark:text-white' : 'text-[#a3a3a3] group-hover/header:text-[#171717] dark:group-hover/header:text-white'}`} />
                                     </div>
                                 </th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest cursor-pointer group/header" onClick={() => handleSort('check_in')}>
                                     <div className="flex items-center gap-2">
-                                        Stay Dates
+                                        {t('table.stayDates')}
                                         <ArrowUpDown className={`size-3 transition-colors ${sortConfig.key === 'check_in' ? 'text-[#171717] dark:text-white' : 'text-[#a3a3a3] group-hover/header:text-[#171717] dark:group-hover/header:text-white'}`} />
                                     </div>
                                 </th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Contact</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">Status</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest text-right">Action</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.contact')}</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.status')}</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest text-right">{t('table.action')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#f5f5f5] dark:divide-admin-dark-border">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm italic">Loading reservations...</td>
+                                    <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm italic">{t('table.loading')}</td>
                                 </tr>
                             ) : filteredReservations.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm">
-                                        No reservations found matching "{searchQuery}".
+                                        {t('table.empty', { query: searchQuery })}
                                     </td>
                                 </tr>
                             ) : filteredReservations.map((reservation) => (
@@ -429,7 +432,7 @@ export default function AdminReservationsPage() {
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-bold text-[#171717] dark:text-admin-dark-text-primary">{reservation.guest_name || 'Guest'}</p>
                                                     {isNew(reservation.created_at) && (
-                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 uppercase tracking-wide">New</span>
+                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 uppercase tracking-wide">{t('table.new')}</span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-1 mt-0.5 text-xs text-[#a3a3a3]">
@@ -442,13 +445,13 @@ export default function AdminReservationsPage() {
                                     <td className="px-8 py-6">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{formatDate(reservation.created_at)}</span>
-                                            <span className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-tighter">Reservado em</span>
+                                            <span className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-tighter">{t('table.reservedAt')}</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{formatDate(reservation.check_in)}</span>
-                                            <span className="text-xs text-[#a3a3a3] font-medium">to {formatDate(reservation.check_out)}</span>
+                                            <span className="text-xs text-[#a3a3a3] font-medium">{t('table.to')} {formatDate(reservation.check_out)}</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
@@ -466,7 +469,7 @@ export default function AdminReservationsPage() {
                                                 </div>
                                             )}
                                             {!reservation.guest_email && !reservation.guest_phone && (
-                                                <span className="text-xs text-[#a3a3a3] italic">No contact info</span>
+                                                <span className="text-xs text-[#a3a3a3] italic">{t('table.noContact')}</span>
                                             )}
                                         </div>
                                     </td>
@@ -477,7 +480,7 @@ export default function AdminReservationsPage() {
                                                 ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
                                                 : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
                                             }`}>
-                                            {reservation.status || 'Pending'}
+                                            {reservation.status ? t(`status.${reservation.status}`) : t('status.pending')}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 text-right font-medium relative" onClick={(e) => e.stopPropagation()}>
@@ -509,7 +512,7 @@ export default function AdminReservationsPage() {
                                                         className="w-full text-left px-3 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors"
                                                     >
                                                         <History className="size-4" />
-                                                        View History
+                                                        {t('actions.viewHistory')}
                                                     </button>
 
                                                     {reservation.status === 'pending' && (
@@ -520,14 +523,14 @@ export default function AdminReservationsPage() {
                                                                 className="w-full text-left px-3 py-2.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg flex items-center gap-2 transition-colors"
                                                             >
                                                                 <Check className="size-4" />
-                                                                Approve Reservation
+                                                                {t('actions.approve')}
                                                             </button>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleStatusUpdate(reservation.id, 'cancelled'); }}
                                                                 className="w-full text-left px-3 py-2.5 text-xs font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg flex items-center gap-2 transition-colors"
                                                             >
                                                                 <Ban className="size-4" />
-                                                                Reject Reservation
+                                                                {t('actions.reject')}
                                                             </button>
                                                         </>
                                                     )}
@@ -539,7 +542,7 @@ export default function AdminReservationsPage() {
                                                         className="w-full text-left px-3 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg flex items-center gap-2 transition-colors"
                                                     >
                                                         <Trash2 className="size-4" />
-                                                        Delete Reservation
+                                                        {t('actions.delete')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -567,7 +570,7 @@ export default function AdminReservationsPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-admin-dark-surface w-full max-w-2xl max-h-[80vh] rounded-2xl shadow-xl flex flex-col">
                         <div className="p-6 border-b border-gray-100 dark:border-admin-dark-border flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Reservation History</h3>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('detail.history')}</h3>
                             <button
                                 onClick={() => setHistoryModalOpen(false)}
                                 className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { format, addDays } from "date-fns";
 import { pt, enGB } from "date-fns/locale";
+import { useTranslations } from "next-intl";
 import { useFormContext } from "react-hook-form";
 import { Calendar as CalendarIcon, Loader2, Trash2, AlertCircle } from "lucide-react";
 import { DayPicker, DateRange } from "react-day-picker";
@@ -31,6 +32,7 @@ export function BlockedDatesSheet({
     reservations: ReservationDate[];
     onUpdate: () => void;
 }) {
+    const t = useTranslations('PropertyEditor');
     const [isOpen, setIsOpen] = useState(false);
     const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
     const [reason, setReason] = useState("");
@@ -42,7 +44,7 @@ export function BlockedDatesSheet({
 
     const handleBlockDates = async () => {
         if (!selectedRange?.from || !selectedRange?.to || !reason) {
-            toast.error("Please select a date range and provide a reason");
+            toast.error(t('pricing.selectRangeError'));
             return;
         }
 
@@ -57,7 +59,7 @@ export function BlockedDatesSheet({
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Dates blocked successfully");
+            toast.success(t('pricing.blockSuccess'));
             setReason("");
             setSelectedRange(undefined);
             onUpdate();
@@ -97,21 +99,21 @@ export function BlockedDatesSheet({
                     type="button"
                     className="text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg bg-[#171717] dark:bg-white text-white dark:text-black hover:opacity-80 transition-all shadow-lg shadow-black/5"
                 >
-                    Management Calendar
+                    {t('pricing.managementCalendar')}
                 </button>
             </SheetTrigger>
             <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
                 <SheetHeader>
-                    <SheetTitle>Blocked Dates Management</SheetTitle>
+                    <SheetTitle>{t('pricing.blockedDatesTitle')}</SheetTitle>
                     <SheetDescription>
-                        Block dates for maintenance or personal use. Existing reservations are also shown.
+                        {t('pricing.blockedDatesDesc')}
                     </SheetDescription>
                 </SheetHeader>
 
                 <div className="mt-8 space-y-8">
                     {/* Add New Block */}
                     <div className="space-y-4">
-                        <h4 className="text-sm font-bold text-navy-900 dark:text-white uppercase tracking-wider">Add New Block</h4>
+                        <h4 className="text-sm font-bold text-navy-900 dark:text-white uppercase tracking-wider">{t('pricing.addNewBlock')}</h4>
 
                         <div className="bg-white dark:bg-admin-dark-surface border dark:border-white/10 rounded-xl p-4 flex justify-center">
                             <DayPicker
@@ -136,11 +138,11 @@ export function BlockedDatesSheet({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Reason</label>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{t('pricing.reasonLabel')}</label>
                             <input
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
-                                placeholder="e.g. Maintenance, Owner Vacation"
+                                placeholder={t('pricing.reasonPlaceholder')}
                                 className="w-full p-3 bg-gray-50 dark:bg-white/5 border dark:border-white/10 rounded-lg text-sm outline-none focus:ring-2 focus:ring-navy-900/20 dark:focus:ring-white/20 text-navy-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                             />
                         </div>
@@ -151,7 +153,7 @@ export function BlockedDatesSheet({
                             className="w-full bg-navy-900 hover:bg-navy-800 text-white dark:bg-white dark:text-navy-900 dark:hover:bg-gray-100"
                         >
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                            Block Dates
+                            {t('pricing.blockDatesAction')}
                         </Button>
                     </div>
                 </div>

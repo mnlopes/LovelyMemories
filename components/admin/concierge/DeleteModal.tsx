@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Loader2, AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface DeleteModalProps {
     isOpen: boolean;
@@ -16,9 +17,11 @@ export default function DeleteModal({
     onClose,
     onConfirm,
     isLoading,
-    title = "Delete Service",
-    message = "Are you sure you want to delete this service? This action cannot be undone."
+    title,
+    message
 }: DeleteModalProps) {
+    const t = useTranslations('AdminConcierge.deleteModal');
+
     if (!isOpen) return null;
 
     return (
@@ -36,9 +39,9 @@ export default function DeleteModal({
                         <AlertTriangle className="size-6 text-red-600" />
                     </div>
 
-                    <h2 className="text-xl font-bold text-[#171717] mb-2">{title}</h2>
+                    <h2 className="text-xl font-bold text-[#171717] mb-2">{title || t('title')}</h2>
                     <p className="text-[#737373] text-sm mb-6">
-                        {message}
+                        {message || t('message')}
                     </p>
 
                     <div className="flex gap-3">
@@ -47,7 +50,7 @@ export default function DeleteModal({
                             disabled={isLoading}
                             className="flex-1 px-4 py-2 border border-[#e5e5e5] rounded-xl text-sm font-bold text-[#171717] hover:bg-[#fafafa] transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {t('cancel')}
                         </button>
                         <button
                             onClick={onConfirm}
@@ -55,7 +58,7 @@ export default function DeleteModal({
                             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {isLoading && <Loader2 className="size-4 animate-spin" />}
-                            Delete
+                            {t('confirm')}
                         </button>
                     </div>
                 </div>

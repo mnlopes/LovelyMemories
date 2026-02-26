@@ -31,7 +31,7 @@ export const Navbar = () => {
 
     const navLinks = [
         { path: '/', label: t('book') },
-        { path: '/owner', label: t('owner') },
+        { path: '/join', label: t('owner') },
         { path: '/about-us', label: t('about') },
         { path: '/properties', label: t('properties') },
         { path: '/concierge', label: t('concierge') },

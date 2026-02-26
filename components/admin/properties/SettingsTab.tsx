@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useFormContext } from "react-hook-form";
-import { Sparkles, Loader2, Globe, Edit3, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useFormContext, Controller } from "react-hook-form";
+import { useTranslations } from "next-intl";
+import { Sparkles, Loader2, Globe, Edit3, Check, User } from "lucide-react";
 import { toast } from "sonner";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { translatePropertyFields } from "@/app/actions/translate";
+import { getOwners } from "@/app/actions/user";
 
 interface SettingsTabProps {
     onAutoTranslate: () => Promise<void>;
@@ -15,11 +17,33 @@ interface SettingsTabProps {
 }
 
 export default function SettingsTab({ onAutoTranslate, isTranslating, activeLang, setActiveLang }: SettingsTabProps) {
+    const t = useTranslations('PropertyEditor');
     const [activeSubTab, setActiveSubTab] = useState<'general' | 'translations'>('translations');
-    const { getValues } = useFormContext<PropertyFormData>();
+    const { getValues, control, watch } = useFormContext<PropertyFormData>();
+    const [owners, setOwners] = useState<{ id: string, full_name: string | null, email: string | null }[]>([]);
+    const [isLoadingOwners, setIsLoadingOwners] = useState(false);
 
-    const languages = [
-        { code: 'he', label: 'Hebrew (Israel)', flag: '🇮🇱' },
+    useEffect(() => {
+        const fetchOwners = async () => {
+            setIsLoadingOwners(true);
+            try {
+                const data = await getOwners();
+                setOwners(data || []);
+            } catch (error) {
+                console.error("Failed to fetch owners:", error);
+                toast.error("Failed to load owners list");
+            } finally {
+                setIsLoadingOwners(false);
+            }
+        };
+
+        if (activeSubTab === 'general') {
+            fetchOwners();
+        }
+    }, [activeSubTab]);
+
+    const languages: { code: string; label: string; flag: string }[] = [
+        // { code: 'he', label: 'Hebrew (Israel)', flag: '🇮🇱' },
         // Add more secondary languages here
     ];
 
@@ -32,14 +56,14 @@ export default function SettingsTab({ onAutoTranslate, isTranslating, activeLang
                     onClick={() => setActiveSubTab('translations')}
                     className={`text-sm font-semibold transition-colors ${activeSubTab === 'translations' ? 'text-[#171717]' : 'text-[#a3a3a3] hover:text-[#171717]'}`}
                 >
-                    Translations
+                    {t('settings.translations')}
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveSubTab('general')}
                     className={`text-sm font-semibold transition-colors ${activeSubTab === 'general' ? 'text-[#171717]' : 'text-[#a3a3a3] hover:text-[#171717]'}`}
                 >
-                    General
+                    {t('settings.general')}
                 </button>
             </div>
 
@@ -52,10 +76,10 @@ export default function SettingsTab({ onAutoTranslate, isTranslating, activeLang
                             <div>
                                 <h3 className="text-lg font-bold text-[#171717] flex items-center gap-2">
                                     <Sparkles className="size-5 text-violet-600" />
-                                    AI Auto-Translate
+                                    {t('settings.aiTranslate')}
                                 </h3>
                                 <p className="text-sm text-[#737373] mt-2 max-w-xl">
-                                    Automatically translate your content from the current active language (EN/PT) to all other supported languages using AI.
+                                    {t('settings.aiTranslateDesc')}
                                 </p>
                             </div>
                             <button
@@ -69,14 +93,14 @@ export default function SettingsTab({ onAutoTranslate, isTranslating, activeLang
                                 ) : (
                                     <Sparkles className="size-4" />
                                 )}
-                                Start Translation
+                                {t('settings.startTranslation')}
                             </button>
                         </div>
                     </div>
 
                     {/* Manual Translation / Language Management */}
                     <div>
-                        <h3 className="text-lg font-bold text-[#171717] mb-4">Secondary Languages</h3>
+                        <h3 className="text-lg font-bold text-[#171717] mb-4">{t('settings.secondaryLangs')}</h3>
                         <div className="grid gap-4">
                             {languages.map((lang) => (
                                 <div key={lang.code} className="flex items-center justify-between p-4 bg-white border border-[#eaeaea] rounded-xl hover:border-[#d4d4d4] transition-colors">
@@ -102,31 +126,73 @@ export default function SettingsTab({ onAutoTranslate, isTranslating, activeLang
                                         {activeLang === lang.code ? (
                                             <>
                                                 <Check className="size-4" />
-                                                Editing Now
+                                                {t('settings.editingNow')}
                                             </>
                                         ) : (
                                             <>
                                                 <Edit3 className="size-4" />
-                                                Edit Content
+                                                {t('settings.editContent')}
                                             </>
                                         )}
                                     </button>
                                 </div>
                             ))}
                         </div>
-                        {activeLang === 'he' && (
-                            <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-sm">
-                                <span className="font-bold">Note:</span> You are currently editing in <strong>Hebrew</strong>. Go back to any tab (Basic Info, Amenities...) to edit the Hebrew content. Switch back to EN/PT here or in the top bar when done.
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
 
             {activeSubTab === 'general' && (
-                <div className="flex flex-col items-center justify-center h-48 text-[#a3a3a3]">
-                    <p className="text-lg font-medium">General Settings</p>
-                    <p className="text-sm mt-2">More settings configurations coming soon.</p>
+                <div className="space-y-8">
+                    {/* Owner Assignment */}
+                    <div className="bg-white p-6 rounded-2xl border border-[#eaeaea] space-y-4">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="size-10 rounded-full bg-blue-50 flex items-center justify-center">
+                                <User className="size-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-[#171717]">Property Owner</h3>
+                                <p className="text-sm text-[#737373]">Assign an owner to this property to give them access to the Owner Portal.</p>
+                            </div>
+                        </div>
+
+                        {isLoadingOwners ? (
+                            <div className="flex items-center gap-2 text-sm text-[#a3a3a3] py-4">
+                                <Loader2 className="size-4 animate-spin" />
+                                Loading owners...
+                            </div>
+                        ) : (
+                            <Controller
+                                control={control}
+                                name="owner_id"
+                                render={({ field }) => (
+                                    <div className="relative">
+                                        <select
+                                            {...field}
+                                            value={field.value || ""}
+                                            onChange={(e) => field.onChange(e.target.value || null)}
+                                            className="w-full h-12 pl-4 pr-10 bg-[#fafafa] border border-[#eaeaea] rounded-xl text-sm font-medium text-[#171717] focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717] transition-all appearance-none"
+                                        >
+                                            <option value="">Select an owner...</option>
+                                            {owners.map((owner) => (
+                                                <option key={owner.id} value={owner.id}>
+                                                    {owner.full_name || owner.email} ({owner.email})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#a3a3a3]">
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                )}
+                            />
+                        )}
+                        <p className="text-xs text-[#a3a3a3] pl-1">
+                            Only users with the 'Owner' role are listed here. To add a new owner, create a user and assign the role in the Users section.
+                        </p>
+                    </div>
                 </div>
             )}
         </div>

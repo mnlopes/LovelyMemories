@@ -15,10 +15,11 @@ const coerceNumberOrNull = z.preprocess((val) => {
 
 export const propertySchema = z.object({
     id: z.string().optional(),
-    title: z.union([z.string(), z.record(z.string(), z.string())]).default({ en: "", pt: "" }),
-    subtitle: z.union([z.string(), z.record(z.string(), z.string())]).optional().nullable(),
-    description: z.union([z.string(), z.record(z.string(), z.string())]).optional().nullable(),
-    highlights_intro: z.union([z.string(), z.record(z.string(), z.string())]).optional().nullable().default({ en: "", pt: "", he: "" }),
+    owner_id: z.string().optional().nullable(),
+    title: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
+    subtitle: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
+    description: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
+    highlights_intro: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
     slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
 
     // Hierarchy
@@ -33,39 +34,39 @@ export const propertySchema = z.object({
     nearby_places: z.array(z.object({
         category: z.string().optional().nullable(),
         items: z.array(z.object({
-            name: z.string().optional().nullable(),
-            subtitle: z.string().optional().nullable(),
+            name: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
+            subtitle: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
             time: z.string().optional().nullable(),
-            amenities: z.array(z.union([z.string(), z.record(z.string(), z.string())])).default([]),
+            amenities: z.array(z.record(z.string(), z.string())).default([]),
             highlights: z.array(z.object({
                 image: z.string().optional().nullable(),
-                text: z.record(z.string(), z.string()).optional().nullable(),
+                text: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
             })).default([]),
             vip_services: z.array(z.object({
-                title: z.record(z.string(), z.string()).optional().nullable(),
+                title: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
                 icon: z.string().optional().nullable(),
             })).default([]),
-            home_truths: z.array(z.union([z.string(), z.record(z.string(), z.string())])).default([]),
+            home_truths: z.array(z.record(z.string(), z.string())).default([]),
             icon: z.string().optional().nullable(), // More permissive than enum for legacy data
             coordinates: z.array(coerceNumberOrNull).optional().nullable(),
         })).optional().nullable()
     })).optional().nullable(),
     images: z.array(z.object({
         url: z.string(),
-        alt: z.record(z.string(), z.string()).optional().nullable(),
+        alt: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
         is_main: z.boolean().default(false),
         order: z.number().default(0),
     })).default([]).nullable(),
     highlights: z.array(z.object({
         image: z.string().optional().nullable(),
-        text: z.record(z.string(), z.string()).optional().nullable(),
+        text: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
     })).default([]).nullable(),
     rooms: z.array(z.object({
-        name: z.record(z.string(), z.string()).optional().nullable(),
+        name: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
         type: z.string().optional().nullable(), // More permissive than enum
         image: z.string().optional().nullable(),
-        details: z.record(z.string(), z.string()).optional().nullable(),
-        beds: z.record(z.string(), z.string()).optional().nullable(),
+        details: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
+        beds: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
         bedCount: z.coerce.number().optional().nullable(),
         bedType: z.string().optional().nullable(),
         isEnsuite: z.boolean().default(false),
@@ -93,7 +94,7 @@ export const propertySchema = z.object({
         text: {
             en: "Baby cot and high chair are available on request at no extra cost.",
             pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",
-            he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות נוספת.",
+            he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות nova.",
         },
     }),
     floor_plan_url: z.string().optional().nullable(),
@@ -123,11 +124,11 @@ export const propertySchema = z.object({
     amenities: z.array(z.object({
         category: z.string(),
         icon: z.string().optional(),
-        items: z.array(z.union([z.string(), z.record(z.string(), z.string())]))
+        items: z.array(z.record(z.string(), z.string()))
     })).default([]).catch([]),
 
     // Policies & Home Truths
-    home_truths: z.array(z.union([z.string(), z.record(z.string(), z.string())])).default([]).catch([]),
+    home_truths: z.array(z.record(z.string(), z.string())).default([]).catch([]),
     house_rules: z.object({
         childrenAllowed: z.boolean().default(true),
         infantsAllowed: z.boolean().default(true),
@@ -167,20 +168,20 @@ export const propertySchema = z.object({
         departureEnd: "11:00",
     }),
     cancellation: z.object({
-        text: z.union([z.string(), z.record(z.string(), z.string())]).default("Moderate"),
-        refundText: z.union([z.string(), z.record(z.string(), z.string())]).default("50% refund"),
-        deadline: z.union([z.string(), z.record(z.string(), z.string())]).default("7 days"),
+        text: z.record(z.string(), z.string()).default({ en: "Moderate", pt: "Moderada", he: "מתון" }),
+        refundText: z.record(z.string(), z.string()).default({ en: "50% refund", pt: "50% de reembolso", he: "החזר של 50%" }),
+        deadline: z.record(z.string(), z.string()).default({ en: "7 days", pt: "7 dias", he: "7 ימים" }),
     }).default({
-        text: "Moderate",
-        refundText: "50% refund",
-        deadline: "7 days",
+        text: { en: "Moderate", pt: "Moderada", he: "מתון" },
+        refundText: { en: "50% refund", pt: "50% de reembolso", he: "החזר של 50%" },
+        deadline: { en: "7 days", pt: "7 dias", he: "7 ימים" },
     }).catch({
-        text: "Moderate",
-        refundText: "50% refund",
-        deadline: "7 days",
+        text: { en: "Moderate", pt: "Moderada", he: "מתון" },
+        refundText: { en: "50% refund", pt: "50% de reembolso", he: "החזר של 50%" },
+        deadline: { en: "7 days", pt: "7 dias", he: "7 ימים" },
     }),
     vip_services: z.array(z.object({
-        title: z.record(z.string(), z.string()).optional().nullable(),
+        title: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
         icon: z.string().optional().nullable(),
     })).default([]).catch([]),
 });

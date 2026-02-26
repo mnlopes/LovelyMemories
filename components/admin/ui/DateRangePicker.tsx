@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
+import { pt } from "date-fns/locale";
 import { Calendar as CalendarIcon, X } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/Calendar";
+import { useTranslations } from "next-intl";
 
 interface DateRangePickerProps {
     date: DateRange | undefined;
@@ -12,6 +14,7 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePicker({ date, setDate }: DateRangePickerProps) {
+    const t = useTranslations('AdminReservations.datePicker');
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -40,13 +43,13 @@ export function DateRangePicker({ date, setDate }: DateRangePickerProps) {
                     {date?.from ? (
                         date.to ? (
                             <>
-                                {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}
+                                {format(date.from, "dd MMM, y", { locale: pt })} - {format(date.to, "dd MMM, y", { locale: pt })}
                             </>
                         ) : (
-                            format(date.from, "LLL dd, y")
+                            format(date.from, "dd MMM, y", { locale: pt })
                         )
                     ) : (
-                        <span>Pick a date range</span>
+                        <span>{t('pickRange')}</span>
                     )}
                 </button>
 
@@ -54,7 +57,7 @@ export function DateRangePicker({ date, setDate }: DateRangePickerProps) {
                     <button
                         onClick={() => setDate(undefined)}
                         className="p-2 text-[#a3a3a3] hover:text-[#171717] hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Clear filter"
+                        title={t('clearFilter')}
                     >
                         <X className="size-4" />
                     </button>

@@ -1,106 +1,81 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Loader2, X } from "lucide-react";
-import { Profile } from "@/lib/types";
+import { Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { deleteUser } from "@/app/actions/user";
 import { toast } from "sonner";
+import { Profile } from "@/lib/types";
+import { useTranslations } from "next-intl";
 
 interface DeleteUserModalProps {
     isOpen: boolean;
+    userToDelete: Profile | null;
     onClose: () => void;
     onSuccess: () => void;
-    userToDelete: Profile | null;
 }
 
-export function DeleteUserModal({ isOpen, onClose, onSuccess, userToDelete }: DeleteUserModalProps) {
-    const [isLoading, setIsLoading] = useState(false);
+export function DeleteUserModal({ isOpen, userToDelete, onClose, onSuccess }: DeleteUserModalProps) {
+    const t = useTranslations("AdminUsers.deleteModal");
+    const [loading, setLoading] = useState(false);
 
-    if (!userToDelete) return null;
+    if (!isOpen || !userToDelete) return null;
 
     const handleDelete = async () => {
-        setIsLoading(true);
+        setLoading(true);
         try {
-            await deleteUser(userToDelete.id);
-            toast.success("User deleted successfully");
-            onSuccess();
-            onClose();
+            const { success, error } = await deleteUser(userToDelete.id) as { success: boolean, error?: string };
+            if (error) {
+                toast.error(t('error', { error }));
+            } else {
+                toast.success(t('success'));
+                onSuccess();
+                onClose();
+            }
         } catch (error: any) {
-            toast.error("Failed to delete user: " + error.message);
+            toast.error(t('error', { error: error.message }));
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    {/* Backdrop */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                    />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-                    {/* Modal Content */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-md bg-white dark:bg-admin-dark-surface rounded-[32px] overflow-hidden shadow-2xl border border-red-100 dark:border-red-900/20"
-                    >
-                        <div className="p-8 md:p-10">
-                            {/* Icon & Close */}
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="size-14 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
-                                    <AlertTriangle className="size-7 text-red-500" />
-                                </div>
-                                <button
-                                    onClick={onClose}
-                                    className="p-2 hover:bg-[#f5f5f5] dark:hover:bg-admin-dark-bg rounded-xl transition-colors text-[#a3a3a3]"
-                                >
-                                    <X className="size-5" />
-                                </button>
-                            </div>
+            <div className="relative w-full max-w-md bg-white dark:bg-admin-dark-surface rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="p-8 pb-6 flex flex-col items-center text-center">
+                    <div className="size-16 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mb-6">
+                        <AlertCircle className="size-8 text-red-500" />
+                    </div>
 
-                            {/* Text content */}
-                            <h3 className="text-2xl font-playfair font-bold text-[#171717] dark:text-admin-dark-text-primary mb-3">
-                                Eliminate User?
-                            </h3>
-                            <p className="text-[#a3a3a3] text-sm font-medium leading-relaxed mb-8">
-                                You are about to delete <span className="text-[#171717] dark:text-white font-bold">{userToDelete.full_name || userToDelete.email}</span>.
-                                This action is <span className="text-red-500 font-bold uppercase tracking-wider">irreversible</span> and will remove all access immediately.
-                            </p>
+                    <h3 className="text-2xl font-playfair font-bold text-[#171717] dark:text-admin-dark-text-primary mb-3">
+                        {t('title')}
+                    </h3>
+                    <p className="text-[#a3a3a3] text-sm font-medium leading-relaxed mb-8">
+                        {t.rich('description', {
+                            name: <span key="name" className="text-[#171717] dark:text-white font-bold">{userToDelete.full_name || userToDelete.email}</span>,
+                            irreversible: <span key="irreversible" className="text-red-500 font-bold uppercase tracking-wider">{t('irreversible')}</span>
+                        })}
+                    </p>
 
-                            {/* Actions */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    onClick={onClose}
-                                    disabled={isLoading}
-                                    className="px-6 py-4 rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border text-sm font-bold uppercase tracking-wider text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#f5f5f5] dark:hover:bg-admin-dark-border transition-all disabled:opacity-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleDelete}
-                                    disabled={isLoading}
-                                    className="px-6 py-4 bg-red-500 text-white rounded-2xl text-sm font-bold uppercase tracking-wider hover:bg-red-600 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
-                                >
-                                    {isLoading ? (
-                                        <Loader2 className="size-4 animate-spin" />
-                                    ) : (
-                                        "Delete User"
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
+                    <div className="flex w-full gap-3">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 py-3 border border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary font-bold rounded-xl hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all"
+                        >
+                            {t('cancel')}
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            disabled={loading}
+                            className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {loading ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                            {t('confirmButton')}
+                        </button>
+                    </div>
                 </div>
-            )}
-        </AnimatePresence>
+            </div>
+        </div>
     );
 }

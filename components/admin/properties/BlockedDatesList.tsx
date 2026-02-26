@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { format } from "date-fns";
 import { AlertCircle, Trash2, Loader2 } from "lucide-react";
 import { BlockedDate } from "@/app/actions/blocked-dates";
@@ -11,11 +13,13 @@ interface BlockedDatesListProps {
 }
 
 export function BlockedDatesList({ blockedDates, isLoading, onDelete }: BlockedDatesListProps) {
+    const t = useTranslations('PropertyEditor');
+
     if (isLoading && blockedDates.length === 0) {
         return (
             <div className="text-center py-8 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed dark:border-white/10 text-sm flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading blocks...
+                {t('pricing.loadingBlocks')}
             </div>
         );
     }
@@ -23,7 +27,7 @@ export function BlockedDatesList({ blockedDates, isLoading, onDelete }: BlockedD
     if (blockedDates.length === 0) {
         return (
             <div className="text-center py-8 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed dark:border-white/10 text-sm">
-                No active blocks found.
+                {t('pricing.noBlocksFound')}
             </div>
         );
     }
@@ -45,7 +49,7 @@ export function BlockedDatesList({ blockedDates, isLoading, onDelete }: BlockedD
                         type="button"
                         onClick={() => onDelete(block.id)}
                         className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Remove block"
+                        title={t('pricing.removeBlockAction')}
                     >
                         <Trash2 className="h-4 w-4" />
                     </button>

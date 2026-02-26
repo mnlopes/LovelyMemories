@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 
 export const Preloader = () => {
     const pathname = usePathname();
-    const [isLoading, setIsLoading] = useState(!pathname?.includes('/booking/checkout') && !pathname?.includes('/admin'));
+    const [isLoading, setIsLoading] = useState(!pathname?.includes('/booking/checkout') && !pathname?.includes('/admin') && !pathname?.includes('/owner'));
 
     useEffect(() => {
-        // Skip preloader for checkout and admin pages to allow direct access
-        if (pathname.includes('/booking/checkout') || pathname.includes('/admin')) {
+        // Skip preloader for checkout, admin and owner portal pages to allow direct access
+        if (pathname.includes('/booking/checkout') || pathname.includes('/admin') || pathname.includes('/owner')) {
             setIsLoading(false);
             return;
         }
@@ -18,7 +18,7 @@ export const Preloader = () => {
         setIsLoading(true);
         window.scrollTo(0, 0);
 
-        const delay = pathname?.includes('/owner') ? 2000 : 1000;
+        const delay = pathname?.includes('/join') ? 2000 : 1000;
 
         const timer = setTimeout(() => {
             setIsLoading(false);
@@ -52,7 +52,7 @@ export const Preloader = () => {
                             className="h-[1px] bg-[#AD9C7E] mx-auto"
                         />
                         <p className="mt-6 text-[#AD9C7E] uppercase tracking-[0.5em] text-xs md:text-sm font-medium">
-                            {pathname?.includes('/owner')
+                            {pathname?.includes('/join')
                                 ? "Elevate Your Property. Maximise your Returns."
                                 : "Luxury Property Management"}
                         </p>

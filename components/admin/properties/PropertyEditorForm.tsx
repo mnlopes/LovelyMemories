@@ -3,9 +3,10 @@
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { ArrowLeft, Save, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Eye, Loader2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { PropertyFormData, propertySchema } from "./PropertyFormSchema";
 import BasicInfoTab from "./BasicInfoTab";
 import LocationTab from "./LocationTab";
@@ -16,6 +17,7 @@ import AmenitiesTab from "./AmenitiesTab";
 import PoliciesTab from "./PoliciesTab";
 import PricingAvailabilityTab from "./PricingAvailabilityTab";
 import { upsertProperty } from "@/app/actions/property";
+import { translatePropertyFields } from "@/app/actions/translate";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 
@@ -27,8 +29,10 @@ interface PropertyEditorFormProps {
 
 export default function PropertyEditorForm({ initialData, isEditing, mode }: PropertyEditorFormProps) {
     const router = useRouter();
+    const t = useTranslations('PropertyEditor');
     const [activeTab, setActiveTab] = useState('basic');
     const [activeLang, setActiveLang] = useState('en');
+    const [isTranslating, setIsTranslating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
@@ -45,7 +49,6 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
     const languages = [
         { id: 'en', label: 'English', flag: '🇬🇧', dir: 'ltr' },
         { id: 'pt', label: 'Português', flag: '🇵🇹', dir: 'ltr' },
-        { id: 'he', label: 'Hebrew', flag: '🇮🇱', dir: 'rtl' },
     ];
 
     const formMethods = useForm<PropertyFormData>({
@@ -140,8 +143,8 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         setModalConfig({
             isOpen: true,
             type: 'loading',
-            title: 'Gravando...',
-            message: 'Estamos a guardar as alterações na base de dados.'
+            title: t('system.saving'),
+            message: t('system.savingDesc')
         });
 
         try {
@@ -150,8 +153,8 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 setModalConfig({
                     isOpen: true,
                     type: 'success',
-                    title: 'Sucesso!',
-                    message: result.message || 'Dados guardados com sucesso.'
+                    title: t('system.success'),
+                    message: result.message || t('system.saveSuccess')
                 });
 
                 setTimeout(() => {
@@ -175,8 +178,8 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 setModalConfig({
                     isOpen: true,
                     type: 'error',
-                    title: 'Erro ao Gravar',
-                    message: result.error || 'Não foi possível guardar as alterações.'
+                    title: t('system.errorSaving'),
+                    message: result.error || t('system.saveError')
                 });
             }
         } catch (error) {
@@ -184,8 +187,8 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
             setModalConfig({
                 isOpen: true,
                 type: 'error',
-                title: 'Erro Inesperado',
-                message: 'Ocorreu um erro no servidor ao tentar gravar.'
+                title: t('system.unexpectedError'),
+                message: t('system.unexpectedDesc')
             });
         } finally {
             setIsSaving(false);
@@ -204,22 +207,22 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         setModalConfig({
             isOpen: true,
             type: 'error',
-            title: 'Dados Incompletos',
-            message: `Por favor, verifica os seguintes campos: [${errorFields}].`
+            title: t('system.incompleteData'),
+            message: t('system.incompleteDesc', { fields: errorFields })
         });
     };
 
     const tabs = [
-        { id: 'media', label: 'Media' },
-        { id: 'basic', label: effectiveMode === 'building' ? 'Building Info' : 'Basic Info' },
-        { id: 'hierarchy', label: 'Hierarchy', hideForUnits: true },
-        { id: 'amenities', label: 'Amenities', hideForBuildings: true },
-        { id: 'units', label: 'Rooms & Spaces', hideForBuildings: true },
-        { id: 'location', label: 'Location' },
-        { id: 'policies', label: 'Policies', hideForBuildings: true },
-        { id: 'pricing', label: 'Pricing & Availability', hideForBuildings: true },
+        { id: 'media', label: t('tabs.media') },
+        { id: 'basic', label: effectiveMode === 'building' ? t('tabs.building') : t('tabs.basic') },
+        { id: 'hierarchy', label: t('tabs.hierarchy'), hideForUnits: true },
+        { id: 'amenities', label: t('tabs.amenities'), hideForBuildings: true },
+        { id: 'units', label: t('tabs.units'), hideForBuildings: true },
+        { id: 'location', label: t('tabs.location') },
+        { id: 'policies', label: t('tabs.policies'), hideForBuildings: true },
+        { id: 'pricing', label: t('tabs.pricing'), hideForBuildings: true },
         // Only show history if not creating new property
-        ...(isEditing ? [{ id: 'history', label: 'History' }] : [])
+        ...(isEditing ? [{ id: 'history', label: t('tabs.history') }] : [])
     ].filter(tab => {
         if (effectiveMode === 'building') {
             return !tab.hideForBuildings;
@@ -232,7 +235,39 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         if (slug) {
             window.open(`/${activeLang}/properties/${slug}`, '_blank');
         } else {
-            alert("Slug is required to preview the page.");
+            toast.error(t('system.slugRequired'));
+        }
+    };
+
+    const handleMagicTranslate = async () => {
+        const values = formMethods.getValues();
+        setIsTranslating(true);
+        const langName = activeLang === 'pt' ? t('magicTranslate.portuguese') : t('magicTranslate.english');
+        const toastId = toast.loading(t('magicTranslate.translating', { lang: langName }));
+
+        try {
+            // translatePropertyFields is a server action
+            const { data: translatedData } = await translatePropertyFields(values, activeLang as any);
+
+            // Update form values.
+            Object.keys(translatedData).forEach((key) => {
+                formMethods.setValue(key as any, (translatedData as any)[key], { shouldDirty: true });
+            });
+
+            toast.success(t('magicTranslate.success'), { id: toastId });
+        } catch (error: any) {
+            console.error("Magic Translation Error:", error);
+            const errorMsg = error.message || "";
+            const isMissingKey = errorMsg.includes("Missing API Key");
+            const isQuota = errorMsg.includes("429") || errorMsg.includes("quota");
+
+            let message = t('magicTranslate.error');
+            if (isMissingKey) message = t('magicTranslate.missingKey');
+            else if (isQuota) message = t('magicTranslate.quotaExceeded');
+
+            toast.error(message, { id: toastId });
+        } finally {
+            setIsTranslating(false);
         }
     };
 
@@ -252,12 +287,15 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         </button>
                         <div>
                             <h1 className="text-2xl font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">
-                                {isEditing ? `Edit ${effectiveMode === 'building' ? 'Building' : 'Property'}` : `Create New ${effectiveMode === 'building' ? 'Building' : 'Property'}`}
+                                {isEditing
+                                    ? t('header.editTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
+                                    : t('header.createTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
+                                }
                             </h1>
                             <p className="text-[#a3a3a3] text-sm font-medium">
                                 {isEditing
-                                    ? `Editing ${(initialData?.title as any)?.en || (effectiveMode === 'building' ? 'Building' : 'Property')}`
-                                    : `Fill in the details to list a new ${effectiveMode === 'building' ? 'building' : 'home'}.`}
+                                    ? t('header.editDesc', { name: (initialData?.title as any)?.en || t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
+                                    : t('header.createDesc', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })}
                             </p>
                         </div>
                     </div>
@@ -268,7 +306,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             className="px-4 py-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded-lg text-sm font-bold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2 shadow-sm"
                         >
                             <Eye className="size-4" />
-                            Preview Page
+                            {t('header.preview')}
                         </button>
                         <button
                             type="submit"
@@ -276,7 +314,10 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             className="px-6 py-2 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2 disabled:opacity-50 min-w-[160px] justify-center shadow-lg shadow-black/5"
                         >
                             {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                            {isSaving ? 'Saving...' : `Save ${effectiveMode === 'building' ? 'Building' : 'Property'}`}
+                            {isSaving
+                                ? t('header.saving')
+                                : t('header.save', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
+                            }
                         </button>
                     </div>
                 </div>
@@ -318,24 +359,41 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             })}
                         </div>
 
-                        {/* Language Selector */}
-                        <div className="flex items-center gap-2 pb-3">
-                            <span className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider mr-2 hidden md:block">Editing in:</span>
-                            <div className="flex p-1 bg-[#f5f5f5] dark:bg-admin-dark-bg rounded-xl border border-[#f0f0f0] dark:border-admin-dark-border transition-colors">
-                                {languages.map((lang) => (
-                                    <button
-                                        key={lang.id}
-                                        type="button"
-                                        onClick={() => setActiveLang(lang.id)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeLang === lang.id
-                                            ? 'bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-admin-dark-text-primary shadow-sm'
-                                            : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'
-                                            }`}
-                                    >
-                                        <span>{lang.flag}</span>
-                                        <span>{lang.id.toUpperCase()}</span>
-                                    </button>
-                                ))}
+                        <div className="flex flex-wrap items-center gap-3 p-1.5 bg-[#f5f5f5] dark:bg-admin-dark-bg rounded-2xl border border-[#f0f0f0] dark:border-admin-dark-border mb-3 transition-colors">
+                            {/* View Selector */}
+                            <div className="flex items-center gap-2 px-1.5">
+                                <span className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-wider">{t('magicTranslate.view')}</span>
+                                <div className="flex gap-1">
+                                    {languages.map((lang) => (
+                                        <button
+                                            key={lang.id}
+                                            type="button"
+                                            onClick={() => setActiveLang(lang.id)}
+                                            className={`h-7 px-2.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 ${activeLang === lang.id
+                                                ? 'bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-admin-dark-text-primary shadow-sm'
+                                                : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'
+                                                }`}
+                                        >
+                                            <span className="text-xs">{lang.flag}</span>
+                                            <span className="hidden sm:inline">{lang.id.toUpperCase()}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="w-px h-4 bg-[#eaeaea] dark:bg-admin-dark-border hidden md:block" />
+
+                            {/* Translate Action */}
+                            <div className="flex items-center gap-2 px-1.5 ml-auto sm:ml-0">
+                                <button
+                                    type="button"
+                                    onClick={handleMagicTranslate}
+                                    disabled={isTranslating}
+                                    className="h-7 px-3 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-[10px] font-black tracking-wider uppercase transition-all flex items-center gap-2 hover:bg-black dark:hover:bg-gray-100 disabled:opacity-50 disabled:grayscale shadow-sm"
+                                >
+                                    {isTranslating ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3 text-gold-400" />}
+                                    <span>{t('magicTranslate.action')}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -351,7 +409,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                                 dir={languages.find(l => l.id === activeLang)?.dir as 'ltr' | 'rtl'}
                             />
                         )}
-                        {activeTab === 'location' && <LocationTab />}
+                        {activeTab === 'location' && <LocationTab activeLang={activeLang} />}
                         {activeTab === 'media' && <MediaTab />}
                         {activeTab === 'hierarchy' && initialData?.id && (
                             <HierarchyTab propertyId={initialData.id as string} />
@@ -380,7 +438,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
 
                         {activeTab === 'history' && initialData?.id && (
                             <div className="max-w-3xl">
-                                <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100">Property Audit Log</h3>
+                                <h3 className="text-lg font-bold mb-6 text-gray-900 dark:text-gray-100">{t('system.auditLog')}</h3>
                                 <ActivityTimeline
                                     resourceType="PROPERTY"
                                     resourceId={initialData.id as string}
@@ -391,8 +449,10 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
 
                         {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'pricing', 'history'].includes(activeTab) && (
                             <div className="flex flex-col items-center justify-center h-64 text-[#a3a3a3]">
-                                <p className="text-lg font-bold dark:text-admin-dark-text-primary">Coming Soon: {tabs.find(t => t.id === activeTab)?.label} Editor</p>
-                                <p className="text-sm mt-2">This module is part of the next update.</p>
+                                <p className="text-lg font-bold dark:text-admin-dark-text-primary">
+                                    {t('system.comingSoon', { tab: tabs.find(t => t.id === activeTab)?.label ?? "" })}
+                                </p>
+                                <p className="text-sm mt-2">{t('system.nextUpdate')}</p>
                             </div>
                         )}
                     </div>

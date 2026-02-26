@@ -15,8 +15,7 @@ export async function translateText(content: string, targetLang: string, apiKey?
     const cleanContent = content ? content.trim() : "";
 
     if (!key) {
-        console.warn(`Missing API Key for ${provider}. Skipping translation.`);
-        return content;
+        throw new Error(`Missing API Key for ${provider}. Please check your environment variables (.env.local).`);
     }
 
     try {
@@ -34,40 +33,64 @@ export async function translateText(content: string, targetLang: string, apiKey?
         } else {
             // Gemini (Default) with Model Fallback
             const genAI = new GoogleGenerativeAI(key);
-            // Extensive list of possible model names to bypass 404s
+            // Prefixing with models/ can help with some SDK versions
             const GEMINI_MODELS = [
-                "gemini-1.5-flash",
-                "gemini-1.5-flash-latest",
-                "gemini-1.5-flash-001",
-                "gemini-1.5-flash-002",
+                "gemini-flash-latest",
+                "gemini-2.0-flash",
                 "gemini-1.5-flash-8b",
                 "gemini-1.5-pro",
-                "gemini-1.0-pro",
-                "gemini-pro"
+                "gemini-pro-latest"
             ];
 
             let lastError;
 
+            // Helper for exponential backoff retry (max 3 retries)
+            const retryWithBackoff = async (fn: () => Promise<any>, maxRetries = 3) => {
+                for (let i = 0; i <= maxRetries; i++) {
+                    try {
+                        return await fn();
+                    } catch (err: any) {
+                        const msg = err.message || '';
+                        // 429, 500, 503 are retryable
+                        const isRetryable = msg.includes('429') || msg.includes('quota') || msg.includes('500') || msg.includes('503');
+
+                        if (isRetryable && i < maxRetries) {
+                            const delay = Math.pow(2, i) * 3000 + Math.random() * 1000;
+                            console.warn(`[GEMINI] Rate Limit reached. Waiting ${Math.round(delay / 1000)}s before retry ${i + 1}/${maxRetries}...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                        throw err;
+                    }
+                }
+            };
+
             // Try models in order
-            for (const modelName of GEMINI_MODELS) {
-                try {
-                    const model = genAI.getGenerativeModel({ model: modelName });
-                    const prompt = `You are a professional translator. Translate the text below strictly into ${targetLang === 'he' ? 'Hebrew' : targetLang === 'pt' ? 'Portuguese' : targetLang}.\nText: "${cleanContent}"`;
+            for (const baseModelName of GEMINI_MODELS) {
+                const namesToTry = [`models/${baseModelName}`, baseModelName];
 
-                    const result = await model.generateContent(prompt);
-                    const response = result.response;
-                    const text = response.text();
-                    if (text) return text.trim();
-                } catch (err: any) {
-                    const msg = err.message || '';
-                    console.warn(`Gemini Model ${modelName} failed: ${msg.split('\n')[0]}`); // Log specific error
+                for (const modelName of namesToTry) {
+                    try {
+                        console.log(`[GEMINI] Attempting translation with ${modelName} (${targetLang})...`);
+                        const model = genAI.getGenerativeModel({ model: modelName });
+                        const prompt = `You are a professional translator. Translate the text below strictly into ${targetLang === 'he' ? 'Hebrew' : targetLang === 'pt' ? 'Portuguese' : targetLang}.\nText: "${cleanContent}"`;
 
-                    // Only continue if it's a 404/400/403
-                    if (msg.includes('404') || msg.includes('not found') || msg.includes('400') || msg.includes('403')) {
+                        const translatedText = await retryWithBackoff(async () => {
+                            const result = await model.generateContent(prompt);
+                            return result.response.text();
+                        });
+
+                        if (translatedText) return translatedText.trim();
+                    } catch (err: any) {
                         lastError = err;
+                        const msg = err.message || '';
+                        console.warn(`[GEMINI] Model ${modelName} failed: ${msg.split('\n')[0]}`);
+
+                        if (msg.includes('404') || msg.includes('not found')) {
+                            continue;
+                        }
                         continue;
                     }
-                    throw err; // Re-throw other errors (quota, etc)
                 }
             }
 
@@ -85,6 +108,12 @@ export async function translatePropertyFields(data: any, sourceLang: string = 'e
     const targets = ['en', 'pt', 'he'].filter(l => l !== sourceLang);
     const translatedData = { ...data };
     let changesCount = 0;
+
+    // Pre-check API basic availability before starting loop
+    const key = apiKey || (provider === 'openai' ? process.env.OPENAI_API_KEY : process.env.GEMINI_API_KEY);
+    if (!key) {
+        throw new Error(`Missing API Key for ${provider}. Please check your environment variables (.env.local).`);
+    }
 
     const translateField = async (fieldValue: any) => {
         if (!fieldValue) return fieldValue;
@@ -107,7 +136,8 @@ export async function translatePropertyFields(data: any, sourceLang: string = 'e
         const newField = { ...sourceObject };
         let fieldChanged = false;
 
-        await Promise.all(targets.map(async (lang) => {
+        // Use sequential loop instead of Promise.all to avoid 429 Quota Exceeded
+        for (const lang of targets) {
             // Translate if missing OR if forced
             if (force || !newField[lang] || newField[lang].trim() === '' || newField[lang] === '[object Object]') {
                 try {
@@ -116,12 +146,20 @@ export async function translatePropertyFields(data: any, sourceLang: string = 'e
                         newField[lang] = translated;
                         fieldChanged = true;
                     }
-                } catch (e) {
-                    // Ignore individual field translation errors to allow partial success
-                    console.warn(`Failed to translate field to ${lang}`);
+                    // Sequential processing with conservative delay to avoid 429 (requested 5s+)
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                } catch (e: any) {
+                    // Re-throw critical missing key or quota errors
+                    const msg = e.message || "";
+                    if (msg.includes("Missing API Key") || msg.includes("429") || msg.includes("quota")) {
+                        throw e;
+                    }
+
+                    // Ignore individual field translation errors (AI failures) to allow partial success
+                    console.warn(`Failed to translate field to ${lang}: ${msg}`);
                 }
             }
-        }));
+        }
 
         if (fieldChanged) changesCount++;
         return newField;
@@ -135,19 +173,42 @@ export async function translatePropertyFields(data: any, sourceLang: string = 'e
     // Helper for nested fields
     const translateNested = async (items: any[]) => {
         if (!items || !Array.isArray(items)) return items;
-        return Promise.all(items.map(async (item) => {
-            if (item.text) item.text = await translateField(item.text); // Highlights
-            if (item.name) item.name = await translateField(item.name); // Rooms
-            if (item.details) item.details = await translateField(item.details);
-            if (item.beds) item.beds = await translateField(item.beds);
-            if (item.alt) item.alt = await translateField(item.alt); // Images
-            return item;
-        }));
+        const result = [];
+        for (const item of items) {
+            const newItem = { ...item };
+            if (newItem.text) newItem.text = await translateField(newItem.text); // Highlights
+            if (newItem.name) newItem.name = await translateField(newItem.name); // Rooms
+            if (newItem.details) newItem.details = await translateField(newItem.details);
+            if (newItem.beds) newItem.beds = await translateField(newItem.beds);
+            if (newItem.alt) newItem.alt = await translateField(newItem.alt); // Images
+            result.push(newItem);
+        }
+        return result;
     };
 
     if (translatedData.highlights) translatedData.highlights = await translateNested(translatedData.highlights);
     if (translatedData.rooms) translatedData.rooms = await translateNested(translatedData.rooms);
     if (translatedData.images) translatedData.images = await translateNested(translatedData.images);
+
+    // Nearby Places
+    if (translatedData.nearby_places && Array.isArray(translatedData.nearby_places)) {
+        const newNearby = [];
+        for (const cat of translatedData.nearby_places) {
+            const newCat = { ...cat };
+            if (newCat.items && Array.isArray(newCat.items)) {
+                const newItems = [];
+                for (const item of newCat.items) {
+                    const newItem = { ...item };
+                    if (newItem.name) newItem.name = await translateField(newItem.name);
+                    if (newItem.subtitle) newItem.subtitle = await translateField(newItem.subtitle);
+                    newItems.push(newItem);
+                }
+                newCat.items = newItems;
+            }
+            newNearby.push(newCat);
+        }
+        translatedData.nearby_places = newNearby;
+    }
 
     // Cancellation
     if (translatedData.cancellation) {
@@ -158,12 +219,19 @@ export async function translatePropertyFields(data: any, sourceLang: string = 'e
 
     // Amenities
     if (translatedData.amenities && Array.isArray(translatedData.amenities)) {
-        translatedData.amenities = await Promise.all(translatedData.amenities.map(async (cat: any) => {
-            if (cat.items && Array.isArray(cat.items)) {
-                cat.items = await Promise.all(cat.items.map(async (item: any) => await translateField(item)));
+        const newAmenities = [];
+        for (const cat of translatedData.amenities) {
+            const newCat = { ...cat };
+            if (newCat.items && Array.isArray(newCat.items)) {
+                const newItems = [];
+                for (const item of newCat.items) {
+                    newItems.push(await translateField(item));
+                }
+                newCat.items = newItems;
             }
-            return cat;
-        }));
+            newAmenities.push(newCat);
+        }
+        translatedData.amenities = newAmenities;
     }
 
     return { data: translatedData, changes: changesCount };

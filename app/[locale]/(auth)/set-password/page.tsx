@@ -135,9 +135,25 @@ function SetPasswordForm() {
             setIsSuccess(true);
             toast.success(t('successPassword'));
 
+            // Determine redirect based on role
+            const { data: { user } } = await supabase.auth.getUser();
+            let redirectPath = '/admin';
+
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile?.role === 'owner') {
+                    redirectPath = '/owner';
+                }
+            }
+
             const locale = window.location.pathname.split('/')[1] || 'en';
             setTimeout(() => {
-                window.location.href = `/${locale}/admin`;
+                window.location.href = `/${locale}${redirectPath}`;
             }, 2000);
         } catch (err: any) {
             console.error("Password update error:", err);

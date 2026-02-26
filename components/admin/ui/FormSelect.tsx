@@ -5,11 +5,12 @@ interface FormSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> 
     label: string;
     error?: string;
     helperText?: string;
+    placeholder?: string;
     options: { label: string; value: string | number }[];
 }
 
 const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
-    ({ className, label, error, helperText, options, ...props }, ref) => {
+    ({ className, label, error, helperText, options, placeholder, ...props }, ref) => {
         return (
             <div className="space-y-1.5 w-full">
                 <label className="text-sm font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{label}</label>
@@ -24,7 +25,9 @@ const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
                         )}
                         {...props}
                     >
-                        <option value="" disabled className="dark:bg-admin-dark-surface">Select an option</option>
+                        <option value="" disabled className="dark:bg-admin-dark-surface">
+                            {placeholder || "Select an option"}
+                        </option>
                         {options.map((opt) => (
                             <option key={opt.value} value={opt.value} className="dark:bg-admin-dark-surface dark:text-admin-dark-text-primary">
                                 {opt.label}

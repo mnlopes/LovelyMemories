@@ -1,28 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { X, Mail, Shield, Loader2, UserPlus } from "lucide-react";
+import { X, Mail, Shield, Loader2, UserPlus, Copy, Check } from "lucide-react";
 import { inviteUser } from "@/app/actions/user";
 import { toast } from "sonner";
 import { AppRole } from "@/lib/types";
+import { useTranslations } from "next-intl";
 
 interface InviteUserModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
     currentUserRole: AppRole;
+    initialRole?: AppRole;
+    allowedRoles?: AppRole[];
 }
 
-export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }: InviteUserModalProps) => {
+export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, initialRole = "editor", allowedRoles }: InviteUserModalProps) => {
+    const t = useTranslations("AdminUsers.inviteModal");
+    const nt = useTranslations("AdminUsers.notifications");
     const [email, setEmail] = useState("");
-    const [role, setRole] = useState<AppRole>("editor");
+    const [role, setRole] = useState<AppRole>(initialRole);
     const [loading, setLoading] = useState(false);
     const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const getAvailableRoles = (): AppRole[] => {
-        if (currentUserRole === 'super_admin') return ['super_admin', 'admin', 'editor', 'user'];
-        if (currentUserRole === 'admin') return ['admin', 'editor', 'user'];
-        return [];
+        let roles: AppRole[] = [];
+        if (currentUserRole === 'super_admin') roles = ['super_admin', 'admin', 'editor', 'user', 'owner'];
+        else if (currentUserRole === 'admin') roles = ['admin', 'editor', 'user', 'owner'];
+
+        if (allowedRoles) {
+            return roles.filter(r => allowedRoles.includes(r));
+        }
+        return roles;
     };
 
     if (!isOpen) return null;
@@ -35,17 +46,26 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
 
             if (result.actionLink) {
                 setGeneratedLink(result.actionLink);
-                toast.info("Email limit exceeded. Link generated manually.");
+                toast.info(t('emailLimitReached'));
             } else {
-                toast.success("Invitation sent to " + email);
+                toast.success(nt('inviteSuccess', { email }));
                 setEmail("");
                 onSuccess();
                 onClose();
             }
         } catch (error: any) {
-            toast.error("Failed to send invitation: " + error.message);
+            toast.error(nt('inviteError', { error: error.message }));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const copyToClipboard = () => {
+        if (generatedLink) {
+            navigator.clipboard.writeText(generatedLink);
+            setCopied(true);
+            toast.success(nt('copySuccess'));
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
@@ -63,8 +83,8 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                     {/* Header */}
                     <div className="flex justify-between items-start mb-6">
                         <div>
-                            <h3 className="text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary">Invite Team Member</h3>
-                            <p className="text-sm text-[#a3a3a3] mt-1">Send an invitation to join the team.</p>
+                            <h3 className="text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h3>
+                            <p className="text-sm text-[#a3a3a3] mt-1">{t('description')}</p>
                         </div>
                         <button
                             onClick={onClose}
@@ -78,7 +98,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl">
                                 <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
-                                    Supabase email limit reached. Please copy this link and send it manually to the user:
+                                    {t('emailLimitReached')}
                                 </p>
                             </div>
 
@@ -90,13 +110,10 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(generatedLink);
-                                        toast.success("Link copied to clipboard!");
-                                    }}
+                                    onClick={copyToClipboard}
                                     className="absolute right-3 top-3 p-2 bg-white dark:bg-admin-dark-surface border border-gray-100 dark:border-admin-dark-border rounded-lg shadow-sm hover:shadow-md transition-all text-[#171717] dark:text-admin-dark-text-primary"
                                 >
-                                    <X className="size-4 rotate-45" /> {/* Using X rotated as a temporary icon or just finding a copy icon */}
+                                    {copied ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
                                 </button>
                             </div>
 
@@ -110,7 +127,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                                 }}
                                 className="w-full px-5 py-4 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-black text-sm font-bold hover:shadow-xl transition-all"
                             >
-                                Done
+                                {t('done')}
                             </button>
                         </div>
                     ) : (
@@ -118,7 +135,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                             {/* Email Input */}
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
-                                    Email Address
+                                    {t('emailLabel')}
                                 </label>
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#a3a3a3]" />
@@ -136,7 +153,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                             {/* Role Selection */}
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
-                                    Initial Access Role
+                                    {t('roleLabel')}
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {getAvailableRoles().map((r) => (
@@ -150,12 +167,9 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                                                 }`}
                                         >
                                             <Shield className={`size-4 mb-2 ${role === r ? "opacity-60" : "text-[#a3a3a3]"}`} />
-                                            <span className="text-sm font-bold capitalize">{r.replace('_', ' ')}</span>
+                                            <span className="text-sm font-bold capitalize">{t(`roles.${r}` as any)}</span>
                                             <span className={`text-[10px] mt-1 ${role === r ? "opacity-60" : "text-[#a3a3a3]"}`}>
-                                                {r === 'super_admin' ? 'Total control & roles' :
-                                                    r === 'admin' ? 'Properties & team' :
-                                                        r === 'editor' ? 'Content & booking' :
-                                                            'Basic client access'}
+                                                {t(`roles.${r}_desc` as any)}
                                             </span>
                                         </button>
                                     ))}
@@ -170,7 +184,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                                         onClick={onClose}
                                         className="flex-1 px-5 py-3 rounded-xl border border-gray-200 dark:border-admin-dark-border text-sm font-bold text-[#a3a3a3] hover:bg-gray-50 dark:hover:bg-white/5 transition-all"
                                     >
-                                        Cancel
+                                        {t('cancel')}
                                     </button>
                                     <button
                                         type="submit"
@@ -182,7 +196,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                                         ) : (
                                             <>
                                                 <UserPlus className="size-4" />
-                                                Send Invite
+                                                {t('sendInvite')}
                                             </>
                                         )}
                                     </button>
@@ -197,17 +211,17 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole }:
                                             const result = await inviteUser(email, role, { skipEmail: true });
                                             if (result.actionLink) {
                                                 setGeneratedLink(result.actionLink);
-                                                toast.success("Link generated successfully!");
+                                                toast.success(nt('linkGenerated'));
                                             }
                                         } catch (error: any) {
-                                            toast.error("Failed to generate link: " + error.message);
+                                            toast.error(nt('inviteError', { error: error.message }));
                                         } finally {
                                             setLoading(false);
                                         }
                                     }}
                                     className="w-full px-5 py-3 rounded-xl border border-dashed border-amber-300 dark:border-amber-500/30 bg-amber-50/30 dark:bg-amber-500/5 text-amber-700 dark:text-amber-400 text-xs font-bold hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
-                                    {loading ? <Loader2 className="size-3 animate-spin" /> : "Gerar Link de Convite Direto (Pular Email)"}
+                                    {loading ? <Loader2 className="size-3 animate-spin" /> : t('generateLink')}
                                 </button>
                             </div>
                         </form>

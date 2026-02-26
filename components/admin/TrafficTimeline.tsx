@@ -25,8 +25,8 @@ export function TrafficTimeline({ data, range }: TrafficTimelineProps) {
     };
 
     return (
-        <div className="bg-[#111111] dark:bg-admin-dark-surface rounded-2xl p-6 border border-white/5 shadow-2xl">
-            <div className="flex items-center justify-between mb-8">
+        <div className="bg-[#111111] dark:bg-admin-dark-surface rounded-2xl p-4 border border-white/5 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{rangeLabels[range]}</h3>
@@ -39,7 +39,7 @@ export function TrafficTimeline({ data, range }: TrafficTimelineProps) {
                 </div>
             </div>
 
-            <div className="h-24 flex items-end gap-[1px] sm:gap-[2px]">
+            <div className="h-10 flex items-end gap-[1px] sm:gap-[2px]">
                 {data.map((count, i) => {
                     const height = (count / maxCount) * 100;
                     return (
@@ -65,7 +65,7 @@ export function TrafficTimeline({ data, range }: TrafficTimelineProps) {
                 })}
             </div>
 
-            <div className="mt-4 flex justify-between border-t border-white/5 pt-3 relative">
+            <div className="mt-2 flex justify-between border-t border-white/5 pt-2 relative">
                 {[0, 0.25, 0.5, 0.75, 1].map((portion) => {
                     const time = new Date(Date.now() - rangeMs[range] * (1 - portion));
                     const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

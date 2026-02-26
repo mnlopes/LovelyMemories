@@ -62,6 +62,7 @@ export async function upsertProperty(data: PropertyFormData) {
         description: validatedData.description,
         highlights_intro: validatedData.highlights_intro,
         slug: validatedData.slug,
+        owner_id: validatedData.owner_id || null,
 
         // Hierarchy
         parent_id: validatedData.parent_id || null,
@@ -190,6 +191,11 @@ export async function upsertProperty(data: PropertyFormData) {
             // Compare Slug
             if (payload.slug !== previousData.slug)
                 changes.slug = { from: previousData.slug, to: payload.slug };
+
+            // Compare Owner
+            if (payload.owner_id !== previousData.owner_id) {
+                changes.owner = { from: previousData.owner_id || 'None', to: payload.owner_id || 'None' };
+            }
 
             // Compare Description (EN) - optional check
             const newDescEn = (payload.description as any)?.en || payload.description || '';
@@ -463,4 +469,150 @@ export async function deleteProperty(id: string) {
 
     revalidatePath("/admin/properties");
     return { success: true };
+}
+
+/**
+ * Assign multiple properties to an owner
+ */
+export async function assignPropertiesToOwner(ownerId: string, propertyIds: string[]) {
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: profile } = await serverSupabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || (profile.role !== 'super_admin' && profile.role !== 'admin')) {
+        return { success: false, error: 'Not authorized' };
+    }
+
+    const { error } = await serverSupabase
+        .from('properties')
+        .update({ owner_id: ownerId })
+        .in('id', propertyIds);
+
+    if (error) return { success: false, error: error.message };
+
+    // Log activity
+    await logActivity(
+        user.id,
+        'UPDATE',
+        'PROPERTY',
+        'BULK_ASSIGN',
+        { owner_id: ownerId, property_ids_count: propertyIds.length }
+    );
+
+    revalidatePath('/admin/owners');
+    return { success: true };
+}
+
+/**
+ * Remove a property from an owner
+ */
+export async function removePropertyFromOwner(propertyId: string) {
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: profile } = await serverSupabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || (profile.role !== 'super_admin' && profile.role !== 'admin')) {
+        return { success: false, error: 'Not authorized' };
+    }
+
+    const { error } = await serverSupabase
+        .from('properties')
+        .update({ owner_id: null })
+        .eq('id', propertyId);
+
+    if (error) return { success: false, error: error.message };
+
+    await logActivity(
+        user.id,
+        'UPDATE',
+        'PROPERTY',
+        propertyId,
+        { action: 'REMOVE_OWNER' }
+    );
+
+    revalidatePath('/admin/owners');
+    return { success: true };
+}
+
+/**
+ * Fetch properties that are not assigned to any owner (or assigned to this owner)
+ */
+export async function getAvailableProperties(currentOwnerId?: string) {
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+
+    let query = serverSupabase
+        .from('properties')
+        .select('id, title, slug, address, city, owner_id, images, status, is_active')
+        .is('owner_id', null);
+
+    // If currentOwnerId is provided, also include properties owned by them (so they show up in list as "already assigned" or just to be safe)
+    // Actually for a "Assign New" dropdown we usually want only unassigned.
+    // Let's stick to unassigned for now. 
+
+    const { data, error } = await query.order('title', { ascending: true });
+
+    if (error) throw error;
+    return data;
 }

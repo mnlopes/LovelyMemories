@@ -2,27 +2,17 @@
 
 import { useState } from "react";
 import { Button } from "./ui/Button";
-import { Users, Calendar, Info } from "lucide-react";
+import { Users, Calendar } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-// Helper to safely extract number from potential object/string
-const safeCount = (val: any): number => {
-    if (typeof val === 'number') return val;
-    if (typeof val === 'string') return parseFloat(val) || 0;
-    if (typeof val === 'object' && val !== null) {
-        const num = val.en || val.pt || val.he || Object.values(val)[0] || '0';
-        return typeof num === 'number' ? num : parseFloat(String(num)) || 0;
-    }
-    return 0;
-};
-
 interface BookingSidebarProps {
-    shortTermPrice?: number;
-    midTermPrice?: number;
-    longTermPrice?: number;
+    propertyId: string;
+    pricePerNight?: number;
     cleaningFee?: number;
     cityTax?: number;
+    weeklyDiscount?: number;
+    monthlyDiscount?: number;
     agent: {
         name: string;
         image: string;
@@ -33,27 +23,29 @@ interface BookingSidebarProps {
 type EstadiaType = 'short' | 'mid' | 'long';
 
 export const BookingSidebar = ({
-    shortTermPrice = 0,
-    midTermPrice = 0,
-    longTermPrice = 0,
+    propertyId,
+    pricePerNight = 0,
     cleaningFee = 65,
     cityTax = 4,
+    weeklyDiscount = 0,
+    monthlyDiscount = 0,
     agent
 }: BookingSidebarProps) => {
     const [activeTab, setActiveTab] = useState<EstadiaType>('short');
     const [guests, setGuests] = useState(2);
 
     const getBasePrice = () => {
-        if (activeTab === 'short') return safeCount(shortTermPrice) || 94.76;
-        if (activeTab === 'mid') return safeCount(midTermPrice) || 2500;
-        return safeCount(longTermPrice) || 2200;
+        // Simple logic for illustration, real app would fetch specific rules
+        if (activeTab === 'short') return pricePerNight || 95;
+        if (activeTab === 'mid') return (pricePerNight * 30 * 0.8) || 2500; // Mock discount
+        return (pricePerNight * 30 * 0.7) || 2200; // Mock discount
     };
 
     const price = getBasePrice();
     const nights = 7; // Mock for design
     const subtotal = price * (activeTab === 'short' ? nights : 1);
-    const totalTax = safeCount(cityTax) * (activeTab === 'short' ? nights : 30);
-    const total = subtotal + totalTax + safeCount(cleaningFee);
+    const totalTax = cityTax * (activeTab === 'short' ? nights : 1);
+    const total = subtotal + totalTax + cleaningFee;
 
     const formatPrice = (val: number | null | undefined) => {
         const safeVal = val || 0;

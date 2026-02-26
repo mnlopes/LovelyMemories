@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { pt } from "date-fns/locale";
 import {
     Activity,
     User,
@@ -17,6 +18,7 @@ import {
 import { getAuditLogs } from "@/app/actions/audit";
 import { AuditLog } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface ActivityTimelineProps {
     resourceId?: string;
@@ -26,6 +28,7 @@ interface ActivityTimelineProps {
 }
 
 export function ActivityTimeline({ resourceId, resourceType, limit = 50, className }: ActivityTimelineProps) {
+    const t = useTranslations('AdminReservations.activity');
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -90,14 +93,14 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                 setLogs(data as unknown as AuditLog[]);
             } catch (err) {
                 console.error(err);
-                setError("Failed to load activity history");
+                setError(t('noActivity'));
             } finally {
                 setLoading(false);
             }
         }
 
         fetchLogs();
-    }, [resourceId, resourceType, limit, selectedDate]);
+    }, [resourceId, resourceType, limit, selectedDate, t]);
 
     const handleRetentionChange = async (days: number) => {
         try {
@@ -133,12 +136,75 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
     };
 
     if (loading && logs.length === 0) {
-        return <div className="p-4 text-center text-gray-500 animate-pulse">Loading activity...</div>;
+        return <div className="p-4 text-center text-gray-500 animate-pulse">{t('loading')}</div>;
     }
 
     if (error) {
         return <div className="p-4 text-center text-red-500">{error}</div>;
     }
+
+    // Wrap translations in a helper or use keys
+    const formatDescription = (log: AuditLog) => {
+        const resource = log.resource_type.toLowerCase();
+        const action = log.action_type;
+        const details = log.details as any;
+        const resourceNameStr = details?.title ? `: ${details.title}` : '';
+
+        const actionKey = action === 'CREATE' ? 'create' :
+            action === 'UPDATE' ? 'update' :
+                action === 'DELETE' ? 'delete' :
+                    action === 'INVITE' ? 'invite' :
+                        action === 'STATUS_CHANGE' ? 'statusChange' : 'generic';
+
+        return t(`actions.${actionKey}`, {
+            resource,
+            name: resourceNameStr,
+            action: action.toLowerCase()
+        });
+    };
+
+    const renderDetails = (details: any) => {
+        if (details.changes) {
+            return (
+                <div className="flex flex-col gap-1 text-xs">
+                    {Object.entries(details.changes).map(([key, value]: [string, any]) => {
+                        if (typeof value === 'object' && value !== null && 'from' in value && 'to' in value) {
+                            return (
+                                <div key={key} className="flex flex-wrap gap-x-1 items-baseline">
+                                    <span className="font-semibold text-gray-500 capitalize">{key.replace('_', ' ')}:</span>
+                                    <span className="text-red-400 line-through decoration-red-400/50 opacity-80">{String(value.from || '---')}</span>
+                                    <span className="text-gray-400 text-[10px]">➜</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{String(value.to || '---')}</span>
+                                </div>
+                            );
+                        }
+                        return (
+                            <div key={key} className="flex gap-2">
+                                <span className="font-medium text-gray-500 capitalize">{key.replace('_', ' ')}:</span>
+                                <span className="truncate max-w-[200px] text-gray-700 dark:text-gray-300">{String(value)}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        }
+
+        if (details.field) {
+            return (
+                <div>
+                    {t('details.changed')} <span className="font-medium text-gray-700 dark:text-gray-300">{details.field}</span>
+                    {details.old_role && <span> {t('details.from')} {details.old_role} {t('details.to')} {details.new_role}</span>}
+                    {details.previous_email && <span> ({t('details.previous')}: {details.previous_email})</span>}
+                </div>
+            );
+        }
+
+        if (details.email) {
+            return <span>Email: {details.email} ({details.role})</span>;
+        }
+
+        return <pre className="whitespace-pre-wrap">{JSON.stringify(details, null, 2)}</pre>;
+    };
 
     return (
         <div className={cn("space-y-6 relative ml-2", className)}>
@@ -146,7 +212,7 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-admin-surface p-4 rounded-xl border border-admin-border shadow-sm sticky top-0 z-20">
                 <div className="flex items-center gap-3">
                     <div className="flex flex-col">
-                        <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">Filter by Day</label>
+                        <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">{t('filterByDay')}</label>
                         <input
                             type="date"
                             value={selectedDate}
@@ -159,7 +225,7 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                             onClick={() => setSelectedDate('')}
                             className="mt-5 text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors"
                         >
-                            CLEAR
+                            {t('clear')}
                         </button>
                     )}
                 </div>
@@ -167,7 +233,7 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                 {userRole === 'super_admin' && (
                     <div className="flex flex-wrap items-center gap-6">
                         <div className="flex flex-col items-end">
-                            <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">Retention Policy</label>
+                            <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">{t('retentionPolicy')}</label>
                             <div className="flex items-center gap-2">
                                 <select
                                     value={retentionDays}
@@ -175,20 +241,20 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                                     disabled={isUpdatingRetention}
                                     className="bg-admin-bg border border-admin-border rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-admin-accent outline-none transition-all text-admin-text-primary appearance-none cursor-pointer disabled:opacity-50"
                                 >
-                                    <option value={30}>30 Days</option>
-                                    <option value={90}>90 Days</option>
-                                    <option value={180}>180 Days (Default)</option>
-                                    <option value={365}>365 Days</option>
+                                    <option value={30}>{t('days', { count: 30 })}</option>
+                                    <option value={90}>{t('days', { count: 90 })}</option>
+                                    <option value={180}>{t('daysDefault', { count: 180 })}</option>
+                                    <option value={365}>{t('days', { count: 365 })}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div className="flex flex-col items-end">
-                            <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">Cleanup Time</label>
+                            <label className="text-[10px] font-bold text-admin-text-secondary uppercase tracking-wider mb-1 px-1">{t('cleanupTime')}</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="time"
-                                    step="3600" // Only hours for simplicity in cron conversion
+                                    step="3600"
                                     value={cleanupTime}
                                     onChange={(e) => handleCleanupTimeChange(e.target.value)}
                                     disabled={isUpdatingRetention}
@@ -208,7 +274,7 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                     <div className="size-12 bg-admin-bg rounded-full flex items-center justify-center mx-auto mb-4 border border-admin-border">
                         <Activity className="text-admin-text-secondary/30" size={20} />
                     </div>
-                    <p className="text-admin-text-secondary italic text-sm">No activity found for this selection.</p>
+                    <p className="text-admin-text-secondary italic text-sm">{t('noActivity')}</p>
                 </div>
             ) : logs.map((log) => {
                 const Icon = getActionIcon(log.action_type);
@@ -226,28 +292,26 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
 
                         <div className="flex-1 py-1">
                             <div className="flex justify-between items-start mb-1">
-                                <div className="font-medium text-admin-text-primary">
+                                <div className="font-medium text-admin-text-primary text-left">
                                     {formatDescription(log)}
                                 </div>
                                 <span className="text-xs text-admin-text-secondary whitespace-nowrap ml-2">
-                                    {format(date, "MMM d, HH:mm")}
+                                    {format(date, "MMM d, HH:mm", { locale: pt })}
                                 </span>
                             </div>
 
-                            <div className="text-sm text-admin-text-secondary">
+                            <div className="text-sm text-admin-text-secondary text-left">
                                 <span className="font-semibold text-admin-text-primary">
-                                    {log.actor?.full_name || log.actor?.email || "System"}
+                                    {log.actor?.full_name || log.actor?.email || t('system')}
                                 </span>
                                 {" • "}
                                 <span className="capitalize text-xs bg-admin-bg px-2 py-0.5 rounded-full border border-admin-border">
-                                    {log.actor?.role?.replace('_', ' ') || 'Unknown Role'}
+                                    {log.actor?.role?.replace('_', ' ') || t('unknownRole')}
                                 </span>
                             </div>
 
-                            {/* Optional: Render details diff or metadata */}
                             {log.details && Object.keys(log.details).length > 0 && (
                                 <div className="mt-2 text-xs bg-admin-bg/50 p-2 rounded border border-admin-border">
-                                    {/* Handle common details patterns */}
                                     {renderDetails(log.details)}
                                 </div>
                             )}
@@ -282,66 +346,4 @@ function getActionColor(action: string) {
         case 'LOGIN': return "bg-teal-500";
         default: return "bg-gray-400";
     }
-}
-
-function formatDescription(log: AuditLog) {
-    const resource = log.resource_type.toLowerCase();
-    const action = log.action_type;
-    const details = log.details as any;
-    const resourceName = details?.title ? `: ${details.title}` : '';
-
-    switch (action) {
-        case 'CREATE': return `Created new ${resource}${resourceName}`;
-        case 'UPDATE': return `Updated ${resource}${resourceName}`;
-        case 'DELETE': return `Deleted ${resource}${resourceName}`;
-        case 'INVITE': return `Invited user`;
-        case 'STATUS_CHANGE': return `Status changed on ${resource}${resourceName}`;
-        default: return `${action} on ${resource}${resourceName}`;
-    }
-}
-
-function renderDetails(details: any) {
-    if (details.changes) {
-        return (
-            <div className="flex flex-col gap-1 text-xs">
-                {Object.entries(details.changes).map(([key, value]: [string, any]) => {
-                    // Handle "from -> to" object style
-                    if (typeof value === 'object' && value !== null && 'from' in value && 'to' in value) {
-                        return (
-                            <div key={key} className="flex flex-wrap gap-x-1 items-baseline">
-                                <span className="font-semibold text-gray-500 capitalize">{key.replace('_', ' ')}:</span>
-                                <span className="text-red-400 line-through decoration-red-400/50 opacity-80">{String(value.from || 'Empty')}</span>
-                                <span className="text-gray-400 text-[10px]">➜</span>
-                                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{String(value.to || 'Empty')}</span>
-                            </div>
-                        );
-                    }
-                    // Fallback for simple values
-                    return (
-                        <div key={key} className="flex gap-2">
-                            <span className="font-medium text-gray-500 capitalize">{key.replace('_', ' ')}:</span>
-                            <span className="truncate max-w-[200px] text-gray-700 dark:text-gray-300">{String(value)}</span>
-                        </div>
-                    );
-                })}
-            </div>
-        );
-    }
-
-    if (details.field) {
-        // Specific field update
-        return (
-            <div>
-                Changed <span className="font-medium text-gray-700 dark:text-gray-300">{details.field}</span>
-                {details.old_role && <span> from {details.old_role} to {details.new_role}</span>}
-                {details.previous_email && <span> (Previous: {details.previous_email})</span>}
-            </div>
-        );
-    }
-
-    if (details.email) {
-        return <span>Email: {details.email} ({details.role})</span>;
-    }
-
-    return <pre className="whitespace-pre-wrap">{JSON.stringify(details, null, 2)}</pre>;
 }

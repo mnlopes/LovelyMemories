@@ -16,7 +16,7 @@ export const Footer = () => {
 
     const navLinks = [
         { path: '/', label: tNav('book') },
-        { path: '/owner', label: tNav('owner') },
+        { path: '/join', label: tNav('owner') },
         { path: '/about-us', label: tNav('about') },
         { path: '/properties', label: tNav('properties') },
         { path: '/concierge', label: tNav('concierge') },

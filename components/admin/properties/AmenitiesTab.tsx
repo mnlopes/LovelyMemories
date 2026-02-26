@@ -1,6 +1,7 @@
 "use client";
 
 import { useFieldArray, useFormContext } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2, ListFilter, Sparkles, ChefHat, Car, Map, Utensils, ChevronDown, Wine, Music, Waves, ShieldCheck, Ticket, Plane, Calendar, GlassWater } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { useState } from "react";
@@ -73,6 +74,7 @@ interface AmenitiesTabProps {
 }
 
 export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
+    const t = useTranslations('PropertyEditor');
     const { control, register, getValues, setValue } = useFormContext<PropertyFormData>();
 
     // VIP Services Control
@@ -118,7 +120,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                 <div className="space-y-8">
                     <div className="flex items-center justify-between pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                         <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                            Property Amenities
+                            {t('amenities.propertyAmenities')}
                         </h3>
                     </div>
 
@@ -128,7 +130,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                 type="text"
                                 value={newCategoryName}
                                 onChange={(e) => setNewCategoryName(e.target.value)}
-                                placeholder="New category..."
+                                placeholder={t('amenities.newCategory')}
                                 className="flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] transition-all"
                                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCategory(newCategoryName))}
                             />
@@ -137,7 +139,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                 onClick={() => addCategory(newCategoryName)}
                                 className="px-6 py-3 bg-[#171717] dark:bg-white text-white dark:text-black rounded-xl text-xs font-bold hover:opacity-80 transition-all"
                             >
-                                Add Category
+                                {t('amenities.addCategory')}
                             </button>
                         </div>
 
@@ -150,7 +152,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                     onClick={() => addCategory(cat)}
                                     className="px-3 py-1.5 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border rounded-lg text-[10px] font-bold text-[#171717] dark:text-admin-dark-text-primary hover:border-[#171717] transition-all"
                                 >
-                                    + {cat}
+                                    + {t(`amenitiesCategories.${cat}`)}
                                 </button>
                             ))}
                         </div>
@@ -174,7 +176,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                             {amenityFields.length === 0 && (
                                 <div className="py-12 flex flex-col items-center justify-center border border-dashed border-[#eaeaea] dark:border-admin-dark-border rounded-[32px] opacity-50">
                                     <ListFilter className="size-8 mb-2 text-[#a3a3a3]" />
-                                    <p className="text-xs font-bold text-[#a3a3a3]">No Amenities categories</p>
+                                    <p className="text-xs font-bold text-[#a3a3a3]">{t('amenities.noCategories')}</p>
                                 </div>
                             )}
                         </div>
@@ -185,13 +187,13 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                 <div className="space-y-8">
                     <div className="flex items-center justify-between pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                         <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                            VIP Services
+                            {t('amenities.vipTitle')}
                         </h3>
                     </div>
 
                     <div className="space-y-6">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">Add VIP Service</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">{t('amenities.addVip')}</label>
                             <div className="flex gap-2">
                                 <div className="relative">
                                     <button
@@ -230,7 +232,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                     type="text"
                                     value={newVipTitle}
                                     onChange={(e) => setNewVipTitle(e.target.value)}
-                                    placeholder="e.g. Private Chef"
+                                    placeholder={t('amenities.vipPlaceholder')}
                                     className="flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] transition-all"
                                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addVipService())}
                                 />
@@ -240,7 +242,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                     className="px-6 py-3 bg-[#171717] dark:bg-white text-white dark:text-black rounded-xl text-xs font-bold hover:opacity-80 transition-all flex items-center gap-2"
                                 >
                                     <Plus className="size-3" />
-                                    Add
+                                    {t('basic.add')}
                                 </button>
                             </div>
                         </div>
@@ -282,9 +284,10 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                         </div>
                                         <div className="flex-1">
                                             <input
+                                                key={`vip-${index}-${activeLang}`}
                                                 {...register(`vip_services.${index}.title.${activeLang}` as any)}
                                                 className="w-full bg-transparent text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none"
-                                                placeholder={`Service title in ${activeLang}`}
+                                                placeholder={t('amenities.vipLabel', { lang: activeLang })}
                                             />
                                         </div>
                                         <button
@@ -300,7 +303,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                             {vipFields.length === 0 && (
                                 <div className="py-12 flex flex-col items-center justify-center border border-dashed border-[#eaeaea] dark:border-admin-dark-border rounded-[32px] opacity-50">
                                     <ChefHat className="size-8 mb-2 text-[#a3a3a3]" />
-                                    <p className="text-xs font-bold text-[#a3a3a3]">No VIP Services</p>
+                                    <p className="text-xs font-bold text-[#a3a3a3]">{t('amenities.noVip')}</p>
                                 </div>
                             )}
                         </div>
@@ -325,6 +328,7 @@ interface CategorySectionProps {
 }
 
 function CategorySection({ index, category, icon, removeCategory, updateCategory, control, register, activeLang, dir }: CategorySectionProps) {
+    const t = useTranslations('PropertyEditor');
     const { fields, append, remove, update } = useFieldArray({
         control,
         name: `amenities.${index}.items` as any,
@@ -399,32 +403,15 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
             <div className="p-4 space-y-4">
                 <div className="space-y-2">
                     {fields.map((field, itemIndex) => {
-                        const actualItem = getValues(`amenities.${index}.items.${itemIndex}` as any);
-                        const isLegacy = typeof actualItem === 'string';
-
                         return (
                             <div key={field.id} className="flex items-center justify-between p-2.5 bg-[#fafafa] dark:bg-admin-dark-bg rounded-xl border border-transparent hover:border-[#eaeaea] group/item transition-all">
-                                {isLegacy ? (
-                                    <div className="flex-1 flex flex-col">
-                                        <input
-                                            {...register(`amenities.${index}.items.${itemIndex}`)}
-                                            className="bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none w-full font-bold opacity-70"
-                                            readOnly
-                                        />
-                                    </div>
-                                ) : (
-                                    <input
-                                        {...register(`amenities.${index}.items.${itemIndex}.${activeLang}` as any)}
-                                        dir={dir}
-                                        className={`bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none w-full font-bold`}
-                                    />
-                                )}
+                                <input
+                                    key={`amenity-${index}-${itemIndex}-${activeLang}`}
+                                    {...register(`amenities.${index}.items.${itemIndex}.${activeLang}` as any)}
+                                    dir={dir}
+                                    className={`bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none w-full font-bold`}
+                                />
                                 <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
-                                    {isLegacy && (
-                                        <button type="button" onClick={() => update(itemIndex, { en: actualItem, pt: actualItem, he: actualItem })} className="p-1 text-[#a3a3a3] hover:text-[#171717]">
-                                            <Sparkles className="size-3" />
-                                        </button>
-                                    )}
                                     <button type="button" onClick={() => remove(itemIndex)} className="p-1 text-[#a3a3a3] hover:text-red-500">
                                         <Trash2 className="size-3" />
                                     </button>
@@ -438,7 +425,7 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
                             type="text"
                             value={newItem}
                             onChange={(e) => setNewItem(e.target.value)}
-                            placeholder={`Add item...`}
+                            placeholder={t('amenities.addItem')}
                             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addItem(newItem))}
                             className="flex-1 bg-white dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border rounded-xl px-3 py-2 text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] transition-all"
                         />

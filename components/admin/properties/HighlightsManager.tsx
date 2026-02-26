@@ -2,6 +2,7 @@ import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { Plus, Trash2, Image as ImageIcon, Sparkles, ChevronDown } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface HighlightsManagerProps {
     activeLang: string;
@@ -9,6 +10,7 @@ interface HighlightsManagerProps {
 }
 
 export default function HighlightsManager({ activeLang, dir = 'ltr' }: HighlightsManagerProps) {
+    const t = useTranslations('PropertyEditor');
     const form = useFormContext<PropertyFormData>();
 
     const highlightsArray = useFieldArray({
@@ -36,7 +38,7 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
         <div className="space-y-6">
             <div className="flex items-center justify-between pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                 <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                    Highlights Manager
+                    {t('highlights.title')}
                 </h3>
                 <button
                     type="button"
@@ -44,7 +46,7 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
                     className="flex items-center gap-2 px-4 py-1.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-xl text-[10px] font-bold uppercase tracking-wider hover:opacity-80 transition-all shadow-sm"
                 >
                     <Plus className="size-3" />
-                    Add Highlight
+                    {t('highlights.addHighlight')}
                 </button>
             </div>
 
@@ -56,7 +58,7 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
                     >
                         {/* Image Preview & Selector */}
                         <div className="w-full md:w-64 space-y-3">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">Highlight Image</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">{t('highlights.imageLabel')}</label>
                             <div className="relative">
                                 <button
                                     type="button"
@@ -68,11 +70,11 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
                                     ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center text-[#a3a3a3] gap-2">
                                             <ImageIcon className="size-6" />
-                                            <span className="text-[10px] uppercase font-bold">Select Image</span>
+                                            <span className="text-[10px] uppercase font-bold">{t('highlights.selectImage')}</span>
                                         </div>
                                     )}
                                     <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold uppercase tracking-wider">
-                                        Change Image
+                                        {t('highlights.changeImage')}
                                     </div>
                                 </button>
 
@@ -98,7 +100,7 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
                                                 </button>
                                             ))}
                                             {galleryImages.length === 0 && (
-                                                <p className="col-span-2 text-[10px] text-center py-4 text-[#a3a3a3]">Upload images to the gallery first.</p>
+                                                <p className="col-span-2 text-[10px] text-center py-4 text-[#a3a3a3]">{t('highlights.uploadFirst')}</p>
                                             )}
                                         </div>
                                     </>
@@ -110,7 +112,7 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
                         <div className="flex-1 space-y-4">
                             <div className="flex items-center justify-between">
                                 <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    Short Description ({activeLang.toUpperCase()})
+                                    {t('highlights.descriptionLabel', { lang: activeLang.toUpperCase() })}
                                 </label>
                                 <button
                                     type="button"
@@ -118,17 +120,18 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
                                     className="p-1 px-2 text-[10px] font-bold text-red-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all flex items-center gap-1"
                                 >
                                     <Trash2 className="size-3" />
-                                    Remove
+                                    {t('highlights.remove')}
                                 </button>
                             </div>
                             <textarea
+                                key={`highlight-${index}-${activeLang}`}
                                 {...form.register(`highlights.${index}.text.${activeLang}` as any)}
                                 dir={dir}
-                                placeholder="e.g. Enjoy a leisurely lunch on the traditionally Spanish terrace"
+                                placeholder={t('highlights.placeholder')}
                                 rows={4}
                                 className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-white/10 rounded-2xl px-5 py-4 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-gold-400 dark:focus:border-white transition-all outline-none resize-none font-medium ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                             />
-                            <p className="text-[11px] text-[#a3a3a3] dark:text-admin-dark-text-secondary italic font-medium">This text appears directly below the image in the "Highlights" slider.</p>
+                            <p className="text-[11px] text-[#a3a3a3] dark:text-admin-dark-text-secondary italic font-medium">{t('highlights.helpText')}</p>
                         </div>
                     </div>
                 ))}
@@ -139,13 +142,13 @@ export default function HighlightsManager({ activeLang, dir = 'ltr' }: Highlight
                             <Sparkles className="size-6 opacity-20" />
                         </div>
                         <div className="text-center">
-                            <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary transition-colors">No Highlights Added</p>
+                            <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary transition-colors">{t('highlights.emptyTitle')}</p>
                             <button
                                 type="button"
                                 onClick={onAddHighlight}
                                 className="mt-2 text-[10px] font-bold text-gold-400 hover:text-gold-500 uppercase tracking-widest transition-colors"
                             >
-                                + Click here to add your first highlight
+                                {t('highlights.emptyAction')}
                             </button>
                         </div>
                     </div>

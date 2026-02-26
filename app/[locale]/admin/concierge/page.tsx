@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, MoreHorizontal, Pencil, Trash, Sparkles } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { Plus, Search, Pencil, Trash } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import ServiceModal from '@/components/admin/concierge/ServiceModal';
 import DeleteModal from '@/components/admin/concierge/DeleteModal';
-import { format } from 'date-fns';
 
 interface Service {
     id: string;
@@ -24,6 +23,7 @@ interface Service {
 
 export default function AdminConciergePage() {
     const locale = useLocale();
+    const t = useTranslations('AdminConcierge');
     const [services, setServices] = useState<Service[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +42,7 @@ export default function AdminConciergePage() {
             setServices(data || []);
         } catch (error) {
             console.error('Error fetching services:', error);
-            toast.error('Failed to load services');
+            toast.error(t('notifications.fetchError'));
         } finally {
             setIsLoading(false);
         }
@@ -70,11 +70,11 @@ export default function AdminConciergePage() {
                 .eq('id', serviceToDelete);
 
             if (error) throw error;
-            toast.success('Service deleted');
+            toast.success(t('notifications.deleteSuccess'));
             fetchServices();
         } catch (error) {
             console.error('Error deleting service:', error);
-            toast.error('Failed to delete service');
+            toast.error(t('notifications.deleteError'));
         } finally {
             setDeleteModalOpen(false);
             setServiceToDelete(null);
@@ -102,15 +102,15 @@ export default function AdminConciergePage() {
             {/* Header Section */}
             <section className="flex justify-between items-end mb-10">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">Concierge Services</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium">Manage on-site services and guest experiences</p>
+                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    <p className="text-[#a3a3a3] mt-2 font-medium">{t('description')}</p>
                 </div>
                 <button
                     onClick={handleAddNew}
                     className="px-5 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded text-sm font-semibold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2"
                 >
                     <Plus className="size-4" />
-                    Add Service
+                    {t('addService')}
                 </button>
             </section>
 
@@ -120,7 +120,7 @@ export default function AdminConciergePage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4" />
                     <input
                         type="text"
-                        placeholder="Search services..."
+                        placeholder={t('searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eeeeee] dark:border-admin-dark-border pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-1 focus:ring-[#171717] dark:focus:ring-white outline-none dark:text-admin-dark-text-primary transition-colors"
@@ -144,7 +144,7 @@ export default function AdminConciergePage() {
                                         ? 'bg-white/90 dark:bg-black/90 text-[#171717] dark:text-white border-white/50'
                                         : 'bg-red-500/90 text-white border-red-400'
                                         }`}>
-                                        {service.is_active ? 'Active' : 'Inactive'}
+                                        {service.is_active ? t('active') : t('inactive')}
                                     </span>
                                 </div>
                             </div>
@@ -181,13 +181,13 @@ export default function AdminConciergePage() {
                                 </p>
                                 <div className="mt-5 pt-4 border-t border-[#f5f5f5] dark:border-admin-dark-border flex justify-between items-center transition-colors">
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-wider">Status</span>
+                                        <span className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-wider">{t('status')}</span>
                                         <span className={`text-xs font-bold ${service.is_active ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                                            {service.is_active ? 'Online' : 'Offline'}
+                                            {service.is_active ? t('online') : t('offline')}
                                         </span>
                                     </div>
                                     <span className="text-[10px] font-bold text-[#a3a3a3] uppercase bg-[#fafafa] dark:bg-admin-dark-bg px-2 py-1 rounded">
-                                        Concierge
+                                        {t('tag')}
                                     </span>
                                 </div>
                             </div>

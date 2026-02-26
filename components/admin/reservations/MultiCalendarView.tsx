@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check,
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
+import { useTranslations } from "next-intl";
 
 interface MultiCalendarViewProps {
     reservations: any[];
@@ -18,6 +19,7 @@ interface MultiCalendarViewProps {
 }
 
 export function MultiCalendarView({ reservations, properties, propertyImages, locale = 'pt', blockedDates = [], onRefresh }: MultiCalendarViewProps) {
+    const t = useTranslations('AdminReservations.multiCalendar');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedReservation, setSelectedReservation] = useState<any | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -55,7 +57,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-
+    const dateLocale = locale === 'pt' ? pt : undefined;
 
     const getPropData = (id: string) => {
         const prop = properties[id];
@@ -184,7 +186,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
                             className="flex items-center gap-2 text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary capitalize hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg px-2 py-1 rounded-lg transition-colors"
                         >
-                            {format(currentDate, "MMMM yyyy", { locale: pt })}
+                            {format(currentDate, "MMMM yyyy", { locale: dateLocale })}
                             <ChevronDown className="size-4 text-[#a3a3a3]" />
                         </button>
                         {isDatePickerOpen && (
@@ -198,7 +200,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                     <div className="h-px bg-admin-border dark:bg-admin-dark-border" />
                                     <div className="grid grid-cols-3 gap-2">
                                         {months.map(month => (
-                                            <button key={month} onClick={() => { setCurrentDate(setMonth(currentDate, month)); setIsDatePickerOpen(false); }} className={cn("px-2 py-1 text-xs font-medium rounded-md capitalize", currentDate.getMonth() === month ? "bg-[#171717] text-white dark:bg-white dark:text-black" : "text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa]")}>{format(new Date(2000, month, 1), 'MMM', { locale: pt })}</button>
+                                            <button key={month} onClick={() => { setCurrentDate(setMonth(currentDate, month)); setIsDatePickerOpen(false); }} className={cn("px-2 py-1 text-xs font-medium rounded-md capitalize", currentDate.getMonth() === month ? "bg-[#171717] text-white dark:bg-white dark:text-black" : "text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa]")}>{format(new Date(2000, month, 1), 'MMM', { locale: dateLocale })}</button>
                                         ))}
                                     </div>
                                 </div>
@@ -211,12 +213,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                     <div className="relative" ref={regionFilterRef}>
                         <button onClick={() => setIsRegionFilterOpen(!isRegionFilterOpen)} className={cn("hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-all", selectedRegion !== "all" ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400" : "bg-white dark:bg-admin-dark-bg text-[#a3a3a3] border-[#eeeeee] hover:text-[#171717]")}>
                             <MapPin className="size-3" />
-                            {selectedRegion === "all" ? "Todas as Zonas" : selectedRegion}
+                            {selectedRegion === "all" ? t('allZones') : selectedRegion}
                             <ChevronDown className={cn("size-3 transition-transform", isRegionFilterOpen && "rotate-180")} />
                         </button>
                         {isRegionFilterOpen && (
                             <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-admin-dark-surface border border-admin-border dark:border-admin-dark-border rounded-xl shadow-xl z-50 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <button onClick={() => { setSelectedRegion("all"); setIsRegionFilterOpen(false); }} className={cn("w-full px-4 py-2 text-left text-xs font-bold transition-all hover:bg-gray-50", selectedRegion === "all" ? "text-blue-600 bg-blue-50" : "text-[#a3a3a3]")}>Todas as Zonas</button>
+                                <button onClick={() => { setSelectedRegion("all"); setIsRegionFilterOpen(false); }} className={cn("w-full px-4 py-2 text-left text-xs font-bold transition-all hover:bg-gray-50", selectedRegion === "all" ? "text-blue-600 bg-blue-50" : "text-[#a3a3a3]")}>{t('allZones')}</button>
                                 <div className="h-px bg-admin-border dark:bg-admin-dark-border my-1" />
                                 {allRegions.map(region => (
                                     <button key={region} onClick={() => { setSelectedRegion(region); setIsRegionFilterOpen(false); }} className={cn("w-full px-4 py-2 text-left text-xs font-bold transition-all hover:bg-gray-50", selectedRegion === region ? "text-blue-600 bg-blue-50" : "text-[#a3a3a3]")}>{region}</button>
@@ -227,17 +229,17 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                     <div className="w-px h-4 bg-[#eeeeee] dark:bg-admin-dark-border hidden md:block" />
                     <div className="flex items-center gap-1 bg-[#f5f5f5] dark:bg-admin-dark-bg p-1 rounded-lg border border-[#eeeeee]">
                         <button onClick={prevMonth} className="p-1 hover:bg-white dark:hover:bg-admin-dark-surface rounded-md shadow-sm transition-all text-[#171717] dark:text-white"><ChevronLeft className="size-4" /></button>
-                        <button onClick={goToToday} className="px-3 py-1 text-xs font-bold text-[#171717] dark:text-white hover:bg-white dark:hover:bg-admin-dark-surface rounded-md shadow-sm transition-all">Hoje</button>
+                        <button onClick={goToToday} className="px-3 py-1 text-xs font-bold text-[#171717] dark:text-white hover:bg-white dark:hover:bg-admin-dark-surface rounded-md shadow-sm transition-all">{t('today')}</button>
                         <button onClick={nextMonth} className="p-1 hover:bg-white dark:hover:bg-admin-dark-surface rounded-md shadow-sm transition-all text-[#171717] dark:text-white"><ChevronRight className="size-4" /></button>
                     </div>
-                    <span className="text-xs font-medium text-[#a3a3a3] bg-[#f5f5f5] dark:bg-admin-dark-bg px-3 py-1 rounded-full border border-admin-border hidden md:block">{reservationsInMonth.length} Reservas</span>
+                    <span className="text-xs font-medium text-[#a3a3a3] bg-[#f5f5f5] dark:bg-admin-dark-bg px-3 py-1 rounded-full border border-admin-border hidden md:block">{t('reservationsCount', { count: reservationsInMonth.length })}</span>
                 </div>
 
                 <div className="flex items-center justify-end gap-6 w-1/3">
                     <div className="hidden lg:flex items-center gap-4 text-[10px] font-medium text-[#a3a3a3]">
-                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-emerald-500"></div>Confirmado</div>
-                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-amber-400"></div>Pendente</div>
-                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full border border-blue-200 bg-blue-50" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(59,130,246,0.1) 2px, rgba(59,130,246,0.1) 4px)' }}></div>Bloqueio</div>
+                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-emerald-500"></div>{t('legend.confirmed')}</div>
+                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-amber-400"></div>{t('legend.pending')}</div>
+                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full border border-blue-200 bg-blue-50" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(59,130,246,0.1) 2px, rgba(59,130,246,0.1) 4px)' }}></div>{t('legend.blocked')}</div>
                     </div>
                 </div>
             </div>
@@ -251,7 +253,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             <div className="relative" ref={filterRef}>
                                 <button onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-bold transition-all border", filteredPropertyIds.length > 0 ? "bg-[#171717] text-white" : "bg-white text-[#171717] border-[#eeeeee] dark:bg-admin-dark-surface dark:text-white hover:bg-[#fafafa]")}>
                                     <Filter className="size-3.5" />
-                                    {isSidebarOpen && <span className="animate-in fade-in duration-300">{filteredPropertyIds.length > 0 ? `${filteredPropertyIds.length}` : "Filtrar"}</span>}
+                                    {isSidebarOpen && <span className="animate-in fade-in duration-300">{filteredPropertyIds.length > 0 ? `${filteredPropertyIds.length}` : t('filter')}</span>}
                                 </button>
                                 {isFilterOpen && (
                                     <div className="absolute left-0 top-10 w-64 bg-white dark:bg-admin-dark-surface border border-admin-border dark:border-admin-dark-border rounded-xl shadow-xl z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
@@ -274,7 +276,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                         </div>
                         {daysInMonth.map((day) => (
                             <div key={day.toISOString()} className={cn("flex-shrink-0 w-[48px] flex flex-col items-center justify-center border-r border-admin-border dark:border-admin-dark-border/50 transition-colors", isToday(day) ? "bg-amber-50/50 dark:bg-amber-500/10" : "")}>
-                                <span className="text-[10px] font-bold text-[#a3a3a3] uppercase">{format(day, "EEE", { locale: pt })}</span>
+                                <span className="text-[10px] font-bold text-[#a3a3a3] uppercase">{format(day, "EEE", { locale: dateLocale })}</span>
                                 <span className={cn("text-sm font-bold mt-0.5 size-6 flex items-center justify-center rounded-full", isToday(day) ? "bg-[#171717] text-white dark:bg-white dark:text-black" : "text-[#171717] dark:text-white")}>{format(day, "d")}</span>
                             </div>
                         ))}
@@ -319,7 +321,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                             return (
                                                 <div key={res.id} onClick={() => setSelectedReservation(res)} className={cn("absolute top-1/2 -translate-y-1/2 h-8 rounded-md cursor-pointer flex items-center px-2 z-10 border transition-all hover:brightness-110", getStatusColor(res.status))} style={{ left: `${style.left}px`, width: `${style.width}px` }}>
                                                     <div className="flex justify-between items-center w-full gap-2 overflow-hidden">
-                                                        <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || 'Hóspede'}</span>
+                                                        <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
                                                         {res.total_price ? <span className="text-[10px] font-bold whitespace-nowrap shrink-0 leading-none">€{res.total_price}</span> : null}
                                                     </div>
                                                 </div>
@@ -339,7 +341,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 >
                                                     <Ban className="size-3 text-blue-400 shrink-0" />
                                                     <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 truncate ml-1.5 opacity-80">
-                                                        {block.reason || 'Bloqueado'}
+                                                        {block.reason || t('blocked')}
                                                     </span>
                                                 </div>
                                             );
@@ -352,7 +354,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                 </div>
             </div>
 
-            {visiblePropertyIds.length === 0 && <div className="h-[400px] flex flex-col items-center justify-center text-[#a3a3a3]"><Filter className="size-8 mb-4 opacity-50" /><p>Nenhuma propriedade encontrada.</p></div>}
+            {visiblePropertyIds.length === 0 && <div className="h-[400px] flex flex-col items-center justify-center text-[#a3a3a3]"><Filter className="size-8 mb-4 opacity-50" /><p>{t('noProperties')}</p></div>}
 
             {/* Sheets and Overlays */}
             <ReservationDetailSheet reservation={selectedReservation} onClose={() => setSelectedReservation(null)} onRefresh={onRefresh} />
@@ -385,15 +387,15 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             <div className="flex items-center justify-between pb-3 border-b border-admin-border dark:border-admin-dark-border mb-3">
                                 <div className="flex flex-col items-center gap-0.5">
                                     <Users className="size-3.5 text-blue-500" />
-                                    <span className="text-[9px] font-bold text-[#171717] dark:text-white">{getPropData(hoveredPropertyId).max_guests} Pax</span>
+                                    <span className="text-[9px] font-bold text-[#171717] dark:text-white">{getPropData(hoveredPropertyId).max_guests} {t('pax')}</span>
                                 </div>
                                 <div className="flex flex-col items-center gap-0.5">
                                     <Bed className="size-3.5 text-emerald-500" />
-                                    <span className="text-[9px] font-bold text-[#171717] dark:text-white">{getPropData(hoveredPropertyId).bedrooms} Quarts</span>
+                                    <span className="text-[9px] font-bold text-[#171717] dark:text-white">{getPropData(hoveredPropertyId).bedrooms} {t('bedrooms')}</span>
                                 </div>
                                 <div className="flex flex-col items-center gap-0.5">
                                     <Bath className="size-3.5 text-purple-500" />
-                                    <span className="text-[9px] font-bold text-[#171717] dark:text-white">{getPropData(hoveredPropertyId).bathrooms} WCs</span>
+                                    <span className="text-[9px] font-bold text-[#171717] dark:text-white">{getPropData(hoveredPropertyId).bathrooms} {t('bathrooms')}</span>
                                 </div>
                             </div>
                             <div className="flex items-start gap-2">

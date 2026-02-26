@@ -1,4 +1,7 @@
+"use client";
+
 import { useFormContext, useFieldArray } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { Upload, Star, GripVertical, Trash2, ImageIcon, Loader2 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
@@ -6,6 +9,7 @@ import { PropertyFormData } from "./PropertyFormSchema";
 import { Reorder, AnimatePresence, motion } from "framer-motion";
 
 export default function MediaTab() {
+    const t = useTranslations('PropertyEditor');
     const { control, setValue, watch } = useFormContext<PropertyFormData>();
     const { fields, append, remove, move } = useFieldArray({
         control,
@@ -45,6 +49,7 @@ export default function MediaTab() {
 
                 append({
                     url: publicUrl,
+                    alt: {},
                     is_main: images.length === 0 && uploadedCount === 0,
                     order: images.length + uploadedCount,
                 });
@@ -87,12 +92,12 @@ export default function MediaTab() {
             {/* Header section with upload button */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-xl font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">Gallery</h3>
-                    <p className="text-sm text-[#a3a3a3] dark:text-admin-dark-text-secondary font-medium">Manage property media. First image is the cover photo.</p>
+                    <h3 className="text-xl font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{t('media.gallery')}</h3>
+                    <p className="text-sm text-[#a3a3a3] dark:text-admin-dark-text-secondary font-medium">{t('media.manageDesc')}</p>
                 </div>
                 <label className="flex items-center gap-2 px-6 py-3 bg-[#171717] dark:bg-white text-white dark:text-black rounded-2xl text-sm font-bold hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg dark:shadow-white/5">
                     <Upload className="size-4" />
-                    Upload Photos
+                    {t('media.uploadPhotos')}
                     <input
                         type="file"
                         multiple
@@ -109,7 +114,7 @@ export default function MediaTab() {
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                             <Loader2 className="size-4 animate-spin text-gold-400" />
-                            <span className="text-xs font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-wider">Processing Media...</span>
+                            <span className="text-xs font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-wider">{t('media.processing')}</span>
                         </div>
                         <span className="text-xs font-black text-gold-400">{uploadProgress}%</span>
                     </div>
@@ -155,7 +160,7 @@ export default function MediaTab() {
                                             ? 'bg-gold-400 text-white shadow-[0_0_15px_rgba(197,160,89,0.5)]'
                                             : 'bg-white/20 text-white hover:bg-white/40 backdrop-blur-md'
                                             }`}
-                                        title={image.is_main ? 'Main Photo' : 'Set as Main'}
+                                        title={image.is_main ? t('media.isMain') : t('media.setMain')}
                                     >
                                         <Star className={`size-5 ${image.is_main ? 'fill-current' : ''}`} />
                                     </button>
@@ -163,14 +168,14 @@ export default function MediaTab() {
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); remove(index); }}
                                         className="p-3 bg-white/20 hover:bg-red-500 text-white rounded-2xl backdrop-blur-md transition-all scale-90 group-hover:scale-100 duration-500 hover:scale-110"
-                                        title="Delete image"
+                                        title={t('media.delete')}
                                     >
                                         <Trash2 className="size-5" />
                                     </button>
                                 </div>
                                 <div className="text-[10px] text-white font-black uppercase tracking-[0.2em] opacity-60 flex items-center gap-1.5">
                                     <GripVertical className="size-3" />
-                                    Reorder
+                                    {t('media.reorder')}
                                 </div>
                             </div>
 
@@ -178,7 +183,7 @@ export default function MediaTab() {
                             {image.is_main && (
                                 <div className="absolute top-4 left-4 px-3 py-1.5 bg-white dark:bg-admin-dark-surface shadow-xl rounded-xl text-[10px] font-black text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2 border border-[#f5f5f5] dark:border-white/10">
                                     <Star className="size-3 fill-gold-400 text-gold-400" />
-                                    <span className="uppercase tracking-[0.1em]">Cover Photo</span>
+                                    <span className="uppercase tracking-[0.1em]">{t('media.coverPhoto')}</span>
                                 </div>
                             )}
 
@@ -199,7 +204,7 @@ export default function MediaTab() {
                             <div className="p-4 bg-[#f5f5f5] dark:bg-white/5 rounded-2xl group-hover:scale-110 transition-transform">
                                 <ImageIcon className="size-6" />
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Add Photo</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('media.addPhoto')}</span>
                         </div>
                     ))}
                 </AnimatePresence>
@@ -208,7 +213,7 @@ export default function MediaTab() {
             {/* Helper message if no images */}
             {images.length === 0 && !isUploading && (
                 <div className="flex flex-col items-center justify-center py-10 text-[#a3a3a3] gap-4">
-                    <p className="text-sm font-medium italic">Empty gallery. Upload images to showcase the property.</p>
+                    <p className="text-sm font-medium italic">{t('media.emptyGallery')}</p>
                 </div>
             )}
         </div>

@@ -50,7 +50,7 @@ export default async function LocaleLayout({
   const dir = locale === 'he' ? 'rtl' : 'ltr';
 
   return (
-    <html lang={locale} dir={dir}>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className={`${montserrat.variable} antialiased`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages} locale={locale}>
           <Toaster
