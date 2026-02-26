@@ -4,7 +4,11 @@ import { Button } from "./ui/Button";
 
 interface PolicySectionProps {
     rules?: string[];
-    cancellationPolicy?: string;
+    cancellationPolicy?: {
+        text: string;
+        refundText: string;
+        deadline: string;
+    };
 }
 
 const DEFAULT_RULES = [
@@ -61,13 +65,15 @@ export const PolicySection = ({ rules, cancellationPolicy }: PolicySectionProps)
                     <h3 className="text-[11px] font-extrabold text-[#AD9C7E] uppercase tracking-[0.4em]">Cancellation policy</h3>
                     <div className="flex gap-6 p-8 bg-[#FBFAF8] rounded-3xl border border-[#F1F0EC]">
                         <div className="flex flex-col items-center justify-center w-14 h-14 bg-white border border-gray-100 rounded-lg text-center shadow-sm">
-                            <span className="text-[10px] font-bold uppercase text-gray-400">Feb</span>
-                            <span className="text-2xl font-black leading-none text-navy-950">3</span>
+                            <span className="text-[10px] font-bold uppercase text-gray-400">Policy</span>
+                            <span className="text-2xl font-black leading-none text-navy-950">{cancellationPolicy?.text?.charAt(0) || 'M'}</span>
                         </div>
                         <div className="flex-1 space-y-2">
-                            <p className="text-[15px] font-bold text-navy-950 leading-tight">Cancel before 3 Feb, 2026</p>
+                            <p className="text-[15px] font-bold text-navy-950 leading-tight">
+                                {cancellationPolicy?.text || 'Moderate'} Policy
+                            </p>
                             <p className="text-xs text-navy-950/50 font-medium leading-relaxed">
-                                for a 50% refund. Not eligible for a refund after this date.
+                                {cancellationPolicy?.refundText || 'Check details'} - Cancel within {cancellationPolicy?.deadline || 'specified time'}.
                             </p>
                             <button className="text-[11px] font-bold text-[#AD9C7E] uppercase tracking-[0.1em] border-b border-[#AD9C7E] pt-2">View full terms</button>
                         </div>
