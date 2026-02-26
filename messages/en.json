@@ -251,7 +251,7 @@
         },
         "deleteModal": {
             "title": "Eliminate User?",
-            "description": "You are about to delete {name}. This action is {irreversible} and will remove all access immediately.",
+            "description": "You are about to delete <name></name>. This action is <irreversible></irreversible> and will remove all access immediately.",
             "irreversible": "irreversible",
             "confirmButton": "Delete User",
             "cancel": "Cancel",

@@ -53,8 +53,8 @@ export function DeleteUserModal({ isOpen, userToDelete, onClose, onSuccess }: De
                     </h3>
                     <p className="text-[#a3a3a3] text-sm font-medium leading-relaxed mb-8">
                         {t.rich('description', {
-                            name: <span key="name" className="text-[#171717] dark:text-white font-bold">{userToDelete.full_name || userToDelete.email}</span>,
-                            irreversible: <span key="irreversible" className="text-red-500 font-bold uppercase tracking-wider">{t('irreversible')}</span>
+                            name: () => <span key="name" className="text-[#171717] dark:text-white font-bold">{userToDelete.full_name || userToDelete.email}</span>,
+                            irreversible: () => <span key="irreversible" className="text-red-500 font-bold uppercase tracking-wider">{t('irreversible')}</span>
                         })}
                     </p>
 

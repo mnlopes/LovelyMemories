@@ -249,7 +249,7 @@
         },
         "deleteModal": {
             "title": "Eliminar Utilizador?",
-            "description": "Está prestes a eliminar {name}. Esta ação é {irreversible} e removerá todo o acesso imediatamente.",
+            "description": "Está prestes a eliminar <name></name>. Esta ação é <irreversible></irreversible> e removerá todo o acesso imediatamente.",
             "irreversible": "irreversível",
             "confirmButton": "Eliminar Utilizador",
             "cancel": "Cancelar",
@@ -263,7 +263,6 @@
             "searchPlaceholder": "Pesquisar por nome ou email...",
             "noResultsTitle": "Nenhum proprietário encontrado",
             "noResultsDesc": "Tente ajustar os termos de pesquisa.",
-            "emptyTitle": "Sem proprietários",
             "emptyTitle": "Sem proprietários",
             "emptyDesc": "Crie um utilizador proprietário para começar a gerir imóveis.",
             "createOwner": "Criar Proprietário",
