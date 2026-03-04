@@ -11,7 +11,7 @@ export const OwnerPricing = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const totalFee = selectedPack === 'base' ? 20 : selectedPack === 'luxe' ? 25 : 0;
+    const totalFee = selectedPack === 'base' ? 25 : selectedPack === 'luxe' ? 30 : 0;
 
     const baseServices = [
         t('services.marketStudy'),
@@ -79,7 +79,7 @@ export const OwnerPricing = () => {
                     >
                         <div className="bg-[#0A1128] pt-16 pb-6 text-center relative rounded-t-[26px]">
                             <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full w-24 h-24 flex items-center justify-center shadow-md border transition-all duration-300 ${selectedPack ? 'border-2 border-[#0A1128]' : 'border-gray-50'}`}>
-                                <span className="text-2xl font-black text-[#0A1128]">+20%</span>
+                                <span className="text-2xl font-black text-[#0A1128]">+25%</span>
                             </div>
                             <h4 className="text-2xl font-bold text-white mt-4">{t('base.title')}</h4>
                         </div>
@@ -178,9 +178,9 @@ export const OwnerPricing = () => {
 
                             <div className="flex-grow max-w-md text-center md:text-left text-gray-400 font-light text-[15px] leading-relaxed z-10 px-6">
                                 {selectedPack === 'luxe' ? (
-                                    <p>{t('total.package')} <span className="text-white font-bold">{t('total.basePlusLuxe')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">25%</span> {t('total.feeLabel')}</p>
+                                    <p>{t('total.package')} <span className="text-white font-bold">{t('total.basePlusLuxe')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">30%</span> {t('total.feeLabel')}</p>
                                 ) : selectedPack === 'base' ? (
-                                    <p>{t('total.package')} <span className="text-white font-bold">{t('base.title')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">20%</span> {t('total.feeLabel')}</p>
+                                    <p>{t('total.package')} <span className="text-white font-bold">{t('base.title')}</span> {t('total.at')} <span className="text-[#b29a7a] font-bold">25%</span> {t('total.feeLabel')}</p>
                                 ) : (
                                     <p>{t('total.selectPrompt')}</p>
                                 )}

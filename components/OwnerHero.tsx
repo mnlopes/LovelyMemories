@@ -146,8 +146,8 @@ export const OwnerHero = () => {
                             transition={{ duration: 0.8, delay: 0.4 }}
                             className="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-[500px] overflow-hidden"
                         >
-                            {/* Card Header with Navy Background */}
-                            <div className="bg-[#0A1128] p-8 md:p-12 pb-6 md:pb-8">
+                            {/* Card Header with Gold Background */}
+                            <div className="bg-[#b29a7a] p-8 md:p-12 pb-6 md:pb-8">
                                 <h2
                                     className="text-[36px] mb-2 leading-tight text-white font-[900]"
                                 >
