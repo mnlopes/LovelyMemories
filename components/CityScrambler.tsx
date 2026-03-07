@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── Config ────────────────────────────────────────────────
-const CITIES = ["PORTO", "LISBOA", "ALGARVE", "MADEIRA"];
+const CITIES = ["PORTO", "LISBOA", "ALGARVE"];
 const SCRAMBLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
 const MAX_LEN = Math.max(...CITIES.map((c) => c.length));
 

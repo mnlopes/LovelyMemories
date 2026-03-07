@@ -120,7 +120,7 @@ export function BookingCalendarPopover({
                         initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
                         animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
-                        className={`fixed inset-x-4 bottom-24 lg:inset-auto z-[110] bg-white rounded-2xl shadow-xl w-auto ${widthClass} mx-auto lg:mx-0 overflow-hidden border border-gray-100 ${getPositionClasses()}`}
+                        className={`fixed inset-x-4 bottom-4 lg:inset-auto z-[110] bg-white rounded-2xl shadow-xl w-auto ${widthClass} mx-auto lg:mx-0 flex flex-col max-h-[85vh] lg:max-h-none overflow-hidden border border-gray-100 ${getPositionClasses()}`}
                     >
                         {/* Header - Only show if not compact */}
                         {!isCompact && (
@@ -153,7 +153,7 @@ export function BookingCalendarPopover({
                         )}
 
                         {/* Calendar Area */}
-                        <div className={`${isCompact ? 'p-3' : 'p-6 lg:p-8'} flex justify-center bg-white luxury-calendar`}>
+                        <div className={`${isCompact ? 'p-3' : 'p-6 lg:p-8'} flex-1 overflow-y-auto flex justify-center bg-white luxury-calendar`}>
                             <DayPicker
                                 mode="range"
                                 selected={selectedRange}

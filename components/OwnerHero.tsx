@@ -99,7 +99,7 @@ export const OwnerHero = () => {
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8 }}
-                            className="max-w-3xl -mt-10 lg:-mt-20"
+                            className="max-w-3xl mt-4 md:-mt-10 lg:-mt-20"
                         >
                             <span className="text-[#b29a7a] font-bold text-lg uppercase tracking-[0.3em] block mb-8">
                                 {t('subtitle')}
@@ -120,20 +120,18 @@ export const OwnerHero = () => {
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.8, delay: 0.2 }}
-                            className="lg:absolute lg:top-[105%] lg:left-0 z-10 flex items-center justify-start lg:block w-fit"
+                            className="lg:absolute lg:top-[105%] lg:left-0 z-10 flex items-center justify-center lg:justify-start w-full lg:w-fit mb-12 lg:mb-0"
                         >
                             <div
-                                className="rounded-full flex flex-col items-center justify-center text-white backdrop-blur-xl shrink-0 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border border-white/20"
+                                className="rounded-full flex flex-col items-center justify-center text-white backdrop-blur-xl shrink-0 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border border-white/20 w-[190px] h-[190px] md:w-[220px] md:h-[220px] lg:w-[250px] lg:h-[250px]"
                                 style={{
-                                    width: '250px',
-                                    height: '250px',
                                     backgroundColor: 'rgba(178, 154, 122, 0.7)', // Semi-transparent gold for glass feel
                                     boxShadow: 'inset 0 0 20px rgba(255,255,255,0.1)'
                                 }}
                             >
-                                <span className="text-lg uppercase tracking-[0.3em] font-bold opacity-80 mb-1">{t('badge.earn')}</span>
-                                <span className="text-7xl font-bold leading-none">{t('badge.percent')}</span>
-                                <span className="text-lg uppercase tracking-[0.3em] font-bold opacity-80 mt-1">{t('badge.more')}</span>
+                                <span className="text-[11px] md:text-sm lg:text-lg uppercase tracking-[0.3em] font-bold opacity-80 mb-1">{t('badge.earn')}</span>
+                                <span className="text-5xl md:text-6xl lg:text-7xl font-bold leading-none">{t('badge.percent')}</span>
+                                <span className="text-[11px] md:text-sm lg:text-lg uppercase tracking-[0.3em] font-bold opacity-80 mt-1">{t('badge.more')}</span>
                             </div>
                         </motion.div>
                     </div>

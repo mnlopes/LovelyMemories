@@ -6,9 +6,10 @@ import { useTranslations, useLocale } from 'next-intl';
 import { getPropertyBySlug } from '@/lib/services';
 import { DateRange } from "react-day-picker";
 import { differenceInDays, format } from "date-fns";
+import { pt, enGB } from "date-fns/locale";
 import { Link } from '@/i18n/routing';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, MapPin, ChevronRight, X } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronRight, X, Share2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/Button';
 import { parseDateLocal } from '@/lib/utils';
@@ -57,6 +58,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
     const gridT = useTranslations('PropertiesGrid');
     const router = useRouter();
     const locale = useLocale();
+    const [isCopied, setIsCopied] = React.useState(false);
 
     const [property, setProperty] = React.useState<any>(null);
     const [conciergeServices, setConciergeServices] = React.useState<any[]>([]);
@@ -68,6 +70,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
     const [availabilityStatus, setAvailabilityStatus] = React.useState<{ available: boolean; loading: boolean; error?: string }>({ available: true, loading: false });
     const [isDescriptionOpen, setIsDescriptionOpen] = React.useState(false);
     const [isHighlightsOpen, setIsHighlightsOpen] = React.useState(false);
+    const [isMobileBookingOpen, setIsMobileBookingOpen] = React.useState(false);
 
     React.useEffect(() => {
         const fetchAll = async () => {
@@ -130,6 +133,17 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
         };
         validate();
     }, [property?.id, selectedRange, adults, childrenCount]);
+
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(window.location.href);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
+
+    const handleWhatsApp = () => {
+        const text = `Check out this amazing property: ${property?.title?.en || property?.title?.pt || 'Luxury Home'}\n\n${window.location.href}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
 
     const nights = selectedRange?.from && selectedRange?.to
         ? differenceInDays(selectedRange.to, selectedRange.from)
@@ -195,30 +209,50 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
     return (
         <div className="bg-white min-h-screen pb-24 lg:pb-0 font-sans">
             <main className="relative container mx-auto px-6 pt-32 pb-8">
-                {/* Back link */}
-                <Link
-                    href={(() => {
-                        const params = new URLSearchParams(window.location.search);
-                        const hasSearchFilters =
-                            params.get('location') ||
-                            params.get('from') ||
-                            params.get('to') ||
-                            params.get('adults') ||
-                            params.get('children') ||
-                            params.get('infants') ||
-                            params.get('building') ||
-                            params.get('fromsearch') === '1';
+                {/* Header Actions (Back & Share) */}
+                <div className="flex items-center justify-between mb-6">
+                    <Link
+                        href={(() => {
+                            const params = new URLSearchParams(window.location.search);
+                            const hasSearchFilters =
+                                params.get('location') ||
+                                params.get('from') ||
+                                params.get('to') ||
+                                params.get('adults') ||
+                                params.get('children') ||
+                                params.get('infants') ||
+                                params.get('building') ||
+                                params.get('fromsearch') === '1';
 
-                        if (hasSearchFilters) {
-                            return `/search?${params.toString()}`;
-                        }
-                        return `/properties`;
-                    })()}
-                    className="inline-flex items-center gap-2 text-sm text-navy-900/40 hover:text-navy-950 transition-colors mb-6 group"
-                >
-                    <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                    {t('backToAll')}
-                </Link>
+                            if (hasSearchFilters) {
+                                return `/search?${params.toString()}`;
+                            }
+                            return `/properties`;
+                        })()}
+                        className="inline-flex items-center gap-2 text-sm text-navy-900/40 hover:text-navy-950 transition-colors group"
+                    >
+                        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                        {t('backToAll')}
+                    </Link>
+
+                    {/* Mobile Share Button */}
+                    <div className="flex items-center gap-3 lg:hidden">
+                        <button
+                            onClick={handleWhatsApp}
+                            className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center text-[#25D366] hover:bg-[#25D366]/5 transition-colors"
+                        >
+                            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={handleCopyLink}
+                            className={`w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center transition-colors ${isCopied ? 'bg-green-50 text-green-600 border-green-200' : 'text-navy-950 hover:bg-gray-50'}`}
+                        >
+                            {isCopied ? <Check className="h-5 w-5" /> : <Share2 className="h-5 w-5" />}
+                        </button>
+                    </div>
+                </div>
 
                 {/* Gallery */}
                 <PropertyGallery
@@ -402,8 +436,8 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                     </div>
 
                     {/* Right Column - Booking Card (Sticky) */}
-                    <div className="hidden lg:block relative">
-                        <div className="sticky top-24 2xl:top-32">
+                    <div id="booking-card-section" className="relative mt-8 lg:mt-0 pb-20 lg:pb-0">
+                        <div className="lg:sticky lg:top-24 2xl:top-32">
                             <BookingCard
                                 propertyId={property.id}
                                 slug={property.slug}
@@ -431,9 +465,12 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
             </main >
 
             {/* Mobile Booking Bar */}
-            < div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[#E1E6EC] p-4 lg:hidden z-50 shadow-lg" >
+            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-[#E1E6EC] p-4 lg:hidden z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                 <div className="container mx-auto flex items-center justify-between">
-                    <div>
+                    <button
+                        onClick={() => setIsMobileBookingOpen(true)}
+                        className="text-left flex-1"
+                    >
                         <div className="flex items-baseline gap-2 text-navy-950">
                             {property.price.originalPrice && (
                                 <span className="text-navy-900/40 line-through text-xs font-medium">
@@ -443,17 +480,24 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                             <span className="text-xl font-bold">€{property.price.perNight}</span>
                             <span className="text-navy-900/40 text-xs font-medium">/{t('perNight')}</span>
                         </div>
-                        <p className="text-[10px] text-navy-900/40 font-bold uppercase tracking-wide">11 - 14 Feb • 2 {t('guestsCount', { count: 2 })}</p>
-                    </div>
+                        <p className="text-[10px] text-navy-900/40 font-bold uppercase tracking-wide underline decoration-navy-900/20 underline-offset-2 mt-0.5">
+                            {(() => {
+                                const guestCount = adults + childrenCount + infants;
+                                const dateLocale = locale === 'pt' ? pt : enGB;
+                                if (selectedRange?.from && selectedRange?.to) {
+                                    const dateStr = `${format(selectedRange.from, 'd MMM', { locale: dateLocale })} - ${format(selectedRange.to, 'd MMM', { locale: dateLocale })}`;
+                                    return `${dateStr} • ${guestCount} ${guestCount === 1 ? (t('guestSelector.person') || 'Guest') : (t('guestSelector.people') || 'Guests')}`;
+                                }
+                                return `${t('selectDates') || "Select dates"} • ${guestCount} ${guestCount === 1 ? (t('guestSelector.person') || 'Guest') : (t('guestSelector.people') || 'Guests')}`;
+                            })()}
+                        </p>
+                    </button>
                     <Button
                         variant="luxury"
-                        className="px-7 py-3 shadow-lg shadow-gold/20 hover:scale-[1.02] transition-transform"
+                        className="px-7 py-3 shadow-lg shadow-gold/20 hover:scale-[1.02] transition-transform ml-4"
                         onClick={() => {
                             if (!selectedRange?.from || !selectedRange?.to) {
-                                // Scroll to desktop booking card where calendar popover can be opened
-                                // Or we could open a mobile date picker here
-                                const card = document.querySelector('.lg\\:block .sticky');
-                                card?.scrollIntoView({ behavior: 'smooth' });
+                                setIsMobileBookingOpen(true);
                             } else {
                                 const checkIn = format(selectedRange.from, 'yyyy-MM-dd');
                                 const checkOut = format(selectedRange.to, 'yyyy-MM-dd');
@@ -461,17 +505,90 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                                     slug: property.slug,
                                     checkIn,
                                     checkOut,
-                                    adults: "1", // Default for mobile bar if not selected
-                                    infants: "0"
+                                    adults: adults.toString(),
+                                    children: childrenCount.toString(),
+                                    infants: infants.toString()
                                 });
                                 router.push(`/${locale}/booking/checkout?${searchParams.toString()}`);
                             }
                         }}
                     >
-                        {t('reserveNow')}
+                        {(!selectedRange?.from || !selectedRange?.to) ? "Select Dates" : (t('reserveNow') || "Reserve now")}
                     </Button>
                 </div>
-            </div >
+            </div>
+
+            {/* Mobile Booking Bottom Sheet */}
+            <AnimatePresence>
+                {isMobileBookingOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsMobileBookingOpen(false)}
+                            className="fixed inset-0 z-[100] bg-navy-950/40 backdrop-blur-sm lg:hidden"
+                        />
+                        <motion.div
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                            className="fixed inset-x-0 bottom-0 z-[110] bg-[#f8f9fa] rounded-t-[32px] overflow-hidden flex flex-col max-h-[90vh] lg:hidden shadow-[0_-20px_50px_rgba(0,0,0,0.15)]"
+                        >
+                            <div className="flex items-center justify-between p-6 bg-white border-b border-[#E1E6EC] sticky top-0 z-10 hidden">
+                                <h3 className="text-xl font-bold font-montserrat text-navy-950">
+                                    {t('reserveNow') || "Reserve"}
+                                </h3>
+                                <button
+                                    onClick={() => setIsMobileBookingOpen(false)}
+                                    className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-navy-950 hover:bg-gray-100 transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <div className="overflow-y-auto w-full luxury-scrollbar p-6 pb-32">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-baseline gap-2 text-navy-950">
+                                        <span className="text-3xl font-bold">€{property.price.perNight}</span>
+                                        <span className="text-navy-900/60 font-medium">/{t('perNight')}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsMobileBookingOpen(false)}
+                                        className="w-10 h-10 rounded-full bg-white border border-[#E1E6EC] shadow-sm flex items-center justify-center text-navy-950 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <BookingCard
+                                    propertyId={property.id}
+                                    slug={property.slug}
+                                    price={property.price.perNight}
+                                    originalPrice={property.price.originalPrice}
+                                    discount={property.price.discount}
+                                    pricingRules={property.policies?.pricing}
+                                    extraPrices={property.servicesPrice}
+                                    selectedExtras={selectedExtras}
+                                    onToggleExtra={handleToggleExtra}
+                                    selectedRange={selectedRange}
+                                    onDateChange={handleDateChange}
+                                    adults={adults}
+                                    setAdults={setAdults}
+                                    childrenCount={childrenCount}
+                                    setChildren={setChildren}
+                                    infants={infants}
+                                    setInfants={setInfants}
+                                    maxGuests={property.guests}
+                                    availabilityStatus={availabilityStatus}
+                                    hideHeader={true}
+                                />
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* Modals */}
             <AnimatePresence>

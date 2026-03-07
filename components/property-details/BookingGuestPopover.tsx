@@ -91,7 +91,7 @@ export function BookingGuestPopover({
                         initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
                         animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
-                        className={`fixed inset-x-4 bottom-24 lg:inset-auto z-[110] bg-white rounded-3xl shadow-2xl w-auto lg:w-[380px] mx-auto lg:mx-0 overflow-hidden border border-gray-100 ${getPositionClasses()}`}
+                        className={`fixed inset-x-4 bottom-4 lg:inset-auto z-[110] bg-white rounded-3xl shadow-2xl w-auto lg:w-[380px] mx-auto lg:mx-0 flex flex-col max-h-[85vh] lg:max-h-none overflow-hidden border border-gray-100 ${getPositionClasses()}`}
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between py-3 px-5 border-b border-gray-100 bg-white">
@@ -113,7 +113,7 @@ export function BookingGuestPopover({
                         </div>
 
                         {/* Guest Selection Area */}
-                        <div className="p-8 space-y-6 bg-white">
+                        <div className="p-8 space-y-6 bg-white flex-1 overflow-y-auto">
                             {/* Adults row */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">

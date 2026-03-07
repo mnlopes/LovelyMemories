@@ -375,6 +375,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const nextStep = () => {
         if (validateStep(step)) {
             setStep(prev => Math.min(prev + 1, 3));
+            if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
     };
     const prevStep = () => {
@@ -465,11 +468,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
     if (isFinished) {
         return (
-            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-white text-navy-950">
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 md:p-6 bg-gradient-to-b from-gray-50 to-white text-navy-950">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="max-w-4xl mx-auto w-full pt-12 pb-24 px-6"
+                    className="max-w-4xl mx-auto w-full pt-12 pb-24 px-0 md:px-6"
                 >
                     <div className="text-center mb-12">
                         <div className="w-20 h-20 bg-[#2d8653] text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#2d8653]/20">
@@ -481,7 +484,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                         {/* Order Summary Header */}
-                        <div className="flex flex-col md:flex-row gap-6 md:gap-0 justify-between py-6 px-8 border-b border-gray-100 bg-gray-50/30">
+                        <div className="flex flex-col md:flex-row gap-6 md:gap-0 justify-between py-6 px-4 md:px-8 border-b border-gray-100 bg-gray-50/30">
                             <div className="space-y-1">
                                 <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('success.reference')}</p>
                                 <p className="text-lg font-mono font-bold tracking-tighter text-navy-950">{reservationRef}</p>
@@ -501,7 +504,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         </div>
 
                         {/* Order Details Body */}
-                        <div className="p-8 space-y-6">
+                        <div className="p-4 sm:p-6 md:p-8 space-y-6">
                             <div className="flex justify-between items-center pb-6 border-b border-gray-100">
                                 <h2 className="text-2xl font-bold font-montserrat text-navy-950">{t('success.orderDetails')}</h2>
                                 <button
@@ -513,9 +516,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                 </button>
                             </div>
 
-                            <div className="flex justify-between items-center py-4 border-b border-gray-100">
-                                <span className="font-bold text-navy-950">{t('success.bookingOf')} <span className="text-[#B08D4A]">{property.title?.[locale] || property.title?.en || 'Untitled'}</span></span>
-                                <span className="font-bold text-navy-950">€{total}</span>
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 py-4 border-b border-gray-100">
+                                <span className="font-bold text-navy-950 text-lg leading-tight">
+                                    {t('success.bookingOf')} <span className="text-[#B08D4A]">{property.title?.[locale] || property.title?.en || 'Untitled'}</span>
+                                </span>
+                                <span className="font-bold text-navy-950 text-xl sm:text-lg">€{total}</span>
                             </div>
 
                             <div className="space-y-2 text-sm text-navy-900/70">
@@ -566,12 +571,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         <span className="font-bold text-navy-950">€{transferTotal}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between text-sm pt-4 border-t border-gray-100">
-                                    <span className="font-bold text-navy-950">{t('success.paymentMethod')}:</span>
-                                    <span className="font-bold text-navy-950 capitalize">{formData.paymentMethod === 'wire' ? t('success.bankTransfer') : formData.paymentMethod}</span>
+                                <div className="flex justify-between gap-4 text-sm pt-4 border-t border-gray-100">
+                                    <span className="font-bold text-navy-950 shrink-0">{t('success.paymentMethod')}:</span>
+                                    <span className="font-bold text-navy-950 capitalize text-right">{formData.paymentMethod === 'wire' ? t('success.bankTransfer') : formData.paymentMethod}</span>
                                 </div>
-                                <div className="flex justify-between text-lg pt-4 border-t border-gray-100">
-                                    <span className="font-bold text-navy-950">{t('sidebar.total')}:</span>
+                                <div className="flex justify-between gap-4 text-lg pt-4 border-t border-gray-100">
+                                    <span className="font-bold text-navy-950 shrink-0">{t('sidebar.total')}:</span>
                                     <span className="font-bold text-navy-950">€{total}</span>
                                 </div>
                             </div>
@@ -587,7 +592,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
                     {/* Billing Address Card */}
                     {showBilling && formData.address && ( // Only show if address is filled (implies toggle was likely used or pre-filled)
-                        <div className="mt-8 bg-white border border-gray-100 rounded-3xl p-8 md:p-12 shadow-sm">
+                        <div className="mt-8 bg-white border border-gray-100 rounded-3xl p-4 sm:p-6 md:p-12 shadow-sm">
                             <h2 className="text-2xl font-bold font-montserrat text-navy-950 mb-6">{t('step1.billingTitle')}</h2>
                             <address className="not-italic space-y-1 text-navy-900/70">
                                 <p className="font-bold text-navy-950">{formData.fullName}</p>
@@ -601,7 +606,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         </div>
                     )}
 
-                    <div className="mt-12 text-center">
+                    <div className="mt-12 flex justify-center w-full">
                         <Link href="/">
                             <Button variant="luxury" className="px-12 h-14 rounded-full">{t('success.returnHome')}</Button>
                         </Link>
@@ -642,12 +647,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         <div className="min-h-screen bg-gray-50 flex flex-col pt-20 lg:pt-24 text-navy-950">
             {/* Header / Navbar Replacement */}
             <header className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 flex flex-col">
-                <div className="h-20 lg:h-24 flex items-center px-6 lg:px-12 justify-between w-full gap-4">
+                <div className="h-20 lg:h-24 flex items-center px-4 lg:px-12 justify-between w-full gap-2 lg:gap-4">
                     {/* Left: Navigation & Brand */}
-                    <div className="w-1/4 min-w-[200px] flex items-center gap-8">
+                    <div className="w-auto lg:w-1/4 lg:min-w-[200px] flex items-center gap-8">
                         <button
                             onClick={prevStep}
-                            className="flex items-center justify-center gap-2 w-32 px-4 py-2 border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 transition-all rounded-full group shrink-0"
+                            className="flex items-center justify-center gap-1.5 w-auto min-w-[90px] lg:w-32 px-3 py-2 border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 transition-all rounded-full group shrink-0"
                         >
                             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                             <span className="font-bold text-[9px] lg:text-[11px] uppercase tracking-widest text-navy-950">
@@ -682,22 +687,22 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         `}>
                                             {step > s.id ? '✓' : s.id}
                                         </div>
-                                        <div className="absolute top-full mt-2 lg:mt-3 flex flex-col items-center">
-                                            <span className={`text-[8px] lg:text-[9px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-colors duration-500
+                                        <div className="absolute top-full mt-1.5 lg:mt-3 flex flex-col items-center">
+                                            <span className={`text-[8px] lg:text-[9px] uppercase font-bold lg:tracking-[0.2em] whitespace-nowrap transition-colors duration-500
                                                 ${step >= s.id ? 'text-navy-950' : 'text-navy-950/20'}`}>
                                                 {s.label}
                                             </span>
                                         </div>
                                     </div>
                                     {idx < 2 && (
-                                        <div className={`w-8 lg:w-16 h-0.5 rounded-full transition-colors duration-500 ${step > s.id ? 'bg-[#2d8653]' : 'bg-gray-100'}`} />
+                                        <div className={`w-5 sm:w-8 lg:w-16 h-0.5 rounded-full transition-colors duration-500 ${step > s.id ? 'bg-[#2d8653]' : 'bg-gray-100'}`} />
                                     )}
                                 </React.Fragment>
                             ))}
                         </div>
                     </div>
 
-                    <div className="w-1/4 min-w-[220px] flex items-center justify-end pr-4">
+                    <div className="hidden lg:flex lg:w-1/4 lg:min-w-[220px] items-center justify-end pr-4">
                         {/* Right: Empty for Balance */}
                     </div>
                 </div>

@@ -403,7 +403,7 @@
     },
     "Home": {
         "heroOverTitle": "Reserve uma das nossas casas requintadas e curadas",
-        "heroTitle": "E crie as suas próprias memórias encantadoras e duradouras do Porto",
+        "heroTitle": "E crie as suas próprias memórias encantadoras e duradouras de <scrambler></scrambler>",
         "aboutTitle": "Do Porto para o Mundo",
         "aboutDescription": "Somos o principal agente de gestão de alojamento turístico em Portugal, gerido por uma equipa internacional fantástica. Os nossos clientes, sejam os proprietários ou os próprios hóspedes, sabem exatamente porquê!",
         "aboutButton": "Sobre Nós",
@@ -985,7 +985,9 @@
             "propertyDetails": "Detalhes da Propriedade",
             "dateRange": "Intervalo de Datas",
             "additionalServices": "Serviços Adicionais",
-            "child": "Criança"
+            "child": "Criança",
+            "weeklyDiscount": "Desconto semanal",
+            "monthlyDiscount": "Desconto mensal"
         },
         "security": {
             "safe": "Os seus dados estão seguros",

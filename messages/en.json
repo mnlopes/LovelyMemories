@@ -407,7 +407,7 @@
     },
     "Home": {
         "heroOverTitle": "Booking one of our exquisite, curated Homes",
-        "heroTitle": "And create your own Lovely, Long Last Memories of Porto",
+        "heroTitle": "And create your own Lovely, Long Last Memories of <scrambler></scrambler>",
         "aboutTitle": "From Porto to the World",
         "aboutDescription": "We are the leading tourism accommodation management agent in Portugal, run by an amazing, international team. Our clients, be it the owners or guests themselves, know exactly why!",
         "aboutButton": "About Us",
@@ -989,7 +989,9 @@
             "propertyDetails": "Property Details",
             "dateRange": "Date Range",
             "additionalServices": "Additional Services",
-            "child": "Child"
+            "child": "Child",
+            "weeklyDiscount": "Weekly discount",
+            "monthlyDiscount": "Monthly discount"
         },
         "security": {
             "safe": "Your data is safe",

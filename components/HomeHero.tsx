@@ -1,7 +1,9 @@
+"use client";
 
 import React from 'react';
 import Image from 'next/image';
 import { HomeBookingBar } from './HomeBookingBar';
+import CityScrambler from './CityScrambler';
 import { useTranslations } from "next-intl";
 
 export const HomeHero = () => {
@@ -33,12 +35,14 @@ export const HomeHero = () => {
 
                 {/* Hero Content */}
                 <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center pb-20 md:pb-0">
-                    <div className="w-full lg:w-9/12 xl:w-8/12 md:mt-24">
-                        <h6 className="text-white mb-4 text-base md:text-xl font-medium tracking-wide">
+                    <div className="w-full lg:w-10/12 xl:w-9/12 md:mt-24">
+                        <h6 className="text-white mb-4 text-base md:text-xl font-medium tracking-widest uppercase opacity-80">
                             {t('heroOverTitle')}
                         </h6>
                         <h1 className="text-white text-[22px] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg">
-                            {t('heroTitle')}
+                            {t.rich('heroTitle', {
+                                scrambler: () => <CityScrambler />
+                            })}
                         </h1>
                     </div>
                 </div>

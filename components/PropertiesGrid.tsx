@@ -95,7 +95,7 @@ export const PropertiesGrid = () => {
 
                 {/* Region Filter Bar - Premium Redesign */}
                 <div className="mb-20">
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-12 gap-y-6 border-b border-gray-100 pb-2 relative">
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-5 sm:gap-x-8 md:gap-x-12 gap-y-4 md:gap-y-6 border-b border-gray-100 pb-2 relative">
                         {regions.map(region => {
                             const count = region === 'all'
                                 ? properties.length

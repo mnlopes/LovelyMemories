@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function ConciergePage() {
     return (
-        <main className="relative pt-20">
+        <main className="relative pt-20 overflow-x-hidden">
             <ConciergeHero />
             <ConciergeIntro />
             <ConciergeServices />
