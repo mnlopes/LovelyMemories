@@ -164,8 +164,16 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
 
     const addVipService = () => {
         if (!newVipTitle.trim()) return;
+        const translation = VIP_TRANSLATIONS[newVipTitle.trim()];
+        
+        const titlePayload = {
+            en: translation?.en || (activeLang === 'en' ? newVipTitle.trim() : ""),
+            pt: translation?.pt || (activeLang === 'pt' ? newVipTitle.trim() : ""),
+            he: (activeLang === 'he' ? newVipTitle.trim() : "")
+        };
+
         appendVip({
-            title: { en: newVipTitle.trim(), pt: newVipTitle.trim(), he: newVipTitle.trim() },
+            title: titlePayload,
             icon: selectedVipIcon
         });
         setNewVipTitle("");
@@ -425,9 +433,9 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
         if (!name.trim()) return;
         const translation = ITEM_TRANSLATIONS[name];
         const itemPayload = { 
-            en: translation?.en || name.trim(), 
-            pt: translation?.pt || name.trim(), 
-            he: name.trim() 
+            en: translation?.en || (activeLang === 'en' ? name.trim() : ""), 
+            pt: translation?.pt || (activeLang === 'pt' ? name.trim() : ""), 
+            he: (activeLang === 'he' ? name.trim() : "") 
         };
         append(itemPayload);
         setNewItem("");
