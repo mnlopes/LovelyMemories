@@ -1,6 +1,6 @@
 "use client";
 
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Plus, Trash2, ListFilter, Sparkles, ChefHat, Car, Map, Utensils, ChevronDown, Wine, Music, Waves, ShieldCheck, Ticket, Plane, Calendar, GlassWater } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
@@ -147,7 +147,12 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
     const { control, register, getValues, setValue } = useFormContext<PropertyFormData>();
 
     // VIP Services Control
-    const { fields: vipFields, append: appendVip, remove: removeVip } = useFieldArray({
+    const { fields: vipFields, append: appendVip, remove: removeVip, update: updateVip } = useFieldArray({
+        control,
+        name: "vip_services"
+    });
+
+    const watchedVips = useWatch({
         control,
         name: "vip_services"
     });
@@ -340,8 +345,9 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                                             <button
                                                                 key={opt.value}
                                                                 type="button"
-                                                                onClick={() => {
-                                                                    setValue(`vip_services.${index}.icon`, opt.value);
+                                                                 onClick={() => {
+                                                                    const currentValues = getValues(`vip_services.${index}`);
+                                                                    updateVip(index, { ...currentValues, icon: opt.value });
                                                                     setOpenVipIconIndex(null);
                                                                 }}
                                                                 className={`size-10 rounded-lg flex items-center justify-center hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all border ${field.icon === opt.value ? 'border-[#171717] bg-[#fafafa] dark:bg-admin-dark-bg' : 'border-transparent'}`}
@@ -358,7 +364,7 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                                 key={`vip-${index}-${activeLang}`}
                                                 {...register(`vip_services.${index}.title.${activeLang}` as const)}
                                                 className="w-full bg-transparent text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none placeholder:text-[#171717]/40 dark:placeholder:text-white/40 placeholder:font-medium"
-                                                placeholder={getValues(`vip_services.${index}.title.en`) || getValues(`vip_services.${index}.title.pt`) || t('amenities.vipLabel', { lang: activeLang })}
+                                                placeholder={watchedVips?.[index]?.title?.en || watchedVips?.[index]?.title?.pt || t('amenities.vipLabel', { lang: activeLang })}
                                             />
                                         </div>
                                         <button
@@ -404,6 +410,12 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
         control,
         name: `amenities.${index}.items` as any,
     });
+    
+    const watchedItems = useWatch({
+        control,
+        name: `amenities.${index}.items` as any
+    });
+
     const { getValues } = useFormContext<PropertyFormData>();
 
     const [newItem, setNewItem] = useState("");
@@ -484,7 +496,7 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
                                     key={`amenity-${index}-${itemIndex}-${activeLang}`}
                                     {...register(`amenities.${index}.items.${itemIndex}.${activeLang}` as const)}
                                     dir={dir}
-                                    placeholder={getValues(`amenities.${index}.items.${itemIndex}.en`) || getValues(`amenities.${index}.items.${itemIndex}.pt`) || ''}
+                                    placeholder={watchedItems?.[itemIndex]?.en || watchedItems?.[itemIndex]?.pt || ''}
                                     className={`bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none w-full font-bold placeholder:text-[#171717]/40 dark:placeholder:text-white/40 placeholder:font-medium`}
                                 />
                                 <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
