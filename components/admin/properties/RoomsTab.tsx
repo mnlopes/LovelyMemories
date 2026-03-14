@@ -237,54 +237,54 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Property Capacity & Layout */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
+                <label className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors cursor-text block">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <User className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.maxGuests')}</label>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t('units.maxGuests')}</span>
                     </div>
                     <input
                         type="number"
                         {...register("max_guests")}
                         min={0}
-                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none"
+                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                </div>
-                <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
+                </label>
+                <label className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors cursor-text block">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <Bed className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.bedrooms')}</label>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t('units.bedrooms')}</span>
                     </div>
                     <input
                         type="number"
                         {...register("bedrooms")}
                         min={0}
-                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none"
+                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                </div>
-                <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
+                </label>
+                <label className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors cursor-text block">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <Layout className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.totalBeds')}</label>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t('units.totalBeds')}</span>
                     </div>
                     <input
                         type="number"
                         {...register("beds")}
                         min={0}
-                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none"
+                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                </div>
-                <div className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors">
+                </label>
+                <label className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors cursor-text block">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <Bath className="size-4" />
-                        <label className="text-[10px] font-bold uppercase tracking-wider">{t('units.bathrooms')}</label>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t('units.bathrooms')}</span>
                     </div>
                     <input
                         type="number"
                         {...register("bathrooms")}
                         min={0}
-                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none"
+                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                </div>
+                </label>
             </div>
             {/* Bed Size Guide \u0026 Baby Equipment Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 bg-[#fafafa] dark:bg-admin-dark-bg rounded-[32px] border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm">

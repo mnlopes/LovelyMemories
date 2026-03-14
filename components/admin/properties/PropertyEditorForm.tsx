@@ -3,7 +3,7 @@
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { ArrowLeft, Save, Eye, Loader2, Wand2 } from "lucide-react";
+import { ArrowLeft, Save, Eye, Loader2, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -17,7 +17,6 @@ import AmenitiesTab from "./AmenitiesTab";
 import PoliciesTab from "./PoliciesTab";
 import PricingAvailabilityTab from "./PricingAvailabilityTab";
 import { upsertProperty } from "@/app/actions/property";
-import { translatePropertyFields } from "@/app/actions/translate";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 
@@ -32,7 +31,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
     const t = useTranslations('PropertyEditor');
     const [activeTab, setActiveTab] = useState('basic');
     const [activeLang, setActiveLang] = useState('en');
-    const [isTranslating, setIsTranslating] = useState(false);
+    const [showTranslateModal, setShowTranslateModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
@@ -239,36 +238,43 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         }
     };
 
-    const handleMagicTranslate = async () => {
-        const values = formMethods.getValues();
-        setIsTranslating(true);
-        const langName = activeLang === 'pt' ? t('magicTranslate.portuguese') : t('magicTranslate.english');
-        const toastId = toast.loading(t('magicTranslate.translating', { lang: langName }));
-
-        try {
-            // translatePropertyFields is a server action
-            const { data: translatedData } = await translatePropertyFields(values, activeLang as any);
-
-            // Update form values.
-            Object.keys(translatedData).forEach((key) => {
-                formMethods.setValue(key as any, (translatedData as any)[key], { shouldDirty: true });
-            });
-
-            toast.success(t('magicTranslate.success'), { id: toastId });
-        } catch (error: any) {
-            console.error("Magic Translation Error:", error);
-            const errorMsg = error.message || "";
-            const isMissingKey = errorMsg.includes("Missing API Key");
-            const isQuota = errorMsg.includes("429") || errorMsg.includes("quota");
-
-            let message = t('magicTranslate.error');
-            if (isMissingKey) message = t('magicTranslate.missingKey');
-            else if (isQuota) message = t('magicTranslate.quotaExceeded');
-
-            toast.error(message, { id: toastId });
-        } finally {
-            setIsTranslating(false);
+    const handleCreateTranslation = () => {
+        if (activeLang === 'en') {
+            toast.error("Por favor seleciona outro idioma para onde traduzir.");
+            return;
         }
+
+        const values = formMethods.getValues();
+        
+        function copyEnToTarget(obj: any): any {
+            if (!obj) return obj;
+            if (Array.isArray(obj)) {
+                return obj.map((item: any) => copyEnToTarget(item));
+            }
+            if (typeof obj === 'object') {
+                if ('en' in obj && typeof obj.en === 'string') {
+                    return {
+                        ...obj,
+                        [activeLang]: obj.en
+                    };
+                }
+                const newObj: any = {};
+                for (const [key, value] of Object.entries(obj)) {
+                    newObj[key] = copyEnToTarget(value);
+                }
+                return newObj;
+            }
+            return obj;
+        }
+
+        const newValues = copyEnToTarget(values);
+        
+        Object.keys(newValues).forEach(key => {
+            formMethods.setValue(key as any, newValues[key], { shouldDirty: true });
+        });
+        
+        setShowTranslateModal(false);
+        toast.success(`Cópia em Inglês carregada para ${activeLang.toUpperCase()}. Podes agora traduzir manualmente.`);
     };
 
 
@@ -359,6 +365,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             })}
                         </div>
 
+                        {isEditing && (
                         <div className="flex flex-wrap items-center gap-3 p-1.5 bg-[#f5f5f5] dark:bg-admin-dark-bg rounded-2xl border border-[#f0f0f0] dark:border-admin-dark-border mb-3 transition-colors">
                             {/* View Selector */}
                             <div className="flex items-center gap-2 px-1.5">
@@ -387,15 +394,16 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             <div className="flex items-center gap-2 px-1.5 ml-auto sm:ml-0">
                                 <button
                                     type="button"
-                                    onClick={handleMagicTranslate}
-                                    disabled={isTranslating}
+                                    onClick={() => setShowTranslateModal(true)}
+                                    disabled={activeLang === 'en'}
                                     className="h-7 px-3 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-[10px] font-black tracking-wider uppercase transition-all flex items-center gap-2 hover:bg-black dark:hover:bg-gray-100 disabled:opacity-50 disabled:grayscale shadow-sm"
                                 >
-                                    {isTranslating ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3 text-gold-400" />}
-                                    <span>{t('magicTranslate.action')}</span>
+                                    <Languages className="size-3" />
+                                    <span>TRANSLATE</span>
                                 </button>
                             </div>
                         </div>
+                        )}
                     </div>
                 </div>
 
@@ -466,6 +474,33 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 title={modalConfig.title}
                 message={modalConfig.message}
             />
+
+            {/* Translation Modal */}
+            {showTranslateModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-all duration-300">
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-3xl p-6 w-full max-w-md shadow-2xl border border-[#eaeaea] dark:border-admin-dark-border transform transition-all">
+                        <h3 className="text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary mb-2">Traduzir Propriedade</h3>
+                        <p className="text-sm text-[#a3a3a3] mb-6">Esta ação vai copiar os textos em Inglês para a língua {activeLang.toUpperCase()}, permitindo a tradução manual dos campos.</p>
+                        
+                        <div className="flex gap-3 mt-8">
+                            <button
+                                type="button"
+                                onClick={() => setShowTranslateModal(false)}
+                                className="flex-1 px-5 py-3 rounded-xl text-sm font-bold text-[#171717] dark:text-white bg-[#f5f5f5] dark:bg-admin-dark-bg hover:bg-[#eaeaea] dark:hover:bg-white/10 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCreateTranslation}
+                                className="flex-1 px-5 py-3 rounded-xl text-sm font-bold text-white bg-[#171717] hover:bg-black transition-colors"
+                            >
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </FormProvider>
     );
 }

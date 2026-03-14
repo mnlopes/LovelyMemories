@@ -8,7 +8,6 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { AdminLanguageSwitcher } from "./AdminLanguageSwitcher";
 
 export const AdminSidebar = () => {
     const pathname = usePathname();
@@ -158,11 +157,6 @@ export const AdminSidebar = () => {
 
             {/* Footer Area */}
             <div className={`p-6 border-t border-admin-border ${isCollapsed ? 'px-2 items-center' : ''}`}>
-                {/* Language Switcher */}
-                <div className="mb-2">
-                    <AdminLanguageSwitcher isCollapsed={isCollapsed} />
-                </div>
-
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}

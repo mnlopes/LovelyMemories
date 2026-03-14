@@ -11,6 +11,34 @@ interface PoliciesTabProps {
     dir: 'ltr' | 'rtl';
 }
 
+const RULE_TRANSLATIONS: Record<string, Record<string, string>> = {
+    'childrenAllowed': {
+        en: "Children Allowed",
+        pt: "Apto para Crianças",
+        he: "ילדים מורשים"
+    },
+    'infantsAllowed': {
+        en: "Infants Allowed",
+        pt: "Apto para Bebés",
+        he: "תינוקות מורשים"
+    },
+    'petsAllowed': {
+        en: "Pets Allowed",
+        pt: "Animais Permitidos",
+        he: "חיות מחמד מורשות"
+    },
+    'partiesAllowed': {
+        en: "Parties/Events Allowed",
+        pt: "Festas/Eventos Permitidos",
+        he: "מסיבות/אירועים מורשים"
+    },
+    'smokingAllowed': {
+        en: "Smoking Allowed",
+        pt: "Permitido Fumar",
+        he: "עישון מותר"
+    }
+};
+
 export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
     const t = useTranslations('PropertyEditor');
     const { control, register, watch, getValues, setValue } = useFormContext<PropertyFormData>();
@@ -31,11 +59,11 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
     };
 
     const standardRules = [
-        { id: 'childrenAllowed', label: t('policies.rules.childrenAllowed'), name: "house_rules.childrenAllowed" },
-        { id: 'infantsAllowed', label: t('policies.rules.infantsAllowed'), name: "house_rules.infantsAllowed" },
-        { id: 'petsAllowed', label: t('policies.rules.petsAllowed'), name: "house_rules.petsAllowed" },
-        { id: 'partiesAllowed', label: t('policies.rules.partiesAllowed'), name: "house_rules.partiesAllowed" },
-        { id: 'smokingAllowed', label: t('policies.rules.smokingAllowed'), name: "house_rules.smokingAllowed" },
+        { id: 'childrenAllowed', label: `${RULE_TRANSLATIONS['childrenAllowed']?.[activeLang] || 'Children Allowed'} (${activeLang.toUpperCase()})`, name: "house_rules.childrenAllowed" },
+        { id: 'infantsAllowed', label: `${RULE_TRANSLATIONS['infantsAllowed']?.[activeLang] || 'Infants Allowed'} (${activeLang.toUpperCase()})`, name: "house_rules.infantsAllowed" },
+        { id: 'petsAllowed', label: `${RULE_TRANSLATIONS['petsAllowed']?.[activeLang] || 'Pets Allowed'} (${activeLang.toUpperCase()})`, name: "house_rules.petsAllowed" },
+        { id: 'partiesAllowed', label: `${RULE_TRANSLATIONS['partiesAllowed']?.[activeLang] || 'Parties/Events Allowed'} (${activeLang.toUpperCase()})`, name: "house_rules.partiesAllowed" },
+        { id: 'smokingAllowed', label: `${RULE_TRANSLATIONS['smokingAllowed']?.[activeLang] || 'Smoking Allowed'} (${activeLang.toUpperCase()})`, name: "house_rules.smokingAllowed" },
     ];
 
     return (
@@ -108,7 +136,9 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
 
                     <div className="space-y-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('policies.policyTitle')}</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
+                                {t('policies.policyTitle')} ({activeLang.toUpperCase()})
+                            </label>
                             <input
                                 key={`cancel-text-${activeLang}`}
                                 {...register(`cancellation.text.${activeLang}` as any)}
@@ -119,7 +149,9 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('policies.refundDetails')}</label>
+                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
+                                    {t('policies.refundDetails')} ({activeLang.toUpperCase()})
+                                </label>
                                 <input
                                     key={`cancel-refund-${activeLang}`}
                                     {...register(`cancellation.refundText.${activeLang}` as any)}
@@ -129,7 +161,9 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">{t('policies.deadline')}</label>
+                                <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
+                                    {t('policies.deadline')} ({activeLang.toUpperCase()})
+                                </label>
                                 <input
                                     key={`cancel-deadline-${activeLang}`}
                                     {...register(`cancellation.deadline.${activeLang}` as any)}
@@ -189,7 +223,7 @@ function DynamicRuleToggle({ index, activeLang, dir, register, watch, onRemove, 
                     key={`custom-rule-${index}-${activeLang}`}
                     {...register(`house_rules.custom.${index}.label.${activeLang}` as any)}
                     dir={dir}
-                    placeholder={placeholder}
+                    placeholder={`${placeholder} (${activeLang.toUpperCase()})`}
                     className="bg-transparent border-none p-0 text-sm font-bold focus:ring-0 outline-none w-full placeholder:text-[#a3a3a3] dark:placeholder:text-admin-dark-text-secondary"
                 />
             </div>

@@ -35,7 +35,6 @@ export const Navbar = () => {
         { path: '/about-us', label: t('about') },
         { path: '/properties', label: t('properties') },
         { path: '/concierge', label: t('concierge') },
-        { path: '/blog', label: t('blog') },
         { path: '/contact', label: t('contact') },
     ];
 
@@ -47,8 +46,8 @@ export const Navbar = () => {
                 <div className="flex items-center justify-between">
 
                     {/* Brand / Logo */}
-                    <Link href="/" className="relative z-50 flex-shrink-0">
-                        <figure className="mb-0">
+                    <Link href="/" className="relative z-50 flex-shrink-0 self-center">
+                        <figure className="mb-0 flex">
                             <img
                                 src="/legacy/home/images/logo.svg"
                                 alt="Lovely Memories"
@@ -58,7 +57,7 @@ export const Navbar = () => {
                     </Link>
 
                     {/* Desktop Navigation */}
-                    <nav className="hidden lg:flex items-center gap-8">
+                    <nav className="hidden lg:flex items-center gap-8 self-center mt-5">
                         <ul className="flex items-center gap-8 m-0 p-0 list-none">
                             {navLinks.map((link) => (
                                 <li key={link.path}>
@@ -75,7 +74,7 @@ export const Navbar = () => {
                     </nav>
 
                     {/* Right Side Actions (Login / Lang) */}
-                    <div className="hidden lg:flex items-center gap-6">
+                    <div className="hidden lg:flex items-center gap-6 self-center mt-5">
                         <Link
                             href="/login"
                             className="flex items-center gap-2 text-white hover:text-[#b09e80] transition-colors group"

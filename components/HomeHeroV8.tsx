@@ -74,14 +74,14 @@ export const HomeHeroV8 = () => {
                                 }}
                             />
                             <span className="text-white text-sm md:text-base font-medium tracking-widest uppercase opacity-70">
-                                Booking one of our exquisite, curated Homes
+                                Book one of our exquisite, curated homes
                             </span>
                         </motion.div>
 
                         <h1 className="text-white text-[22px] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg">
                             And create your own Lovely,{" "}
                             <br className="hidden sm:block" />
-                            Long Last Memories of{" "}
+                            long lasting Memories of{" "}
                             <CityLiquidMorph onCityChange={setCityIdx} />
                         </h1>
 

@@ -18,6 +18,18 @@ const SUGGESTED_CATEGORIES = [
     "Safety"
 ];
 
+const CATEGORY_TRANSLATIONS: Record<string, Record<string, string>> = {
+    "Bedroom & Laundry": { en: "Bedroom & Laundry", pt: "Quarto e Lavandaria" },
+    "Entertainment": { en: "Entertainment", pt: "Entretenimento" },
+    "Heating and Cooling": { en: "Heating and Cooling", pt: "Climatização" },
+    "Internet and Office": { en: "Internet and Office", pt: "Internet e Escritório" },
+    "Kitchen and Dining": { en: "Kitchen and Dining", pt: "Cozinha e Área de Jantar" },
+    "Bathroom": { en: "Bathroom", pt: "Casa de Banho" },
+    "Location Features": { en: "Location Features", pt: "Localização" },
+    "Outdoor": { en: "Outdoor", pt: "Exterior" },
+    "Safety": { en: "Safety", pt: "Segurança" }
+};
+
 const COMMON_ITEMS = {
     "Bedroom & Laundry": ["Washing machine", "Iron", "Hangers", "Bed linens", "Extra pillows and blankets", "Room-darkening shades"],
     "Entertainment": ["HDTV with Netflix", "Marshall Bluetooth sound system", "Books and reading material", "Standard cable"],
@@ -28,6 +40,47 @@ const COMMON_ITEMS = {
     "Outdoor": ["Pool", "Garden", "Private entrance", "Patio or balcony", "Outdoor furniture"],
     "Location Features": ["River view", "Resort access", "Beach access", "City view"]
 };
+
+// Map item English keys to translations
+const ITEM_TRANSLATIONS: Record<string, Record<string, string>> = {
+    "Washing machine": { en: "Washing machine", pt: "Máquina de Lavar" },
+    "Iron": { en: "Iron", pt: "Ferro de Engomar" },
+    "Hangers": { en: "Hangers", pt: "Cabides" },
+    "Bed linens": { en: "Bed linens", pt: "Roupas de Cama" },
+    "Extra pillows and blankets": { en: "Extra pillows and blankets", pt: "Almofadas e Cobertores Extra" },
+    "Room-darkening shades": { en: "Room-darkening shades", pt: "Cortinas Opacas" },
+    "HDTV with Netflix": { en: "HDTV with Netflix", pt: "Smart TV / Netflix" },
+    "Marshall Bluetooth sound system": { en: "Marshall Bluetooth sound system", pt: "Sistema de Som Marshall" },
+    "Books and reading material": { en: "Books and reading material", pt: "Livros e Leitura" },
+    "Standard cable": { en: "Standard cable", pt: "Canais por Cabo" },
+    "Air conditioning": { en: "Air conditioning", pt: "Ar Condicionado" },
+    "Central heating": { en: "Central heating", pt: "Aquecimento Central" },
+    "Portable fans": { en: "Portable fans", pt: "Ventoinhas Portáteis" },
+    "High-speed WiFi": { en: "High-speed WiFi", pt: "Wi-Fi Rápido" },
+    "Dedicated workspace": { en: "Dedicated workspace", pt: "Área de Trabalho" },
+    "Ergonomic chair": { en: "Ergonomic chair", pt: "Cadeira Ergonómica" },
+    "Fully equipped kitchen": { en: "Fully equipped kitchen", pt: "Cozinha Completa" },
+    "Nespresso machine": { en: "Nespresso machine", pt: "Máquina Nespresso" },
+    "Dishwasher": { en: "Dishwasher", pt: "Máquina de Lavar Loiça" },
+    "Wine glasses": { en: "Wine glasses", pt: "Copos de Vinho" },
+    "Toaster": { en: "Toaster", pt: "Torradeira" },
+    "Cooking basics": { en: "Cooking basics", pt: "Básicos de Cozinha" },
+    "Hair dryer": { en: "Hair dryer", pt: "Secador de Cabelo" },
+    "Premium toiletries": { en: "Premium toiletries", pt: "Produtos de Banho Premium" },
+    "Hot water": { en: "Hot water", pt: "Água Quente" },
+    "Walk-in shower": { en: "Walk-in shower", pt: "Duche" },
+    "Bathtub": { en: "Bathtub", pt: "Banheira" },
+    "Pool": { en: "Pool", pt: "Piscina" },
+    "Garden": { en: "Garden", pt: "Jardim" },
+    "Private entrance": { en: "Private entrance", pt: "Entrada Privada" },
+    "Patio or balcony": { en: "Patio or balcony", pt: "Pátio ou Varanda" },
+    "Outdoor furniture": { en: "Outdoor furniture", pt: "Mobiliário de Exterior" },
+    "River view": { en: "River view", pt: "Vista de Rio" },
+    "Resort access": { en: "Resort access", pt: "Acesso ao Resort" },
+    "Beach access": { en: "Beach access", pt: "Acesso à Praia" },
+    "City view": { en: "City view", pt: "Vista da Cidade" }
+};
+
 
 const AVAILABLE_ICONS = [
     { label: "Heating/Cooling", value: "/icons/heating_navy.png" },
@@ -55,6 +108,22 @@ const VIP_ICONS = [
     { label: "Tickets", value: "Ticket", icon: Ticket },
     { label: "Calendar", value: "Calendar", icon: Calendar },
 ];
+
+const VIP_TRANSLATIONS: Record<string, Record<string, string>> = {
+    "Concierge": { en: "Concierge", pt: "Concierge" },
+    "Chef": { en: "Private Chef", pt: "Chef Privado" },
+    "Chauffeur": { en: "Chauffeur", pt: "Motorista Privado" },
+    "Transfer": { en: "Transfer", pt: "Transfer" },
+    "Tours": { en: "Tours", pt: "Tours" },
+    "Dining": { en: "Fine Dining", pt: "Jantares Exclusivos" },
+    "Wine": { en: "Wine Tasting", pt: "Provas de Vinho" },
+    "Drinks": { en: "Premium Drinks", pt: "Bebidas Premium" },
+    "Music": { en: "Live Music", pt: "Música ao Vivo" },
+    "Wellness": { en: "Wellness & Spa", pt: "Bem-estar e Spa" },
+    "Security": { en: "Security", pt: "Segurança" },
+    "Tickets": { en: "Event Tickets", pt: "Bilhetes para Eventos" },
+    "Calendar": { en: "Planning", pt: "Planeamento" }
+};
 
 const DEFAULT_ICONS: Record<string, string> = {
     "Bedroom & Laundry": "/icons/bedroom_navy.png",
@@ -143,18 +212,20 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                             </button>
                         </div>
 
-                        {/* Suggested Categories */}
                         <div className="flex flex-wrap gap-2">
-                            {SUGGESTED_CATEGORIES.filter(cat => !amenityFields.some(f => f.category === cat)).map(cat => (
-                                <button
-                                    key={cat}
-                                    type="button"
-                                    onClick={() => addCategory(cat)}
-                                    className="px-3 py-1.5 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border rounded-lg text-[10px] font-bold text-[#171717] dark:text-admin-dark-text-primary hover:border-[#171717] transition-all"
-                                >
-                                    + {t(`amenitiesCategories.${cat}`)}
-                                </button>
-                            ))}
+                            {SUGGESTED_CATEGORIES.filter(cat => !amenityFields.some(f => f.category === cat)).map(cat => {
+                                const localizedCat = CATEGORY_TRANSLATIONS[cat]?.[activeLang] || cat;
+                                return (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => addCategory(cat)}
+                                        className="px-3 py-1.5 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border rounded-lg text-[10px] font-bold text-[#171717] dark:text-admin-dark-text-primary hover:border-[#171717] transition-all"
+                                    >
+                                        + {localizedCat}
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         <div className="grid grid-cols-1 gap-6">
@@ -285,9 +356,9 @@ export default function AmenitiesTab({ activeLang, dir }: AmenitiesTabProps) {
                                         <div className="flex-1">
                                             <input
                                                 key={`vip-${index}-${activeLang}`}
-                                                {...register(`vip_services.${index}.title.${activeLang}` as any)}
-                                                className="w-full bg-transparent text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none"
-                                                placeholder={t('amenities.vipLabel', { lang: activeLang })}
+                                                {...register(`vip_services.${index}.title.${activeLang}` as const)}
+                                                className="w-full bg-transparent text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none placeholder:text-[#171717]/40 dark:placeholder:text-white/40 placeholder:font-medium"
+                                                placeholder={getValues(`vip_services.${index}.title.en`) || getValues(`vip_services.${index}.title.pt`) || t('amenities.vipLabel', { lang: activeLang })}
                                             />
                                         </div>
                                         <button
@@ -340,8 +411,12 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
 
     const addItem = (name: string) => {
         if (!name.trim()) return;
-        const itemPayload = { en: "", pt: "", he: "" };
-        (itemPayload as any)[activeLang] = name.trim();
+        const translation = ITEM_TRANSLATIONS[name];
+        const itemPayload = { 
+            en: translation?.en || name.trim(), 
+            pt: translation?.pt || name.trim(), 
+            he: name.trim() 
+        };
         append(itemPayload);
         setNewItem("");
     };
@@ -407,9 +482,10 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
                             <div key={field.id} className="flex items-center justify-between p-2.5 bg-[#fafafa] dark:bg-admin-dark-bg rounded-xl border border-transparent hover:border-[#eaeaea] group/item transition-all">
                                 <input
                                     key={`amenity-${index}-${itemIndex}-${activeLang}`}
-                                    {...register(`amenities.${index}.items.${itemIndex}.${activeLang}` as any)}
+                                    {...register(`amenities.${index}.items.${itemIndex}.${activeLang}` as const)}
                                     dir={dir}
-                                    className={`bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none w-full font-bold`}
+                                    placeholder={getValues(`amenities.${index}.items.${itemIndex}.en`) || getValues(`amenities.${index}.items.${itemIndex}.pt`) || ''}
+                                    className={`bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none w-full font-bold placeholder:text-[#171717]/40 dark:placeholder:text-white/40 placeholder:font-medium`}
                                 />
                                 <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-all">
                                     <button type="button" onClick={() => remove(itemIndex)} className="p-1 text-[#a3a3a3] hover:text-red-500">
@@ -456,16 +532,20 @@ function CategorySection({ index, category, icon, removeCategory, updateCategory
                                         if (typeof f === 'object') return (f.en || '').toLowerCase() === item.toLowerCase();
                                         return false;
                                     });
-                                }).slice(0, 5).map(item => (
-                                    <button
-                                        key={item}
-                                        type="button"
-                                        onClick={() => addItem(item)}
-                                        className="px-2 py-1 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg text-[9px] font-bold text-[#171717] dark:text-admin-dark-text-primary hover:border-[#171717] transition-all"
-                                    >
-                                        + {item}
-                                    </button>
-                                ))}
+                                }).slice(0, 5).map(item => {
+                                    const localizedItem = ITEM_TRANSLATIONS[item]?.[activeLang] || item;
+                                    
+                                    return (
+                                        <button
+                                            key={item}
+                                            type="button"
+                                            onClick={() => addItem(item)}
+                                            className="px-2 py-1 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg text-[9px] font-bold text-[#171717] dark:text-admin-dark-text-primary hover:border-[#171717] transition-all"
+                                        >
+                                            + {localizedItem}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

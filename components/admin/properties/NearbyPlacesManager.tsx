@@ -80,7 +80,9 @@ function CategorySection({ title, categoryKey, description, categoryIndex, activ
                         <div className="flex-1 space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">{t('location.itemName')}</label>
+                                    <label className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">
+                                        {t('location.itemName')} ({activeLang.toUpperCase()})
+                                    </label>
                                     <input
                                         key={`nearby-name-${index}-${activeLang}`}
                                         {...register(`nearby_places.${categoryIndex}.items.${index}.name.${activeLang}`)}

@@ -39,9 +39,9 @@ export const HomeHero = () => {
                         <h6 className="text-white mb-4 text-base md:text-xl font-medium tracking-widest uppercase opacity-80">
                             {t('heroOverTitle')}
                         </h6>
-                        <h1 className="text-white text-[22px] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg">
+                        <h1 className="text-white text-[22px] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg whitespace-pre-line">
                             {t.rich('heroTitle', {
-                                scrambler: () => <CityScrambler />
+                                scrambler: () => <CityScrambler mainVariant />
                             })}
                         </h1>
                     </div>

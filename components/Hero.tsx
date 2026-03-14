@@ -16,7 +16,7 @@ export const Hero = () => {
                         <div className="row align-items-center" style={{ minHeight: "411px" }}>
                             <div className="col-12 col-xl-7">
                                 <h6 className="color-white hero__content--pretitle">Book one of our exquisite, curated Homes</h6>
-                                <h1 className="color-white text-bold hero__content--title">And create your own Lovely, Long Last Memories of Porto</h1>
+                                <h1 className="color-white text-bold hero__content--title">And create your own Lovely, long lasting Memories of Porto</h1>
                             </div>
                         </div>
                     </div>

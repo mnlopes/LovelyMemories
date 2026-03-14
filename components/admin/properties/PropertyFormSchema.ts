@@ -83,14 +83,14 @@ export const propertySchema = z.object({
         superKing: "180 x 200 cm",
     }),
     baby_equipment: z.object({
-        available: z.boolean().default(true),
+        available: z.boolean().default(false),
         text: z.record(z.string(), z.string()).default({
             en: "Baby cot and high chair are available on request at no extra cost.",
             pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",
             he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות נוספת.",
         }),
     }).default({
-        available: true,
+        available: false,
         text: {
             en: "Baby cot and high chair are available on request at no extra cost.",
             pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",

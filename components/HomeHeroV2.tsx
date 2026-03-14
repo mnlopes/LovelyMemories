@@ -27,14 +27,14 @@ export const HomeHeroV2 = () => {
                 <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center pb-20 md:pb-0">
                     <div className="w-full lg:w-9/12 xl:w-8/12 md:mt-24">
                         <h6 className="text-white mb-4 text-base md:text-xl font-medium tracking-wide">
-                            Booking one of our exquisite, curated Homes
+                            Book one of our exquisite, curated homes
                         </h6>
                         {/*
                           The city is inline — SplitFlapCity uses em-based sizing
                           so the flap tiles scale with the h1 font size.
                         */}
                         <h1 className="text-white text-[22px] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg">
-                            And create your own Lovely, Long Last Memories of{" "}
+                            And create your own Lovely, long lasting Memories of{" "}
                             <SplitFlapCity />
                         </h1>
                     </div>

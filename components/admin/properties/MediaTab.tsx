@@ -3,10 +3,10 @@
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Upload, Star, GripVertical, Trash2, ImageIcon, Loader2 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { PropertyFormData } from "./PropertyFormSchema";
-import { Reorder, AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function MediaTab() {
     const t = useTranslations('PropertyEditor');
@@ -19,6 +19,34 @@ export default function MediaTab() {
     const images = watch("images") || [];
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+
+    const draggedItem = useRef<number | null>(null);
+    const dragOverItem = useRef<number | null>(null);
+
+    const handleDragStart = (index: number) => {
+        draggedItem.current = index;
+    };
+
+    const handleDragEnter = (index: number) => {
+        dragOverItem.current = index;
+    };
+
+    const handleDragEnd = () => {
+        if (draggedItem.current !== null && dragOverItem.current !== null && draggedItem.current !== dragOverItem.current) {
+            const newImages = [...images];
+            const [movedImage] = newImages.splice(draggedItem.current, 1);
+            newImages.splice(dragOverItem.current, 0, movedImage);
+            
+            const updatedImages = newImages.map((img, idx) => ({
+                ...img,
+                order: idx,
+                is_main: idx === 0
+            }));
+            setValue("images", updatedImages, { shouldDirty: true });
+        }
+        draggedItem.current = null;
+        dragOverItem.current = null;
+    };
 
     const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -67,18 +95,15 @@ export default function MediaTab() {
     }, [append, images.length]);
 
     const setMainImage = (index: number) => {
-        const updatedImages = images.map((img, i) => ({
+        if (index === 0) return;
+        const newImages = [...images];
+        const [movedImage] = newImages.splice(index, 1);
+        newImages.unshift(movedImage);
+        
+        const updatedImages = newImages.map((img, i) => ({
             ...img,
-            is_main: i === index
-        }));
-        setValue("images", updatedImages, { shouldDirty: true });
-    };
-
-    const handleReorder = (newFields: any[]) => {
-        // Sync the form state with the reordered fields
-        const updatedImages = newFields.map((img, index) => ({
-            ...img,
-            order: index
+            is_main: i === 0,
+            order: i
         }));
         setValue("images", updatedImages, { shouldDirty: true });
     };
@@ -128,21 +153,21 @@ export default function MediaTab() {
             )}
 
             {/* Structured Grid with Draggable Items and Placeholders */}
-            <Reorder.Group
-                axis="y"
-                values={images}
-                onReorder={handleReorder}
-                className="grid grid-cols-2 lg:grid-cols-4 gap-6 p-1"
-            >
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 p-1">
                 <AnimatePresence initial={false}>
                     {images.map((image, index) => (
-                        <Reorder.Item
+                        <motion.div
                             key={image.url}
-                            value={image}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="group relative aspect-square bg-white dark:bg-white/5 rounded-3xl overflow-hidden border border-[#f5f5f5] dark:border-white/10 hover:border-gold-400/50 dark:hover:border-white/20 transition-all shadow-sm hover:shadow-xl cursor-grab active:cursor-grabbing"
+                            layout
+                            draggable
+                            onDragStart={() => handleDragStart(index)}
+                            onDragEnter={() => handleDragEnter(index)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={(e) => e.preventDefault()}
+                            className={`group relative aspect-square bg-white dark:bg-white/5 rounded-3xl overflow-hidden border transition-all shadow-sm hover:shadow-xl cursor-grab active:cursor-grabbing ${index === 0 ? 'border-gold-400 ring-2 ring-gold-400/20' : 'border-[#f5f5f5] dark:border-white/10 hover:border-gold-400/50 dark:hover:border-white/20'}`}
                         >
                             <img
                                 src={image.url}
@@ -156,13 +181,13 @@ export default function MediaTab() {
                                     <button
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); setMainImage(index); }}
-                                        className={`p-3 rounded-2xl transition-all scale-90 group-hover:scale-100 duration-500 hover:scale-110 ${image.is_main
+                                        className={`p-3 rounded-2xl transition-all scale-90 group-hover:scale-100 duration-500 hover:scale-110 ${index === 0
                                             ? 'bg-gold-400 text-white shadow-[0_0_15px_rgba(197,160,89,0.5)]'
                                             : 'bg-white/20 text-white hover:bg-white/40 backdrop-blur-md'
                                             }`}
-                                        title={image.is_main ? t('media.isMain') : t('media.setMain')}
+                                        title={index === 0 ? t('media.isMain') : t('media.setMain')}
                                     >
-                                        <Star className={`size-5 ${image.is_main ? 'fill-current' : ''}`} />
+                                        <Star className={`size-5 ${index === 0 ? 'fill-current' : ''}`} />
                                     </button>
                                     <button
                                         type="button"
@@ -180,10 +205,16 @@ export default function MediaTab() {
                             </div>
 
                             {/* Badges */}
-                            {image.is_main && (
-                                <div className="absolute top-4 left-4 px-3 py-1.5 bg-white dark:bg-admin-dark-surface shadow-xl rounded-xl text-[10px] font-black text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2 border border-[#f5f5f5] dark:border-white/10">
+                            {index === 0 && (
+                                <div className="absolute top-4 left-4 z-10 px-3 py-1.5 bg-white dark:bg-admin-dark-surface shadow-xl rounded-xl text-[10px] font-black text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2 border border-[#f5f5f5] dark:border-white/10">
                                     <Star className="size-3 fill-gold-400 text-gold-400" />
                                     <span className="uppercase tracking-[0.1em]">{t('media.coverPhoto')}</span>
+                                </div>
+                            )}
+                            {index === 1 && (
+                                <div className="absolute top-4 left-4 z-10 px-3 py-1.5 bg-white/90 backdrop-blur-sm dark:bg-admin-dark-surface/90 shadow-xl rounded-xl text-[10px] font-black text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2 border border-[#f5f5f5] dark:border-white/10">
+                                    <ImageIcon className="size-3 text-gold-400" />
+                                    <span className="uppercase tracking-[0.1em]">Secondary Cover</span>
                                 </div>
                             )}
 
@@ -191,7 +222,7 @@ export default function MediaTab() {
                             <div className="absolute bottom-4 right-4 size-7 flex items-center justify-center bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
                                 #{index + 1}
                             </div>
-                        </Reorder.Item>
+                        </motion.div>
                     ))}
 
                     {/* Placeholders */}
@@ -208,7 +239,7 @@ export default function MediaTab() {
                         </div>
                     ))}
                 </AnimatePresence>
-            </Reorder.Group>
+            </div>
 
             {/* Helper message if no images */}
             {images.length === 0 && !isUploading && (

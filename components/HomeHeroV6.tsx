@@ -27,12 +27,12 @@ export const HomeHeroV6 = () => {
                 <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center pb-20 md:pb-0">
                     <div className="w-full lg:w-10/12 xl:w-9/12 md:mt-24">
                         <h6 className="text-white mb-4 text-base md:text-xl font-medium tracking-widest uppercase opacity-80">
-                            Booking one of our exquisite, curated Homes
+                            Book one of our exquisite, curated homes
                         </h6>
                         <h1 className="text-white text-[22px] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg">
                             And create your own Lovely,{" "}
                             <br className="hidden sm:block" />
-                            Long Last Memories of{" "}
+                            long lasting Memories of{" "}
                             <SplitFlapCityV2 />
                         </h1>
                     </div>

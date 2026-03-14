@@ -334,14 +334,17 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                     </h3>
                     <div className="space-y-4 pt-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">{t('basic.homeTruths')}</label>
+                            <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">
+                                {t('basic.homeTruths')} ({activeLang.toUpperCase()})
+                            </label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={newTruth}
                                     onChange={(e) => setNewTruth(e.target.value)}
-                                    placeholder={t('basic.addTruth')}
+                                    placeholder={`${t('basic.addTruth')} (${activeLang.toUpperCase()})`}
                                     className="flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] transition-all"
+
                                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTruth())}
                                 />
                                 <button

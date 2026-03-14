@@ -406,8 +406,8 @@
         "termsConditions": "Terms & Conditions"
     },
     "Home": {
-        "heroOverTitle": "Booking one of our exquisite, curated Homes",
-        "heroTitle": "And create your own Lovely, Long Last Memories of <scrambler></scrambler>",
+        "heroOverTitle": "Book one of our exquisite, curated homes",
+        "heroTitle": "And create your own Lovely,\nlong lasting Memories of <scrambler></scrambler>",
         "aboutTitle": "From Porto to the World",
         "aboutDescription": "We are the leading tourism accommodation management agent in Portugal, run by an amazing, international team. Our clients, be it the owners or guests themselves, know exactly why!",
         "aboutButton": "About Us",
@@ -1787,6 +1787,72 @@
         "types": {
             "property": "Property",
             "building": "Building"
+        },
+        "AmenitiesTab": {
+            "Categories": {
+                "BedroomLaundry": "Bedroom & Laundry",
+                "Entertainment": "Entertainment",
+                "HeatingandCooling": "Heating and Cooling",
+                "InternetandOffice": "Internet and Office",
+                "KitchenandDining": "Kitchen and Dining",
+                "Bathroom": "Bathroom",
+                "Outdoor": "Outdoor",
+                "LocationFeatures": "Location Features",
+                "Safety": "Safety"
+            },
+            "CommonItems": {
+                "Washingmachine": "Washing machine",
+                "Iron": "Iron",
+                "Hangers": "Hangers",
+                "Bedlinens": "Bed linens",
+                "Extrapillowsandblankets": "Extra pillows and blankets",
+                "Roomdarkeningshades": "Room-darkening shades",
+                "HDTVwithNetflix": "HDTV with Netflix",
+                "MarshallBluetoothsoundsystem": "Marshall Bluetooth sound system",
+                "Booksandreadingmaterial": "Books and reading material",
+                "Standardcable": "Standard cable",
+                "Airconditioning": "Air conditioning",
+                "Centralheating": "Central heating",
+                "Portablefans": "Portable fans",
+                "HighspeedWiFi": "High-speed WiFi",
+                "Dedicatedworkspace": "Dedicated workspace",
+                "Ergonomicchair": "Ergonomic chair",
+                "Fullyequippedkitchen": "Fully equipped kitchen",
+                "Nespressomachine": "Nespresso machine",
+                "Dishwasher": "Dishwasher",
+                "Wineglasses": "Wine glasses",
+                "Toaster": "Toaster",
+                "Cookingbasics": "Cooking basics",
+                "Hairdryer": "Hair dryer",
+                "Premiumtoiletries": "Premium toiletries",
+                "Hotwater": "Hot water",
+                "Walkinshower": "Walk-in shower",
+                "Bathtub": "Bathtub",
+                "Pool": "Pool",
+                "Garden": "Garden",
+                "Privateentrance": "Private entrance",
+                "Patioorbalcony": "Patio or balcony",
+                "Outdoorfurniture": "Outdoor furniture",
+                "Riverview": "River view",
+                "Resortaccess": "Resort access",
+                "Beachaccess": "Beach access",
+                "Cityview": "City view"
+            },
+            "VIPServices": {
+                "Concierge": "Concierge",
+                "Chef": "Private Chef",
+                "Chauffeur": "Chauffeur",
+                "Transfer": "Transfer",
+                "Tours": "Tours",
+                "Dining": "Fine Dining",
+                "Wine": "Wine Tasting",
+                "Drinks": "Premium Drinks",
+                "Music": "Live Music",
+                "Wellness": "Wellness & Spa",
+                "Security": "Security",
+                "Tickets": "Event Tickets",
+                "Calendar": "Planning"
+            }
         }
     }
 }

@@ -83,9 +83,11 @@ function useScramble(target: string) {
 function ScrambleChar({
     value,
     locked,
+    mainVariant = false,
 }: {
     value: string;
     locked: boolean;
+    mainVariant?: boolean;
 }) {
     const isSpace = value === " " || value === "";
 
@@ -94,19 +96,19 @@ function ScrambleChar({
             style={{
                 display: "inline-block",
                 color: locked
-                    ? "transparent"
-                    : "rgba(201,169,110,0.55)", // dim gold while scrambling
-                backgroundImage: locked
+                    ? (mainVariant ? "#b09e80" : "transparent")
+                    : (mainVariant ? "rgba(176,158,128,0.55)" : "rgba(201,169,110,0.55)"), // dim gold while scrambling
+                backgroundImage: locked && !mainVariant
                     ? "linear-gradient(135deg, #f5e6c8 0%, #c9a96e 45%, #e8d5a0 70%, #a07840 100%)"
                     : "none",
-                WebkitBackgroundClip: locked ? "text" : "unset",
-                backgroundClip: locked ? "text" : "unset",
-                textShadow: locked
+                WebkitBackgroundClip: locked && !mainVariant ? "text" : "unset",
+                backgroundClip: locked && !mainVariant ? "text" : "unset",
+                textShadow: locked && !mainVariant
                     ? "0 0 24px rgba(201,169,110,0.6), 0 0 60px rgba(201,169,110,0.2)"
                     : "none",
                 fontVariantNumeric: "tabular-nums",
                 letterSpacing: isSpace ? "0" : "0.02em",
-                transition: locked ? "color 120ms ease, text-shadow 200ms ease" : "none",
+                transition: locked && !mainVariant ? "color 120ms ease, text-shadow 200ms ease" : (locked && mainVariant ? "color 120ms ease" : "none"),
                 minWidth: isSpace ? "0.35em" : undefined,
             }}
         >
@@ -116,7 +118,7 @@ function ScrambleChar({
 }
 
 // ── Main export ───────────────────────────────────────────
-export default function CityScrambler() {
+export default function CityScrambler({ mainVariant = false }: { mainVariant?: boolean }) {
     const [cityIdx, setCityIdx] = useState(0);
     const chars = useScramble(CITIES[cityIdx]);
 
@@ -143,6 +145,7 @@ export default function CityScrambler() {
                     key={i}
                     value={ch ?? randomChar()}
                     locked={ch !== null}
+                    mainVariant={mainVariant}
                 />
             ))}
         </span>

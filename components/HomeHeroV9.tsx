@@ -42,13 +42,13 @@ export const HomeHeroV9 = () => {
                             transition={{ duration: 0.8, delay: 0.3 }}
                             className="text-white text-base md:text-xl font-medium tracking-widest uppercase mb-4"
                         >
-                            Booking one of our exquisite, curated Homes
+                            Book one of our exquisite, curated homes
                         </motion.p>
 
                         <h1 className="text-white text-[22px] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg">
                             And create your own Lovely,{" "}
                             <br className="hidden sm:block" />
-                            Long Last Memories of{" "}
+                            long lasting Memories of{" "}
                             <CityLiquidMorph onCityChange={setCityIdx} />
                         </h1>
 
