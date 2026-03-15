@@ -404,64 +404,69 @@ export async function updateUserPassword(password: string) {
  * Delete a user from both Auth and Profiles
  */
 export async function deleteUser(userId: string) {
-    const supabase = await getSupabase();
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    try {
+        const supabase = await getSupabase();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-    if (!currentUser) throw new Error('Not authenticated');
-    if (currentUser.id === userId) throw new Error('You cannot delete your own account');
+        if (!currentUser) throw new Error('Not authenticated');
+        if (currentUser.id === userId) throw new Error('You cannot delete your own account');
 
-    // Get current user's role
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
+        // Get current user's role
+        const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
 
-    if (!currentProfile) throw new Error('Current user profile not found');
+        if (!currentProfile) throw new Error('Current user profile not found');
 
-    // Get target user's role
-    const { data: targetProfile } = await supabase
-        .from('profiles')
-        .select('role, email')
-        .eq('id', userId)
-        .single();
+        // Get target user's role
+        const { data: targetProfile } = await supabase
+            .from('profiles')
+            .select('role, email')
+            .eq('id', userId)
+            .single();
 
-    if (!targetProfile) throw new Error('Target user profile not found');
+        if (!targetProfile) throw new Error('Target user profile not found');
 
-    const isSuperAdmin = currentProfile.role === 'super_admin';
-    const isAdmin = currentProfile.role === 'admin';
+        const isSuperAdmin = currentProfile.role === 'super_admin';
+        const isAdmin = currentProfile.role === 'admin';
 
-    // Hierarchy protection logic
-    if (!isSuperAdmin) {
-        if (!isAdmin) {
-            throw new Error('Not authorized to delete users');
+        // Hierarchy protection logic
+        if (!isSuperAdmin) {
+            if (!isAdmin) {
+                throw new Error('Not authorized to delete users');
+            }
+
+            // Admins CANNOT delete super_admins or other admins
+            const isTargetProtected = targetProfile.role === 'super_admin' || targetProfile.role === 'admin';
+            if (isTargetProtected) {
+                throw new Error('You do not have permission to delete this user');
+            }
         }
 
-        // Admins CANNOT delete super_admins or other admins
-        const isTargetProtected = targetProfile.role === 'super_admin' || targetProfile.role === 'admin';
-        if (isTargetProtected) {
-            throw new Error('You do not have permission to delete this user');
-        }
+        // Use ADMIN client to delete from Supabase Auth
+        const adminSupabase = await getSupabaseAdmin();
+        const { error } = await adminSupabase.auth.admin.deleteUser(userId);
+
+        if (error) throw error;
+
+        // Log Deletion
+        await logActivity(
+            currentUser.id,
+            'DELETE',
+            'USER',
+            userId,
+            { target_email: targetProfile.email, target_role: targetProfile.role },
+            'CRITICAL'
+        );
+
+        revalidatePath('/[locale]/admin/users', 'page');
+        return { success: true };
+    } catch (error: any) {
+        console.error("SERVER ACTION ERROR [Delete User]:", error);
+        return { success: false, error: error.message || 'Failed to delete user' };
     }
-
-    // Use ADMIN client to delete from Supabase Auth
-    const adminSupabase = await getSupabaseAdmin();
-    const { error } = await adminSupabase.auth.admin.deleteUser(userId);
-
-    if (error) throw error;
-
-    // Log Deletion
-    await logActivity(
-        currentUser.id,
-        'DELETE',
-        'USER',
-        userId,
-        { target_email: targetProfile.email, target_role: targetProfile.role },
-        'CRITICAL'
-    );
-
-    revalidatePath('/[locale]/admin/users', 'page');
-    return { success: true };
 }
 
 
