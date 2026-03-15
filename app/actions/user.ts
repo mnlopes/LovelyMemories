@@ -283,15 +283,27 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
 
     // Determine the base URL for redirection
     const getBaseUrl = () => {
+        // Priority 1: User defined site URL
         if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-        if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-        if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+        
+        // Priority 2: Vercel specific environment variables
+        // Note: VERCEL_PROJECT_PRODUCTION_URL is usually better as it points to the custom domain
+        const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+        const vercelUrl = process.env.VERCEL_URL;
+        
+        if (vercelProductionUrl) return `https://${vercelProductionUrl}`;
+        if (vercelUrl) return `https://${vercelUrl}`;
+        
+        // Fallback for local development
         return 'http://localhost:3000';
     };
     const baseUrl = getBaseUrl();
     
     // Include the email in the redirect URL for the set-password page to identify the invitee
     const redirectTo = `${baseUrl}/api/auth/confirm?next=/set-password&email=${encodeURIComponent(email)}`;
+    
+    console.log(`[Invite] Generating invite for ${email} with redirectTo: ${redirectTo}`);
+    console.log(`[Invite] Env Check - NEXT_PUBLIC_SITE_URL: ${process.env.NEXT_PUBLIC_SITE_URL}, VERCEL_URL: ${process.env.VERCEL_URL}`);
 
     let user = null;
     let actionLink = null;
