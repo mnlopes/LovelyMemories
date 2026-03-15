@@ -106,6 +106,12 @@ export async function upsertProperty(data: PropertyFormData) {
         cancellation: validatedData.cancellation,
         bed_sizes: validatedData.bed_sizes,
         baby_equipment: validatedData.baby_equipment,
+
+        // Concierge Settings
+        has_breakfast: validatedData.has_breakfast,
+        breakfast_price: validatedData.breakfast_price,
+        has_transfer: validatedData.has_transfer,
+        transfer_price: validatedData.transfer_price,
     };
 
     try {
@@ -240,7 +246,14 @@ export async function upsertProperty(data: PropertyFormData) {
             }
 
             // Compare Numeric Fields
-            ['max_guests', 'bedrooms', 'beds', 'bathrooms', 'area'].forEach(field => {
+            ['max_guests', 'bedrooms', 'beds', 'bathrooms', 'area', 'breakfast_price', 'transfer_price'].forEach(field => {
+                if (payload[field as keyof typeof payload] !== previousData[field]) {
+                    changes[field] = { from: previousData[field], to: payload[field as keyof typeof payload] };
+                }
+            });
+
+            // Compare Boolean Fields
+            ['has_breakfast', 'has_transfer'].forEach(field => {
                 if (payload[field as keyof typeof payload] !== previousData[field]) {
                     changes[field] = { from: previousData[field], to: payload[field as keyof typeof payload] };
                 }

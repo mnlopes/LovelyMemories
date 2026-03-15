@@ -75,12 +75,14 @@ export interface Property {
         };
     };
     concierge?: {
-        chef: boolean;
-        chauffeur: boolean;
-        spa: boolean;
-        tours: boolean;
-        security: boolean;
-        events: boolean;
+        breakfast?: boolean;
+        transfer?: boolean;
+        chef?: boolean;
+        chauffeur?: boolean;
+        spa?: boolean;
+        tours?: boolean;
+        security?: boolean;
+        events?: boolean;
     };
     sleepingArrangements?: {
         title: string;

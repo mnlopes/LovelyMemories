@@ -505,8 +505,13 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
             discount: getNumber(visualData.discount_percentage || p.discount_percentage)
         },
         servicesPrice: {
-            breakfast: 15,
-            transfer: 55
+            breakfast: getNumber(visualData.breakfast_price || p.breakfast_price || 15),
+            transfer: getNumber(visualData.transfer_price || p.transfer_price || 55)
+        },
+        concierge: {
+            ...(visualData.concierge || p.concierge || {}),
+            breakfast: visualData.has_breakfast ?? p.has_breakfast ?? false,
+            transfer: visualData.has_transfer ?? p.has_transfer ?? false,
         },
         types: visualData.types || p.types || [],
         highlights: (visualData.highlights || p.highlights || legacyProperty?.highlights || []).map((h: any) => ({

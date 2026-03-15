@@ -140,19 +140,15 @@ export function BookingPoliciesSection({ policies }: BookingPoliciesSectionProps
                                     </span>
                                 </div>
                                 <div className="space-y-3 text-left">
-                                    <p className="text-sm font-medium text-navy-950 leading-relaxed">
-                                        {t('cancellationTemplate', {
-                                            date: (isRelative || isNone || !isDateValid)
-                                                ? deadlineStr
-                                                : format(parsedDate!, 'd MMM', { locale: dateLocale }),
-                                            percent: "50%"
-                                        })}
-                                    </p>
-                                    <div className="flex gap-2 items-start text-xs text-navy-900/50">
-                                        <Ban className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                                        <span>{t('refundEligibilityTemplate', { days: 7 })}</span>
-                                    </div>
-                                    <button className="text-xs font-bold text-[#B08D4A] uppercase tracking-wider border-b border-[#B08D4A] pb-0.5 hover:text-[#9A7B3E] hover:border-[#9A7B3E] transition-colors">
+                                    <div className="flex flex-col">
+                                        <span className="text-base font-bold text-navy-950">
+                                            {getLocalizedStr(policies.cancellation?.text, locale) || t('cancellationPolicy')}
+                                        </span>
+                                        <p className="text-sm font-medium text-navy-900/80 mt-1 leading-relaxed">
+                                            {getLocalizedStr(policies.cancellation?.refundText, locale) || '50% refund'}
+                                        </p>
+                                </div>
+                                    <button className="text-xs font-bold text-[#B08D4A] uppercase tracking-wider border-b border-[#B08D4A] pb-0.5 hover:text-[#9A7B3E] hover:border-[#9A7B3E] transition-colors mt-2">
                                         {t('viewFullTerms')}
                                     </button>
                                 </div>

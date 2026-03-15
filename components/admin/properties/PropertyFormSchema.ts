@@ -115,6 +115,12 @@ export const propertySchema = z.object({
     monthly_discount_percent: z.coerce.number().min(0).max(100).default(15),
     city_tax_per_night: z.coerce.number().min(0).optional().nullable(),
 
+    // Extra Services
+    has_breakfast: z.boolean().default(false),
+    breakfast_price: z.coerce.number().min(0).default(15),
+    has_transfer: z.boolean().default(false),
+    transfer_price: z.coerce.number().min(0).default(55),
+
     // Flags
     status: z.enum(['active', 'coming_soon', 'hidden']).default('active'),
     is_active: z.boolean().default(true),

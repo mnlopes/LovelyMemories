@@ -32,6 +32,8 @@ interface ConciergeSectionProps {
     dbServices?: any[]; // Global from Supabase
     vipServices?: any[]; // Property-specific
     services?: {
+        breakfast?: boolean;
+        transfer?: boolean;
         chef?: boolean;
         chauffeur?: boolean;
         spa?: boolean;
@@ -90,7 +92,10 @@ export function ConciergeSection({ dbServices, vipServices: propertyVipServices,
             }))
             : [];
 
-    const hasBookable = (dbBreakfast || dbTransfer) && !!onToggleExtra;
+    const showBreakfast = dbBreakfast && services?.breakfast;
+    const showTransfer = dbTransfer && services?.transfer;
+
+    const hasBookable = (showBreakfast || showTransfer) && !!onToggleExtra;
     const hasVip = finalVipServices.length > 0;
 
     if (!hasBookable && !hasVip) return null;
@@ -113,7 +118,7 @@ export function ConciergeSection({ dbServices, vipServices: propertyVipServices,
                 {hasBookable && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Breakfast Card */}
-                        {dbBreakfast && (
+                        {showBreakfast && (
                             <div
                                 onClick={() => onToggleExtra?.('breakfast')}
                                 className={`
@@ -161,7 +166,7 @@ export function ConciergeSection({ dbServices, vipServices: propertyVipServices,
                         )}
 
                         {/* Transfer Card */}
-                        {dbTransfer && (
+                        {showTransfer && (
                             <div
                                 onClick={() => onToggleExtra?.('transfer')}
                                 className={`

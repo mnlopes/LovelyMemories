@@ -282,7 +282,14 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
     const adminSupabase = await getSupabaseAdmin();
 
     // Determine the base URL for redirection
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const getBaseUrl = () => {
+        if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+        if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+        if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+        return 'http://localhost:3000';
+    };
+    const baseUrl = getBaseUrl();
+    
     // Include the email in the redirect URL for the set-password page to identify the invitee
     const redirectTo = `${baseUrl}/api/auth/confirm?next=/set-password&email=${encodeURIComponent(email)}`;
 
