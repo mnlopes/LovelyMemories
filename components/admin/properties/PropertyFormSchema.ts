@@ -24,7 +24,11 @@ export const propertySchema = z.object({
 
     // Hierarchy
     parent_id: z.string().optional().nullable(),
-    is_multi_unit: z.boolean().default(false),
+    is_multi_unit: z.preprocess((val) => {
+        if (typeof val === "string") return val === "true";
+        if (typeof val === "number") return val === 1;
+        return !!val;
+    }, z.boolean()).default(false),
 
     // Location
     address: z.string().optional().nullable(),

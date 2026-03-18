@@ -123,6 +123,24 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
             weekly_discount_percent: (initialData as any)?.weekly_discount_percent ?? 5,
             monthly_discount_percent: (initialData as any)?.monthly_discount_percent ?? 15,
             city_tax_per_night: (initialData as any)?.city_tax_per_night ?? 2,
+            
+            // Fix: Initialize hierarchy and type fields to prevent validation errors
+            is_multi_unit: initialData?.is_multi_unit ?? (mode === 'building'),
+            parent_id: initialData?.parent_id ?? null,
+            type: initialData?.type ?? 'apartment',
+            
+            // Extra Flags
+            has_breakfast: initialData?.has_breakfast ?? false,
+            has_transfer: initialData?.has_transfer ?? false,
+            breakfast_price: initialData?.breakfast_price ?? 15,
+            transfer_price: initialData?.transfer_price ?? 55,
+            
+            // Capacity
+            max_guests: initialData?.max_guests ?? 0,
+            bedrooms: initialData?.bedrooms ?? 0,
+            beds: initialData?.beds ?? 0,
+            bathrooms: initialData?.bathrooms ?? 0,
+            area: initialData?.area ?? null,
         } as any
     });
 
