@@ -180,6 +180,7 @@ export function BookingCard({
 
     // Default to 1 night if nothing selected for display purposes, but total is 0
     const displayedNights = nights > 0 ? nights : 1;
+    const hasDatesSelected = Boolean(selectedRange?.from && selectedRange?.to);
 
     // Core Price Logic (Mirroring lib/pricing.ts)
     const nightsStay = nights > 0 ? nights : 0;
@@ -408,7 +409,7 @@ export function BookingCard({
                 <div className="space-y-2 mb-4 text-sm">
                     <div className="flex justify-between">
                         <span className="text-navy-900/60">€{price} × {t('nightsCount', { count: nightsStay })}</span>
-                        <span className="font-semibold text-navy-950">€{baseSubtotal}</span>
+                        <span className="font-semibold text-navy-950">{hasDatesSelected ? `€${baseSubtotal}` : '-'}</span>
                     </div>
                     {activeDiscountPercent > 0 && discountAmount > 0 && (
                         <div className="flex justify-between text-[#2d8653]">
@@ -467,7 +468,9 @@ export function BookingCard({
 
                     <div className="flex justify-between">
                         <span className="text-navy-900/60">{t('cleaningFee')}</span>
-                        {cleaningFee === 0 ? (
+                        {!hasDatesSelected ? (
+                            <span className="font-semibold text-navy-950">-</span>
+                        ) : cleaningFee === 0 ? (
                             <span className="text-[#2d8653] font-bold">{t('included')}</span>
                         ) : (
                             <span className="font-semibold text-navy-950">€{cleaningFee}</span>
@@ -476,7 +479,9 @@ export function BookingCard({
 
                     <div className="flex justify-between">
                         <span className="text-navy-900/60">{t('cityTax')}</span>
-                        {cityTaxTotal === 0 ? (
+                        {!hasDatesSelected ? (
+                            <span className="font-semibold text-navy-950">-</span>
+                        ) : cityTaxTotal === 0 ? (
                             <span className="text-[#2d8653] font-bold">{t('included')}</span>
                         ) : (
                             <span className="font-semibold text-navy-950">€{cityTaxTotal}</span>
@@ -486,8 +491,8 @@ export function BookingCard({
                     <div className="flex justify-between items-baseline mb-1">
                         <span className="font-bold text-navy-950 uppercase text-xs tracking-widest">{t('total')}</span>
                         <div className="flex flex-col items-end">
-                            <span className="text-4xl font-bold text-navy-950 tracking-tighter">€{total}</span>
-                            <span className="text-[10px] text-navy-900/40 font-medium">{t('booking.vatIncluded')}</span>
+                            <span className="text-4xl font-bold text-navy-950 tracking-tighter">{hasDatesSelected ? `€${total}` : '-'}</span>
+                            <span className="text-[10px] text-navy-900/40 font-medium">{hasDatesSelected && t('booking.vatIncluded')}</span>
                         </div>
                     </div>
                 </div>
