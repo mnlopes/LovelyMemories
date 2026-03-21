@@ -21,3 +21,13 @@ export interface AuditLog {
     severity: 'INFO' | 'WARNING' | 'CRITICAL';
     actor?: Profile; // Joined field
 }
+
+export interface RolePermission {
+    id: string;
+    role_name: AppRole;
+    module_name: string;
+    can_view: boolean;
+    can_edit: boolean;
+    created_at: string;
+    updated_at: string;
+}

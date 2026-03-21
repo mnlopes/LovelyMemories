@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { AssignPropertyModal } from '@/components/admin/owners/AssignPropertyModal';
 import { StatusModal } from '@/components/admin/ui/StatusModal';
+import { EditUserSidebar } from '@/components/admin/users/EditUserSidebar';
+import { Pencil } from 'lucide-react';
+import { Profile, AppRole } from '@/lib/types';
 
 interface Property {
     id: string;
@@ -48,6 +51,7 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
     const [owner, setOwner] = useState<OwnerDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
         type: 'success' | 'error' | 'loading' | 'warning';
@@ -172,13 +176,22 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
                     <p className="text-[#a3a3a3] mt-1">{owner.email} • {owner.phone || "No phone"}</p>
                 </div>
 
-                <button
-                    onClick={() => setIsAssignModalOpen(true)}
-                    className="bg-[#171717] dark:bg-white text-white dark:text-[#171717] px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-black/90 dark:hover:bg-white/90 transition-colors shadow-lg shadow-[#171717]/20"
-                >
-                    <Plus className="size-4" />
-                    Assign Property
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-admin-dark-text-primary border border-[#f5f5f5] dark:border-admin-dark-border px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors shadow-sm"
+                    >
+                        <Pencil className="size-4" />
+                        Edit details
+                    </button>
+                    <button
+                        onClick={() => setIsAssignModalOpen(true)}
+                        className="bg-[#171717] dark:bg-white text-white dark:text-[#171717] px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-black/90 dark:hover:bg-white/90 transition-colors shadow-lg shadow-[#171717]/20"
+                    >
+                        <Plus className="size-4" />
+                        Assign Property
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-8">
@@ -232,9 +245,15 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
                                                             {property.city || property.address || property.slug}
                                                         </div>
                                                         <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                                                        <span>
-                                                            {property.is_multi_unit ? 'Building' : `${property.bedrooms || 0} Beds • ${property.max_guests || 0} Guests`}
-                                                        </span>
+                                                        {property.is_multi_unit ? (
+                                                            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-[9px] font-bold uppercase tracking-wider border border-blue-200 dark:border-blue-500/30">
+                                                                Building
+                                                            </span>
+                                                        ) : (
+                                                            <span>
+                                                                {property.bedrooms || 0} Beds • {property.max_guests || 0} Guests
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -283,6 +302,16 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
                 message={modalConfig.message}
                 actionLabel={modalConfig.actionLabel}
                 onAction={modalConfig.onAction}
+            />
+
+            <EditUserSidebar
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                onSuccess={() => {
+                    fetchOwner();
+                    router.refresh();
+                }}
+                userToEdit={owner as unknown as Profile}
             />
         </div>
     );

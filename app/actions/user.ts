@@ -256,7 +256,7 @@ export async function updateUserRole(userId: string, newRole: string) {
 /**
  * Invite a new user via email
  */
-export async function inviteUser(email: string, role: string, options?: { skipEmail?: boolean }) {
+export async function inviteUser(email: string, role: string, options?: { skipEmail?: boolean; fullName?: string; phone?: string }) {
     const isAuthorized = await checkRole(['super_admin', 'admin']);
     if (!isAuthorized) {
         throw new Error('Not authorized to invite users');
@@ -315,7 +315,11 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
                 type: 'invite',
                 email: email,
                 options: {
-                    data: { initial_role: role },
+                    data: { 
+                        initial_role: role,
+                        full_name: options?.fullName,
+                        phone: options?.phone
+                    },
                     redirectTo: redirectTo
                 }
             });
@@ -327,7 +331,11 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
         } else {
             // Normal flow: try to send email first
             const { data, error } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
-                data: { initial_role: role },
+                data: { 
+                    initial_role: role,
+                    full_name: options?.fullName,
+                    phone: options?.phone
+                },
                 redirectTo: redirectTo
             });
 
@@ -338,7 +346,11 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
                         type: 'invite',
                         email: email,
                         options: {
-                            data: { initial_role: role },
+                            data: { 
+                                initial_role: role,
+                                full_name: options?.fullName,
+                                phone: options?.phone
+                            },
                             redirectTo: redirectTo
                         }
                     });
@@ -363,7 +375,7 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
                 'INVITE',
                 'USER',
                 user?.id || 'pending',
-                { email, role, skipEmail: options?.skipEmail }
+                { email, role, fullName: options?.fullName, phone: options?.phone, skipEmail: options?.skipEmail }
             );
         }
 
@@ -393,18 +405,30 @@ export async function updateUserPassword(password: string) {
     if (user) {
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('*')
             .eq('id', user.id)
             .single();
 
         const initialRole = user.user_metadata?.initial_role;
+        const fullName = user.user_metadata?.full_name;
+        const phone = user.user_metadata?.phone;
 
-        // If the profile is still 'user' but the metadata says otherwise, we update it
+        const updates: any = {};
         if (profile && profile.role === 'user' && initialRole && initialRole !== 'user') {
+            updates.role = initialRole;
+        }
+        if (profile && !profile.full_name && fullName) {
+            updates.full_name = fullName;
+        }
+        if (profile && !profile.phone && phone) {
+            updates.phone = phone;
+        }
+
+        if (Object.keys(updates).length > 0) {
             const adminSupabase = await getSupabaseAdmin();
             await adminSupabase
                 .from('profiles')
-                .update({ role: initialRole })
+                .update(updates)
                 .eq('id', user.id);
         }
     }
@@ -550,7 +574,7 @@ export async function getOwnersWithPropertyCounts() {
     const ownerIds = owners.map(o => o.id);
     const { data: properties, error: propsError } = await supabase
         .from('properties')
-        .select('owner_id')
+        .select('owner_id, is_multi_unit')
         .in('owner_id', ownerIds);
 
     if (propsError) {
@@ -580,19 +604,32 @@ export async function getOwnersWithPropertyCounts() {
     }
 
     // Aggregate counts
-    const counts: Record<string, number> = {};
+    const counts: Record<string, { total: number; buildings: number; units: number }> = {};
     properties?.forEach((p) => {
         if (p.owner_id) {
-            counts[p.owner_id] = (counts[p.owner_id] || 0) + 1;
+            if (!counts[p.owner_id]) {
+                counts[p.owner_id] = { total: 0, buildings: 0, units: 0 };
+            }
+            counts[p.owner_id].total++;
+            if (p.is_multi_unit) {
+                counts[p.owner_id].buildings++;
+            } else {
+                counts[p.owner_id].units++;
+            }
         }
     });
 
     // Map counts and dates to owners
-    return owners.map(owner => ({
-        ...owner,
-        created_at: createdAtMap[owner.id] || owner.updated_at, // Fallback to updated_at if fetch fails
-        property_count: counts[owner.id] || 0
-    }));
+    return owners.map(owner => {
+        const ownerCounts = counts[owner.id] || { total: 0, buildings: 0, units: 0 };
+        return {
+            ...owner,
+            created_at: createdAtMap[owner.id] || owner.updated_at, // Fallback to updated_at if fetch fails
+            property_count: ownerCounts.total,
+            buildings_count: ownerCounts.buildings,
+            units_count: ownerCounts.units
+        };
+    });
 }
 
 /**

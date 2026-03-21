@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, use } from 'react';
 import { getOwnersWithPropertyCounts, getCurrentUserRole } from '@/app/actions/user';
-import { Loader2, Plus, Search, Building2, User, Phone, Mail, ArrowRight } from 'lucide-react';
+import { Loader2, Plus, Search, Building2, User, Phone, Mail, ArrowRight, Home } from 'lucide-react';
 import Link from 'next/link';
 import { InviteUserModal } from '@/components/admin/users/InviteUserModal';
 import { AppRole } from '@/lib/types';
@@ -16,6 +16,8 @@ interface OwnerWithCount {
     phone: string | null;
     created_at: string;
     property_count: number;
+    buildings_count: number;
+    units_count: number;
 }
 
 export default function AdminOwnersPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -54,7 +56,7 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-playfair font-bold text-[#171717] dark:text-admin-dark-text-primary">
                         {t('title')}
@@ -62,20 +64,26 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                     <p className="text-[#a3a3a3] mt-1">{t('subtitle')}</p>
                 </div>
 
-                <div className="flex gap-3">
-                    {/* Add Owner button removed as requested */}
-                </div>
+                <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+                    {/* Search */}
+                    <div className="relative w-full md:w-auto min-w-[300px]">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[#a3a3a3]" />
+                        <input
+                            type="text"
+                            placeholder={t('searchPlaceholder')}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl pl-11 pr-4 py-3 text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none"
+                        />
+                    </div>
 
-                {/* Search */}
-                <div className="relative w-full md:w-auto min-w-[300px]">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[#a3a3a3]" />
-                    <input
-                        type="text"
-                        placeholder={t('searchPlaceholder')}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl pl-11 pr-4 py-3 text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none"
-                    />
+                    <button
+                        onClick={() => setIsInviteModalOpen(true)}
+                        className="bg-[#171717] dark:bg-white text-white dark:text-[#171717] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black/90 dark:hover:bg-white/90 transition-colors shadow-sm inline-flex items-center gap-2"
+                    >
+                        <Plus className="size-4" />
+                        {t('addOwner')}
+                    </button>
                 </div>
             </div>
 
@@ -152,13 +160,26 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-center">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${owner.property_count > 0
-                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20'
-                                                : 'bg-gray-50 dark:bg-admin-dark-bg text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-admin-dark-border'
-                                                }`}>
-                                                <Building2 className="size-3" />
-                                                {owner.property_count}
-                                            </span>
+                                            <div className="flex items-center justify-center gap-2">
+                                                {owner.buildings_count > 0 && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20" title="Buildings">
+                                                        <Building2 className="size-3" />
+                                                        {owner.buildings_count}
+                                                    </span>
+                                                )}
+                                                {owner.units_count > 0 && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20" title="Properties">
+                                                        <Home className="size-3" />
+                                                        {owner.units_count}
+                                                    </span>
+                                                )}
+                                                {owner.property_count === 0 && (
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-gray-50 dark:bg-admin-dark-bg text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-admin-dark-border">
+                                                        <Home className="size-3" />
+                                                        0
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="py-4 px-6 text-right">
                                             <Link

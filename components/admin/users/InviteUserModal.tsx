@@ -14,15 +14,18 @@ interface InviteUserModalProps {
     currentUserRole: AppRole;
     initialRole?: AppRole;
     allowedRoles?: AppRole[];
+    title?: string;
 }
 
-export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, initialRole = "editor", allowedRoles }: InviteUserModalProps) => {
+export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, initialRole = "editor", allowedRoles, title }: InviteUserModalProps) => {
     const t = useTranslations("AdminUsers.inviteModal");
     const nt = useTranslations("AdminUsers.notifications");
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<AppRole>(initialRole);
     const [loading, setLoading] = useState(false);
     const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+    const [fullName, setFullName] = useState("");
+    const [phone, setPhone] = useState("");
     const [copied, setCopied] = useState(false);
 
     const getAvailableRoles = (): AppRole[] => {
@@ -42,7 +45,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
         e.preventDefault();
         setLoading(true);
         try {
-            const result = await inviteUser(email, role);
+            const result = await inviteUser(email, role, { fullName, phone });
 
             if (result.actionLink) {
                 setGeneratedLink(result.actionLink);
@@ -83,7 +86,9 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                     {/* Header */}
                     <div className="flex justify-between items-start mb-6">
                         <div>
-                            <h3 className="text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h3>
+                            <h3 className="text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary">
+                                {title || (role === 'owner' ? t('ownerTitle') : t('title'))}
+                            </h3>
                             <p className="text-sm text-[#a3a3a3] mt-1">{t('description')}</p>
                         </div>
                         <button
@@ -132,6 +137,23 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Full Name Input (Specific for Owners) */}
+                            {role === 'owner' && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
+                                        {t('nameLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        placeholder="John Doe"
+                                        className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border px-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-[#0a1128] dark:focus:ring-white/20 outline-none transition-all text-[#171717] dark:text-admin-dark-text-primary"
+                                    />
+                                </div>
+                            )}
+
                             {/* Email Input */}
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
@@ -149,6 +171,22 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                                     />
                                 </div>
                             </div>
+
+                            {/* Contact/Phone Input (Specific for Owners) */}
+                            {role === 'owner' && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
+                                        {t('phoneLabel')}
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder="+351 912 345 678"
+                                        className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border px-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-[#0a1128] dark:focus:ring-white/20 outline-none transition-all text-[#171717] dark:text-admin-dark-text-primary"
+                                    />
+                                </div>
+                            )}
 
                             {/* Role Selection */}
                             <div className="space-y-2">
@@ -204,11 +242,11 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
 
                                 <button
                                     type="button"
-                                    disabled={loading || !email}
-                                    onClick={async () => {
-                                        setLoading(true);
-                                        try {
-                                            const result = await inviteUser(email, role, { skipEmail: true });
+                                        disabled={loading || !email || (role === 'owner' && !fullName)}
+                                        onClick={async () => {
+                                            setLoading(true);
+                                            try {
+                                                const result = await inviteUser(email, role, { skipEmail: true, fullName, phone });
                                             if (result.actionLink) {
                                                 setGeneratedLink(result.actionLink);
                                                 toast.success(nt('linkGenerated'));

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Search, Mail, Loader2, UserPlus, MoreHorizontal, Phone } from "lucide-react";
+import { Users, Search, Mail, Loader2, UserPlus, MoreHorizontal, Phone, ShieldAlert } from "lucide-react";
 import { getProfiles, updateUserRole } from "@/app/actions/user";
 import { toast } from "sonner";
 import { Profile, AppRole } from "@/lib/types";
@@ -10,18 +10,22 @@ import { DeleteUserModal } from "@/components/admin/users/DeleteUserModal";
 import { supabase } from "@/lib/supabase";
 import { Trash2, Pencil } from "lucide-react";
 import { EditUserSidebar } from "@/components/admin/users/EditUserSidebar";
+import { RolesPermissionsModal } from "@/components/admin/users/RolesPermissionsModal";
 import { useTranslations, useLocale } from "next-intl";
+import { checkPermission } from "@/app/actions/permissions";
 
 export default function AdminUsersPage() {
     const t = useTranslations("AdminUsers");
     const locale = useLocale();
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
+    const [canEditTeam, setCanEditTeam] = useState(false);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
     const [userForAction, setUserForAction] = useState<Profile | null>(null);
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
@@ -35,7 +39,15 @@ export default function AdminUsersPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const myProfile = profilesList.find(p => p.id === user.id);
-                if (myProfile) setCurrentUserProfile(myProfile);
+                if (myProfile) {
+                    setCurrentUserProfile(myProfile);
+                    if (myProfile.role === 'super_admin') {
+                        setCanEditTeam(true);
+                    } else {
+                        const canEdit = await checkPermission('team', 'can_edit');
+                        setCanEditTeam(canEdit);
+                    }
+                }
             }
         } catch (error: any) {
             toast.error(t('notifications.fetchError', { error: error.message }));
@@ -59,7 +71,7 @@ export default function AdminUsersPage() {
     };
 
     const canManageTarget = (targetProfile: Profile) => {
-        if (!currentUserProfile) return false;
+        if (!currentUserProfile || !canEditTeam) return false;
         if (targetProfile.id === currentUserProfile.id) return false; // Cannot manage self
         if (currentUserProfile.role === 'super_admin') return true;
         if (currentUserProfile.role === 'admin') {
@@ -105,14 +117,25 @@ export default function AdminUsersPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
                     <p className="text-[#a3a3a3] mt-2 font-medium">{t('description')}</p>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setIsInviteModalOpen(true)}
-                        className="px-5 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-semibold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2 shadow-sm"
-                    >
-                        <UserPlus className="size-4" />
-                        {t('inviteButton')}
-                    </button>
+                <div className="flex flex-wrap gap-2">
+                    {currentUserProfile?.role === 'super_admin' && (
+                        <button
+                            onClick={() => setIsRolesModalOpen(true)}
+                            className="px-5 py-2.5 bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-admin-dark-text-primary border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg text-sm font-semibold hover:bg-[#fafafa] dark:hover:bg-admin-dark-surface transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <ShieldAlert className="size-4 text-red-500" />
+                            Roles & Permissions
+                        </button>
+                    )}
+                    {canEditTeam && (
+                        <button
+                            onClick={() => setIsInviteModalOpen(true)}
+                            className="px-5 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-semibold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2 shadow-sm"
+                        >
+                            <UserPlus className="size-4" />
+                            {t('inviteButton')}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -290,6 +313,11 @@ export default function AdminUsersPage() {
                 }}
                 onSuccess={fetchProfiles}
                 userToEdit={userForAction}
+            />
+
+            <RolesPermissionsModal 
+                isOpen={isRolesModalOpen}
+                onClose={() => setIsRolesModalOpen(false)}
             />
         </div>
     );

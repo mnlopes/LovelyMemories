@@ -13,6 +13,7 @@ export const AdminSidebar = () => {
     const pathname = usePathname();
     const t = useTranslations('AdminSidebar');
     const [role, setRole] = useState<string | null>(null);
+    const [permissions, setPermissions] = useState<{ module_name: string; can_view: boolean }[]>([]);
 
     const checkActive = (path: string) => {
         const pathParts = pathname.split('/');
@@ -21,7 +22,7 @@ export const AdminSidebar = () => {
     };
 
     useEffect(() => {
-        const fetchRole = async () => {
+        const fetchRoleAndPermissions = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const { data: profile } = await supabase
@@ -29,11 +30,28 @@ export const AdminSidebar = () => {
                     .select('role')
                     .eq('id', user.id)
                     .single();
-                if (profile) setRole(profile.role);
+                if (profile) {
+                    setRole(profile.role);
+                    if (profile.role !== 'super_admin') {
+                        const { data: perms } = await supabase
+                            .from('role_permissions')
+                            .select('module_name, can_view')
+                            .eq('role_name', profile.role);
+                        if (perms) {
+                            setPermissions(perms);
+                        }
+                    }
+                }
             }
         };
-        fetchRole();
+        fetchRoleAndPermissions();
     }, []);
+
+    const hasAccess = (moduleName: string) => {
+        if (role === 'super_admin') return true;
+        const p = permissions.find(p => p.module_name === moduleName);
+        return p?.can_view || false;
+    };
 
     const menuSections = [
         {
@@ -43,14 +61,11 @@ export const AdminSidebar = () => {
                 ...(role === 'super_admin' ? [
                     { icon: LayoutDashboard, label: t('overview'), path: "/admin" }
                 ] : []),
-                { icon: Hotel, label: t('properties'), path: "/admin/properties" },
-                { icon: Calendar, label: t('bookings'), path: "/admin/reservations" },
-                // Only show Users/Tenants to Admins and Super Admins
-                ...(role === 'admin' || role === 'super_admin' ? [
-                    { icon: Users, label: t('tenants'), path: "/admin/users" },
-                    { icon: KeyRound, label: t('owners'), path: "/admin/owners" }
-                ] : []),
-                { icon: Sparkles, label: t('concierge'), path: "/admin/concierge" },
+                ...(hasAccess('properties') ? [{ icon: Hotel, label: t('properties'), path: "/admin/properties" }] : []),
+                ...(hasAccess('bookings') ? [{ icon: Calendar, label: t('bookings'), path: "/admin/reservations" }] : []),
+                ...(hasAccess('team') ? [{ icon: Users, label: t('tenants'), path: "/admin/users" }] : []),
+                ...(hasAccess('owners') ? [{ icon: KeyRound, label: t('owners'), path: "/admin/owners" }] : []),
+                ...(hasAccess('concierge') ? [{ icon: Sparkles, label: t('concierge'), path: "/admin/concierge" }] : []),
             ]
         },
         // Only show Reports to Super Admins

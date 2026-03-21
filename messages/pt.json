@@ -228,6 +228,9 @@
         },
         "inviteModal": {
             "title": "Convidar Membro da Equipa",
+            "ownerTitle": "Convidar Proprietário",
+            "nameLabel": "Nome do Proprietário",
+            "phoneLabel": "Contacto (Opcional)",
             "description": "Enviar um convite para se juntar à equipa.",
             "emailLimitReached": "Limite de emails do Supabase atingido. Por favor, copie este link e envie-o manualmente para o utilizador:",
             "done": "Concluído",

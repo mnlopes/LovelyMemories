@@ -228,6 +228,9 @@
         },
         "inviteModal": {
             "title": "Invite Team Member",
+            "ownerTitle": "Invite Owner",
+            "nameLabel": "Owner Name",
+            "phoneLabel": "Contact (Optional)",
             "description": "Send an invitation to join the team.",
             "emailLimitReached": "Supabase email limit reached. Please copy this link and send it manually to the user:",
             "done": "Done",
