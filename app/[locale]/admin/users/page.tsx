@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
                     <p className="text-[#a3a3a3] mt-2 font-medium">{t('description')}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {currentUserProfile?.role === 'super_admin' && (
+                    {(currentUserProfile?.role === 'super_admin' || currentUserProfile?.role === 'admin') && (
                         <button
                             onClick={() => setIsRolesModalOpen(true)}
                             className="px-5 py-2.5 bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-admin-dark-text-primary border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg text-sm font-semibold hover:bg-[#fafafa] dark:hover:bg-admin-dark-surface transition-all flex items-center gap-2 shadow-sm"
