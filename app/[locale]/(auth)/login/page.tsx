@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/routing";
 import { supabase } from "@/lib/supabase";
 import { Mail, Lock, Loader2, ChevronRight, ArrowRight } from "lucide-react";
 import { useParams } from "next/navigation";
+import { loginWithEmail } from "@/app/actions/auth";
 
 export default function LoginPage() {
     const t = useTranslations('Auth');
@@ -26,37 +27,21 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-            if (signInError) throw signInError;
+            const result = await loginWithEmail(email, password);
+            if (result.error) throw new Error(result.error);
 
-            // Success! Give the browser a moment to set cookies
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Success! Give the browser a moment to resolve redirects
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-            // Fetch user role to determine redirect
-            const { data: { user } } = await supabase.auth.getUser();
             let redirectUrl = `/${locale}`; // Default to home
 
-            if (user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', user.id)
-                    .single();
-
-                if (profile) {
-                    if (['super_admin', 'admin', 'editor'].includes(profile.role)) {
-                        redirectUrl = `/${locale}/admin`;
-                    } else if (profile.role === 'owner') {
-                        redirectUrl = `/${locale}/owner`;
-                    }
+            if (result.role) {
+                if (['super_admin', 'admin', 'editor'].includes(result.role)) {
+                    redirectUrl = `/${locale}/admin`;
+                } else if (result.role === 'owner') {
+                    redirectUrl = `/${locale}/owner`;
                 }
             }
-
-            // Refresh to sync cookies with server
-            router.refresh();
 
             // Redirect
             window.location.href = redirectUrl;
