@@ -253,8 +253,11 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                     {...register(`title.${activeLang}` as any)}
                                     dir={dir}
                                     placeholder={mode === 'building' ? "e.g. Paraíso 331" : "e.g. The Flower Power"}
-                                    className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-lg font-bold focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                                    className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border ${activeLang === 'en' && errors.title ? 'border-red-500 dark:border-red-500' : 'border-[#f5f5f5] dark:border-admin-dark-border'} rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-lg font-bold focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                                 />
+                                {activeLang === 'en' && errors.title && (
+                                    <p className="text-xs text-red-500 font-bold">{errors.title.message?.toString()}</p>
+                                )}
                             </div>
 
                             {mode !== 'building' && (
@@ -290,8 +293,11 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                             dir={dir}
                             rows={14}
                             placeholder={mode === 'building' ? "Detailed description of the building..." : "Detailed property description..."}
-                            className={`w-full flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                            className={`w-full flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border ${activeLang === 'en' && errors.description ? 'border-red-500 dark:border-red-500' : 'border-[#f5f5f5] dark:border-admin-dark-border'} rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                         />
+                        {activeLang === 'en' && errors.description && (
+                            <p className="text-xs text-red-500 font-bold mt-1">{errors.description.message?.toString()}</p>
+                        )}
                     </div>
                 </div>
             </div>

@@ -183,9 +183,15 @@ export async function upsertProperty(data: PropertyFormData) {
             if (payload.status !== previousData.status)
                 changes.status = { from: previousData.status, to: payload.status };
 
+            const getEnStr = (val: any): string => {
+                if (typeof val === 'string') return val;
+                if (val && typeof val === 'object' && typeof val.en === 'string') return val.en;
+                return '';
+            };
+
             // Compare Titles (deep compare or just EN)
-            const newTitleEn = (payload.title as any)?.en || payload.title;
-            const oldTitleEn = (previousData.title as any)?.en || previousData.title; // Handle legacy string or json
+            const newTitleEn = getEnStr(payload.title);
+            const oldTitleEn = getEnStr(previousData.title);
             if (newTitleEn !== oldTitleEn)
                 changes.title = { from: oldTitleEn, to: newTitleEn };
 
@@ -204,8 +210,8 @@ export async function upsertProperty(data: PropertyFormData) {
             }
 
             // Compare Description (EN) - optional check
-            const newDescEn = (payload.description as any)?.en || payload.description || '';
-            const oldDescEn = (previousData.description as any)?.en || previousData.description || '';
+            const newDescEn = getEnStr(payload.description);
+            const oldDescEn = getEnStr(previousData.description);
 
             if (newDescEn !== oldDescEn && (newDescEn || oldDescEn)) {
                 // Smart Diff Logic: Remove common prefix and suffix
@@ -298,7 +304,7 @@ export async function upsertProperty(data: PropertyFormData) {
 
         } else {
             // New creation
-            changes.title = (validatedData.title as any)?.en || validatedData.title;
+            changes.title = getEnStr(validatedData.title) || 'Untitled';
             changes.status = validatedData.status;
             changes.slug = validatedData.slug;
         }
