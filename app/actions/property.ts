@@ -175,6 +175,12 @@ export async function upsertProperty(data: PropertyFormData) {
             };
         }
 
+        const getEnStr = (val: any): string => {
+            if (typeof val === 'string') return val;
+            if (val && typeof val === 'object' && typeof val.en === 'string') return val.en;
+            return '';
+        };
+
         // 3. Log Activity with Diff
         const changes: Record<string, any> = {};
 
@@ -182,12 +188,6 @@ export async function upsertProperty(data: PropertyFormData) {
             // Compare key fields
             if (payload.status !== previousData.status)
                 changes.status = { from: previousData.status, to: payload.status };
-
-            const getEnStr = (val: any): string => {
-                if (typeof val === 'string') return val;
-                if (val && typeof val === 'object' && typeof val.en === 'string') return val.en;
-                return '';
-            };
 
             // Compare Titles (deep compare or just EN)
             const newTitleEn = getEnStr(payload.title);
