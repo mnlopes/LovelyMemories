@@ -564,37 +564,37 @@ export function BookingCard({
             {/* Guest Insurance Banner */}
             <button 
                 onClick={() => setIsInsuranceModalOpen(true)}
-                className="w-full bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#E1E6EC] p-5 flex items-center justify-between group hover:border-[#B08D4A]/40 hover:shadow-[0_8px_30px_rgba(176,141,74,0.12)] transition-all duration-300 text-left relative overflow-hidden"
+                className="w-full bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#E1E6EC] p-4 flex items-center justify-between group hover:border-[#B08D4A]/40 hover:shadow-[0_8px_30px_rgba(176,141,74,0.12)] transition-all duration-300 text-left relative overflow-hidden"
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#B08D4A]/[0.02] to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
-                <div className="flex items-center gap-4 text-navy-950 relative z-10">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#B08D4A]/10 to-[#B08D4A]/5 text-[#B08D4A] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:bg-[#B08D4A]/15 transition-all duration-300 border border-[#B08D4A]/10">
-                        <ShieldCheck className="h-5 w-5" />
+                <div className="flex items-center gap-3.5 text-navy-950 relative z-10 w-full">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B08D4A]/10 to-[#B08D4A]/5 text-[#B08D4A] flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:bg-[#B08D4A]/15 transition-all duration-300 border border-[#B08D4A]/10">
+                        <ShieldCheck className="h-[18px] w-[18px]" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-sm tracking-tight text-navy-950 group-hover:text-[#B08D4A] transition-colors">{t('insurance.title') || "Proteção de Hóspedes"}</h4>
-                        <p className="text-[11px] text-navy-900/60 font-medium mt-0.5">{t('insurance.subtitle') || "Seguro obrigatório incluído na reserva"}</p>
+                        <h4 className="font-bold text-[13px] tracking-tight text-navy-950 group-hover:text-[#B08D4A] transition-colors">{t('insurance.title') || "Proteção de Hóspedes"}</h4>
+                        <p className="text-[11px] text-navy-900/60 font-medium leading-snug mt-0.5">{t('insurance.subtitle') || "Seguro obrigatório incluído na reserva"}</p>
                     </div>
                 </div>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 group-hover:bg-[#B08D4A]/10 transition-colors relative z-10">
-                    <Info className="h-4 w-4 text-navy-900/40 group-hover:text-[#B08D4A] transition-colors" />
+                <div className="w-7 h-7 rounded-full flex items-center justify-center bg-gray-50 group-hover:bg-[#B08D4A]/10 transition-colors relative z-10 flex-shrink-0 ml-1">
+                    <Info className="h-3.5 w-3.5 text-navy-900/40 group-hover:text-[#B08D4A] transition-colors" />
                 </div>
             </button>
 
             {/* Host Contact Card */}
-            <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#E1E6EC] p-6 flex flex-col gap-4 transition-all hover:border-[#E1E6EC] hover:shadow-md">
-                <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#F0FDF4] border border-[#DCFCE7] flex items-center justify-center flex-shrink-0 animate-pulse">
-                        <MessageCircle className="h-5 w-5 text-[#3d8c63]" />
+            <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[#E1E6EC] p-4 flex flex-col transition-all hover:border-[#E1E6EC] hover:shadow-md cursor-pointer group/host">
+                <div className="flex items-center gap-3.5 text-navy-950">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F0FDF4] to-[#DCFCE7]/50 border border-[#DCFCE7] flex items-center justify-center flex-shrink-0 group-hover/host:scale-110 transition-transform duration-300">
+                        <MessageCircle className="h-[18px] w-[18px] text-[#3d8c63]" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-navy-950 mb-1">{t('questions')}</h4>
-                        <p className="text-xs text-navy-900/60 leading-relaxed">
-                            {t('askHostDesc')}{" "}
-                            <button className="text-[#3d8c63] hover:underline font-bold inline-flex items-center gap-1">
+                        <h4 className="font-bold text-[13px] tracking-tight text-navy-950 mb-0.5">{t('questions')}</h4>
+                        <div className="text-[11px] text-navy-900/60 font-medium leading-snug flex flex-col gap-0.5">
+                            <span>{t('askHostDesc')}</span>
+                            <button className="text-[#3d8c63] hover:text-[#2d6b4a] font-bold inline-flex items-center transition-colors text-left">
                                 {t('sendMessage')}
                             </button>
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
