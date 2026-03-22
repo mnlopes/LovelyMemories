@@ -902,6 +902,17 @@
             "detailedSleeping": "Detailed configuration of sleeping and bathing areas",
             "socialArea": "Social Area",
             "luxuryBath": "Luxury Bath"
+        },
+        "insurance": {
+            "title": "Guest Insurance Included",
+            "subtitle": "Mandatory coverage included in your reservation",
+            "modalTitle": "Secure Guest Insurance",
+            "desc1": "For your complete peace of mind and security, all reservations in our properties include a mandatory global guest insurance.",
+            "benefit1": "Civil liability coverage",
+            "benefit2": "Protection against accidental property damage",
+            "benefit3": "Emergency medical assistance during your stay",
+            "footer": "The full policy details will be sent to your email with your reservation confirmation.",
+            "understand": "I Understand"
         }
     },
     "Checkout": {

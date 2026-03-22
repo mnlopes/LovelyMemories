@@ -898,6 +898,17 @@
             "detailedSleeping": "Configuração detalhada das áreas de dormir e banho",
             "socialArea": "Área Social",
             "luxuryBath": "Banho de Luxo"
+        },
+        "insurance": {
+            "title": "Proteção de Hóspedes",
+            "subtitle": "Seguro obrigatório incluído na reserva",
+            "modalTitle": "Seguro de Hóspedes Incluído",
+            "desc1": "Para sua total tranquilidade e segurança, todas as reservas efetuadas nas nossas propriedades incluem obrigatoriamente um seguro global de hóspedes.",
+            "benefit1": "Cobertura de responsabilidade civil",
+            "benefit2": "Proteção contra danos acidentais à propriedade",
+            "benefit3": "Assistência médica de emergência durante a estadia",
+            "footer": "Os detalhes completos da apólice ser-lhe-ão enviados no seu email de confirmação de reserva.",
+            "understand": "Compreendido"
         }
     },
     "Checkout": {

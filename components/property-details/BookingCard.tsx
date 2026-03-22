@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Calendar, Users, Share2, MessageCircle, Baby, Copy, Check, X, Plus, Minus, Loader2, ShieldCheck, Info } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useTranslations } from "next-intl";
@@ -105,6 +106,9 @@ export function BookingCard({
         };
         fetchDates();
     }, [propertyId]);
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     const guestCount = adults + childrenCount + infants;
 
@@ -619,74 +623,78 @@ export function BookingCard({
             />
 
             {/* Insurance Modal */}
-            <AnimatePresence>
-                {isInsuranceModalOpen && (
-                    <>
-                        {/* Backdrop */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsInsuranceModalOpen(false)}
-                            className="fixed inset-0 bg-[#0a1128]/40 backdrop-blur-sm z-50"
-                        />
-                        {/* Modal Content */}
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            {mounted && typeof document !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {isInsuranceModalOpen && (
+                        <>
+                            {/* Backdrop */}
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="w-full max-w-md bg-white rounded-[24px] shadow-2xl overflow-hidden pointer-events-auto border border-[#E1E6EC]"
-                            >
-                                <div className="p-8">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="w-12 h-12 rounded-full bg-[#B08D4A]/10 text-[#B08D4A] flex items-center justify-center border border-[#B08D4A]/10">
-                                            <ShieldCheck className="h-6 w-6" />
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsInsuranceModalOpen(false)}
+                                className="fixed inset-0 bg-[#0a1128]/40 backdrop-blur-sm z-[100]"
+                                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+                            />
+                            {/* Modal Content */}
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    className="w-full max-w-md bg-white rounded-[24px] shadow-2xl overflow-hidden pointer-events-auto border border-[#E1E6EC]"
+                                >
+                                    <div className="p-8">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="w-12 h-12 rounded-full bg-[#B08D4A]/10 text-[#B08D4A] flex items-center justify-center border border-[#B08D4A]/10">
+                                                <ShieldCheck className="h-6 w-6" />
+                                            </div>
+                                            <button 
+                                                onClick={() => setIsInsuranceModalOpen(false)}
+                                                className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-navy-900/50 hover:bg-gray-100 hover:text-navy-950 transition-colors"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        <h3 className="text-2xl font-bold font-playfair text-[#0a1128] mb-3">
+                                            {t('insurance.modalTitle') || "Seguro de Hóspedes Incluído"}
+                                        </h3>
+                                        <div className="space-y-4 text-[15px] text-navy-900/70 leading-relaxed font-medium">
+                                            <p>
+                                                {t('insurance.desc1') || "Para sua total tranquilidade e segurança, todas as reservas efetuadas nas nossas propriedades incluem obrigatoriamente um seguro global de hóspedes."}
+                                            </p>
+                                            <ul className="space-y-3 mt-4">
+                                                <li className="flex gap-3">
+                                                    <Check className="w-5 h-5 flex-shrink-0 text-[#B08D4A]" />
+                                                    <span>{t('insurance.benefit1') || "Cobertura de responsabilidade civil"}</span>
+                                                </li>
+                                                <li className="flex gap-3">
+                                                    <Check className="w-5 h-5 flex-shrink-0 text-[#B08D4A]" />
+                                                    <span>{t('insurance.benefit2') || "Proteção contra danos acidentais à propriedade"}</span>
+                                                </li>
+                                                <li className="flex gap-3">
+                                                    <Check className="w-5 h-5 flex-shrink-0 text-[#B08D4A]" />
+                                                    <span>{t('insurance.benefit3') || "Assistência médica de emergência durante a estadia"}</span>
+                                                </li>
+                                            </ul>
+                                            <p className="pt-2 text-sm text-navy-900/50">
+                                                {t('insurance.footer') || "Os detalhes completos da apólice ser-lhe-ão enviados no seu email de confirmação de reserva."}
+                                            </p>
                                         </div>
                                         <button 
                                             onClick={() => setIsInsuranceModalOpen(false)}
-                                            className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-navy-900/50 hover:bg-gray-100 hover:text-navy-950 transition-colors"
+                                            className="w-full mt-8 h-12 bg-[#0a1128] text-white rounded-full font-bold hover:bg-[#0a1128]/90 transition-colors border-none"
                                         >
-                                            <X className="w-4 h-4" />
+                                            {t('insurance.understand') || "Compreendido"}
                                         </button>
                                     </div>
-                                    <h3 className="text-2xl font-bold font-playfair text-[#0a1128] mb-3">
-                                        {t('insurance.modalTitle') || "Seguro de Hóspedes Incluído"}
-                                    </h3>
-                                    <div className="space-y-4 text-[15px] text-navy-900/70 leading-relaxed font-medium">
-                                        <p>
-                                            {t('insurance.desc1') || "Para sua total tranquilidade e segurança, todas as reservas efetuadas nas nossas propriedades incluem obrigatoriamente um seguro global de hóspedes."}
-                                        </p>
-                                        <ul className="space-y-3 mt-4">
-                                            <li className="flex gap-3">
-                                                <Check className="w-5 h-5 flex-shrink-0 text-[#B08D4A]" />
-                                                <span>{t('insurance.benefit1') || "Cobertura de responsabilidade civil"}</span>
-                                            </li>
-                                            <li className="flex gap-3">
-                                                <Check className="w-5 h-5 flex-shrink-0 text-[#B08D4A]" />
-                                                <span>{t('insurance.benefit2') || "Proteção contra danos acidentais à propriedade"}</span>
-                                            </li>
-                                            <li className="flex gap-3">
-                                                <Check className="w-5 h-5 flex-shrink-0 text-[#B08D4A]" />
-                                                <span>{t('insurance.benefit3') || "Assistência médica de emergência durante a estadia"}</span>
-                                            </li>
-                                        </ul>
-                                        <p className="pt-2 text-sm text-navy-900/50">
-                                            {t('insurance.footer') || "Os detalhes completos da apólice ser-lhe-ão enviados no seu email de confirmação de reserva."}
-                                        </p>
-                                    </div>
-                                    <Button 
-                                        onClick={() => setIsInsuranceModalOpen(false)}
-                                        className="w-full mt-8 h-12 bg-[#0a1128] text-white rounded-full font-bold hover:bg-[#0a1128]/90 transition-colors"
-                                    >
-                                        {t('insurance.understand') || "Compreendido"}
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    </>
-                )}
-            </AnimatePresence>
+                                </motion.div>
+                            </div>
+                        </>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div >
     );
 }
