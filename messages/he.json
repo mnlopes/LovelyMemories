@@ -512,10 +512,18 @@
             "separate": "נפרד",
             "ensuiteBathroom": "חדר רחצה צמוד",
             "travelingWithChildren": "מטיילים עם ילדים?",
-            "babyCotInfo": "עריסת תינוק וכיסא אוכל זמינים על פי בקשה ללא עלות נוספור.",
+            "babyPlaceholder": "מיטת תינוק וכיסא אוכל זמינים לפי בקשה...",
+            "parking": "חנייה",
+            "parkingDesc": "הגדר זמינות וגודל חנייה.",
+            "parkingSize": "גודל חנייה ({lang})",
+            "parkingPlaceholder": "למשל: מתאים לרוב המכוניות הרגילות (סדאן, רכבי שטח קומפקטיים)",
+            "electricCharger": "מטען חשמלי",
+            "roomsAndSpaces": "חדרים וחללים",
             "detailedSleeping": "תצורה מפורטת של אזורי שינה ורחצה",
             "socialArea": "אזור חברתי",
-            "luxuryBath": "אמבט יוקרתי"
+            "luxuryBath": "אמבט יוקרתי",
+            "parkingGuide": "מדריך גודל חניה",
+            "parkingSpace": "מקום חניה"
         },
         "insurance": {
             "title": "Guest Insurance Included",

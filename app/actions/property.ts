@@ -106,6 +106,7 @@ export async function upsertProperty(data: PropertyFormData) {
         cancellation: validatedData.cancellation,
         bed_sizes: validatedData.bed_sizes,
         baby_equipment: validatedData.baby_equipment,
+        parking: validatedData.parking,
 
         // Concierge Settings
         has_breakfast: validatedData.has_breakfast,

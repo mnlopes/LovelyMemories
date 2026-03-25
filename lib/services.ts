@@ -442,8 +442,9 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
     const actualParent = parentData || p.parent;
 
     // Location fallback
-    const city = visualData.locations?.name_en || visualData.city || p.locations?.name_en || p.city || actualParent?.locations?.name_en || actualParent?.city || units[0]?.locations?.name_en || '';
-    const region = visualData.region || p.region || city;
+    const cityValue = visualData.locations?.name_en || visualData.city || p.locations?.name_en || p.city || actualParent?.locations?.name_en || actualParent?.city || units[0]?.locations?.name_en || '';
+    const city = getLocalizedStr(cityValue);
+    const region = getLocalizedStr(visualData.region || p.region || city);
 
     const getLines = (val: any, lang: string) => {
         const content = val?.[lang] || val?.['en'] || val?.['pt'] || '';
@@ -494,7 +495,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
             city: city,
             region: region,
             country: 'Portugal',
-            address: visualData.address || p.address || actualParent?.address || units[0]?.address || '',
+            address: getLocalizedStr(visualData.address || p.address || actualParent?.address || units[0]?.address || ''),
             coordinates: safeCoords(visualData.lat || p.lat, visualData.lng || p.lng, actualParent?.lat || 41.1579, actualParent?.lng || -8.6291)
         },
         image: (typeof visualData.images?.[0] === 'string' ? visualData.images[0] : visualData.images?.find((img: any) => img.is_main)?.url) || visualData.property_images?.find((img: any) => img.is_main)?.url || propertyImages[0],
@@ -538,6 +539,22 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
             title: getLocalizedStr(actualParent.title),
             slug: actualParent.slug
         } : null,
+        parking: visualData.parking || p.parking || {
+            available: (visualData.amenities || p.amenities || []).some((cat: any) => 
+                (cat.items || []).some((item: any) => 
+                    JSON.stringify(item).toLowerCase().includes('parking') || 
+                    JSON.stringify(item).toLowerCase().includes('estacionamento') ||
+                    JSON.stringify(item).toLowerCase().includes('garage') ||
+                    JSON.stringify(item).toLowerCase().includes('garagem')
+                )
+            ),
+            size: {
+                en: "Suitable for most standard cars (e.g. Sedans, compact SUVs)",
+                pt: "Adequado para a maioria dos carros standard (ex. Sedans, SUVs compactos)",
+                he: "מתאים לרוב המכוניות הרגילות (למשל סדאן, רכבי שטח קומפקטיים)"
+            },
+            hasElectricCharger: false
+        },
         policies: {
             houseRules: visualData.house_rules || p.house_rules || {
                 childrenAllowed: true,

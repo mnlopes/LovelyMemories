@@ -21,7 +21,8 @@ const ReservationSchema = z.object({
 
     // Travel Details
     arrivalTime: z.string().nullish().or(z.literal("")),
-    specialRequests: z.string().max(500).nullish().or(z.literal("")),
+    couponCode: z.string().nullish().or(z.literal("")),
+    couponDiscount: z.number().min(0).optional(),
 
     // Security / Honeypot
     website: z.string().nullish().or(z.literal("")),
@@ -38,23 +39,24 @@ const ReservationSchema = z.object({
     cityTaxTotal: z.number().min(0).optional(),
     paymentMethod: z.string().min(1, "Método de pagamento obrigatório"),
 
-    // Billing Address (Required if address is provided, otherwise optional)
+    // Billing Toggle
+    isBillingActive: z.boolean().optional().default(false),
+
+    // Billing Address (Required if isBillingActive is true)
     address: z.string().nullish().or(z.literal("")),
     city: z.string().nullish().or(z.literal("")),
     zip: z.string().nullish().or(z.literal("")),
     country: z.string().nullish().or(z.literal("")),
     vat: z.string().nullish().or(z.literal("")),
 }).refine((data) => {
-    // If any billing field is provided (or if we have a flag from frontend), 
-    // we require the core billing fields
-    const hasBillingInfo = !!(data.address || data.city || data.zip || data.country);
-    if (hasBillingInfo) {
+    // If billing is active, check required core fields
+    if (data.isBillingActive) {
         return !!(data.address && data.city && data.zip && data.country);
     }
     return true;
 }, {
     message: "Todos os campos de faturação são obrigatórios quando a faturação está ativa.",
-    path: ["address"] // Generic path for the refinement error
+    path: ["address"]
 });
 
 export async function processReservation(data: z.infer<typeof ReservationSchema>) {
@@ -136,7 +138,8 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         guest_email: data.email,
         guest_phone: data.phone,
         arrival_time: data.arrivalTime,
-        special_requests: data.specialRequests,
+        coupon_code: data.couponCode,
+        coupon_discount_amount: data.couponDiscount || 0,
         base_price: pricing.basePrice,
         cleaning_fee: pricing.cleaningFee,
         discount_amount: pricing.discountAmount,
@@ -229,7 +232,9 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
             billing_city: data.city,
             billing_zip: data.zip,
             billing_country: data.country,
-            billing_vat: data.vat
+            billing_vat: data.vat,
+            coupon_code: data.couponCode,
+            coupon_discount_amount: data.couponDiscount || 0
         };
 
         // Notify Admin

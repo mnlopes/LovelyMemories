@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bed, Bath, ChevronRight, Ruler, ShowerHead, Toilet, Baby, Maximize, Sofa, X } from "lucide-react";
+import { Bed, Bath, ChevronRight, Ruler, ShowerHead, Toilet, Baby, Maximize, Sofa, X, Car, Zap } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useTranslations, useLocale } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,6 +33,11 @@ interface BedroomsSectionProps {
     baby_equipment?: {
         available: boolean;
         text: Record<string, string>;
+    };
+    parking?: {
+        available: boolean;
+        size?: Record<string, string>;
+        hasElectricCharger?: boolean;
     };
 }
 
@@ -95,7 +100,8 @@ export function BedroomsSection({
             pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",
             he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות נוספת."
         }
-    }
+    },
+    parking
 }: BedroomsSectionProps) {
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
@@ -109,6 +115,7 @@ export function BedroomsSection({
     const [floorPlanOpen, setFloorPlanOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<Room & { index?: number } | null>(null);
     const [showBedGuide, setShowBedGuide] = useState(false);
+    const [showParkingGuide, setShowParkingGuide] = useState(false);
 
     // Localized data access for rooms
     const localizedRooms = (() => {
@@ -324,15 +331,31 @@ export function BedroomsSection({
 
                             {/* Modal Body */}
                             <div className="flex-1 overflow-y-auto p-7 lg:p-10 luxury-scrollbar text-left">
-                                {/* Size Guide Toggle */}
-                                <div className="mb-8">
-                                    <button
-                                        onClick={() => setShowBedGuide(!showBedGuide)}
-                                        className="flex items-center gap-3 text-[#B08D4A] hover:underline font-bold text-[10px] uppercase tracking-widest bg-[#B08D4A]/5 px-4 py-2 rounded-full transition-all"
-                                    >
-                                        <Ruler className="h-3.5 w-3.5" />
-                                        {t('bedrooms.bedSizeGuide')}
-                                    </button>
+                                {/* Size Guide Toggles */}
+                                <div className="mb-8 flex flex-col gap-4">
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <button
+                                            onClick={() => setShowBedGuide(!showBedGuide)}
+                                            className={`flex items-center gap-3 hover:underline font-bold text-[10px] uppercase tracking-widest px-4 py-2 rounded-full transition-all ${
+                                                showBedGuide ? 'bg-[#B08D4A] text-white' : 'text-[#B08D4A] bg-[#B08D4A]/5'
+                                            }`}
+                                        >
+                                            <Ruler className="h-3.5 w-3.5" />
+                                            {t('bedrooms.bedSizeGuide') || "Show bed size guide"}
+                                        </button>
+
+                                        {parking && parking.available && (
+                                            <button
+                                                onClick={() => setShowParkingGuide(!showParkingGuide)}
+                                                className={`flex items-center gap-3 hover:underline font-bold text-[10px] uppercase tracking-widest px-4 py-2 rounded-full transition-all ${
+                                                    showParkingGuide ? 'bg-[#B08D4A] text-white' : 'text-[#B08D4A] bg-[#B08D4A]/5'
+                                                }`}
+                                            >
+                                                <Car className="h-3.5 w-3.5" />
+                                                {t('bedrooms.parkingGuide') || "Parking Size Guide"}
+                                            </button>
+                                        )}
+                                    </div>
 
                                     <AnimatePresence>
                                         {showBedGuide && (
@@ -342,7 +365,7 @@ export function BedroomsSection({
                                                 exit={{ height: 0, opacity: 0 }}
                                                 className="overflow-hidden"
                                             >
-                                                <div className="mt-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 grid grid-cols-2 lg:grid-cols-4 gap-6 text-sm text-left">
+                                                <div className="mt-2 p-6 bg-gray-50 rounded-2xl border border-gray-100 grid grid-cols-2 lg:grid-cols-4 gap-6 text-sm text-left">
                                                     <div>
                                                         <p className="font-bold text-navy-950 mb-1">{t('bedrooms.single')}</p>
                                                         <p className="text-navy-900/40">{bed_sizes.single}</p>
@@ -359,6 +382,43 @@ export function BedroomsSection({
                                                         <p className="font-bold text-navy-950 mb-1">{t('bedrooms.superKing')}</p>
                                                         <p className="text-navy-900/40">{bed_sizes.superKing}</p>
                                                     </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <AnimatePresence>
+                                        {showParkingGuide && parking && parking.available && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="mt-2 p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col md:flex-row gap-6 text-sm text-left">
+                                                    <div className="flex-1">
+                                                        <p className="font-bold text-navy-950 mb-1 flex items-center gap-2">
+                                                            <Car className="h-4 w-4 text-[#B08D4A]" />
+                                                            {t('bedrooms.parkingSpace') || "Parking Space"}
+                                                        </p>
+                                                        <p className="text-navy-900/40">
+                                                            {parking?.size 
+                                                                ? getLocalizedStr(parking.size, locale) 
+                                                                : (locale === 'pt' ? 'Adequado para a maioria dos carros standard (ex. Sedans, SUVs compactos)' : 'Suitable for most standard cars (e.g. Sedans, compact SUVs)')}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    {parking.hasElectricCharger && (
+                                                        <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6">
+                                                            <p className="font-bold text-navy-950 mb-1 flex items-center gap-2">
+                                                                <Zap className="h-4 w-4 text-[#B08D4A]" />
+                                                                {t('bedrooms.electricCharger') || "EV Charger"}
+                                                            </p>
+                                                            <p className="text-navy-900/40">
+                                                                {locale === 'pt' ? 'Carregador elétrico disponível no local.' : 'Electric vehicle charger available on site.'}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </motion.div>
                                         )}

@@ -7,10 +7,55 @@
         "tenants": "Equipa e Acesso",
         "owners": "Proprietários",
         "concierge": "Concierge",
+        "coupons": "Cupões",
         "reports": "Relatórios",
         "finances": "Finanças",
         "performance": "Desempenho",
         "signOut": "Sair"
+    },
+    "AdminCoupons": {
+        "title": "Cupões de Desconto",
+        "subtitle": "Gira os códigos promocionais e descontos especiais para os seus hóspedes.",
+        "searchPlaceholder": "Procurar cupões...",
+        "newButton": "Novo Cupão",
+        "table": {
+            "code": "Código",
+            "discount": "Desconto",
+            "uses": "Utilizações",
+            "expiration": "Expiração",
+            "status": "Estado",
+            "actions": "Ações",
+            "loading": "A carregar cupões...",
+            "empty": "Nenhum cupão encontrado.",
+            "noExpiration": "Sem expiração",
+            "active": "Ativo",
+            "inactive": "Inativo"
+        },
+        "modal": {
+            "newTitle": "Novo Cupão",
+            "editTitle": "Editar Cupão",
+            "codeLabel": "Código do Cupão",
+            "codePlaceholder": "ex: VERÃO2024",
+            "typeLabel": "Tipo de Desconto",
+            "typePercentage": "Percentagem (%)",
+            "typeFixed": "Valor Fixo (€)",
+            "valueLabel": "Valor",
+            "maxUsesLabel": "Max. Utilizações",
+            "maxUsesPlaceholder": "Ilimitado",
+            "expiryLabel": "Data Expiração",
+            "cancel": "Cancelar",
+            "save": "Guardar",
+            "create": "Criar Cupão"
+        },
+        "messages": {
+            "deleteConfirm": "Tem a certeza que deseja eliminar este cupão?",
+            "deleteSuccess": "Cupão eliminado com sucesso.",
+            "statusActive": "ativado",
+            "statusInactive": "desativado",
+            "statusSuccess": "Cupão {status} com sucesso.",
+            "updateSuccess": "Cupão atualizado.",
+            "createSuccess": "Cupão criado."
+        }
     },
     "AdminHeader": {
         "searchPlaceholder": "Procurar propriedades ou hóspedes...",
@@ -76,6 +121,8 @@
         "table": {
             "guestProperty": "Hóspede & Propriedade",
             "bookingDate": "Data da Reserva",
+            "checkIn": "Check In",
+            "checkOut": "Check Out",
             "stayDates": "Datas da Estadia",
             "contact": "Contacto",
             "status": "Estado",
@@ -897,7 +944,10 @@
             "babyCotInfo": "Berço e cadeira alta disponíveis mediante pedido, sem custos adicionais.",
             "detailedSleeping": "Configuração detalhada das áreas de dormir e banho",
             "socialArea": "Área Social",
-            "luxuryBath": "Banho de Luxo"
+            "luxuryBath": "Banho de Luxo",
+            "parkingGuide": "Guia de Estacionamento",
+            "parkingSpace": "Lugar de Garagem",
+            "electricCharger": "Carregador Elétrico"
         },
         "insurance": {
             "title": "Proteção de Hóspedes",
@@ -947,13 +997,16 @@
         },
         "step2": {
             "title": "Detalhes da Reserva",
-            "subtitle": "Deixe-nos saber se tem algum pedido especial.",
+            "subtitle": "Opções adicionais para a sua estadia.",
             "arrivalTime": "Hora de Chegada Estimada",
             "unknown": "Ainda não sei",
             "after18": "Depois das 18:00",
             "selectTime": "Selecione a hora de chegada",
-            "specialRequests": "Pedidos Especiais",
-            "specialRequestsPlaceholder": "Alergias, check-in tardio, berço, etc..."
+            "couponCode": "Código do Cupão",
+            "couponPlaceholder": "Introduza o código (ex: SAVE10)",
+            "applyCoupon": "Aplicar",
+            "couponApplied": "Cupão aplicado!",
+            "invalidCoupon": "Cupão inválido ou expirado."
         },
         "step3": {
             "title": "Método de Pagamento",
@@ -990,6 +1043,7 @@
             "subtotal": "Subtotal",
             "cleaning": "Taxa de limpeza",
             "cityTax": "Taxa Municipal (City Tax)",
+            "coupon": "Cupão",
             "breakfast": "Pequeno-almoço (Estadia Completa)",
             "transfer": "Transfer Aeroporto",
             "oneWay": "Só Ida",
@@ -1545,6 +1599,11 @@
             "travelingWithChildren": "A viajar com crianças",
             "babyDescription": "Descrição ({lang})",
             "babyPlaceholder": "Berço e cadeira alta estão disponíveis sob pedido...",
+            "parking": "Estacionamento",
+            "parkingDesc": "Configurar disponibilidade e tamanho do estacionamento.",
+            "parkingSize": "Tamanho do Estacionamento ({lang})",
+            "parkingPlaceholder": "ex: Adequado para a maioria dos carros standard (Sedans, SUVs compactos)",
+            "electricCharger": "Carregador Elétrico",
             "roomsAndSpaces": "Quartos e Espaços",
             "roomsDesc": "Configure quartos individuais, casas de banho e áreas comuns.",
             "addRoom": "Adicionar Quarto",
@@ -1666,6 +1725,7 @@
             "location": "Localização",
             "policies": "Políticas",
             "pricing": "Preços & Disponibilidade",
+            "calendar": "Calendário",
             "history": "Histórico"
         },
         "system": {

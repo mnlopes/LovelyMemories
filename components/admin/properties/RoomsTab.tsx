@@ -2,7 +2,7 @@
 
 import { useFormContext, useFieldArray, useWatch, Control } from "react-hook-form";
 import { useTranslations } from "next-intl";
-import { Plus, Trash2, Bed, Bath, User, Layout, Image as ImageIcon, Ruler, Upload, Loader2, Baby } from "lucide-react";
+import { Plus, Trash2, Bed, Bath, User, Layout, Image as ImageIcon, Ruler, Upload, Loader2, Baby, Car, Zap } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
@@ -370,6 +370,61 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                             placeholder={t('units.babyPlaceholder')}
                             className={`w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                         />
+                    </div>
+                </div>
+            </div>
+
+            {/* Parking Section */}
+            <div className="p-8 bg-[#fafafa] dark:bg-admin-dark-bg rounded-[32px] border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm space-y-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-xl bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border flex items-center justify-center text-[#171717] dark:text-admin-dark-text-primary shadow-sm">
+                            <Car className="size-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{t('units.parking')}</h3>
+                            <p className="text-[10px] text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">{t('units.parkingDesc')}</p>
+                        </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            {...register("parking.available")}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-[#f5f5f5] dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#171717] dark:peer-checked:bg-[#B08D4A]"></div>
+                    </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
+                            {t('units.parkingSize', { lang: activeLang.toUpperCase() })}
+                        </label>
+                        <textarea
+                            key={`parking-size-${activeLang}`}
+                            {...register(`parking.size.${activeLang}`)}
+                            dir={dir}
+                            rows={3}
+                            placeholder={t('units.parkingPlaceholder')}
+                            className={`w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                        />
+                    </div>
+
+                    <div className="flex flex-col justify-center">
+                        <label className="flex items-center gap-3 p-4 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-xl cursor-pointer hover:border-[#171717] dark:hover:border-white transition-all group">
+                            <div className="size-8 rounded-lg bg-[#fafafa] dark:bg-admin-dark-bg flex items-center justify-center text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#B08D4A] transition-colors">
+                                <Zap className="size-4" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('units.electricCharger')}</p>
+                            </div>
+                            <input
+                                type="checkbox"
+                                {...register("parking.hasElectricCharger")}
+                                className="size-4 rounded border-[#eaeaea] dark:border-admin-dark-border text-[#171717] dark:text-[#B08D4A] focus:ring-0 transition-all cursor-pointer"
+                            />
+                        </label>
                     </div>
                 </div>
             </div>

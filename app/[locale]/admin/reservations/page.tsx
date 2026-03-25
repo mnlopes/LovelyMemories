@@ -316,6 +316,11 @@ export default function AdminReservationsPage() {
             const dateB = new Date(b.check_in).getTime();
             return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
         }
+        if (sortConfig.key === 'check_out') {
+            const dateA = new Date(a.check_out).getTime();
+            const dateB = new Date(b.check_out).getTime();
+            return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+        }
         if (sortConfig.key === 'created_at') {
             const dateA = new Date(a.created_at).getTime();
             const dateB = new Date(b.created_at).getTime();
@@ -392,8 +397,14 @@ export default function AdminReservationsPage() {
                                 </th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest cursor-pointer group/header" onClick={() => handleSort('check_in')}>
                                     <div className="flex items-center gap-2">
-                                        {t('table.stayDates')}
+                                        {t('table.checkIn')}
                                         <ArrowUpDown className={`size-3 transition-colors ${sortConfig.key === 'check_in' ? 'text-[#171717] dark:text-white' : 'text-[#a3a3a3] group-hover/header:text-[#171717] dark:group-hover/header:text-white'}`} />
+                                    </div>
+                                </th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest cursor-pointer group/header" onClick={() => handleSort('check_out')}>
+                                    <div className="flex items-center gap-2">
+                                        {t('table.checkOut')}
+                                        <ArrowUpDown className={`size-3 transition-colors ${sortConfig.key === 'check_out' ? 'text-[#171717] dark:text-white' : 'text-[#a3a3a3] group-hover/header:text-[#171717] dark:group-hover/header:text-white'}`} />
                                     </div>
                                 </th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.contact')}</th>
@@ -404,11 +415,11 @@ export default function AdminReservationsPage() {
                         <tbody className="divide-y divide-[#f5f5f5] dark:divide-admin-dark-border">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm italic">{t('table.loading')}</td>
+                                    <td colSpan={7} className="px-8 py-10 text-center text-[#a3a3a3] text-sm italic">{t('table.loading')}</td>
                                 </tr>
                             ) : filteredReservations.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-10 text-center text-[#a3a3a3] text-sm">
+                                    <td colSpan={7} className="px-8 py-10 text-center text-[#a3a3a3] text-sm">
                                         {t('table.empty', { query: searchQuery })}
                                     </td>
                                 </tr>
@@ -451,7 +462,13 @@ export default function AdminReservationsPage() {
                                     <td className="px-8 py-6">
                                         <div className="flex flex-col gap-1">
                                             <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{formatDate(reservation.check_in)}</span>
-                                            <span className="text-xs text-[#a3a3a3] font-medium">{t('table.to')} {formatDate(reservation.check_out)}</span>
+                                            <span className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-tighter">{t('table.checkIn')}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{formatDate(reservation.check_out)}</span>
+                                            <span className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-tighter">{t('table.checkOut')}</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">

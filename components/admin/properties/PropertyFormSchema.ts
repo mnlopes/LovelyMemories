@@ -102,8 +102,25 @@ export const propertySchema = z.object({
         text: {
             en: "Baby cot and high chair are available on request at no extra cost.",
             pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",
-            he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות nova.",
+            he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות.",
         },
+    }),
+    parking: z.object({
+        available: z.boolean().default(false),
+        size: z.record(z.string(), z.string()).default({
+            en: "Suitable for most standard cars (e.g. Sedans, compact SUVs)",
+            pt: "Adequado para a maioria dos carros standard (ex. Sedans, SUVs compactos)",
+            he: "מתאים לרוב המכוניות הרגילות (למשל סדאן, רכבי שטח קומפקטיים)"
+        }),
+        hasElectricCharger: z.boolean().default(false),
+    }).default({
+        available: false,
+        size: {
+            en: "Suitable for most standard cars (e.g. Sedans, compact SUVs)",
+            pt: "Adequado para a maioria dos carros standard (ex. Sedans, SUVs compactos)",
+            he: "מתאים לרוב המכוניות הרגילות (למשל סדאן, רכבי שטח קומפקטיים)"
+        },
+        hasElectricCharger: false,
     }),
     floor_plan_url: z.string().optional().nullable(),
 

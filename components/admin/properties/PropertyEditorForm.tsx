@@ -113,8 +113,17 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 text: {
                     en: "Baby cot and high chair are available on request at no extra cost.",
                     pt: "Berço e cadeira alta estão disponíveis mediante pedido, sem custo extra.",
-                    he: "מיטת תינוק e כיסא alta estão disponíveis mediante pedido, sem custo extra."
+                    he: "מיטת תינוק וכיסא אוכל זמינים לפי בקשה ללא עלות."
                 }
+            },
+            parking: initialData?.parking || {
+                available: false,
+                size: {
+                    en: "Suitable for most standard cars (e.g. Sedans, compact SUVs)",
+                    pt: "Adequado para a maioria dos carros standard (ex. Sedans, SUVs compactos)",
+                    he: "מתאים לרוב המכוניות הרגילות (למשל סדאן, רכבי שטח קומפקטיים)"
+                },
+                hasElectricCharger: false
             },
             price_per_night: initialData?.price_per_night ?? 0,
             original_price: initialData?.original_price ?? null,

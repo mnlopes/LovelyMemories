@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     ChevronLeft,
     ChevronDown,
-    ChevronUp,
     ShieldCheck,
     Shield,
     CreditCard,
@@ -22,7 +21,8 @@ import {
     MapPin,
     Euro,
     Users,
-    Clock
+    Clock,
+    Ticket
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -32,6 +32,7 @@ import { ADDRESS_DATA, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
 import { processReservation } from "@/app/actions/reservation";
 import { getBookingSession, BookingSessionData } from "@/lib/booking-session";
 import { getPropertyBySlug } from "@/lib/services";
+import { toast } from "sonner";
 
 export default function CheckoutPage({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = React.use(params);
@@ -96,18 +97,25 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         fullName: "",
         email: "",
         phone: "",
-        arrivalTime: "unknown",
-        specialRequests: "",
-        paymentMethod: "wire", // Default to wire for now
-        phoneCode: "+351",
-        website: "", // Honeypot field
-        // Billing Address
+        arrivalTime: "",
+        couponCode: "",
         address: "",
         city: "",
         zip: "",
-        country: "",
-        vat: "" // VAT / NIF Number
+        country: "Portugal",
+        vat: "",
+        website: "", // Honeypot
+        paymentMethod: "wire", // Default to wire for now
+        phoneCode: "+351",
     });
+
+    const [appliedCoupon, setAppliedCoupon] = useState<{
+        code: string;
+        discount_type: 'percentage' | 'fixed';
+        discount_value: number;
+    } | null>(null);
+
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
     const [isPhoneCodeOpen, setIsPhoneCodeOpen] = useState(false);
     const [isCountryOpen, setIsCountryOpen] = useState(false);
@@ -356,7 +364,23 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const breakfastTotal = selectedExtras?.breakfast ? (breakfastPrice * (adults + children + infants) * breakfastDays) : 0;
     const transferTotal = selectedExtras?.transfer ? (transferPrice * (isRoundTrip ? 2 : 1)) : 0;
 
-    const total = basePrice - discountAmount + cleaningFee + cityTaxTotal + breakfastTotal + transferTotal;
+    // Calculate total price including base, discounts, fees, and extras
+    const pricing = {
+        basePrice: basePrice,
+        discountAmount: discountAmount,
+        cleaningFee: cleaningFee,
+        cityTaxTotal: cityTaxTotal,
+        totalPrice: basePrice - discountAmount + cleaningFee + cityTaxTotal
+    };
+
+    const reservationDiscount = pricing ? pricing.discountAmount : 0;
+    const couponDiscount = appliedCoupon
+        ? (appliedCoupon.discount_type === 'percentage'
+            ? (pricing ? pricing.basePrice * (appliedCoupon.discount_value / 100) : 0)
+            : appliedCoupon.discount_value)
+        : 0;
+
+    const total = Math.max(0, (pricing?.totalPrice || 0) + breakfastTotal + transferTotal - couponDiscount);
     const vat = total * 0.23;
 
     const formatDate = (dateString: string) => {
@@ -388,6 +412,28 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         }
     };
 
+    const handleApplyCoupon = async () => {
+        if (!formData.couponCode) return;
+        
+        setIsValidatingCoupon(true);
+        const { validateCoupon } = await import("@/app/actions/coupons");
+        const result = await validateCoupon(formData.couponCode);
+        
+        if (result.success && result.coupon) {
+            setAppliedCoupon(result.coupon);
+            toast.success(t('step2.couponApplied'));
+        } else {
+            toast.error(result.error || t('step2.invalidCoupon'));
+            setAppliedCoupon(null);
+        }
+        setIsValidatingCoupon(false);
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setFormData(prev => ({ ...prev, couponCode: "" }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -407,6 +453,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
                 const result = await processReservation({
                     ...formData,
+                    isBillingActive: showBilling,
+                    couponCode: appliedCoupon?.code || "",
+                    couponDiscount: couponDiscount,
                     phone: finalPhone, // Use the combined phone number
                     propertySlug: property.slug,
                     checkIn: checkIn,
@@ -557,6 +606,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         <span className="font-bold text-navy-950">€{cityTaxTotal}</span>
                                     </div>
                                 )}
+                                {appliedCoupon && couponDiscount > 0 && (
+                                    <div className="flex justify-between text-sm text-[#2d8653]">
+                                        <span className="font-medium">{t('sidebar.coupon')} ({appliedCoupon.code}):</span>
+                                        <span className="font-bold">−€{couponDiscount}</span>
+                                    </div>
+                                )}
 
                                 {/* Additional Services */}
                                 {selectedExtras?.breakfast && (
@@ -581,12 +636,6 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                 </div>
                             </div>
 
-                            {formData.specialRequests && (
-                                <div className="pt-6">
-                                    <h3 className="text-sm font-bold text-navy-950 mb-2">{t('success.note')}:</h3>
-                                    <p className="text-sm text-navy-900/70 italic">"{formData.specialRequests}"</p>
-                                </div>
-                            )}
                         </div>
                     </div> {/* Added missing closing div here */}
 
@@ -635,7 +684,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         customerName={formData.fullName}
                         customerEmail={formData.email}
                         customerPhone={formData.phone}
-                        specialRequests={formData.specialRequests}
+                        couponCode={appliedCoupon?.code || ""}
+                        couponDiscount={couponDiscount}
                         t={t}
                     />
                 </div>
@@ -1158,9 +1208,49 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                 </AnimatePresence>
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step2.specialRequests')}</label>
-                                            <textarea name="specialRequests" value={formData.specialRequests} onChange={handleInputChange} className="w-full h-40 bg-white border border-gray-100 rounded-2xl p-5 focus:border-[#B08D4A] outline-none transition-colors resize-none" placeholder={t('step2.specialRequestsPlaceholder')}></textarea>
+                                        <div className="space-y-4 pt-4 border-t border-gray-100">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Ticket className="w-5 h-5 text-[#B08D4A]" />
+                                                <h4 className="text-sm font-bold uppercase tracking-widest text-[#B08D4A]">
+                                                    {t('step2.couponCode')}
+                                                </h4>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.couponCode}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
+                                                    placeholder={t('step2.couponPlaceholder')}
+                                                    className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl px-5 h-12 text-sm outline-none focus:ring-1 focus:ring-[#8ca38c] transition-all uppercase"
+                                                    disabled={!!appliedCoupon || isValidatingCoupon}
+                                                />
+                                                {appliedCoupon ? (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={handleRemoveCoupon}
+                                                        className="h-12 px-6 rounded-2xl border-red-100 text-red-600 hover:bg-red-50"
+                                                    >
+                                                        {t('header.cancel')}
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        type="button"
+                                                        variant="luxury"
+                                                        onClick={handleApplyCoupon}
+                                                        disabled={!formData.couponCode || isValidatingCoupon}
+                                                        className="h-12 px-8 rounded-2xl"
+                                                    >
+                                                        {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : t('step2.applyCoupon')}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                            {appliedCoupon && (
+                                                <p className="text-xs font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                                                    <CheckCircle2 className="w-3 h-3" />
+                                                    {t('step2.couponApplied')}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                 </motion.div>
@@ -1398,6 +1488,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         <div className="flex justify-between text-sm">
                                             <span className="text-navy-900/80 font-medium">{t('sidebar.cityTax') || "City Tax"}</span>
                                             <span className="font-bold">€{cityTaxTotal}</span>
+                                        </div>
+                                    )}
+                                    {couponDiscount > 0 && (
+                                        <div className="flex justify-between text-sm text-[#B08D4A]">
+                                            <span className="font-medium">{t('step2.couponCode')} ({appliedCoupon?.code})</span>
+                                            <span className="font-bold">−€{couponDiscount}</span>
                                         </div>
                                     )}
 

@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'onujtyzpvaejrvhjmlwn.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'lovely-memories.pt',
+      },
     ],
   },
   async redirects() {

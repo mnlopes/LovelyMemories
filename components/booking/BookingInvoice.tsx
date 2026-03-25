@@ -23,7 +23,8 @@ interface BookingInvoiceProps {
     customerName: string;
     customerEmail: string;
     customerPhone: string;
-    specialRequests?: string;
+    couponCode?: string;
+    couponDiscount?: number;
     t: (key: string, params?: any) => string;
 }
 
@@ -47,7 +48,8 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
     customerName,
     customerEmail,
     customerPhone,
-    specialRequests,
+    couponCode,
+    couponDiscount = 0,
     t
 }) => {
     return (
@@ -174,6 +176,12 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                                     <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 'bold' }}>−€{discountAmount}</td>
                                 </tr>
                             )}
+                            {couponDiscount > 0 && (
+                                <tr style={{ borderBottom: '1px solid #f3f4f6', color: '#B08D4A' }}>
+                                    <td style={{ padding: '16px 24px', fontWeight: '500' }}>{t('step2.couponCode')} ({couponCode})</td>
+                                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 'bold' }}>−€{couponDiscount}</td>
+                                </tr>
+                            )}
                             {cityTaxTotal > 0 && (
                                 <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                                     <td style={{ padding: '16px 24px', fontWeight: '500' }}>{t('sidebar.cityTax') || "City Tax"}</td>
@@ -212,12 +220,6 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                     <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '8px', margin: 0 }}>{t('success.paymentMethod')}</p>
                     <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#0a1128', textTransform: 'capitalize', margin: 0 }}>{paymentMethod === 'wire' ? t('success.bankTransfer') : paymentMethod}</p>
                 </div>
-                {specialRequests && (
-                    <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.1em', color: '#B08D4A', marginBottom: '8px', margin: 0 }}>{t('success.note')}</p>
-                        <p style={{ fontSize: '11px', color: '#6e7a91', fontStyle: 'italic', fontWeight: '500', margin: 0 }}>"{specialRequests}"</p>
-                    </div>
-                )}
             </div>
 
             {/* Bottom Tagline */}

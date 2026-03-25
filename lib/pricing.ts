@@ -1,6 +1,6 @@
 
 import { supabase } from './supabase';
-import { differenceInDays, startOfDay, isWithinInterval, parseISO, subDays, addDays } from 'date-fns';
+import { differenceInDays, startOfDay, isWithinInterval, parseISO, subDays, addDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 export interface PricingBreakdown {
@@ -59,15 +59,15 @@ export async function calculateReservationPrice({
         .from('custom_pricing')
         .select('*')
         .eq('property_id', propertyId)
-        .gte('end_date', checkIn.toISOString().split('T')[0])
-        .lte('start_date', checkOut.toISOString().split('T')[0]);
+        .gte('end_date', format(checkIn, 'yyyy-MM-dd'))
+        .lte('start_date', format(checkOut, 'yyyy-MM-dd'));
 
     // 4. Calcular o custo das noites (considerando overrides)
     let totalBasePrice = 0;
     const currentDate = new Date(checkIn);
 
     for (let i = 0; i < nights; i++) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = format(currentDate, 'yyyy-MM-dd');
 
         // Verificar se existe um preço customizado para esta noite
         const custom = customPrices?.find(cp =>
@@ -127,8 +127,8 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
         .from('blocked_dates')
         .select('*')
         .eq('property_id', propertyId)
-        .gt('end_date', checkIn.toISOString().split('T')[0])
-        .lt('start_date', checkOut.toISOString().split('T')[0]);
+        .gt('end_date', format(checkIn, 'yyyy-MM-dd'))
+        .lt('start_date', format(checkOut, 'yyyy-MM-dd'));
 
     if (blocks && blocks.length > 0) {
         return { available: false, error: 'errorBlocked' };
@@ -140,8 +140,8 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
         .select('*')
         .eq('property_id', propertyId)
         .neq('status', 'cancelled')
-        .gt('check_out', checkIn.toISOString().split('T')[0])
-        .lt('check_in', checkOut.toISOString().split('T')[0]);
+        .gt('check_out', format(checkIn, 'yyyy-MM-dd'))
+        .lt('check_in', format(checkOut, 'yyyy-MM-dd'));
 
     if (reservations && reservations.length > 0) {
         return { available: false, error: 'errorAlreadyBooked' };

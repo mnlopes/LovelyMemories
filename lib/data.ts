@@ -104,6 +104,11 @@ export interface Property {
         isEnsuite?: boolean;
         amenities?: string[];
     }[];
+    parking?: {
+        available: boolean;
+        size?: Record<string, string>;
+        hasElectricCharger?: boolean;
+    };
 }
 
 export const PROPERTIES: Property[] = [

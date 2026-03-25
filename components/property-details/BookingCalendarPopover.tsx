@@ -217,7 +217,7 @@ export function BookingCalendarPopover({
                                             let curr = start;
                                             while (curr < end) {
                                                 middleNights.push(curr);
-                                                curr += 86400000;
+                                                curr = normalize(addDays(new Date(curr), 1));
                                             }
                                         } else if (item instanceof Date) {
                                             middleNights.push(normalize(item));
@@ -291,11 +291,11 @@ export function BookingCalendarPopover({
                                             const range = d as DateRange;
                                             if (range?.from && range?.to) {
                                                 // START ONE DAY AFTER 'from' to keep the check-in day visually clean
-                                                let curr = normalize(range.from) + 86400000;
+                                                let curr = normalize(addDays(range.from, 1));
                                                 const end = normalize(range.to);
                                                 while (curr < end) {
                                                     stayNights.push(new Date(curr));
-                                                    curr += 86400000;
+                                                    curr = normalize(addDays(new Date(curr), 1));
                                                 }
                                             } else if (d instanceof Date) {
                                                 // Single blocks remain as is

@@ -7,11 +7,56 @@
         "tenants": "Team & Access",
         "owners": "Owners",
         "concierge": "Concierge",
+        "coupons": "Coupons",
         "reports": "Reports",
         "finances": "Finances",
         "performance": "Performance",
         "signOut": "Sign Out"
     },
+    "AdminCoupons": {
+        "title": "Discount Coupons",
+        "subtitle": "Manage promotional codes and special discounts for your guests.",
+        "searchPlaceholder": "Search coupons...",
+        "newButton": "New Coupon",
+        "table": {
+            "code": "Code",
+            "discount": "Discount",
+            "uses": "Uses",
+            "expiration": "Expiration",
+            "status": "Status",
+            "actions": "Actions",
+            "loading": "Loading coupons...",
+            "empty": "No coupons found.",
+            "noExpiration": "No expiration",
+            "active": "Active",
+            "inactive": "Inactive"
+    },
+    "modal": {
+        "newTitle": "New Coupon",
+        "editTitle": "Edit Coupon",
+        "codeLabel": "Coupon Code",
+        "codePlaceholder": "e.g. SUMMER2024",
+        "typeLabel": "Discount Type",
+        "typePercentage": "Percentage (%)",
+        "typeFixed": "Fixed Value (€)",
+        "valueLabel": "Value",
+        "maxUsesLabel": "Max. Uses",
+        "maxUsesPlaceholder": "Unlimited",
+        "expiryLabel": "Expiration Date",
+        "cancel": "Cancel",
+        "save": "Save",
+        "create": "Create Coupon"
+    },
+    "messages": {
+        "deleteConfirm": "Are you sure you want to delete this coupon?",
+        "deleteSuccess": "Coupon deleted successfully.",
+        "statusActive": "activated",
+        "statusInactive": "deactivated",
+        "statusSuccess": "Coupon {status} successfully.",
+        "updateSuccess": "Coupon updated.",
+        "createSuccess": "Coupon created."
+    }
+},
     "AdminHeader": {
         "searchPlaceholder": "Find properties or guests...",
         "role": "Administrator"
@@ -76,6 +121,8 @@
         "table": {
             "guestProperty": "Guest & Property",
             "bookingDate": "Booking Date",
+            "checkIn": "Check In",
+            "checkOut": "Check Out",
             "stayDates": "Stay Dates",
             "contact": "Contact",
             "status": "Status",
@@ -901,7 +948,10 @@
             "babyCotInfo": "Baby cot and high chair are available on request at no extra cost.",
             "detailedSleeping": "Detailed configuration of sleeping and bathing areas",
             "socialArea": "Social Area",
-            "luxuryBath": "Luxury Bath"
+            "luxuryBath": "Luxury Bath",
+            "parkingGuide": "Parking Size Guide",
+            "parkingSpace": "Parking Space",
+            "electricCharger": "EV Charger"
         },
         "insurance": {
             "title": "Guest Insurance Included",
@@ -951,13 +1001,16 @@
         },
         "step2": {
             "title": "Reservation Details",
-            "subtitle": "Let us know if you have any special requirements.",
+            "subtitle": "Additional options for your stay.",
             "arrivalTime": "Estimated Arrival Time",
             "unknown": "I don't know yet",
             "after18": "After 6:00 PM",
             "selectTime": "Select arrival time",
-            "specialRequests": "Special Requests",
-            "specialRequestsPlaceholder": "Allergies, late check-in, baby cot requirements..."
+            "couponCode": "Coupon Code",
+            "couponPlaceholder": "Enter code (e.g. SAVE10)",
+            "applyCoupon": "Apply",
+            "couponApplied": "Coupon applied!",
+            "invalidCoupon": "Invalid or expired coupon."
         },
         "step3": {
             "title": "Payment",
@@ -994,6 +1047,7 @@
             "subtotal": "Subtotal",
             "cleaning": "Cleaning fee",
             "cityTax": "City Tax",
+            "coupon": "Coupon Code",
             "breakfast": "Breakfast (Entire Stay)",
             "transfer": "Airport Transfer",
             "oneWay": "One Way",
@@ -1549,6 +1603,11 @@
             "travelingWithChildren": "Traveling with children",
             "babyDescription": "Description ({lang})",
             "babyPlaceholder": "Baby cot and high chair are available on request...",
+            "parking": "Parking",
+            "parkingDesc": "Configure parking availability and size.",
+            "parkingSize": "Parking Size ({lang})",
+            "parkingPlaceholder": "e.g. Suitable for most standard cars (Sedans, compact SUVs)",
+            "electricCharger": "Electric Charger",
             "roomsAndSpaces": "Rooms & Spaces",
             "roomsDesc": "Configure individual bedrooms, bathrooms and communal areas.",
             "addRoom": "Add Room",
@@ -1670,6 +1729,7 @@
             "location": "Location",
             "policies": "Policies",
             "pricing": "Pricing & Availability",
+            "calendar": "Calendar",
             "history": "History"
         },
         "system": {

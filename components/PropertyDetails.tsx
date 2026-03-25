@@ -406,6 +406,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                             rooms={property.rooms}
                             bed_sizes={property.bed_sizes}
                             baby_equipment={property.baby_equipment}
+                            parking={property.parking}
                         />
 
                         {/* Location */}
