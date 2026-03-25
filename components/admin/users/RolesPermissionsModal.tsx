@@ -16,6 +16,7 @@ const MODULES = [
     { id: 'bookings', label: 'Bookings Management' },
     { id: 'owners', label: 'Property Owners' },
     { id: 'concierge', label: 'Concierge Management' },
+    { id: 'coupons', label: 'Coupons Management' },
     { id: 'team', label: 'Team & Access' },
 ];
 
