@@ -407,7 +407,7 @@ export default function AdminProperties() {
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                                        Annual Calendar
+                                        Calendar
                                     </h3>
                                     <p className="text-xs font-medium text-[#a3a3a3]">
                                         {properties.find(p => p.id === calendarPropertyId)?.title?.[locale] || properties.find(p => p.id === calendarPropertyId)?.title?.en || 'Unknown Property'}
