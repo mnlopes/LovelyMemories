@@ -2,7 +2,7 @@
 
 import { X, User, Home, Calendar, Phone, Mail, Clock, CreditCard, Receipt, ExternalLink, FileText, Printer, ChevronRight, Check, Ban, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,37 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
     const [isUpdating, setIsUpdating] = useState(false);
     const [confirmingStatus, setConfirmingStatus] = useState<'confirmed' | 'cancelled' | null>(null);
     const [showHistory, setShowHistory] = useState(false);
+    const [ownerInfo, setOwnerInfo] = useState<{ full_name: string; email: string; phone?: string } | null>(null);
+
+    useEffect(() => {
+        if (reservation?.status === 'owner_block') {
+            import('@/lib/supabase').then(({ supabase }) => {
+                const fetchOwnerInfo = (ownerId: string) => {
+                    supabase
+                        .from('profiles')
+                        .select('full_name, email, phone')
+                        .eq('id', ownerId)
+                        .single()
+                        .then(({ data }) => setOwnerInfo(data));
+                };
+
+                if (reservation?.properties?.owner_id) {
+                    fetchOwnerInfo(reservation.properties.owner_id);
+                } else if (reservation?.property_id) {
+                    supabase
+                        .from('properties')
+                        .select('owner_id')
+                        .eq('id', reservation.property_id)
+                        .single()
+                        .then(({ data: propData }) => {
+                            if (propData?.owner_id) {
+                                fetchOwnerInfo(propData.owner_id);
+                            }
+                        });
+                }
+            });
+        }
+    }, [reservation]);
 
     if (!reservation) return null;
 
@@ -86,27 +117,42 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between bg-white dark:bg-admin-dark-surface sticky top-0 z-10">
                     <div>
-                        <div className="flex items-center gap-3">
-                            <span className={cn(
-                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border",
-                                reservation.status === 'confirmed' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/30" :
-                                    reservation.status === 'pending' ? "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-100 dark:border-yellow-500/30" :
-                                        "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/30"
-                            )}>
-                                {reservation.status?.toUpperCase()}
-                            </span>
-                            <span className={cn(
-                                "size-2 rounded-full shrink-0",
-                                reservation.status === 'confirmed' ? "bg-emerald-500" :
-                                    reservation.status === 'pending' ? "bg-yellow-500" : "bg-rose-500"
-                            )} />
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
-                                {reservation.guest_name}
-                            </h2>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            ID: {reservation.reference_id}
-                        </p>
+                        {reservation.status === 'owner_block' ? (
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-3">
+                                    <span className="px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest border bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30">
+                                        OWNER BLOCK
+                                    </span>
+                                    <h2 className="text-xl font-black text-gray-900 dark:text-white truncate">
+                                        {ownerInfo ? ownerInfo.full_name : (reservation.guest_name || 'Owner')}
+                                    </h2>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center gap-3">
+                                    <span className={cn(
+                                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border",
+                                        reservation.status === 'confirmed' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/30" :
+                                            reservation.status === 'pending' ? "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-100 dark:border-yellow-500/30" :
+                                                "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/30"
+                                    )}>
+                                        {reservation.status?.toUpperCase()}
+                                    </span>
+                                    <span className={cn(
+                                        "size-2 rounded-full shrink-0",
+                                        reservation.status === 'confirmed' ? "bg-emerald-500" :
+                                            reservation.status === 'pending' ? "bg-yellow-500" : "bg-rose-500"
+                                    )} />
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+                                        {reservation.guest_name}
+                                    </h2>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    ID: {reservation.reference_id}
+                                </p>
+                            </>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -164,118 +210,163 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                                     </div>
                                 </div>
 
-                                {/* Guest Contact & Services */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* Contact Info */}
-                                    <div className="p-4 rounded-2xl border border-gray-100 dark:border-white/10 space-y-3">
-                                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t('guestDetails')}</p>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <Mail className="size-3.5 text-gray-400" />
-                                                <span className="text-xs font-medium dark:text-gray-300 truncate" title={reservation.guest_email}>{reservation.guest_email || 'No email'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Phone className="size-3.5 text-gray-400" />
-                                                <span className="text-xs font-medium dark:text-gray-300">{reservation.guest_phone || 'No phone'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Clock className="size-3.5 text-gray-400" />
-                                                <span className="text-xs font-medium dark:text-gray-300">{reservation.arrival_time || 'N/A'}</span>
-                                            </div>
+                                {/* Owner Details (If Owner Block) */}
+                                {reservation.status === 'owner_block' && (
+                                    <div className="p-4 rounded-2xl border border-gray-100 dark:border-white/10 space-y-3 bg-indigo-50/30 dark:bg-indigo-500/5">
+                                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Owner / Notes</p>
+                                        <div className="space-y-4">
+                                            {/* What was written for the owner during booking */}
+                                            {reservation.guest_name && (
+                                                <div className="flex items-start gap-2">
+                                                    <FileText className="size-3.5 text-gray-400 mt-0.5" />
+                                                    <div>
+                                                        <span className="text-[10px] font-bold text-gray-400 uppercase block mb-0.5">Note</span>
+                                                        <span className="text-xs font-medium dark:text-gray-300 break-words">{reservation.guest_name}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Real Owner Info dynamically fetched */}
+                                            {ownerInfo && (
+                                                <div className="border-t border-gray-100 dark:border-white/10 pt-3 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <User className="size-3.5 text-gray-400" />
+                                                        <span className="text-xs font-medium dark:text-gray-300 truncate">{ownerInfo.full_name || 'No name'}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Mail className="size-3.5 text-gray-400" />
+                                                        <span className="text-xs font-medium dark:text-gray-300 truncate" title={ownerInfo.email}>{ownerInfo.email || 'No email'}</span>
+                                                    </div>
+                                                    {ownerInfo.phone && (
+                                                        <div className="flex items-center gap-2">
+                                                            <Phone className="size-3.5 text-gray-400" />
+                                                            <span className="text-xs font-medium dark:text-gray-300">{ownerInfo.phone}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
+                                )}
 
-                                    {/* Services Compact */}
-                                    <div className="p-4 rounded-2xl border border-gray-100 dark:border-white/10 space-y-3">
-                                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t('extras')}</p>
-                                        <div className="space-y-2.5">
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-gray-500 dark:text-gray-400">{t('breakfast')}</span>
-                                                <span className={cn("font-bold px-1.5 py-0.5 rounded", reservation.breakfast_total > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500")}>
-                                                    {reservation.breakfast_total > 0 ? t('yes') : t('no')}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-gray-500 dark:text-gray-400">Transfer</span>
+                                {/* Guest Contact & Services */}
+                                {reservation.status !== 'owner_block' && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Contact Info */}
+                                        <div className="p-4 rounded-2xl border border-gray-100 dark:border-white/10 space-y-3">
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t('guestDetails')}</p>
+                                            <div className="space-y-2">
                                                 <div className="flex items-center gap-2">
-                                                    {reservation.transfer_total > 0 && reservation.transfer_type && (
-                                                        <span className="text-[9px] font-bold uppercase tracking-widest text-[#B08D4A] bg-[#B08D4A]/5 px-2 py-0.5 rounded border border-[#B08D4A]/10">
-                                                            {reservation.transfer_type === 'round_trip' ? t('roundTrip') : t('oneWay')}
-                                                        </span>
-                                                    )}
-                                                    <span className={cn("font-bold px-1.5 py-0.5 rounded", reservation.transfer_total > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500")}>
-                                                        {reservation.transfer_total > 0 ? t('yes') : t('no')}
+                                                    <Mail className="size-3.5 text-gray-400" />
+                                                    <span className="text-xs font-medium dark:text-gray-300 truncate" title={reservation.guest_email}>{reservation.guest_email || 'No email'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Phone className="size-3.5 text-gray-400" />
+                                                    <span className="text-xs font-medium dark:text-gray-300">{reservation.guest_phone || 'No phone'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="size-3.5 text-gray-400" />
+                                                    <span className="text-xs font-medium dark:text-gray-300">{reservation.arrival_time || 'N/A'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Services Compact */}
+                                        <div className="p-4 rounded-2xl border border-gray-100 dark:border-white/10 space-y-3">
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t('extras')}</p>
+                                            <div className="space-y-2.5">
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className="text-gray-500 dark:text-gray-400">{t('breakfast')}</span>
+                                                    <span className={cn("font-bold px-1.5 py-0.5 rounded", reservation.breakfast_total > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500")}>
+                                                        {reservation.breakfast_total > 0 ? t('yes') : t('no')}
                                                     </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className="text-gray-500 dark:text-gray-400">Transfer</span>
+                                                    <div className="flex items-center gap-2">
+                                                        {reservation.transfer_total > 0 && reservation.transfer_type && (
+                                                            <span className="text-[9px] font-bold uppercase tracking-widest text-[#B08D4A] bg-[#B08D4A]/5 px-2 py-0.5 rounded border border-[#B08D4A]/10">
+                                                                {reservation.transfer_type === 'round_trip' ? t('roundTrip') : t('oneWay')}
+                                                            </span>
+                                                        )}
+                                                        <span className={cn("font-bold px-1.5 py-0.5 rounded", reservation.transfer_total > 0 ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500")}>
+                                                            {reservation.transfer_total > 0 ? t('yes') : t('no')}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Price Breakdown (Compact) */}
-                            <div className="mt-2 p-4 rounded-2xl border border-gray-100 dark:border-white/10 space-y-2.5 bg-gray-50/50 dark:bg-white/5">
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('stay')}</span>
-                                    <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.base_price || 0)}</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('cleaningFee')}</span>
-                                    <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.cleaning_fee || 0)}</span>
-                                </div>
-                                {reservation.city_tax_total > 0 && (
+                            {reservation.status !== 'owner_block' && (
+                                <div className="mt-2 p-4 rounded-2xl border border-gray-100 dark:border-white/10 space-y-2.5 bg-gray-50/50 dark:bg-white/5">
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500 dark:text-gray-400">{t('cityTax')}</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.city_tax_total)}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">{t('stay')}</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.base_price || 0)}</span>
                                     </div>
-                                )}
-                                {reservation.discount_amount > 0 && (
-                                    <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400">
-                                        <span>{t('discount')}</span>
-                                        <span className="font-bold">-{formatCurrency(reservation.discount_amount)}</span>
-                                    </div>
-                                )}
-                                {(reservation.breakfast_total > 0) && (
                                     <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500 dark:text-gray-400">{t('breakfast')}</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.breakfast_total)}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">{t('cleaningFee')}</span>
+                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.cleaning_fee || 0)}</span>
                                     </div>
-                                )}
-                                {(reservation.transfer_total > 0) && (
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500 dark:text-gray-400">Transfer</span>
-                                        <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.transfer_total)}</span>
+                                    {reservation.city_tax_total > 0 && (
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-gray-500 dark:text-gray-400">{t('cityTax')}</span>
+                                            <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.city_tax_total)}</span>
+                                        </div>
+                                    )}
+                                    {reservation.discount_amount > 0 && (
+                                        <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400">
+                                            <span>{t('discount')}</span>
+                                            <span className="font-bold">-{formatCurrency(reservation.discount_amount)}</span>
+                                        </div>
+                                    )}
+                                    {(reservation.breakfast_total > 0) && (
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-gray-500 dark:text-gray-400">{t('breakfast')}</span>
+                                            <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.breakfast_total)}</span>
+                                        </div>
+                                    )}
+                                    {(reservation.transfer_total > 0) && (
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-gray-500 dark:text-gray-400">Transfer</span>
+                                            <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(reservation.transfer_total)}</span>
+                                        </div>
+                                    )}
+                                    <div className="h-px bg-gray-200 dark:bg-white/10 my-1" />
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{t('total')}</span>
+                                        <span className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(reservation.total_price || 0)}</span>
                                     </div>
-                                )}
-                                <div className="h-px bg-gray-200 dark:bg-white/10 my-1" />
-                                <div className="flex justify-between items-end">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{t('total')}</span>
-                                    <span className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(reservation.total_price || 0)}</span>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Guest Breakdown (Compact) */}
-                            <section className="space-y-4">
-                                <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
-                                    <div className="flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-wider">
-                                        <User className="size-3.5" /> {t('guests')}
+                            {reservation.status !== 'owner_block' && (
+                                <section className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
+                                        <div className="flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-wider">
+                                            <User className="size-3.5" /> {t('guests')}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {[
+                                                reservation.adults > 0 && `${reservation.adults} ${t('adults')}`,
+                                                reservation.children > 0 && `${reservation.children} ${t('children')}`,
+                                                reservation.infants > 0 && `${reservation.infants} ${t('infants')}`
+                                            ].filter(Boolean).map((text: any, i) => (
+                                                <span key={i} className="px-2 py-1 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 text-[10px] font-bold text-gray-900 dark:text-white shadow-sm">
+                                                    {text}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {[
-                                            reservation.adults > 0 && `${reservation.adults} ${t('adults')}`,
-                                            reservation.children > 0 && `${reservation.children} ${t('children')}`,
-                                            reservation.infants > 0 && `${reservation.infants} ${t('infants')}`
-                                        ].filter(Boolean).map((text: any, i) => (
-                                            <span key={i} className="px-2 py-1 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 text-[10px] font-bold text-gray-900 dark:text-white shadow-sm">
-                                                {text}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </section>
+                                </section>
+                            )}
 
                             {/* Billing Info */}
-                            {(reservation.billing_address || reservation.billing_vat) && (
+                            {reservation.status !== 'owner_block' && (reservation.billing_address || reservation.billing_vat) && (
                                 <section className="space-y-4">
                                     <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">{t('billingDetails')}</h3>
                                     <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 flex gap-4">
@@ -361,21 +452,23 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                         </div>
                     )}
 
-                    <button
-                        onClick={() => {
-                            setIsNavigating(true);
-                            window.location.href = `/${locale}/admin/reservations/${reservation.id}`;
-                        }}
-                        disabled={isNavigating || isUpdating}
-                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-2xl font-bold text-sm hover:scale-[1.01] transition-all shadow-lg active:scale-95 disabled:opacity-70"
-                    >
-                        {isNavigating ? (
-                            <div className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        ) : (
-                            <FileText className="size-4" />
-                        )}
-                        {isNavigating ? t('loading') : t('viewFullPage')}
-                    </button>
+                    {reservation.status !== 'owner_block' && (
+                        <button
+                            onClick={() => {
+                                setIsNavigating(true);
+                                window.location.href = `/${locale}/admin/reservations/${reservation.id}`;
+                            }}
+                            disabled={isNavigating || isUpdating}
+                            className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-2xl font-bold text-sm hover:scale-[1.01] transition-all shadow-lg active:scale-95 disabled:opacity-70"
+                        >
+                            {isNavigating ? (
+                                <div className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                                <FileText className="size-4" />
+                            )}
+                            {isNavigating ? t('loading') : t('viewFullPage')}
+                        </button>
+                    )}
                 </div>
             </motion.div>
         </AnimatePresence>
