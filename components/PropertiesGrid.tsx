@@ -157,7 +157,7 @@ export const PropertiesGrid = () => {
                                             className="transition-transform duration-1000 grayscale-[0.3]"
                                         />
                                     ) : (
-                                        <Link href={property.unitsCount >= 2 ? `/buildings/${property.slug}` : `/properties/${property.singleUnitSlug || property.slug}`}>
+                                        <Link href={property.is_multi_unit ? `/buildings/${property.slug}` : `/properties/${property.singleUnitSlug || property.slug}`}>
                                             <Image
                                                 src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
                                                 alt={property.title}
@@ -166,7 +166,7 @@ export const PropertiesGrid = () => {
                                                 style={{ objectFit: 'cover' }}
                                                 className="transition-transform duration-1000 group-hover:scale-110"
                                             />
-                                            {property.unitsCount >= 2 && (
+                                            {property.is_multi_unit && (
                                                 <div className="absolute top-4 right-4 z-30">
                                                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#AD9C7E]/40 backdrop-blur-md border border-white/30 text-white shadow-2xl scale-100 transition-all duration-300 group-hover:scale-105 group-hover:bg-[#AD9C7E] group-hover:border-[#AD9C7E]">
                                                         <Building2 className="w-3.5 h-3.5" />
@@ -259,10 +259,10 @@ export const PropertiesGrid = () => {
                                             </div>
                                         ) : (
                                             <Link
-                                                href={property.unitsCount >= 2 ? `/buildings/${property.slug}` : `/properties/${property.singleUnitSlug || property.slug}`}
+                                                href={property.is_multi_unit ? `/buildings/${property.slug}` : `/properties/${property.singleUnitSlug || property.slug}`}
                                                 className="block w-full text-center py-4 px-6 bg-[#192537] hover:bg-[#253654] text-white font-bold uppercase tracking-widest text-sm rounded-full transition-all duration-300 shadow-md active:scale-[0.98]"
                                             >
-                                                {property.unitsCount >= 2 ? t('viewBuilding') : t('viewHome')}
+                                                {property.is_multi_unit ? t('viewBuilding') : t('viewHome')}
                                             </Link>
                                         )}
                                     </div>

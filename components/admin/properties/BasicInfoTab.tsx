@@ -3,6 +3,7 @@
 import { useFormContext, useWatch, useFieldArray } from "react-hook-form";
 import { FormSelect } from "@/components/admin/ui/FormSelect";
 import { Building2, Home, Eye, EyeOff, Clock, Plus, Trash2, Info, Sparkles } from "lucide-react";
+import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { useEffect, useState } from "react";
@@ -112,6 +113,24 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
         fetchBuildings();
     }, [activeLang]);
 
+    // Auto-slugify for new properties
+    const titleEn = (useWatch({ control, name: "title.en" as any }) || "") as string;
+    useEffect(() => {
+        const id = getValues("id" as any);
+        const currentSlug = getValues("slug");
+        
+        // Only auto-slugify if it's a new property (no ID) and slug is empty
+        if (!id && titleEn && (!currentSlug || currentSlug.trim() === "")) {
+            const slugified = titleEn
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+            setValue("slug", slugified, { shouldDirty: true, shouldValidate: true });
+        }
+    }, [titleEn, setValue, getValues]);
+
     // Clear parent_id if is_multi_unit is checked
     useEffect(() => {
         if (isMultiUnit) {
@@ -146,6 +165,32 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
             <input type="hidden" {...register("is_multi_unit")} />
             <input type="hidden" {...register("parent_id")} />
             <input type="hidden" {...register("status")} />
+
+            {/* Parent Building Banner */}
+            {!isMultiUnit && parentId && (
+                <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 -mb-4 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                            <Building2 className="size-5" />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                                {t('basic.belongsToBuilding', { fallback: 'This unit belongs to a Building' })}
+                            </h4>
+                            <p className="text-xs text-purple-700 dark:text-purple-300 font-medium mt-0.5">
+                                {t('basic.partOf', { fallback: 'Part of:' })} {parentOptions.find(o => o.value === parentId)?.label || '...'}
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        href={`/admin/properties/${parentId}` as any}
+                        className="px-4 py-2 bg-purple-100 hover:bg-purple-200 dark:bg-purple-500/20 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0"
+                    >
+                        <Eye className="size-3.5" />
+                        {t('basic.viewBuilding', { fallback: 'View Building' })}
+                    </Link>
+                </div>
+            )}
 
             {/* Top Layout Grid: Identity & Description */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

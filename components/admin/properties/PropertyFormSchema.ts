@@ -20,9 +20,7 @@ export const propertySchema = z.object({
         message: "English title is required",
     }),
     subtitle: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
-    description: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }).refine(val => val.en && val.en.trim().length > 0, {
-        message: "English description is required",
-    }),
+    description: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
     highlights_intro: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
     slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
 
@@ -215,6 +213,14 @@ export const propertySchema = z.object({
         title: z.record(z.string(), z.string()).default({ en: "", pt: "", he: "" }),
         icon: z.string().optional().nullable(),
     })).default([]).catch([]),
+}).superRefine((data, ctx) => {
+    if (!data.is_multi_unit && (!data.description?.en || data.description.en.trim().length === 0)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "English description is required for individual properties",
+            path: ["description", "en"],
+        });
+    }
 });
 
 export type PropertyFormData = z.infer<typeof propertySchema>;

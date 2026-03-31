@@ -132,18 +132,27 @@
             "reservedAt": "Reserved at",
             "to": "to",
             "noContact": "No contact info",
-            "new": "New"
+            "new": "New",
+            "ownerBooking": "Owner Booking",
+            "tabUpcoming": "Upcoming",
+            "tabCompleted": "Completed",
+            "tabCanceled": "Canceled",
+            "tabAll": "All",
+            "tabOwners": "Owners"
         },
         "status": {
             "pending": "Pending",
             "confirmed": "Confirmed",
-            "cancelled": "Cancelled"
+            "cancelled": "Cancelled",
+            "completed": "Completed",
+            "owner_block": "Owner Block"
         },
         "actions": {
             "viewHistory": "View History",
-            "approve": "Approve Reservation",
-            "reject": "Reject Reservation",
-            "delete": "Delete Reservation"
+            "approve": "Confirm",
+            "reject": "Reject",
+            "delete": "Delete",
+            "finishBooking": "Finish Booking"
         },
         "modals": {
             "deleteTitle": "Delete Reservation?",
@@ -152,7 +161,8 @@
             "deleting": "Deleting...",
             "removing": "Removing reservation...",
             "deletedTitle": "Reservation Deleted",
-            "deletedMessage": "The reservation has been successfully removed.",
+            "deletedMessage": "The reservation has been permanently removed.",
+            "finishMessage": "Are you sure you want to finish this booking today? This will free the calendar for upcoming days.",
             "done": "Done",
             "errorDeleting": "Error Deleting",
             "approveTitle": "Approve Reservation?",
@@ -1586,7 +1596,10 @@
             "add": "Add",
             "stayHours": "Stay Hours",
             "checkInAfter": "Check-in After",
-            "checkOutBefore": "Check-out Before"
+            "checkOutBefore": "Check-out Before",
+            "belongsToBuilding": "This unit belongs to a Building",
+            "partOf": "Part of:",
+            "viewBuilding": "View Building"
         },
         "units": {
             "maxGuests": "Max Guests",
@@ -1746,7 +1759,9 @@
             "slugRequired": "Slug is required to preview the page.",
             "comingSoon": "Coming Soon: {tab} Editor",
             "nextUpdate": "This module will be part of the next update.",
-            "auditLog": "Property Audit Log"
+            "auditLog": "Property Audit Log",
+            "saveFirstTitle": "Save Building First",
+            "saveFirstDesc": "Before you can view or add units to this building, please fill in the basic information and save it."
         },
         "magicTranslate": {
             "view": "View:",

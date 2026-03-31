@@ -107,8 +107,14 @@ export const AdminSidebar = () => {
             className={`bg-admin-surface border-r border-admin-border flex flex-col shrink-0 h-screen sticky top-0 z-50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-72'}`}
         >
             {/* Logo Area */}
-            <div className={`flex flex-col items-center justify-center transition-all duration-300 ${isCollapsed ? 'p-4' : 'p-8 gap-2 text-center'}`}>
-                <div className={`flex items-center justify-center transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-40 h-auto p-2'}`}>
+            <Link 
+                href="/"
+                className={cn(
+                    "flex flex-col items-center justify-center transition-all duration-300 hover:opacity-80 active:scale-95 group/logo",
+                    isCollapsed ? 'p-4' : 'p-8 gap-2 text-center'
+                )}
+            >
+                <div className={cn("flex items-center justify-center transition-all duration-300", isCollapsed ? 'w-10 h-10' : 'w-40 h-auto p-2')}>
                     <img
                         src="/legacy/home/images/logo.svg"
                         alt="Lovely Memories"
@@ -120,7 +126,7 @@ export const AdminSidebar = () => {
                         Lovely Memories
                     </h1>
                 )}
-            </div>
+            </Link>
 
             {/* Navigation */}
             <nav className={`flex-1 space-y-8 overflow-y-auto custom-scrollbar ${isCollapsed ? 'px-3' : 'px-6'}`}>

@@ -222,11 +222,11 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
     };
 
     const onInvalid = (errors: any) => {
-        console.error("❌ Validation Failed:", errors);
+        console.warn("⚠️ Validation Failed:", errors);
 
-        // Log individual field errors for better visibility in user screenshots
+        // Log individual field errors in console for debugging but don't burst red overlay
         Object.entries(errors).forEach(([field, error]: [string, any]) => {
-            console.error(`- Error in ${field}:`, error.message, error.type);
+            console.warn(`- Field ${field}:`, error.message, error.type);
         });
 
         const errorFields = Object.keys(errors).join(", ");
@@ -449,6 +449,19 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         {activeTab === 'hierarchy' && initialData?.id && (
                             <HierarchyTab propertyId={initialData.id as string} />
                         )}
+                        {activeTab === 'hierarchy' && !initialData?.id && (
+                            <div className="flex flex-col items-center justify-center py-20 bg-[#fafafa] dark:bg-admin-dark-bg rounded-2xl border-2 border-dashed border-[#eaeaea] dark:border-admin-dark-border">
+                                <div className="size-16 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-4">
+                                    <Save className="size-8" />
+                                </div>
+                                <h4 className="text-[17px] font-bold text-[#171717] dark:text-admin-dark-text-primary">
+                                    {t('system.saveFirstTitle', { fallback: 'Save Building First' })}
+                                </h4>
+                                <p className="text-sm text-[#a3a3a3] mt-2 text-center max-w-md">
+                                    {t('system.saveFirstDesc', { fallback: 'Before you can view or add units to this building, please fill in the basic information and save it.' })}
+                                </p>
+                            </div>
+                        )}
                         {activeTab === 'units' && (
                             <RoomsTab
                                 activeLang={activeLang}
@@ -482,7 +495,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             </div>
                         )}
 
-                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'pricing', 'history'].includes(activeTab) && (
+                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'pricing', 'history', 'hierarchy'].includes(activeTab) && (
                             <div className="flex flex-col items-center justify-center h-64 text-[#a3a3a3]">
                                 <p className="text-lg font-bold dark:text-admin-dark-text-primary">
                                     {t('system.comingSoon', { tab: tabs.find(t => t.id === activeTab)?.label ?? "" })}

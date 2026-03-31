@@ -422,9 +422,8 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
     const unitsCount = units.length;
     const singleUnitSlug = unitsCount === 1 ? units[0].slug : null;
 
-    // VISUAL ABSORPTION: If building has exactly 1 unit, 
-    // we show the unit's information (title, images, etc) but keep the identity.
-    const visualData = (unitsCount === 1 && !p.parent_id) ? units[0] : p;
+    // VISUAL ABSORPTION is disabled as per user request to always show Building details
+    const visualData = p;
 
     // Support both joined property_images and JSONB images column
     // MIGRATION NOTE: Prioritize JSONB 'images' as it contains the freshest data from the editor

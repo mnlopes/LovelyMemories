@@ -360,7 +360,7 @@ function SearchResultsContent() {
                                 <div
                                     onClick={() => {
                                         if (property.isReserved) return;
-                                        if (property.unitsCount >= 2) {
+                                        if (property.is_multi_unit) {
                                             const params = new URLSearchParams(searchParams.toString());
                                             params.set('building', property.slug);
                                             params.set('fromsearch', '1');
@@ -381,7 +381,7 @@ function SearchResultsContent() {
                                         style={{ objectFit: 'cover' }}
                                         className="transition-transform duration-1000 group-hover:scale-110"
                                     />
-                                    {property.unitsCount >= 2 && (
+                                    {property.is_multi_unit && (
                                         <div className="absolute top-4 right-4 z-30">
                                             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#AD9C7E]/40 backdrop-blur-md border border-white/30 text-white shadow-2xl scale-100 transition-all duration-300 group-hover:scale-105 group-hover:bg-[#AD9C7E] group-hover:border-[#AD9C7E]">
                                                 <Building2 className="w-3.5 h-3.5" />
@@ -430,7 +430,7 @@ function SearchResultsContent() {
                                     </div>
 
                                     <div className="flex flex-col items-center justify-center py-3 border-b border-gray-100 min-h-[5rem] px-4">
-                                        {property.unitsCount >= 2 ? (
+                                        {property.is_multi_unit ? (
                                             <div className="flex items-center gap-2">
                                                 <Building2 className="text-[#AD9C7E] w-[18px] h-[18px]" />
                                                 <p className="text-[#192537] text-sm font-bold">
@@ -471,7 +471,7 @@ function SearchResultsContent() {
 
                                 {/* Disable buttons/links if reserved */}
                                 <div className={`pt-0 pb-4 text-center ${property.isReserved ? 'opacity-30 pointer-events-none' : ''}`}>
-                                    {property.unitsCount >= 2 ? (
+                                    {property.is_multi_unit ? (
                                         <button
                                             onClick={() => {
                                                 const params = new URLSearchParams(searchParams.toString());

@@ -7,7 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { deleteReservation } from "@/app/actions/reservation";
-import { updateReservationStatus } from "@/app/actions/admin-reservation-actions";
+import { deleteBlockedDate } from "@/app/actions/blocked-dates";
+import { updateReservationStatus, finishReservationEarly } from "@/app/actions/admin-reservation-actions";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import { DateRangePicker } from "@/components/admin/ui/DateRangePicker";
 import { DateRange } from "react-day-picker";
@@ -24,6 +25,8 @@ export default function AdminReservationsPage() {
     const t = useTranslations('AdminReservations');
     const locale = (params?.locale as string) || 'en';
     const [view, setView] = useState<'calendar' | 'list'>('list');
+    type TabOption = 'upcoming' | 'completed' | 'canceled' | 'owners' | 'all';
+    const [activeTab, setActiveTab] = useState<TabOption>('upcoming');
     const [reservations, setReservations] = useState<any[]>([]);
     const [blockedDates, setBlockedDates] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -164,7 +167,26 @@ export default function AdminReservationsPage() {
             properties: (propertiesResult.data || []).find((p: any) => p.id === res.property_id) || res.properties
         }));
 
-        setReservations(enhancedReservations);
+        const enhancedBlockedDates = (blockedDatesResult.data || []).map((bd: any) => ({
+            id: `block-${bd.id}`,
+            original_id: bd.id,
+            is_manual_block: true,
+            property_id: bd.property_id,
+            property_name: newPropertiesMap[bd.property_id]?.title || 'Unknown Property',
+            guest_name: t('table.ownerBooking'),
+            reason: bd.reason,
+            check_in: bd.start_date,
+            check_out: bd.end_date,
+            created_at: bd.created_at || bd.start_date,
+            status: 'owner_block',
+            properties: (propertiesResult.data || []).find((p: any) => p.id === bd.property_id)
+        }));
+
+        setReservations([...enhancedReservations, ...enhancedBlockedDates].sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return dateB - dateA; // default sort descending
+        }));
         setIsLoading(false);
     };
 
@@ -222,7 +244,7 @@ export default function AdminReservationsPage() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const confirmDelete = (id: string) => {
+    const confirmDelete = (id: string, isManualBlock: boolean = false) => {
         setOpenMenuId(null);
         setModalConfig({
             isOpen: true,
@@ -230,15 +252,21 @@ export default function AdminReservationsPage() {
             title: t('modals.deleteTitle'),
             message: t('modals.deleteMessage'),
             actionLabel: t('modals.deleteConfirm'),
-            onAction: () => handleDelete(id)
+            onAction: () => handleDelete(id, isManualBlock)
         });
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: string, isManualBlock: boolean = false) => {
         setModalConfig(prev => ({ ...prev, type: 'loading', title: t('modals.deleting'), message: t('modals.removing') }));
 
         try {
-            await deleteReservation(id);
+            if (isManualBlock) {
+                const blockId = id.startsWith('block-') ? id.replace('block-', '') : id;
+                await deleteBlockedDate(blockId);
+            } else {
+                await deleteReservation(id);
+            }
+            
             setReservations(prev => prev.filter(r => r.id !== id));
             setModalConfig({
                 isOpen: true,
@@ -248,6 +276,7 @@ export default function AdminReservationsPage() {
                 actionLabel: t('modals.done'),
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
+            fetchData();
         } catch (error: any) {
             setModalConfig({
                 isOpen: true,
@@ -258,6 +287,29 @@ export default function AdminReservationsPage() {
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
         }
+    };
+
+    const confirmFinishEarly = (id: string, isManualBlock: boolean = false) => {
+        setOpenMenuId(null);
+        setModalConfig({
+            isOpen: true,
+            type: 'warning',
+            title: t('actions.finishBooking'),
+            message: t('modals.finishMessage') || 'Are you sure you want to finish this booking today? This will free the calendar for upcoming days.',
+            actionLabel: t('actions.finishBooking'),
+            onAction: async () => {
+                const toastId = toast.loading(t('modals.updating') || 'Updating...');
+                try {
+                    await finishReservationEarly(id, isManualBlock);
+                    toast.success(t('modals.successApprove') || 'Booking finished!', { id: toastId });
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    fetchData();
+                } catch (error: any) {
+                    toast.error(`${t('modals.unexpectedError') || 'Error'}: ${error.message}`, { id: toastId });
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        });
     };
 
     const handleStatusUpdate = async (id: string, newStatus: 'confirmed' | 'cancelled') => {
@@ -305,11 +357,27 @@ export default function AdminReservationsPage() {
         if (dateRange?.from && res.check_in) {
             const checkIn = new Date(res.check_in);
             const start = startOfDay(dateRange.from);
-            const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from); // Allow single date selection
+            const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
             matchesDate = isWithinInterval(checkIn, { start, end });
         }
 
-        return matchesSearch && matchesDate;
+        const today = startOfDay(new Date());
+        let matchesTab = true;
+        const resCheckOutDate = startOfDay(new Date(res.check_out));
+
+        if (activeTab === 'upcoming') {
+            matchesTab = res.status !== 'cancelled' && res.status !== 'completed' && resCheckOutDate.getTime() > today.getTime() && !res.is_manual_block;
+        } else if (activeTab === 'completed') {
+            matchesTab = res.status !== 'cancelled' && (res.status === 'completed' || resCheckOutDate.getTime() <= today.getTime()) && !res.is_manual_block;
+        } else if (activeTab === 'canceled') {
+            matchesTab = res.status === 'cancelled' && !res.is_manual_block;
+        } else if (activeTab === 'owners') {
+            matchesTab = res.is_manual_block;
+        } else if (activeTab === 'all') {
+            matchesTab = true;
+        }
+
+        return matchesSearch && matchesDate && matchesTab;
     }).sort((a, b) => {
         if (sortConfig.key === 'check_in') {
             const dateA = new Date(a.check_in).getTime();
@@ -355,20 +423,43 @@ export default function AdminReservationsPage() {
                 </div>
             </div>
 
-            {/* Search Bar */}
+            {/* Search Bar & Tabs */}
             {view === 'list' && (
-                <div className="flex items-center justify-between gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4" />
-                        <input
-                            type="text"
-                            placeholder={t('searchPlaceholder')}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-1 focus:ring-[#8ca38c] outline-none shadow-sm dark:text-admin-dark-text-primary transition-colors"
-                        />
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[#e5e5e5] dark:border-admin-dark-border gap-4">
+                        {/* Tabs */}
+                        <div className="flex overflow-x-auto no-scrollbar -mb-px">
+                            {(['upcoming', 'completed', 'canceled', 'owners', 'all'] as const).map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={cn(
+                                        "px-4 py-3 text-[15px] whitespace-nowrap font-medium transition-all relative",
+                                        activeTab === tab 
+                                            ? "text-[#171717] dark:text-white border-b-2 border-[#171717] dark:border-white" 
+                                            : "text-[#717171] border-b-2 border-transparent hover:text-[#171717] hover:border-[#dddddd] dark:text-[#a3a3a3] dark:hover:text-white dark:hover:border-[#555]"
+                                    )}
+                                >
+                                    {t(`table.tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Search & Dates */}
+                        <div className="flex items-center gap-4 w-full md:w-auto pb-2">
+                            <div className="relative w-full md:w-80">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4" />
+                                <input
+                                    type="text"
+                                    placeholder={t('searchPlaceholder')}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#e5e5e5] dark:border-admin-dark-border pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-1 focus:ring-[#171717] dark:focus:ring-white outline-none shadow-sm dark:text-admin-dark-text-primary transition-colors"
+                                />
+                            </div>
+                            <DateRangePicker date={dateRange} setDate={setDateRange} />
+                        </div>
                     </div>
-                    <DateRangePicker date={dateRange} setDate={setDateRange} />
                 </div>
             )}
 
@@ -423,12 +514,27 @@ export default function AdminReservationsPage() {
                                         {t('table.empty', { query: searchQuery })}
                                     </td>
                                 </tr>
-                            ) : filteredReservations.map((reservation) => (
+                            ) : filteredReservations.map((reservation) => {
+                                const checkOutDate = new Date(reservation.check_out);
+                                const today = startOfDay(new Date());
+                                
+                                // Determine effective status purely for UI: if check out has passed and it was confirmed, it's completed (unless it's a block!)
+                                let effectiveStatus = reservation.status;
+                                if (!reservation.is_manual_block && reservation.status === 'confirmed' && startOfDay(checkOutDate).getTime() <= today.getTime()) {
+                                    effectiveStatus = 'completed';
+                                }
+
+                                return (
                                 <tr
                                     key={reservation.id}
-                                    onClick={() => setDetailSheetReservation(reservation)}
+                                    onClick={() => {
+                                        if (!reservation.is_manual_block) {
+                                            setDetailSheetReservation(reservation);
+                                        }
+                                    }}
                                     className={cn(
-                                        "group transition-all cursor-pointer border-b border-[#f5f5f5] dark:border-admin-dark-border relative",
+                                        "group transition-all border-b border-[#f5f5f5] dark:border-admin-dark-border relative",
+                                        !reservation.is_manual_block && "cursor-pointer",
                                         detailSheetReservation?.id === reservation.id
                                             ? "bg-gold-100/50 dark:bg-gold-500/10 shadow-[inset_4px_0_0_0_#c5a059]"
                                             : "hover:bg-[#fafafa]/50 dark:hover:bg-admin-dark-bg/50"
@@ -442,7 +548,10 @@ export default function AdminReservationsPage() {
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-bold text-[#171717] dark:text-admin-dark-text-primary">{reservation.guest_name || 'Guest'}</p>
-                                                    {isNew(reservation.created_at) && (
+                                                    {reservation.is_manual_block && (
+                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 uppercase tracking-wide">{t('table.ownerBooking')}</span>
+                                                    )}
+                                                    {isNew(reservation.created_at) && !reservation.is_manual_block && (
                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 uppercase tracking-wide">{t('table.new')}</span>
                                                     )}
                                                 </div>
@@ -473,31 +582,42 @@ export default function AdminReservationsPage() {
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="flex flex-col gap-1.5">
-                                            {reservation.guest_email && (
-                                                <div className="flex items-center gap-2 text-xs text-[#171717] dark:text-admin-dark-text-primary">
-                                                    <Mail className="size-3 text-[#a3a3a3]" />
-                                                    {reservation.guest_email}
-                                                </div>
-                                            )}
-                                            {reservation.guest_phone && (
-                                                <div className="flex items-center gap-2 text-xs text-[#171717] dark:text-admin-dark-text-primary">
-                                                    <Phone className="size-3 text-[#a3a3a3]" />
-                                                    {reservation.guest_phone}
-                                                </div>
-                                            )}
-                                            {!reservation.guest_email && !reservation.guest_phone && (
-                                                <span className="text-xs text-[#a3a3a3] italic">{t('table.noContact')}</span>
+                                            {reservation.is_manual_block ? (
+                                                <span className="text-xs text-[#a3a3a3] italic">{reservation.reason || t('table.noContact')}</span>
+                                            ) : (
+                                                <>
+                                                    {reservation.guest_email && (
+                                                        <div className="flex items-center gap-2 text-xs text-[#171717] dark:text-admin-dark-text-primary">
+                                                            <Mail className="size-3 text-[#a3a3a3]" />
+                                                            {reservation.guest_email}
+                                                        </div>
+                                                    )}
+                                                    {reservation.guest_phone && (
+                                                        <div className="flex items-center gap-2 text-xs text-[#171717] dark:text-admin-dark-text-primary">
+                                                            <Phone className="size-3 text-[#a3a3a3]" />
+                                                            {reservation.guest_phone}
+                                                        </div>
+                                                    )}
+                                                    {!reservation.guest_email && !reservation.guest_phone && (
+                                                        <span className="text-xs text-[#a3a3a3] italic">{t('table.noContact')}</span>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${reservation.status === 'confirmed'
-                                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/30'
-                                            : reservation.status === 'pending'
-                                                ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
-                                                : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
+                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                            effectiveStatus === 'confirmed'
+                                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/30'
+                                                : effectiveStatus === 'completed'
+                                                    ? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/20'
+                                                    : effectiveStatus === 'pending'
+                                                        ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
+                                                        : effectiveStatus === 'owner_block'
+                                                            ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/30'
+                                                            : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
                                             }`}>
-                                            {reservation.status ? t(`status.${reservation.status}`) : t('status.pending')}
+                                            {effectiveStatus ? t(`status.${effectiveStatus}`) : t('status.pending')}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 text-right font-medium relative" onClick={(e) => e.stopPropagation()}>
@@ -519,20 +639,22 @@ export default function AdminReservationsPage() {
                                                 className="absolute right-8 top-12 w-48 bg-white dark:bg-admin-dark-surface rounded-xl shadow-xl border border-[#f5f5f5] dark:border-admin-dark-border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
                                             >
                                                 <div className="p-1">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setOpenMenuId(null);
-                                                            setSelectedReservationId(reservation.id);
-                                                            setHistoryModalOpen(true);
-                                                        }}
-                                                        className="w-full text-left px-3 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors"
-                                                    >
-                                                        <History className="size-4" />
-                                                        {t('actions.viewHistory')}
-                                                    </button>
+                                                    {!reservation.is_manual_block && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenMenuId(null);
+                                                                setSelectedReservationId(reservation.id);
+                                                                setHistoryModalOpen(true);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2.5 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg flex items-center gap-2 transition-colors"
+                                                        >
+                                                            <History className="size-4" />
+                                                            {t('actions.viewHistory')}
+                                                        </button>
+                                                    )}
 
-                                                    {reservation.status === 'pending' && (
+                                                    {reservation.status === 'pending' && !reservation.is_manual_block && (
                                                         <>
                                                             <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
                                                             <button
@@ -552,10 +674,23 @@ export default function AdminReservationsPage() {
                                                         </>
                                                     )}
 
+                                                    {(activeTab === 'upcoming' || activeTab === 'all') && new Date(reservation.check_in).getTime() <= startOfDay(new Date()).getTime() && (
+                                                        <>
+                                                            <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); confirmFinishEarly(reservation.id, reservation.is_manual_block); }}
+                                                                className="w-full text-left px-3 py-2.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <Check className="size-4" />
+                                                                {t('actions.finishBooking')}
+                                                            </button>
+                                                        </>
+                                                    )}
+
                                                     <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
 
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); confirmDelete(reservation.id); }}
+                                                        onClick={(e) => { e.stopPropagation(); confirmDelete(reservation.id, reservation.is_manual_block); }}
                                                         className="w-full text-left px-3 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg flex items-center gap-2 transition-colors"
                                                     >
                                                         <Trash2 className="size-4" />
@@ -566,7 +701,7 @@ export default function AdminReservationsPage() {
                                         )}
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                 </div>

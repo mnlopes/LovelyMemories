@@ -132,18 +132,27 @@
             "reservedAt": "Reservado em",
             "to": "até",
             "noContact": "Sem info de contacto",
-            "new": "Nova"
+            "new": "Nova",
+            "ownerBooking": "Res. Proprietário",
+            "tabUpcoming": "Próximas",
+            "tabCompleted": "Concluídas",
+            "tabCanceled": "Canceladas",
+            "tabAll": "Todas",
+            "tabOwners": "Proprietários"
         },
         "status": {
             "pending": "Pendente",
             "confirmed": "Confirmada",
-            "cancelled": "Cancelada"
+            "cancelled": "Cancelada",
+            "completed": "Concluída",
+            "owner_block": "Bloq. Proprietário"
         },
         "actions": {
             "viewHistory": "Ver Histórico",
-            "approve": "Aprovar Reserva",
-            "reject": "Rejeitar Reserva",
-            "delete": "Eliminar Reserva"
+            "approve": "Confirmar",
+            "reject": "Rejeitar",
+            "delete": "Eliminar",
+            "finishBooking": "Terminar"
         },
         "modals": {
             "deleteTitle": "Eliminar Reserva?",
@@ -152,9 +161,10 @@
             "deleting": "A eliminar...",
             "removing": "A remover reserva...",
             "deletedTitle": "Reserva Eliminada",
-            "deletedMessage": "A reserva foi removida com sucesso.",
+            "deletedMessage": "A reserva foi removida permanentemente.",
+            "errorDeleting": "Erro a Eliminar",
+            "finishMessage": "Tem certeza que deseja terminar esta reserva hoje? Isto libertará o calendário para os próximos dias.",
             "done": "Concluído",
-            "errorDeleting": "Erro ao Eliminar",
             "approveTitle": "Aprovar Reserva?",
             "rejectTitle": "Rejeitar Reserva?",
             "approveMessage": "Tem a certeza que deseja aprovar esta reserva e confirmar o pagamento?",
@@ -1582,7 +1592,10 @@
             "add": "Adicionar",
             "stayHours": "Horário de Estadia",
             "checkInAfter": "Check-in Após",
-            "checkOutBefore": "Check-out Antes"
+            "checkOutBefore": "Check-out Antes",
+            "belongsToBuilding": "Esta unidade pertence a um Edifício",
+            "partOf": "Parte de:",
+            "viewBuilding": "Ver Edifício"
         },
         "units": {
             "maxGuests": "Hóspedes Máx.",
@@ -1742,7 +1755,9 @@
             "slugRequired": "O Slug é obrigatório para pré-visualizar a página.",
             "comingSoon": "Brevemente: Editor de {tab}",
             "nextUpdate": "Este módulo fará parte da próxima atualização.",
-            "auditLog": "Registo de Auditoria"
+            "auditLog": "Registo de Auditoria",
+            "saveFirstTitle": "Guarde o Edifício Primeiro",
+            "saveFirstDesc": "Antes de poder visualizar ou adicionar unidades a este edifício, por favor preencha as informações básicas e guarde."
         },
         "magicTranslate": {
             "view": "Ver:",
