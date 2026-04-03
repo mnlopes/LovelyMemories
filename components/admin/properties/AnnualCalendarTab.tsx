@@ -679,8 +679,8 @@ const getEffectiveStatus = (status: string, checkIn: string | Date, checkOut: st
     const end = startOfDay(new Date(checkOut));
     
     if (status === "confirmed") {
-        if (end < today) return "completed";
-        if (start <= today) return "checked-in";
+        if (today.getTime() >= end.getTime()) return "completed";
+        if (today.getTime() >= start.getTime()) return "checked-in";
     }
     return status;
 };
