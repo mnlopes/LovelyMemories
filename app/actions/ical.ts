@@ -206,18 +206,27 @@ export async function syncAllPropertiesICal() {
             return { success: false, error: error?.message || 'No active properties found' };
         }
 
-        let totalNew = 0;
+        let totalNewEvents = 0;
         let results = [];
+        let failures = [];
 
         for (const prop of properties) {
             const res = await syncPropertyICal(prop.id);
             if (res.success) {
-                totalNew += (res.newEvents || 0);
+                totalNewEvents += (res.newEvents || 0);
+            } else {
+                failures.push({ id: prop.id, title: prop.title, error: (res as any).error });
             }
             results.push({ id: prop.id, title: prop.title, ...res });
         }
 
-        return { success: true, totalNew, results };
+        return { 
+            success: true, 
+            totalNewEvents, 
+            propertiesSynced: properties.length - failures.length,
+            failures,
+            results 
+        };
     } catch (e: any) {
         console.error('Global sync error:', e);
         return { success: false, error: e.message };
