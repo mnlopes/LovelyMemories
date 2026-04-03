@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Search, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown, Check, Ban } from "lucide-react";
+import { Calendar, Search, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown, Check, Ban, Globe } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -107,7 +107,7 @@ export default function AdminReservationsPage() {
                 .order('created_at', { ascending: false }),
             supabase
                 .from('properties')
-                .select('id, title, subtitle, images, city, address, bedrooms, bathrooms, max_guests'),
+                .select('id, title, subtitle, images, city, address, bedrooms, bathrooms, max_guests, is_multi_unit'),
             supabase
                 .from('blocked_dates')
                 .select('*')
@@ -167,20 +167,24 @@ export default function AdminReservationsPage() {
             properties: (propertiesResult.data || []).find((p: any) => p.id === res.property_id) || res.properties
         }));
 
-        const enhancedBlockedDates = (blockedDatesResult.data || []).map((bd: any) => ({
-            id: `block-${bd.id}`,
-            original_id: bd.id,
-            is_manual_block: true,
-            property_id: bd.property_id,
-            property_name: newPropertiesMap[bd.property_id]?.title || 'Unknown Property',
-            guest_name: t('table.ownerBooking'),
-            reason: bd.reason,
-            check_in: bd.start_date,
-            check_out: bd.end_date,
-            created_at: bd.created_at || bd.start_date,
-            status: 'owner_block',
-            properties: (propertiesResult.data || []).find((p: any) => p.id === bd.property_id)
-        }));
+        const enhancedBlockedDates = (blockedDatesResult.data || []).map((bd: any) => {
+            const isAirbnb = bd.source === 'airbnb_booking';
+            return {
+                id: `block-${bd.id}`,
+                original_id: bd.id,
+                is_manual_block: !isAirbnb,
+                is_airbnb: isAirbnb,
+                property_id: bd.property_id,
+                property_name: newPropertiesMap[bd.property_id]?.title || 'Unknown Property',
+                guest_name: isAirbnb ? 'Airbnb' : t('table.ownerBooking'),
+                reason: bd.reason,
+                check_in: bd.start_date,
+                check_out: bd.end_date,
+                created_at: bd.created_at || bd.start_date,
+                status: isAirbnb ? 'airbnb' : 'owner_block',
+                properties: (propertiesResult.data || []).find((p: any) => p.id === bd.property_id)
+            };
+        });
 
         setReservations([...enhancedReservations, ...enhancedBlockedDates].sort((a, b) => {
             const dateA = new Date(a.created_at).getTime();
@@ -366,9 +370,9 @@ export default function AdminReservationsPage() {
         const resCheckOutDate = startOfDay(new Date(res.check_out));
 
         if (activeTab === 'upcoming') {
-            matchesTab = res.status !== 'cancelled' && res.status !== 'completed' && resCheckOutDate.getTime() > today.getTime() && !res.is_manual_block;
+            matchesTab = res.status !== 'cancelled' && res.status !== 'completed' && res.status !== 'checked-out' && resCheckOutDate.getTime() > today.getTime() && !res.is_manual_block;
         } else if (activeTab === 'completed') {
-            matchesTab = res.status !== 'cancelled' && (res.status === 'completed' || resCheckOutDate.getTime() <= today.getTime()) && !res.is_manual_block;
+            matchesTab = res.status !== 'cancelled' && (res.status === 'completed' || res.status === 'checked-out' || resCheckOutDate.getTime() <= today.getTime()) && !res.is_manual_block;
         } else if (activeTab === 'canceled') {
             matchesTab = res.status === 'cancelled' && !res.is_manual_block;
         } else if (activeTab === 'owners') {
@@ -551,7 +555,13 @@ export default function AdminReservationsPage() {
                                                     {reservation.is_manual_block && (
                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 uppercase tracking-wide">{t('table.ownerBooking')}</span>
                                                     )}
-                                                    {isNew(reservation.created_at) && !reservation.is_manual_block && (
+                                                    {reservation.is_airbnb && (
+                                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 uppercase tracking-wide">
+                                                            <Globe className="size-2.5" />
+                                                            Airbnb
+                                                        </div>
+                                                    )}
+                                                    {isNew(reservation.created_at) && !reservation.is_manual_block && !reservation.is_airbnb && (
                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 uppercase tracking-wide">{t('table.new')}</span>
                                                     )}
                                                 </div>
@@ -609,13 +619,15 @@ export default function AdminReservationsPage() {
                                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                                             effectiveStatus === 'confirmed'
                                                 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/30'
-                                                : effectiveStatus === 'completed'
-                                                    ? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/20'
-                                                    : effectiveStatus === 'pending'
-                                                        ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
-                                                        : effectiveStatus === 'owner_block'
-                                                            ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/30'
-                                                            : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
+                                                : effectiveStatus === 'checked-in'
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/30'
+                                                    : effectiveStatus === 'completed' || effectiveStatus === 'checked-out'
+                                                        ? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/20'
+                                                        : effectiveStatus === 'pending'
+                                                            ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
+                                                            : effectiveStatus === 'owner_block'
+                                                                ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/30'
+                                                                : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
                                             }`}>
                                             {effectiveStatus ? t(`status.${effectiveStatus}`) : t('status.pending')}
                                         </span>

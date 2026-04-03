@@ -3,95 +3,6 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Plus, Trash2, ListFilter, Sparkles, ChefHat, Car, Map, Utensils, ChevronDown, Wine, Music, Waves, ShieldCheck, Ticket, Plane, Calendar, GlassWater } from "lucide-react";
-import { PropertyFormData } from "./PropertyFormSchema";
-import { useState } from "react";
-
-const SUGGESTED_CATEGORIES = [
-    "Bedroom & Laundry",
-    "Entertainment",
-    "Heating and Cooling",
-    "Internet and Office",
-    "Kitchen and Dining",
-    "Bathroom",
-    "Location Features",
-    "Outdoor",
-    "Safety"
-];
-
-const CATEGORY_TRANSLATIONS: Record<string, Record<string, string>> = {
-    "Bedroom & Laundry": { en: "Bedroom & Laundry", pt: "Quarto e Lavandaria" },
-    "Entertainment": { en: "Entertainment", pt: "Entretenimento" },
-    "Heating and Cooling": { en: "Heating and Cooling", pt: "Climatização" },
-    "Internet and Office": { en: "Internet and Office", pt: "Internet e Escritório" },
-    "Kitchen and Dining": { en: "Kitchen and Dining", pt: "Cozinha e Área de Jantar" },
-    "Bathroom": { en: "Bathroom", pt: "Casa de Banho" },
-    "Location Features": { en: "Location Features", pt: "Localização" },
-    "Outdoor": { en: "Outdoor", pt: "Exterior" },
-    "Safety": { en: "Safety", pt: "Segurança" }
-};
-
-const COMMON_ITEMS = {
-    "Bedroom & Laundry": ["Washing machine", "Iron", "Hangers", "Bed linens", "Extra pillows and blankets", "Room-darkening shades"],
-    "Entertainment": ["HDTV with Netflix", "Marshall Bluetooth sound system", "Books and reading material", "Standard cable"],
-    "Heating and Cooling": ["Air conditioning", "Central heating", "Portable fans"],
-    "Internet and Office": ["High-speed WiFi", "Dedicated workspace", "Ergonomic chair"],
-    "Kitchen and Dining": ["Fully equipped kitchen", "Nespresso machine", "Dishwasher", "Wine glasses", "Toaster", "Cooking basics"],
-    "Bathroom": ["Hair dryer", "Premium toiletries", "Hot water", "Walk-in shower", "Bathtub"],
-    "Outdoor": ["Pool", "Garden", "Private entrance", "Patio or balcony", "Outdoor furniture"],
-    "Location Features": ["River view", "Resort access", "Beach access", "City view"]
-};
-
-// Map item English keys to translations
-const ITEM_TRANSLATIONS: Record<string, Record<string, string>> = {
-    "Washing machine": { en: "Washing machine", pt: "Máquina de Lavar" },
-    "Iron": { en: "Iron", pt: "Ferro de Engomar" },
-    "Hangers": { en: "Hangers", pt: "Cabides" },
-    "Bed linens": { en: "Bed linens", pt: "Roupas de Cama" },
-    "Extra pillows and blankets": { en: "Extra pillows and blankets", pt: "Almofadas e Cobertores Extra" },
-    "Room-darkening shades": { en: "Room-darkening shades", pt: "Cortinas Opacas" },
-    "HDTV with Netflix": { en: "HDTV with Netflix", pt: "Smart TV / Netflix" },
-    "Marshall Bluetooth sound system": { en: "Marshall Bluetooth sound system", pt: "Sistema de Som Marshall" },
-    "Books and reading material": { en: "Books and reading material", pt: "Livros e Leitura" },
-    "Standard cable": { en: "Standard cable", pt: "Canais por Cabo" },
-    "Air conditioning": { en: "Air conditioning", pt: "Ar Condicionado" },
-    "Central heating": { en: "Central heating", pt: "Aquecimento Central" },
-    "Portable fans": { en: "Portable fans", pt: "Ventoinhas Portáteis" },
-    "High-speed WiFi": { en: "High-speed WiFi", pt: "Wi-Fi Rápido" },
-    "Dedicated workspace": { en: "Dedicated workspace", pt: "Área de Trabalho" },
-    "Ergonomic chair": { en: "Ergonomic chair", pt: "Cadeira Ergonómica" },
-    "Fully equipped kitchen": { en: "Fully equipped kitchen", pt: "Cozinha Completa" },
-    "Nespresso machine": { en: "Nespresso machine", pt: "Máquina Nespresso" },
-    "Dishwasher": { en: "Dishwasher", pt: "Máquina de Lavar Loiça" },
-    "Wine glasses": { en: "Wine glasses", pt: "Copos de Vinho" },
-    "Toaster": { en: "Toaster", pt: "Torradeira" },
-    "Cooking basics": { en: "Cooking basics", pt: "Básicos de Cozinha" },
-    "Hair dryer": { en: "Hair dryer", pt: "Secador de Cabelo" },
-    "Premium toiletries": { en: "Premium toiletries", pt: "Produtos de Banho Premium" },
-    "Hot water": { en: "Hot water", pt: "Água Quente" },
-    "Walk-in shower": { en: "Walk-in shower", pt: "Duche" },
-    "Bathtub": { en: "Bathtub", pt: "Banheira" },
-    "Pool": { en: "Pool", pt: "Piscina" },
-    "Garden": { en: "Garden", pt: "Jardim" },
-    "Private entrance": { en: "Private entrance", pt: "Entrada Privada" },
-    "Patio or balcony": { en: "Patio or balcony", pt: "Pátio ou Varanda" },
-    "Outdoor furniture": { en: "Outdoor furniture", pt: "Mobiliário de Exterior" },
-    "River view": { en: "River view", pt: "Vista de Rio" },
-    "Resort access": { en: "Resort access", pt: "Acesso ao Resort" },
-    "Beach access": { en: "Beach access", pt: "Acesso à Praia" },
-    "City view": { en: "City view", pt: "Vista da Cidade" }
-};
-
-
-const AVAILABLE_ICONS = [
-    { label: "Heating/Cooling", value: "/icons/heating_navy.png" },
-    { label: "Entertainment", value: "/icons/entertainment_navy.png" },
-    { label: "Outdoor", value: "/icons/outdoor_navy.png" },
-    { label: "Parking", value: "/icons/parking_navy.png" },
-    { label: "Bedroom/Laundry", value: "/icons/bedroom_navy.png" },
-    { label: "Internet/Office", value: "/icons/internet_navy.png" },
-    { label: "Kitchen", value: "/icons/kitchen_navy.png" },
-    { label: "Bathroom", value: "/icons/bathroom_navy.png" },
-];
 
 const VIP_ICONS = [
     { label: "Concierge", value: "Sparkles", icon: Sparkles },
@@ -124,18 +35,17 @@ const VIP_TRANSLATIONS: Record<string, Record<string, string>> = {
     "Tickets": { en: "Event Tickets", pt: "Bilhetes para Eventos" },
     "Calendar": { en: "Planning", pt: "Planeamento" }
 };
+import { PropertyFormData } from "./PropertyFormSchema";
+import { useState } from "react";
 
-const DEFAULT_ICONS: Record<string, string> = {
-    "Bedroom & Laundry": "/icons/bedroom_navy.png",
-    "Entertainment": "/icons/entertainment_navy.png",
-    "Heating and Cooling": "/icons/heating_navy.png",
-    "Internet and Office": "/icons/internet_navy.png",
-    "Kitchen and Dining": "/icons/kitchen_navy.png",
-    "Bathroom": "/icons/bathroom_navy.png",
-    "Outdoor": "/icons/outdoor_navy.png",
-    "Location Features": "/icons/outdoor_navy.png",
-    "Safety": "/icons/parking_navy.png"
-};
+import { 
+    SUGGESTED_CATEGORIES, 
+    CATEGORY_TRANSLATIONS, 
+    COMMON_ITEMS, 
+    ITEM_TRANSLATIONS, 
+    AVAILABLE_ICONS, 
+    DEFAULT_ICONS 
+} from "@/lib/amenityConstants";
 
 interface AmenitiesTabProps {
     activeLang: string;

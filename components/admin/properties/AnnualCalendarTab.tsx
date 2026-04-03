@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import {
     format, startOfYear, endOfYear, eachMonthOfInterval, getDay,
     getDaysInMonth, isToday, startOfDay, addMonths, subMonths,
     getMonth, getYear, isSameDay, differenceInCalendarDays
 } from "date-fns";
 import { pt, enUS } from "date-fns/locale";
-import { Loader2, ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Globe, Ban } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface AnnualCalendarTabProps {
@@ -35,6 +36,7 @@ interface Bar {
     containsToday: boolean;
     stackIndex: number;
     status: string;
+    type: "reservation" | "block" | "airbnb";
 }
 
 export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: AnnualCalendarTabProps) {
@@ -62,7 +64,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                 .select("id, check_in, check_out, status, guest_name, total_price")
                 .eq("property_id", propertyId)
                 .neq("status", "cancelled"),
-            supabase.from("blocked_dates").select("id, start_date, end_date").eq("property_id", propertyId),
+            supabase.from("blocked_dates").select("id, start_date, end_date, source, reason").eq("property_id", propertyId),
             supabase.from("properties").select("price_per_night").eq("id", propertyId).single(),
         ]).then(([resResult, blockResult, propResult]) => {
             if (!resResult.error) setReservations(resResult.data || []);
@@ -82,15 +84,37 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
     // Only actual guest reservations (excludes blocked_dates) — used for annual mini-month bars
     const isDateReserved = (date: Date) => {
         const d = startOfDay(date);
-        return reservations.some(r => d >= startOfDay(new Date(r.check_in)) && d < startOfDay(new Date(r.check_out)));
+        
+        // 1. Check reservations
+        const res = reservations.find(r => {
+            const start = startOfDay(new Date(r.check_in));
+            const end = startOfDay(new Date(r.check_out));
+            return d >= start && d < end && r.status !== 'cancelled';
+        });
+        if (res) return { type: "reservation", status: res.status, checkIn: res.check_in, checkOut: res.check_out };
+        
+        // 2. Check blocks
+        const block = blockedDates.find(b => {
+            const start = startOfDay(new Date(b.start_date));
+            const end = startOfDay(new Date(b.end_date));
+            return d >= start && d < end;
+        });
+        if (block) return { 
+            type: block.source === "airbnb_booking" ? "airbnb" : "block", 
+            status: "blocked", 
+            checkIn: block.start_date,
+            checkOut: block.end_date 
+        };
+        
+        return null;
     };
 
     const getMonthSegments = (year: number, month: number) => {
-        const segments: { start: number; end: number; startRow: number; startCol: number }[] = [];
+        const segments: { start: number; end: number; startRow: number; startCol: number; type: string; status: string; checkIn: string | Date; checkOut: string | Date }[] = [];
         const daysInMonth = getDaysInMonth(new Date(year, month));
         const firstDay = getDay(new Date(year, month, 1));
         const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-        let seg: { start: number; end: number; startRow: number; startCol: number } | null = null;
+        let seg: { start: number; end: number; startRow: number; startCol: number; type: string; status: string; checkIn: string | Date; checkOut: string | Date } | null = null;
 
         for (let day = 1; day <= daysInMonth; day++) {
             const reserved = isDateReserved(new Date(year, month, day));
@@ -98,8 +122,14 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
             const row = Math.floor(pos / 7);
             const col = pos % 7;
             if (reserved) {
-                if (!seg) seg = { start: day, end: day, startRow: row, startCol: col };
-                else if (col === 0) { segments.push({ ...seg }); seg = { start: day, end: day, startRow: row, startCol: col }; }
+                if (!seg || seg.type !== reserved.type) {
+                    if (seg) segments.push(seg);
+                    seg = { start: day, end: day, startRow: row, startCol: col, type: reserved.type, status: reserved.status, checkIn: reserved.checkIn, checkOut: reserved.checkOut };
+                }
+                else if (col === 0) { 
+                    segments.push({ ...seg }); 
+                    seg = { start: day, end: day, startRow: row, startCol: col, type: reserved.type, status: reserved.status, checkIn: reserved.checkIn, checkOut: reserved.checkOut }; 
+                }
                 else seg.end = day;
             } else {
                 if (seg) { segments.push({ ...seg }); seg = null; }
@@ -193,10 +223,60 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                     colStart: col,
                     colEnd,
                     isStart: isSameDay(rowStart, resStart),
-                    isEnd: isSameDay(rowEnd, new Date(resEnd.getTime() - 86400000)),
+                    isEnd: isSameDay(rowEnd, startOfDay(new Date(resEnd.getTime() - 24 * 60 * 60 * 1000))),
                     containsToday,
                     stackIndex: 0,
                     status: res.status || "confirmed",
+                    type: "reservation",
+                });
+
+                dayPointer = new Date(year, month, dayNum + extent + 1);
+            }
+        });
+
+        // Add blocks as bars
+        blockedDates.forEach((block) => {
+            const blockStart = startOfDay(new Date(block.start_date));
+            const blockEnd = startOfDay(new Date(block.end_date));
+            const monthStart = new Date(year, month, 1);
+            const monthEndExcl = new Date(year, month + 1, 1);
+
+            if (blockEnd <= monthStart || blockStart >= monthEndExcl) return;
+            if (!resOrder.includes(block.id)) resOrder.push(block.id);
+
+            const clampedStart = blockStart < monthStart ? monthStart : blockStart;
+            const clampedEnd = blockEnd > monthEndExcl ? monthEndExcl : blockEnd;
+            const nights = differenceInCalendarDays(blockEnd, blockStart);
+
+            let dayPointer = new Date(clampedStart);
+            while (dayPointer < clampedEnd) {
+                const dayNum = dayPointer.getDate();
+                const pos = startOffset + dayNum - 1;
+                const row = Math.floor(pos / 7);
+                const col = pos % 7;
+                const daysLeftInRow = 6 - col;
+                const daysLeftInSeg = Math.floor((clampedEnd.getTime() - dayPointer.getTime()) / 86400000) - 1;
+                const extent = Math.min(daysLeftInRow, daysLeftInSeg);
+                const colEnd = col + extent;
+                const rowStart = dayPointer;
+                const rowEnd = new Date(year, month, dayNum + extent);
+
+                bars.push({
+                    resId: block.id,
+                    guestName: block.reason || (block.source === "airbnb_booking" ? "Airbnb Reservation" : "Blocked"),
+                    totalPrice: null,
+                    checkIn: blockStart,
+                    checkOut: blockEnd,
+                    nights,
+                    row,
+                    colStart: col,
+                    colEnd,
+                    isStart: isSameDay(rowStart, blockStart),
+                    isEnd: isSameDay(rowEnd, startOfDay(new Date(blockEnd.getTime() - 24 * 60 * 60 * 1000))),
+                    containsToday: false,
+                    stackIndex: 0,
+                    status: "blocked",
+                    type: block.source === "airbnb_booking" ? "airbnb" : "block",
                 });
 
                 dayPointer = new Date(year, month, dayNum + extent + 1);
@@ -274,7 +354,6 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                 </div>
 
                 {/* Calendar rows */}
-                {/* Calendar rows */}
                 <div ref={scrollRef} className="flex-1 overflow-y-auto bg-white dark:bg-admin-dark-bg">
                     {Array.from({ length: totalRows }).map((_, rowIndex) => {
                         const rowBars = (rowBarGroups[rowIndex] || []);
@@ -308,7 +387,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                                                     {/* Date number */}
                                                     <span className={`w-6 h-6 flex items-center justify-center text-[11px] font-semibold rounded-full
                                                         ${isT
-                                                            ? "bg-[#222] dark:bg-white text-white dark:text-black"
+                                                            ? "bg-[#ff385c] dark:bg-[#ff385c] text-white"
                                                             : isWeekend
                                                                 ? "text-[#999] dark:text-admin-dark-text-secondary"
                                                                 : "text-[#222] dark:text-admin-dark-text-primary"
@@ -337,48 +416,69 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                                         const isActive = bar.containsToday;
                                         const showName = bar.isStart || bar.colStart === 0;
 
-                                        return (
-                                            <div
-                                                key={`bar-${bi}`}
-                                                className="absolute pointer-events-auto cursor-pointer group/bar transition-all duration-150 hover:brightness-90 active:scale-[0.99]"
-                                                style={{
-                                                    left: `calc(${leftPct}% + ${bar.isStart ? 5 : 0}px)`,
-                                                    width: `calc(${widthPct}% - ${(bar.isStart ? 5 : 0) + (bar.isEnd ? 5 : 0)}px)`,
-                                                    top: topPx,
-                                                    height: BAR_H,
-                                                    borderRadius: `${bar.isStart ? "14px" : "3px"} ${bar.isEnd ? "14px" : "3px"} ${bar.isEnd ? "14px" : "3px"} ${bar.isStart ? "14px" : "3px"}`,
-                                                    backgroundColor: isActive ? "#ff385c" : "#222222",
-                                                    zIndex: 5,
-                                                    boxShadow: isActive
-                                                        ? "0 2px 8px rgba(255,56,92,0.35)"
-                                                        : "0 1px 4px rgba(0,0,0,0.12)",
-                                                }}
-                                                onMouseEnter={(e) => handleBarMouseEnter(e, bar)}
-                                                onMouseMove={handleBarMouseMove}
-                                                onMouseLeave={handleBarMouseLeave}
-                                            >
-                                                {/* Name and Price container */}
-                                                <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between pointer-events-none overflow-hidden gap-2">
-                                                    {showName && (
-                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                            {/* Guest initial avatar */}
-                                                            <span className={`size-4 rounded-full flex-shrink-0 flex items-center justify-center text-[8px] font-bold border
-                                                                ${isActive ? "border-white/30 bg-white/20 text-white" : "border-white/20 bg-white/15 text-white"}`}>
-                                                                {bar.guestName.charAt(0).toUpperCase()}
+                                                        const isAirbnb = bar.type === "airbnb";
+                                                        const isBlock = bar.type === "block";
+
+                                                        return (
+                                                                <div
+                                                                    key={`bar-${bi}`}
+                                                                    className={cn(
+                                                                        "absolute pointer-events-auto cursor-pointer group/bar transition-all duration-150 hover:brightness-[1.02] active:scale-[0.99] border shadow-sm",
+                                                                        isAirbnb 
+                                                                            ? "border-rose-300/60 dark:border-rose-500/30" 
+                                                                            : isBlock 
+                                                                                ? "border-slate-300/60 dark:border-slate-600"
+                                                                                : "border-black/10 dark:border-white/10"
+                                                                    )}
+                                                                    style={{
+                                                                        left: `calc(${leftPct}% + ${bar.isStart ? 5 : 0}px)`,
+                                                                        width: `calc(${widthPct}% - ${(bar.isStart ? 5 : 0) + (bar.isEnd ? 5 : 0)}px)`,
+                                                                        top: topPx,
+                                                                        height: BAR_H,
+                                                                        borderRadius: `${bar.isStart ? "18px" : "0px"} ${bar.isEnd ? "18px" : "0px"} ${bar.isEnd ? "18px" : "0px"} ${bar.isStart ? "18px" : "0px"}`,
+                                                                        background: isAirbnb 
+                                                                            ? 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 6px, #ffe4e6 6px, #ffe4e6 12px)'
+                                                                            : isBlock
+                                                                                ? 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #f1f5f9 6px, #f1f5f9 12px)'
+                                                                                : getStatusColor(bar.status, bar.checkIn, bar.checkOut),
+                                                                        zIndex: 5,
+                                                                    }}
+                                                    onMouseEnter={(e) => handleBarMouseEnter(e, bar)}
+                                                    onMouseMove={handleBarMouseMove}
+                                                    onMouseLeave={handleBarMouseLeave}
+                                                >
+                                                    {/* Name and Price container */}
+                                                    <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between pointer-events-none overflow-hidden gap-2">
+                                                        {showName && (
+                                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                                {/* Icon or Initial */}
+                                                                {isAirbnb ? (
+                                                                    <div className="size-5 rounded-md bg-rose-500 flex items-center justify-center shrink-0 shadow-sm">
+                                                                        <Globe className="size-3 text-white" />
+                                                                    </div>
+                                                                ) : isBlock ? (
+                                                                    <Ban className="size-3.5 text-slate-500 shrink-0" />
+                                                                ) : (
+                                                                    <span className="size-4 rounded-full flex-shrink-0 flex items-center justify-center text-[8px] font-bold border border-white/20 bg-white/15 text-white">
+                                                                        {bar.guestName.charAt(0).toUpperCase()}
+                                                                    </span>
+                                                                )}
+                                                                <span className={cn(
+                                                                    "text-[10px] font-bold truncate leading-none",
+                                                                    isAirbnb ? "text-rose-800 dark:text-rose-200" : isBlock ? "text-slate-600 dark:text-slate-300" : "text-white"
+                                                                )}>
+                                                                    {isAirbnb ? "Airbnb" : bar.guestName}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {/* Price on last segment */}
+                                                        {bar.isEnd && bar.totalPrice && (
+                                                            <span className="text-[10px] font-bold text-white/90 shrink-0">
+                                                                €{bar.totalPrice.toLocaleString()}
                                                             </span>
-                                                            <span className="text-[11px] font-semibold text-white truncate leading-none">
-                                                                {bar.guestName}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {/* Price on last segment */}
-                                                    {bar.isEnd && bar.totalPrice && (
-                                                        <span className="text-[10px] font-bold text-white/90 shrink-0">
-                                                            €{bar.totalPrice.toLocaleString()}
-                                                        </span>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
                                         );
                                     })}
                                 </div>
@@ -395,6 +495,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                         pricePerNight={pricePerNight}
                         onMouseEnter={() => tooltipTimeoutRef.current && clearTimeout(tooltipTimeoutRef.current)}
                         onMouseLeave={() => setHoveredBar(null)}
+                        getStatusColor={getStatusColor}
                     />
                 )}
             </div>
@@ -502,14 +603,28 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                                                                 seg.end >= todayDate.getDate() &&
                                                                 monthIndex === todayDate.getMonth() &&
                                                                 year === todayDate.getFullYear();
+                                                            const reserved = isDateReserved(new Date(year, monthIndex, seg.start));
+                                                            const isAirbnb = reserved?.type === "airbnb";
+                                                            const isBlock = reserved?.type === "block";
+                                                            const color = isAirbnb 
+                                                                ? "bg-rose-400 dark:bg-rose-500" 
+                                                                : isBlock 
+                                                                    ? "bg-slate-300 dark:bg-slate-500" 
+                                                                    : "";
+                                                            const customBg = !isAirbnb && !isBlock ? getStatusColor(seg.status, seg.checkIn, seg.checkOut) : null;
+
                                                             return (
                                                                 <div
                                                                     key={`seg-${idx}`}
-                                                                    className={`absolute h-[7px] rounded-full z-10 ${containsToday ? "bg-[#ff385c]" : "bg-[#222] dark:bg-white/85"}`}
+                                                                    className={cn(
+                                                                        "absolute h-[6px] rounded-full z-10",
+                                                                        color
+                                                                    )}
                                                                     style={{
                                                                         top: seg.startRow * ROW_H + (ROW_H / 2) - 3.5,
                                                                         left: `calc(${leftPct}% + 2px)`,
                                                                         width: `calc(${widthPct}% - 4px)`,
+                                                                        backgroundColor: customBg || undefined
                                                                     }}
                                                                 />
                                                             );
@@ -558,6 +673,30 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
     );
 }
 
+const getEffectiveStatus = (status: string, checkIn: string | Date, checkOut: string | Date) => {
+    const today = startOfDay(new Date());
+    const start = startOfDay(new Date(checkIn));
+    const end = startOfDay(new Date(checkOut));
+    
+    if (status === "confirmed") {
+        if (end < today) return "completed";
+        if (start <= today) return "checked-in";
+    }
+    return status;
+};
+
+const getStatusColor = (status: string, checkIn: string | Date, checkOut: string | Date) => {
+    const effectiveStatus = getEffectiveStatus(status, checkIn, checkOut);
+    switch (effectiveStatus) {
+        case "checked-in": return "#3b82f6"; // Blue-500
+        case "confirmed": return "#10b981";  // Emerald-500
+        case "pending": return "#f59e0b";    // Amber-500
+        case "checked-out":
+        case "completed": return "#94a3b8";  // Slate-400
+        default: return "#171717";           // Black
+    }
+};
+
 // ─── Tooltip Component ────────────────────────────────────────────────────────
 function ReservationTooltip({
     bar,
@@ -571,8 +710,11 @@ function ReservationTooltip({
     pricePerNight: number | null;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
+    getStatusColor: (status: string, checkIn: string | Date, checkOut: string | Date) => string;
 }) {
-    const isActive = bar.containsToday;
+    const effectiveStatus = bar.type === "reservation" 
+        ? getEffectiveStatus(bar.status, bar.checkIn, bar.checkOut) 
+        : bar.status;
 
     const tooltipStyle: React.CSSProperties = {
         position: "fixed",
@@ -595,19 +737,25 @@ function ReservationTooltip({
             onMouseLeave={onMouseLeave}
         >
             {/* Color strip */}
-            <div className={`h-1.5 w-full ${isActive ? "bg-[#ff385c]" : "bg-[#222]"}`} />
+            <div className="h-1.5 w-full" style={{ 
+                backgroundColor: bar.type === "airbnb" ? "#f43f5e" : bar.type === "block" ? "#94a3b8" : getStatusColor(bar.status, bar.checkIn, bar.checkOut) 
+            }} />
 
             <div className="p-4 space-y-3">
                 {/* Guest */}
                 <div className="flex items-center gap-3">
-                    <div className={`size-10 rounded-full flex items-center justify-center text-white font-bold text-base flex-shrink-0 ${isActive ? "bg-[#ff385c]" : "bg-[#222]"}`}>
+                    <div className="size-10 rounded-full flex items-center justify-center text-white font-bold text-base flex-shrink-0" 
+                        style={{ backgroundColor: bar.type === "airbnb" ? "#f43f5e" : bar.type === "block" ? "#94a3b8" : getStatusColor(bar.status, bar.checkIn, bar.checkOut) }}>
                         {bar.guestName.charAt(0).toUpperCase()}
                     </div>
                     <div>
                         <p className="text-sm font-bold text-[#171717] dark:text-white leading-tight">{bar.guestName}</p>
                         <p className={`text-[10px] font-semibold mt-0.5 capitalize
-                            ${bar.status === "confirmed" ? "text-green-500" : bar.status === "pending" ? "text-amber-500" : "text-[#aaa]"}`}>
-                            {bar.status === "confirmed" ? "Confirmed" : bar.status === "pending" ? "Pending" : bar.status}
+                            ${effectiveStatus === "confirmed" ? "text-emerald-500" : 
+                              effectiveStatus === "checked-in" ? "text-blue-500" : 
+                              effectiveStatus === "pending" ? "text-amber-500" : 
+                              "text-slate-400"}`}>
+                            {effectiveStatus.replace("-", " ")}
                         </p>
                     </div>
                 </div>

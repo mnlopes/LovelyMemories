@@ -9,6 +9,9 @@ import { RecentActivityList } from "@/components/owner/RecentActivityList";
 import { Building2, TrendingUp, Users, Wallet } from "lucide-react";
 import { getOwnerDashboardStats } from "@/app/actions/owner-analytics";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function OwnerDashboard() {
     const cookieStore = await cookies();
 
@@ -26,16 +29,8 @@ export default async function OwnerDashboard() {
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Fetch Dashboard Stats (Unified Action: Real Data + Mock Fallback)
+    // Fetch Dashboard Stats (Unified Action: Real Data)
     const stats = await getOwnerDashboardStats();
-
-    // Mock Data for Activities (Keep for now until Activity Feed is ready)
-    const mockActivities = [
-        { id: '1', type: 'booking', title: 'New Booking', subtitle: 'Villa Marisol', date: 'Today, 09:41 AM', amount: '+ €1,250' },
-        { id: '2', type: 'check-in', title: 'Guest Check-in', subtitle: 'Ocean View Apt', date: 'Yesterday, 14:20 PM' },
-        { id: '3', type: 'maintenance', title: 'Maintenance Request', subtitle: 'Pool Cleaning', date: 'Oct 24, 2024' },
-        { id: '4', type: 'booking', title: 'New Booking', subtitle: 'Sunset Villa', date: 'Oct 22, 2024', amount: '+ €850' },
-    ] as any;
 
     // Fetch user profile for name
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
@@ -113,10 +108,8 @@ export default async function OwnerDashboard() {
 
             {/* Recent Activity Full Row */}
             <div className="grid grid-cols-1">
-                <RecentActivityList activities={mockActivities} />
+                <RecentActivityList activities={stats.recentActivity} />
             </div>
-
-            {/* Debug/Mock Indicator (Optional, handled silently for now as per "just verify" requirement) */}
         </div>
     );
 }

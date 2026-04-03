@@ -43,6 +43,12 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
     const t = useTranslations('PropertyEditor');
     const { control, register, watch, getValues, setValue } = useFormContext<PropertyFormData>();
 
+    // Home Truths Control
+    const { fields: truthFields, append: appendTruth, remove: removeTruth } = useFieldArray({
+        control,
+        name: "home_truths",
+    });
+
     // House Rules: Custom
     const { fields: customFields, append: appendCustom, remove: removeCustom } = useFieldArray({
         control,
@@ -115,6 +121,94 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                                 onRemove={() => removeCustom(index)}
                                 placeholder={t('policies.newRule')}
                             />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Stay Hours Section */}
+                <div className="bg-white dark:bg-admin-dark-surface rounded-[32px] border border-[#eaeaea] dark:border-admin-dark-border p-8 shadow-sm space-y-6 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-2xl bg-[#fafafa] dark:bg-admin-dark-bg flex items-center justify-center text-[#171717] dark:text-admin-dark-text-primary border border-[#f5f5f5] dark:border-admin-dark-border">
+                            <Clock className="size-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('policies.stayHours') || "Stay Hours"}</h3>
+                            <p className="text-xs text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">{t('policies.checkInOutDescription') || "Standard arrival and departure windows"}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider flex items-center gap-2">
+                                <Plus className="size-3 text-emerald-500 rotate-45" /> {t('policies.checkInAfter') || "Check-in after"}
+                            </label>
+                            <input
+                                {...register("check_in.arrivalStart")}
+                                placeholder="e.g. 15:00"
+                                className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm font-bold focus:border-[#171717] dark:focus:border-white outline-none transition-all"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider flex items-center gap-2">
+                                <Trash2 className="size-3 text-red-500" /> {t('policies.checkOutBefore') || "Check-out before"}
+                            </label>
+                            <input
+                                {...register("check_in.departureEnd")}
+                                placeholder="e.g. 11:00"
+                                className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm font-bold focus:border-[#171717] dark:focus:border-white outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Home Truths / Safety Section */}
+                <div className="bg-white dark:bg-admin-dark-surface rounded-[32px] border border-[#eaeaea] dark:border-admin-dark-border p-8 shadow-sm space-y-6 transition-colors">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-2xl bg-[#fafafa] dark:bg-admin-dark-bg flex items-center justify-center text-[#171717] dark:text-admin-dark-text-primary border border-[#f5f5f5] dark:border-admin-dark-border">
+                                <Info className="size-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('policies.homeTruths') || "Home Truths & Safety"}</h3>
+                                <p className="text-xs text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider font-bold">{t('policies.disclosures') || "Important safety information"}</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => appendTruth({ en: "", pt: "", he: "" })}
+                            className="p-2 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg hover:bg-black dark:hover:bg-gray-200 transition-all shadow-sm"
+                        >
+                            <Plus className="size-4" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-3">
+                        {truthFields.length === 0 && (
+                            <div className="py-8 text-center border-2 border-dashed border-[#f5f5f5] dark:border-admin-dark-border rounded-2xl">
+                                <Sparkles className="size-8 text-[#eaeaea] dark:text-admin-dark-bg mx-auto mb-2" />
+                                <p className="text-xs text-[#a3a3a3] font-medium">{t('policies.noTruths') || "No safety disclosures added yet."}</p>
+                            </div>
+                        )}
+                        {truthFields.map((field, index) => (
+                            <div key={field.id} className="flex items-start gap-3 p-4 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-2xl group transition-all">
+                                <div className="flex-1 space-y-1">
+                                    <label className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-wider">{t('policies.disclosure')} #{index + 1} ({activeLang.toUpperCase()})</label>
+                                    <textarea
+                                        {...register(`home_truths.${index}.${activeLang}` as any)}
+                                        rows={2}
+                                        dir={dir}
+                                        placeholder="e.g. Security cameras on property"
+                                        className="w-full bg-transparent border-none p-0 text-sm font-bold focus:ring-0 outline-none resize-none placeholder:text-[#a3a3a3]/50"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeTruth(index)}
+                                    className="p-1.5 text-[#a3a3a3] hover:text-red-500 hover:bg-red-50/50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                    <Trash2 className="size-4" />
+                                </button>
+                            </div>
                         ))}
                     </div>
                 </div>

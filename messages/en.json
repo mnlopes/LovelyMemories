@@ -64,8 +64,16 @@
     "AdminProperties": {
         "title": "Properties",
         "subtitle": "Manage your portfolio of {count} {count, plural, =1 {estate} other {estates}}",
+        "importAirbnb": "Import Airbnb",
+        "importAirbnbSubtitle": "Import property details from an Airbnb URL",
+        "importAirbnbPlaceholder": "Paste Airbnb Room URL...",
+        "importAirbnbScan": "Scan Listing",
+        "importAirbnbScanning": "Scanning...",
+        "importAirbnbSuccess": "Import Successful",
+        "importAirbnbError": "Import Failed",
         "addBuilding": "Add Building",
         "addProperty": "Add Property",
+        "subtitle_new": "Fill in the details to list a new Property.",
         "searchPlaceholder": "Search by name or location...",
         "buildingsOnly": "Buildings Only",
         "filters": "Filters",
@@ -145,7 +153,10 @@
             "confirmed": "Confirmed",
             "cancelled": "Cancelled",
             "completed": "Completed",
-            "owner_block": "Owner Block"
+            "checked-in": "Checked In",
+            "checked-out": "Checked Out",
+            "owner_block": "Owner Block",
+            "airbnb": "Airbnb"
         },
         "actions": {
             "viewHistory": "View History",
@@ -193,6 +204,7 @@
             "pax": "Pax",
             "legend": {
                 "confirmed": "Confirmed",
+                "checkedIn": "Checked In",
                 "pending": "Pending",
                 "blocked": "Blocked"
             }
@@ -228,7 +240,10 @@
             "cancelButton": "Cancel",
             "loading": "Loading...",
             "viewFullPage": "View Full Page",
-            "history": "History"
+            "history": "History",
+            "successApprove": "Reservation confirmed successfully!",
+            "successReject": "Reservation rejected successfully!",
+            "unexpectedError": "An unexpected error occurred."
         },
         "datePicker": {
             "pickRange": "Pick a date range",
@@ -1576,7 +1591,11 @@
             "typeLabel": "PROPERTY TYPE",
             "typePlaceholder": "Select property type...",
             "ownerLabel": "Owner",
+            "ownerChange": "Change Owner",
+            "ownerSearchPlaceholder": "Search by name or email...",
+            "ownerUnknown": "Not Assigned",
             "ownerPlaceholder": "Unknown Owner",
+            "ownerDesc": "Assign a specific owner to this property (optional).",
             "areaLabel": "Area (m²)",
             "titleLabel": "TITLE ({lang})",
             "subtitleLabel": "SUBTITLE ({lang})",
@@ -1599,7 +1618,12 @@
             "checkOutBefore": "Check-out Before",
             "belongsToBuilding": "This unit belongs to a Building",
             "partOf": "Part of:",
-            "viewBuilding": "View Building"
+            "viewBuilding": "View Building",
+            "common": {
+                "cancel": "Cancel",
+                "save": "Save",
+                "close": "Close"
+            }
         },
         "units": {
             "maxGuests": "Max Guests",
@@ -1814,6 +1838,14 @@
                 "smokingAllowed": "Smoking Allowed"
             },
             "checkInOut": "Check-in & Check-out",
+            "stayHours": "Stay Hours",
+            "checkInOutDescription": "Standard arrival and departure windows",
+            "checkInAfter": "Check-in After",
+            "checkOutBefore": "Check-out Before",
+            "homeTruths": "Home Truths & Safety",
+            "disclosures": "Important safety information",
+            "noTruths": "No safety disclosures added yet.",
+            "disclosure": "Disclosure",
             "cancellationTitle": "Cancellation Policy"
         },
         "pricing": {

@@ -2,11 +2,14 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, MoreHorizontal, Search, Filter, Building2, Home, Trash2, Eye, EyeOff, CalendarDays, X } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Building2, Home, Trash2, Eye, EyeOff, CalendarDays, X, RefreshCw, AlertCircle, Globe } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import AnnualCalendarTab from "@/components/admin/properties/AnnualCalendarTab";
+import { syncPropertyICal } from "@/app/actions/ical";
+import { toast } from "sonner";
+import ImportAirbnbModal from "@/components/admin/properties/ImportAirbnbModal";
 
 export default function AdminProperties() {
     const params = useParams();
@@ -19,8 +22,12 @@ export default function AdminProperties() {
     // Search & Filter
     const [searchQuery, setSearchQuery] = useState("");
     const [showBuildingsOnly, setShowBuildingsOnly] = useState(false);
+    
+    // Sync UI State
+    const [isSyncing, setIsSyncing] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [calendarPropertyId, setCalendarPropertyId] = useState<string | null>(null);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     // Modal State
     const [modalConfig, setModalConfig] = useState<{
@@ -63,6 +70,22 @@ export default function AdminProperties() {
             setIsLoading(false);
         }
         fetchData();
+
+        // Background Polling for sync statuses (every 60 seconds)
+        const pollInterval = setInterval(async () => {
+            const { data } = await supabase
+                .from('properties')
+                .select('id, last_sync_at, sync_status, last_sync_error');
+            
+            if (data) {
+                setProperties(prev => prev.map(p => {
+                    const update = data.find(d => d.id === p.id);
+                    return update ? { ...p, ...update } : p;
+                }));
+            }
+        }, 60000); // 1 minute
+
+        return () => clearInterval(pollInterval);
     }, []);
 
     // Close menu on outside click
@@ -159,6 +182,57 @@ export default function AdminProperties() {
         }
     };
 
+    const handleForceSync = async (e: React.MouseEvent, propertyId: string, propertyName: string) => {
+        e.stopPropagation();
+        setIsSyncing(propertyId);
+        
+        try {
+            const res = await syncPropertyICal(propertyId);
+            
+            // Re-fetch property to get updated sync status
+            const { data: updatedProp } = await supabase
+                .from('properties')
+                .select('last_sync_at, sync_status, last_sync_error')
+                .eq('id', propertyId)
+                .single();
+            
+            if (updatedProp) {
+                setProperties(prev => prev.map(p => p.id === propertyId ? { ...p, ...updatedProp } : p));
+            }
+
+            if (res.success) {
+                if (res.newEvents && res.newEvents > 0) {
+                    toast.success(`Synched! ${res.newEvents} new block(s) imported for ${propertyName}.`);
+                } else if (res.totalFound === 0) {
+                    toast.warning(`No dates found in the Airbnb file for ${propertyName}.`);
+                } else {
+                    toast.success(`Synched! Found ${res.totalFound} events, but all are already imported for ${propertyName}.`);
+                }
+            } else {
+                toast.error(`Sync failed: ${res.error}`);
+            }
+        } catch (error) {
+            toast.error("An unexpected error occurred during sync.");
+        } finally {
+            setIsSyncing(null);
+        }
+    };
+
+    const formatRelativeTime = (dateStr: string | null) => {
+        if (!dateStr) return 'Never';
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    };
+
+    // Global Sync Check
+    const failedSyncCount = properties.filter(p => p.sync_status === 'failed' && p.is_active).length;
+
     // Filter Logic
     const filteredProperties = properties.filter(property => {
         const title = property.title?.[locale] || property.title?.en || 'Untitled';
@@ -173,6 +247,31 @@ export default function AdminProperties() {
 
     return (
         <div className="space-y-10 pb-20">
+            {/* Global Sync Warning */}
+            {failedSyncCount > 0 && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400">
+                            <AlertCircle className="size-5" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-red-800 dark:text-red-200">
+                                {failedSyncCount === 1 ? 'One property failed to sync' : `${failedSyncCount} properties failed to sync`}
+                            </p>
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                                Please check your iCal connections to ensure all calendars are up to date.
+                            </p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-red-600/20"
+                    >
+                        Retry All
+                    </button>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex justify-between items-end">
                 <div>
@@ -180,6 +279,14 @@ export default function AdminProperties() {
                     <p className="text-[#a3a3a3] mt-2 font-medium">{t('subtitle', { count: properties.length })}</p>
                 </div>
                 <div className="flex gap-3">
+                    <button
+                        onClick={() => setIsImportModalOpen(true)}
+                        className="px-5 py-2.5 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded text-sm font-semibold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2"
+                        title="Import from Airbnb"
+                    >
+                        <Globe className="size-4 text-[#a3a3a3]" />
+                        <span className="hidden sm:inline">Import Airbnb</span>
+                    </button>
                     <button
                         onClick={() => window.location.href = `/${locale}/admin/properties/new?mode=building`}
                         className="px-5 py-2.5 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded text-sm font-semibold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2"
@@ -302,17 +409,43 @@ export default function AdminProperties() {
                                     </td>
                                     <td className="px-8 py-6 text-right relative flex items-center justify-end gap-1">
                                         {!property.is_multi_unit && (
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setCalendarPropertyId(property.id);
-                                                }}
-                                                className="text-[#a3a3a3] hover:text-blue-500 dark:hover:text-blue-400 transition-all p-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl"
-                                                title="View Calendar"
-                                            >
-                                                <CalendarDays className="size-5" />
-                                            </button>
+                                            <>
+                                                <div className="group/sync relative flex items-center justify-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleForceSync(e, property.id, title)}
+                                                        disabled={isSyncing === property.id}
+                                                        className={`transition-all p-2 rounded-xl disabled:opacity-50 relative
+                                                            ${property.sync_status === 'failed' 
+                                                                ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30' 
+                                                                : 'text-[#a3a3a3] hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'}
+                                                        `}
+                                                        title={property.sync_status === 'failed' ? `CRITICAL ERROR: ${property.last_sync_error || 'Check iCal URL'}` : "Force Sync iCal"}
+                                                    >
+                                                        <RefreshCw className={`size-5 ${isSyncing === property.id ? 'animate-spin text-emerald-500' : property.sync_status === 'failed' ? 'text-rose-600' : ''}`} />
+                                                        {property.sync_status === 'failed' && (
+                                                            <span className="absolute -top-0.5 -right-0.5 size-3 bg-rose-600 rounded-full border-2 border-white dark:border-admin-dark-bg animate-pulse shadow-sm"></span>
+                                                        )}
+                                                    </button>
+                                                    
+                                                    {/* Relative time indicator (Discreet text below) */}
+                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover/sync:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap text-[9px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary">
+                                                        {formatRelativeTime(property.last_sync_at)}
+                                                        {property.sync_status === 'failed' && <span className="ml-1 text-rose-500 uppercase"> - Failed</span>}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setCalendarPropertyId(property.id);
+                                                    }}
+                                                    className="text-[#a3a3a3] hover:text-blue-500 dark:hover:text-blue-400 transition-all p-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl"
+                                                    title="View Calendar"
+                                                >
+                                                    <CalendarDays className="size-5" />
+                                                </button>
+                                            </>
                                         )}
                                         <button
                                             id={`menu-trigger-${property.id}`}
@@ -427,6 +560,11 @@ export default function AdminProperties() {
                     </div>
                 </div>
             )}
+            {/* Modals */}
+            <ImportAirbnbModal 
+                isOpen={isImportModalOpen} 
+                onClose={() => setIsImportModalOpen(false)} 
+            />
         </div>
     );
 }

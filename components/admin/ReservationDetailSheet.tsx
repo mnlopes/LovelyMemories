@@ -1,9 +1,9 @@
 "use client";
 
-import { X, User, Home, Calendar, Phone, Mail, Clock, CreditCard, Receipt, ExternalLink, FileText, Printer, ChevronRight, Check, Ban, History } from "lucide-react";
+import { X, User, Home, Calendar, Phone, Mail, Clock, CreditCard, Receipt, ExternalLink, FileText, Printer, ChevronRight, Check, Ban, History, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useParams } from "next/navigation";
@@ -96,6 +96,15 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
         }).format(amount);
     };
 
+    const checkOutDate = new Date(reservation.check_out);
+    const today = startOfDay(new Date());
+
+    // Determine effective status purely for UI: if check out has passed and it was confirmed, it's completed (unless it's a block!)
+    let effectiveStatus = reservation.status;
+    if (!reservation.is_manual_block && reservation.status === 'confirmed' && startOfDay(checkOutDate).getTime() <= today.getTime()) {
+        effectiveStatus = 'completed';
+    }
+
     return (
         <AnimatePresence>
             <motion.div
@@ -131,21 +140,32 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                         ) : (
                             <>
                                 <div className="flex items-center gap-3">
-                                    <span className={cn(
-                                        "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border",
-                                        reservation.status === 'confirmed' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/30" :
-                                            reservation.status === 'pending' ? "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-100 dark:border-yellow-500/30" :
-                                                "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/30"
-                                    )}>
-                                        {reservation.status?.toUpperCase()}
-                                    </span>
+                                    {reservation.is_airbnb ? (
+                                        <span className="px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest border bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 flex items-center gap-1.5">
+                                            <Globe className="size-3" />
+                                            AIRBNB
+                                        </span>
+                                    ) : (
+                                        <span className={cn(
+                                            "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border",
+                                            effectiveStatus === 'confirmed' ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/30" :
+                                                effectiveStatus === 'checked-in' ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-500/30" :
+                                                    effectiveStatus === 'completed' || effectiveStatus === 'checked-out' ? "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/20" :
+                                                        effectiveStatus === 'pending' ? "bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-100 dark:border-yellow-500/30" :
+                                                            "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-500/30"
+                                        )}>
+                                            {String(effectiveStatus || 'pending').replace('_', ' ').toUpperCase()}
+                                        </span>
+                                    )}
                                     <span className={cn(
                                         "size-2 rounded-full shrink-0",
-                                        reservation.status === 'confirmed' ? "bg-emerald-500" :
-                                            reservation.status === 'pending' ? "bg-yellow-500" : "bg-rose-500"
+                                        effectiveStatus === 'confirmed' ? "bg-emerald-500" :
+                                            effectiveStatus === 'checked-in' ? "bg-blue-500" :
+                                                effectiveStatus === 'completed' || effectiveStatus === 'checked-out' ? "bg-gray-400" :
+                                                    effectiveStatus === 'pending' ? "bg-yellow-500" : "bg-rose-500"
                                     )} />
                                     <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
-                                        {reservation.guest_name}
+                                        {reservation.is_airbnb ? 'Airbnb Reservation' : reservation.guest_name}
                                     </h2>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

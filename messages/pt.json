@@ -64,8 +64,17 @@
     "AdminProperties": {
         "title": "Propriedades",
         "subtitle": "Faça a gestão do seu portfólio de {count} {count, plural, =1 {imóvel} other {imóveis}}",
+        "importAirbnb": "Importar Airbnb",
+        "importAirbnbSubtitle": "Importar detalhes da propriedade a partir de um URL Airbnb",
+        "importAirbnbPlaceholder": "Cole o URL do Quarto Airbnb...",
+        "importAirbnbScan": "Analisar Anúncio",
+        "importAirbnbScanning": "A analisar...",
+        "importAirbnbSuccess": "Importação efetuada com sucesso",
+        "importAirbnbError": "Falha na Importação",
+        "importAirbnbSelect": "Selecionar Airbnb",
         "addBuilding": "Adicionar Edifício",
         "addProperty": "Adicionar Propriedade",
+        "subtitle_new": "Preencha os detalhes para listar uma nova Propriedade.",
         "searchPlaceholder": "Pesquisar por nome ou localização...",
         "buildingsOnly": "Apenas Edifícios",
         "filters": "Filtros",
@@ -145,7 +154,10 @@
             "confirmed": "Confirmada",
             "cancelled": "Cancelada",
             "completed": "Concluída",
-            "owner_block": "Bloq. Proprietário"
+            "checked-in": "Check-in Feito",
+            "checked-out": "Check-out Feito",
+            "owner_block": "Bloq. Proprietário",
+            "airbnb": "Airbnb"
         },
         "actions": {
             "viewHistory": "Ver Histórico",
@@ -193,6 +205,7 @@
             "pax": "Pax",
             "legend": {
                 "confirmed": "Confirmado",
+                "checkedIn": "Check-In",
                 "pending": "Pendente",
                 "blocked": "Bloqueio"
             }
@@ -228,7 +241,10 @@
             "cancelButton": "Cancelar",
             "loading": "A carregar...",
             "viewFullPage": "Ver Página Completa",
-            "history": "Histórico"
+            "history": "Histórico",
+            "successApprove": "Reserva confirmada com sucesso!",
+            "successReject": "Reserva rejeitada com sucesso!",
+            "unexpectedError": "Ocorreu um erro inesperado."
         },
         "datePicker": {
             "pickRange": "Selecione um intervalo de datas",
@@ -1572,7 +1588,11 @@
             "typeLabel": "TIPO DE PROPRIEDADE",
             "typePlaceholder": "Selecione o tipo...",
             "ownerLabel": "Proprietário",
+            "ownerChange": "Alterar Proprietário",
+            "ownerSearchPlaceholder": "Pesquisar por nome ou email...",
+            "ownerUnknown": "Não Atribuído",
             "ownerPlaceholder": "Sem Proprietário",
+            "ownerDesc": "Atribua um proprietário específico a esta propriedade (opcional).",
             "areaLabel": "Área (m²)",
             "titleLabel": "TÍTULO ({lang})",
             "subtitleLabel": "SUBTÍTULO ({lang})",
@@ -1595,7 +1615,12 @@
             "checkOutBefore": "Check-out Antes",
             "belongsToBuilding": "Esta unidade pertence a um Edifício",
             "partOf": "Parte de:",
-            "viewBuilding": "Ver Edifício"
+            "viewBuilding": "Ver Edifício",
+            "common": {
+                "cancel": "Cancelar",
+                "save": "Gravar",
+                "close": "Fechar"
+            }
         },
         "units": {
             "maxGuests": "Hóspedes Máx.",
@@ -1810,6 +1835,14 @@
                 "smokingAllowed": "Fumar Permitido"
             },
             "checkInOut": "Check-in & Check-out",
+            "stayHours": "Horários de Estadia",
+            "checkInOutDescription": "Janelas padrão de chegada e partida",
+            "checkInAfter": "Check-in após",
+            "checkOutBefore": "Check-out antes",
+            "homeTruths": "Safety & Desclousures",
+            "disclosures": "Informações importantes de segurança",
+            "noTruths": "Nenhuma informação de segurança adicionada ainda.",
+            "disclosure": "Informação",
             "cancellationTitle": "Política de Cancelamento"
         },
         "pricing": {

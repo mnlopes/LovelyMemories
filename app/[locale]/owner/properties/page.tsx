@@ -30,67 +30,72 @@ export default async function OwnerPropertiesPage({
         .from('properties')
         .select(`
             *,
-            locations (*),
-            property_images (*)
+            locations (*)
         `)
         .eq('owner_id', user?.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-[#192537]">
+                    <h1 className="text-3xl font-bold font-playfair text-[#0A1128]">
                         My Properties
                     </h1>
-                    <p className="text-gray-500 mt-2">
+                    <p className="text-gray-500 font-light tracking-wide mt-2">
                         Manage and view details of your assigned properties.
                     </p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {properties?.map((property) => {
-                    const title = (property.title as any)?.en || property.slug;
-                    const image = property.property_images?.[0]?.url || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80';
-                    const city = property.locations?.name_en || property.city || 'Portugal';
+                    const title = (property.title as any)?.[locale] || (property.title as any)?.en || property.slug;
+                    
+                    // Priority: property.images JSONB array or fallback
+                    const propertyImages = Array.isArray(property.images) ? property.images : [];
+                    const image = propertyImages[0]?.url || propertyImages[0] || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80';
+                    
+                    const city = (property.locations as any)?.[`name_${locale}`] || (property.locations as any)?.name_en || property.city || 'Portugal';
 
                     return (
-                        <div key={property.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden group hover:shadow-lg transition-all duration-300">
-                            <div className="relative h-48 overflow-hidden">
+                        <div key={property.id} className="bg-white rounded-[32px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-500">
+                            <div className="relative aspect-[4/3] overflow-hidden">
                                 <img
                                     src={image}
                                     alt={title}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                 />
-                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-[#192537]">
-                                    {property.status === 'active' ? 'Active' : property.status}
+                                <div className="absolute top-5 right-5 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-[#0A1128] shadow-sm">
+                                    {property.status || 'Active'}
                                 </div>
                             </div>
 
-                            <div className="p-6">
-                                <h3 className="text-xl font-bold text-[#192537] mb-2 truncate" title={title}>
+                            <div className="p-8">
+                                <h3 className="text-2xl font-bold font-playfair text-[#0A1128] mb-3 truncate" title={title}>
                                     {title}
                                 </h3>
-                                <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
-                                    <MapPin className="size-4" />
-                                    {city}
+                                <div className="flex items-center gap-2.5 text-gray-500 text-sm mb-6">
+                                    <div className="size-6 rounded-full bg-gray-50 flex items-center justify-center text-[#C5A059]">
+                                        <MapPin className="size-3.5" />
+                                    </div>
+                                    <span className="font-medium">{city}</span>
                                 </div>
 
-                                <div className="flex items-center justify-between py-4 border-t border-gray-100">
-                                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                                        <div className="flex items-center gap-1.5" title="Guests">
-                                            <Users className="size-4" />
-                                            <span>{property.max_guests || 0}</span>
+                                <div className="flex items-center justify-between py-6 border-t border-gray-50">
+                                    <div className="flex items-center gap-6 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                                        <div className="flex items-center gap-2" title="Guests">
+                                            <Users className="size-4 text-[#0A1128]" />
+                                            <span className="text-[#0A1128]">{property.max_guests || 0}</span>
                                         </div>
-                                        <div className="flex items-center gap-1.5" title="Bedrooms">
-                                            <Bed className="size-4" />
-                                            <span>{property.bedrooms || 0}</span>
+                                        <div className="flex items-center gap-2" title="Bedrooms">
+                                            <Bed className="size-4 text-[#0A1128]" />
+                                            <span className="text-[#0A1128]">{property.bedrooms || 0}</span>
                                         </div>
-                                        <div className="flex items-center gap-1.5" title="Bathrooms">
-                                            <Bath className="size-4" />
-                                            <span>{property.bathrooms || 0}</span>
+                                        <div className="flex items-center gap-2" title="Bathrooms">
+                                            <Bath className="size-4 text-[#0A1128]" />
+                                            <span className="text-[#0A1128]">{property.bathrooms || 0}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -98,7 +103,7 @@ export default async function OwnerPropertiesPage({
                                 <Link
                                     href={`/properties/${property.slug}`}
                                     target="_blank"
-                                    className="flex items-center justify-between w-full p-4 bg-gray-50 rounded-xl text-sm font-bold text-[#192537] hover:bg-[#192537] hover:text-white transition-all group/btn"
+                                    className="flex items-center justify-between w-full px-6 py-4 bg-[#0A1128] rounded-2xl text-[11px] font-black text-white uppercase tracking-[0.2em] hover:bg-[#C5A059] transition-all transform active:scale-95 shadow-lg shadow-navy-100 group/btn"
                                 >
                                     View Live Page
                                     <ArrowRight className="size-4 group-hover/btn:translate-x-1 transition-transform" />

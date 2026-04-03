@@ -2,7 +2,7 @@
 
 import { useFormContext, useWatch, useFieldArray } from "react-hook-form";
 import { FormSelect } from "@/components/admin/ui/FormSelect";
-import { Building2, Home, Eye, EyeOff, Clock, Plus, Trash2, Info, Sparkles } from "lucide-react";
+import { Building2, Home, Eye, EyeOff, Clock, Plus, Trash2, User, ArrowRight } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { PropertyFormData } from "./PropertyFormSchema";
@@ -38,7 +38,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
     };
 
     // Home Truths Control
-    const { fields: truthFields, append: appendTruth, remove: removeTruth, update: updateTruth } = useFieldArray({
+    const { fields: truthFields, append: appendTruth, remove: removeTruth } = useFieldArray({
         control,
         name: "home_truths",
     });
@@ -57,6 +57,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
     const isMultiUnit = useWatch({ control, name: "is_multi_unit" });
     const parentId = useWatch({ control, name: "parent_id" });
     const status = useWatch({ control, name: "status" });
+    const ownerId = useWatch({ control, name: "owner_id" });
 
     const handleStatusCycle = () => {
         const states: PropertyFormData['status'][] = ['active', 'coming_soon', 'hidden'];
@@ -103,23 +104,18 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                 setParentOptions(data.map(p => {
                     const titleObj = p.title as any;
                     const label = titleObj?.[activeLang] || titleObj?.en || titleObj?.pt || p.slug || 'Untitled Building';
-                    return {
-                        label,
-                        value: p.id
-                    };
+                    return { label, value: p.id };
                 }));
             }
         }
         fetchBuildings();
     }, [activeLang]);
 
-    // Auto-slugify for new properties
+    // Auto-slugify
     const titleEn = (useWatch({ control, name: "title.en" as any }) || "") as string;
     useEffect(() => {
         const id = getValues("id" as any);
         const currentSlug = getValues("slug");
-        
-        // Only auto-slugify if it's a new property (no ID) and slug is empty
         if (!id && titleEn && (!currentSlug || currentSlug.trim() === "")) {
             const slugified = titleEn
                 .toLowerCase()
@@ -131,11 +127,9 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
         }
     }, [titleEn, setValue, getValues]);
 
-    // Clear parent_id if is_multi_unit is checked
+    // Clear parent_id if multi-unit
     useEffect(() => {
-        if (isMultiUnit) {
-            setValue('parent_id', null);
-        }
+        if (isMultiUnit) setValue('parent_id', null);
     }, [isMultiUnit, setValue]);
 
     // Fetch Owners
@@ -143,7 +137,6 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
     useEffect(() => {
         async function fetchOwners() {
             try {
-                // Import dynamically to avoid server-action issues if not yet compatible
                 const { getOwners } = await import('@/app/actions/user');
                 const data = await getOwners();
                 if (data) {
@@ -159,6 +152,8 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
         fetchOwners();
     }, []);
 
+    const selectedOwner = ownerOptions.find(o => o.value === ownerId);
+
     return (
         <div className="space-y-12 animate-in fade-in duration-500">
             {/* Hidden Fields */}
@@ -167,35 +162,32 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
             <input type="hidden" {...register("status")} />
 
             {/* Parent Building Banner */}
-            {!isMultiUnit && parentId && (
-                <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 -mb-4 transition-colors">
-                    <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
-                            <Building2 className="size-5" />
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-bold text-purple-900 dark:text-purple-100">
-                                {t('basic.belongsToBuilding', { fallback: 'This unit belongs to a Building' })}
-                            </h4>
-                            <p className="text-xs text-purple-700 dark:text-purple-300 font-medium mt-0.5">
-                                {t('basic.partOf', { fallback: 'Part of:' })} {parentOptions.find(o => o.value === parentId)?.label || '...'}
-                            </p>
-                        </div>
-                    </div>
-                    <Link
-                        href={`/admin/properties/${parentId}` as any}
-                        className="px-4 py-2 bg-purple-100 hover:bg-purple-200 dark:bg-purple-500/20 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shrink-0"
-                    >
-                        <Eye className="size-3.5" />
-                        {t('basic.viewBuilding', { fallback: 'View Building' })}
-                    </Link>
-                </div>
-            )}
+
 
             {/* Top Layout Grid: Identity & Description */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* Left Column: Identity */}
                 <div className="space-y-8">
+                    {!isMultiUnit && parentId && (
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-purple-50/40 dark:bg-purple-500/5 border border-purple-100/50 dark:border-purple-500/10 rounded-[18px] transition-all hover:bg-purple-100/50 dark:hover:bg-purple-500/10 group cursor-default">
+                            <div className="flex items-center gap-3">
+                                <div className="size-7 rounded-full bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0 shadow-sm border border-white dark:border-purple-500/20">
+                                    <Building2 className="size-3.5" />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-purple-900/40 dark:text-purple-100/40 uppercase tracking-[0.2em]">{t('basic.partOf', { fallback: 'Part of' })}</span>
+                                    <span className="text-[11px] font-bold text-purple-900 dark:text-purple-100 uppercase tracking-widest">{parentOptions.find(o => o.value === parentId)?.label || '...'}</span>
+                                </div>
+                            </div>
+                            <Link
+                                href={`/admin/properties/${parentId}` as any}
+                                className="px-3 py-1 bg-white dark:bg-purple-500/20 shadow-sm border border-purple-100 dark:border-purple-500/30 text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-[0.2em] rounded-full flex items-center gap-1.5 hover:scale-105 hover:bg-purple-600 hover:text-white dark:hover:bg-purple-500 transition-all active:scale-95"
+                            >
+                                {t('basic.viewBuilding', { fallback: 'View' })}
+                                <ArrowRight className="size-2.5" />
+                            </Link>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                         <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
                             {mode === 'building' ? t('types.building') : t('basic.identity')}
@@ -210,9 +202,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                 <statusConfig.icon className="size-3" />
                                 {statusConfig.label}
                             </button>
-
                             <div className="h-4 w-px bg-[#f5f5f5] dark:bg-admin-dark-border mx-1" />
-
                             <div className="flex items-center gap-2">
                                 {isMultiUnit ? (
                                     <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider border border-blue-100 dark:border-blue-500/20 flex items-center gap-1.5 transition-colors">
@@ -222,7 +212,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                 ) : parentId ? (
                                     <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 text-[10px] font-bold uppercase tracking-wider border border-purple-100 dark:border-purple-500/20 flex items-center gap-1.5 transition-colors">
                                         <Home className="size-3" />
-                                        {parentOptions.find(o => o.value === parentId)?.label || 'Unit'}
+                                        Unit
                                     </span>
                                 ) : (
                                     <span className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-admin-dark-bg text-gray-400 dark:text-admin-dark-text-secondary text-[10px] font-bold uppercase tracking-wider border border-gray-100 dark:border-admin-dark-border flex items-center gap-1.5 transition-colors">
@@ -230,6 +220,13 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                     </span>
                                 )}
                             </div>
+
+                            {selectedOwner && (
+                                <span className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-admin-dark-bg text-[#171717] dark:text-admin-dark-text-primary text-[10px] font-bold uppercase tracking-wider border border-gray-100 dark:border-admin-dark-border flex items-center gap-1.5 transition-all">
+                                    <User className="size-3" />
+                                    {t('basic.ownerLabel') || "Owner"}: {selectedOwner.label.split(' (')[0]}
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -273,23 +270,9 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                 />
                                 {errors.area && <p className="text-xs text-red-500 font-bold">{errors.area.message}</p>}
                             </div>
-                        </div>
 
-                        <div className="space-y-6 pt-2">
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
-                                    {t('basic.ownerLabel') || "Property Owner"}
-                                </label>
-                                <FormSelect
-                                    label={t('basic.ownerLabel')}
-                                    {...register("owner_id")}
-                                    placeholder={t('basic.ownerPlaceholder') || "Select an owner..."}
-                                    options={ownerOptions}
-                                />
-                                <p className="text-[10px] text-[#a3a3a3] font-medium">Assign a specific owner to this property (optional).</p>
-                            </div>
 
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 pt-4">
                                 <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
                                     {t('basic.titleLabel', { lang: activeLang.toUpperCase() })}
                                 </label>
@@ -347,13 +330,13 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                 </div>
             </div>
 
-            {/* Bottom Layout Grid: Highlights Intro & Highlights Manager */}
+            {/* Highlights Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 border-t border-[#f5f5f5] dark:border-admin-dark-border pt-12 transition-colors">
                 <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                         {mode === 'building' ? t('basic.identity') : t('basic.highlights')}
                     </h3>
-                    <div className="space-y-1.5 flex-1 flex flex-col">
+                    <div className="space-y-1.5 flex flex-col">
                         <label className="text-sm font-bold text-[#a3a3a3] uppercase tracking-wider">
                             {t('basic.highlightsIntroLabel', { lang: activeLang.toUpperCase() })}
                         </label>
@@ -363,22 +346,17 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                             dir={dir}
                             rows={8}
                             placeholder="..."
-                            className={`w-full flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                            className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:bg-white dark:focus:bg-admin-dark-surface focus:border-[#171717] dark:focus:border-white transition-all outline-none resize-none"
                         />
-                        <p className="text-[10px] text-[#a3a3a3] font-medium italic mt-2">Customizes the introduction text shown above the highlights carousel on the property page.</p>
                     </div>
                 </div>
-
-                <div className="space-y-6">
-                    <div className="pt-2">
-                        <HighlightsManager activeLang={activeLang} dir={dir} />
-                    </div>
+                <div className="space-y-6 pt-10">
+                    <HighlightsManager activeLang={activeLang} dir={dir} />
                 </div>
             </div>
 
-            {/* Good to Know & Stay Hours Grid */}
+            {/* Bottom Section: Rules & Hours */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 border-t border-[#f5f5f5] dark:border-admin-dark-border pt-12 transition-colors">
-                {/* Good to Know / Home Truths */}
                 <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                         {t('basic.goodToKnow')}
@@ -395,7 +373,6 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                     onChange={(e) => setNewTruth(e.target.value)}
                                     placeholder={`${t('basic.addTruth')} (${activeLang.toUpperCase()})`}
                                     className="flex-1 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-sm text-[#171717] dark:text-admin-dark-text-primary outline-none focus:border-[#171717] transition-all"
-
                                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTruth())}
                                 />
                                 <button
@@ -408,33 +385,28 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                                 </button>
                             </div>
                         </div>
-
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                            {truthFields.map((field, index) => {
-                                return (
-                                    <div key={field.id} className="group p-3 bg-[#fafafa] dark:bg-admin-dark-bg rounded-xl border border-transparent hover:border-[#f5f5f5] flex items-center gap-3 transition-all">
-                                        <div className="flex-1">
-                                            <input
-                                                key={`truth-${index}-${activeLang}`}
-                                                {...register(`home_truths.${index}.${activeLang}` as any)}
-                                                className="w-full bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeTruth(index)}
-                                            className="p-1.5 text-[#a3a3a3] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                        >
-                                            <Trash2 className="size-3.5" />
-                                        </button>
+                            {truthFields.map((field, index) => (
+                                <div key={field.id} className="group p-3 bg-[#fafafa] dark:bg-admin-dark-bg rounded-xl border border-transparent hover:border-[#f5f5f5] flex items-center gap-3 transition-all">
+                                    <div className="flex-1">
+                                        <input
+                                            {...register(`home_truths.${index}.${activeLang}` as any)}
+                                            className="w-full bg-transparent text-xs text-[#171717] dark:text-admin-dark-text-primary outline-none"
+                                        />
                                     </div>
-                                );
-                            })}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeTruth(index)}
+                                        className="p-1.5 text-[#a3a3a3] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                        <Trash2 className="size-3.5" />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Stay Hours */}
                 <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
                         {t('basic.stayHours')}

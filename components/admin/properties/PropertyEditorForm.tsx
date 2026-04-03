@@ -16,6 +16,7 @@ import HierarchyTab from "./HierarchyTab";
 import AmenitiesTab from "./AmenitiesTab";
 import PoliciesTab from "./PoliciesTab";
 import PricingAvailabilityTab from "./PricingAvailabilityTab";
+import SyncTab from "./SyncTab";
 import { upsertProperty } from "@/app/actions/property";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
@@ -137,6 +138,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
             is_multi_unit: initialData?.is_multi_unit ?? (mode === 'building'),
             parent_id: initialData?.parent_id ?? null,
             type: initialData?.type ?? 'apartment',
+            ical_import_urls: initialData?.ical_import_urls ?? [],
             
             // Extra Flags
             has_breakfast: initialData?.has_breakfast ?? false,
@@ -247,6 +249,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         { id: 'location', label: t('tabs.location') },
         { id: 'policies', label: t('tabs.policies'), hideForBuildings: true },
         { id: 'pricing', label: t('tabs.pricing'), hideForBuildings: true },
+        { id: 'sync', label: 'Sincronização', hideForBuildings: true },
         // Only show history if not creating new property
         ...(isEditing ? [{ id: 'history', label: t('tabs.history') }] : [])
     ].filter(tab => {
@@ -483,6 +486,8 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         )}
 
                         {activeTab === 'pricing' && <PricingAvailabilityTab />}
+                        
+                        {activeTab === 'sync' && <SyncTab propertyId={initialData?.id as string | undefined} />}
 
                         {activeTab === 'history' && initialData?.id && (
                             <div className="max-w-3xl">
@@ -495,7 +500,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             </div>
                         )}
 
-                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'pricing', 'history', 'hierarchy'].includes(activeTab) && (
+                        {!['basic', 'location', 'media', 'units', 'amenities', 'policies', 'pricing', 'history', 'hierarchy', 'sync'].includes(activeTab) && (
                             <div className="flex flex-col items-center justify-center h-64 text-[#a3a3a3]">
                                 <p className="text-lg font-bold dark:text-admin-dark-text-primary">
                                     {t('system.comingSoon', { tab: tabs.find(t => t.id === activeTab)?.label ?? "" })}

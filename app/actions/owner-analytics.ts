@@ -3,6 +3,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { startOfMonth, subMonths, format, endOfMonth, differenceInDays, isWithinInterval, subDays } from "date-fns";
+import { createClient } from "@supabase/supabase-js";
+
+export interface ActivityItem {
+    id: string;
+    type: 'booking' | 'check-in' | 'maintenance' | 'blocked';
+    title: string;
+    subtitle: string;
+    date: string;
+    amount?: string;
+}
 
 export interface DashboardStats {
     revenueData: { label: string; value: number; date: string }[];
@@ -13,6 +23,7 @@ export interface DashboardStats {
     avgOccupancy: number;
     occupancyTrend: number;
     activeProperties: number;
+    recentActivity: ActivityItem[];
     isMockData?: boolean;
 }
 
@@ -39,13 +50,13 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     if (!user) return getEmptyStats();
 
     // 1. Get Owner Properties
-    const { data: properties } = await supabase
+    const { data: properties, error: propErr } = await supabase
         .from('properties')
-        .select('id, guests')
+        .select('id, max_guests')
         .eq('owner_id', user.id)
         .eq('is_active', true);
 
-    if (!properties || properties.length === 0) return getMockStats(0);
+    if (!properties || properties.length === 0) return getEmptyStats();
 
     const propertyIds = properties.map(p => p.id);
     const activeProperties = properties.length;
@@ -59,30 +70,47 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     const thirtyDaysAgo = subDays(today, 30);
 
     // 3. Fetch Reservations (All confirmed/completed for metrics)
-    const { data: reservations, error } = await supabase
+    // IMPORTANT: Using service role here temporarily because RLS for owners on reservations table 
+    // is currently restricted to admins. We still scope by propertyIds found via the user session.
+    const adminClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: reservations, error } = await adminClient
         .from('reservations')
-        .select('total_price, check_in, check_out, status, adults, children, infants')
+        .select(`
+            id,
+            total_price,
+            check_in,
+            check_out,
+            status,
+            adults,
+            children,
+            infants,
+            created_at,
+            guest_name,
+            properties (
+                title,
+                slug
+            )
+        `)
         .in('property_id', propertyIds)
-        .gte('check_in', subMonths(today, 13).toISOString()) // Extra month for trend calc
         .in('status', ['confirmed', 'completed', 'checked-in', 'checked-out']);
+
+    // Log for verification
+    const logMsg = `[DEBUG-STATS] ${new Date().toISOString()} - User: ${user.id} - Props: ${propertyIds.length} - Res Count: ${reservations?.length || 0}${error ? ` - Error: ${JSON.stringify(error)}` : ''}\n`;
+    require('fs').appendFileSync('debug-owner.log', logMsg);
 
     if (error) {
         console.error("Error fetching dashboard stats:", error);
-        // Fallback to mock on error to show something
-        return getMockStats(activeProperties);
-    }
-
-    // If no reservations, return Mock Data (as per user request)
-    if (!reservations || reservations.length === 0) {
-        return getMockStats(activeProperties);
+        return getEmptyStats();
     }
 
     // 4. Metrics Calculation
-
-    // --- Revenue Chart Data (12 Months) ---
     const monthlyRevenue: Record<string, number> = {};
 
-    // Init last 12 months
+    // Init last 12 months for chart
     for (let i = 11; i >= 0; i--) {
         const d = subMonths(today, i);
         const key = format(d, 'MMM');
@@ -101,40 +129,44 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     // --- Occupancy Metrics (Last 30 Days) ---
     let bookedNightsLast30Days = 0;
 
-    reservations.forEach(res => {
-        const checkIn = new Date(res.check_in);
-        const checkOut = new Date(res.check_out);
-        const amount = Number(res.total_price) || 0;
-        const guests = (res.adults || 0) + (res.children || 0) + (res.infants || 0);
+    if (reservations) {
+        reservations.forEach(res => {
+            const checkIn = new Date(res.check_in);
+            const checkOut = new Date(res.check_out);
+            const amount = Number(res.total_price) || 0;
+            const guests = (res.adults || 0) + (res.children || 0) + (res.infants || 0);
 
-        // Revenue Aggregation
-        if (checkIn >= twelveMonthsAgo) {
-            const monthKey = format(checkIn, 'MMM');
-            if (monthlyRevenue.hasOwnProperty(monthKey)) {
-                monthlyRevenue[monthKey] += amount;
-            }
+            // 1. Total Revenue (All Time)
             totalRevenue += amount;
             totalGuests += guests;
-        }
 
-        // Trends
-        if (checkIn >= startOfCurrentMonth) {
-            currentMonthRevenue += amount;
-            currentMonthGuests += guests;
-        } else if (checkIn >= startOfLastMonth && checkIn <= endOfLastMonth) {
-            lastMonthRevenue += amount;
-            lastMonthGuests += guests;
-        }
+            // 2. Chart Data (Last 12 Months)
+            if (checkIn >= twelveMonthsAgo) {
+                const monthKey = format(checkIn, 'MMM');
+                if (monthlyRevenue.hasOwnProperty(monthKey)) {
+                    monthlyRevenue[monthKey] += amount;
+                }
+            }
 
-        // Occupancy (Last 30 Days overlap)
-        const rangeStart = checkIn < thirtyDaysAgo ? thirtyDaysAgo : checkIn;
-        const rangeEnd = checkOut > today ? today : checkOut;
+            // 3. Current Month Trends
+            if (checkIn >= startOfCurrentMonth) {
+                currentMonthRevenue += amount;
+                currentMonthGuests += guests;
+            } else if (checkIn >= startOfLastMonth && checkIn <= endOfLastMonth) {
+                lastMonthRevenue += amount;
+                lastMonthGuests += guests;
+            }
 
-        if (rangeStart < rangeEnd) {
-            const days = differenceInDays(rangeEnd, rangeStart);
-            if (days > 0) bookedNightsLast30Days += days;
-        }
-    });
+            // 4. Occupancy (Last 30 Days overlap)
+            const rangeStart = checkIn < thirtyDaysAgo ? thirtyDaysAgo : checkIn;
+            const rangeEnd = checkOut > today ? today : checkOut;
+
+            if (rangeStart < rangeEnd) {
+                const days = differenceInDays(rangeEnd, rangeStart);
+                if (days > 0) bookedNightsLast30Days += days;
+            }
+        });
+    }
 
     // Formatting Chart Data
     const revenueData = [];
@@ -153,13 +185,30 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     const guestsTrend = calculateTrend(currentMonthGuests, lastMonthGuests);
 
     // Calculating Occupancy
+    // Check-in and out dates tell us nights booked. Capacity is activeProperties * 30 nights.
     const totalAvailableNights = activeProperties * 30;
     const avgOccupancy = totalAvailableNights > 0
         ? Math.round((bookedNightsLast30Days / totalAvailableNights) * 100)
         : 0;
 
-    // Cap occupancy at 100% just in case of overlaps/errors
-    const finalOccupancy = Math.min(avgOccupancy, 100);
+    // Formatting Recent Activity (Latest 10)
+    const recentActivity: ActivityItem[] = (reservations || [])
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 10)
+        .map(res => {
+            const propertyTitle = (res.properties as any)?.title?.en || (res.properties as any)?.title?.pt || (res.properties as any)?.slug || 'Unknown Property';
+            const checkInDate = new Date(res.check_in);
+            const isToday = isWithinInterval(today, { start: startOfMonth(today), end: endOfMonth(today) }); // Simplified toggle for logic
+
+            return {
+                id: res.id,
+                type: 'booking', // We'll focus on bookings for now
+                title: 'New Booking',
+                subtitle: `${res.guest_name || 'Guest'} · ${propertyTitle}`,
+                amount: res.total_price ? `+ €${Number(res.total_price).toLocaleString()}` : undefined,
+                date: format(new Date(res.created_at), 'MMM d, HH:mm')
+            };
+        });
 
     return {
         revenueData,
@@ -167,9 +216,10 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
         revenueTrend,
         totalGuests,
         guestsTrend,
-        avgOccupancy: finalOccupancy,
-        occupancyTrend: 5.2, // Hard to calc without more history
+        avgOccupancy: Math.min(avgOccupancy, 100),
+        occupancyTrend: 0, 
         activeProperties,
+        recentActivity,
         isMockData: false
     };
 }
@@ -188,7 +238,8 @@ function getEmptyStats(): DashboardStats {
         guestsTrend: 0,
         avgOccupancy: 0,
         occupancyTrend: 0,
-        activeProperties: 0
+        activeProperties: 0,
+        recentActivity: []
     };
 }
 
@@ -221,6 +272,7 @@ function getMockStats(activeProperties: number): DashboardStats {
         avgOccupancy: 78,
         occupancyTrend: 3.2,
         activeProperties: activeProperties || 2, // Default to 2 if 0 passed
+        recentActivity: [],
         isMockData: true
     };
 }

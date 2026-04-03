@@ -13,7 +13,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { TrafficTimeline } from "@/components/admin/TrafficTimeline";
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight } from "lucide-react";
+import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight, Zap } from "lucide-react";
+import { syncAllPropertiesICal } from "@/app/actions/ical";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -56,6 +57,13 @@ export default function SettingsPage() {
     const [selectedLog, setSelectedLog] = useState<any | null>(null);
     const [isLive, setIsLive] = useState(true);
     const [showAdminLogs, setShowAdminLogs] = useState(false);
+
+    // iCal Sync State
+    const [icalInterval, setIcalInterval] = useState<number>(5);
+    const [isUpdatingIcal, setIsUpdatingIcal] = useState(false);
+    const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+    const [isSyncingAll, setIsSyncingAll] = useState(false);
+    const [syncFailures, setSyncFailures] = useState<any[]>([]);
 
     // ... (AUTH EFFECT - Skipped for brevity in replacement if unchanged, but included if needed) ...
 
@@ -126,6 +134,13 @@ export default function SettingsPage() {
                     // Initial checks
                     handleCheckResend();
                     handleCheckDB();
+
+                    // Load iCal Settings
+                    const interval = await getSystemSetting('ical_sync_interval');
+                    if (interval) setIcalInterval(Number(interval));
+                    
+                    const lastSync = await getSystemSetting('ical_last_sync_at');
+                    if (lastSync) setLastSyncTime(lastSync);
                 } catch (error) {
                     console.error("Failed to load settings:", error);
                 }
@@ -226,6 +241,49 @@ export default function SettingsPage() {
             toast.error("Unexpected error occurred", { id: loadingToast });
         } finally {
             setIsFlushingCache(false);
+        }
+    };
+
+    const handleUpdateIcalInterval = async (val: number) => {
+        setIsUpdatingIcal(true);
+        try {
+            const { updateSystemSetting } = await import('@/app/actions/settings');
+            const result = await updateSystemSetting('ical_sync_interval', val);
+            if (result.success) {
+                setIcalInterval(val);
+                toast.success(`Sync interval updated to ${val} minutes`);
+            } else {
+                toast.error("Failed to update interval");
+            }
+        } catch (error) {
+            toast.error("An error occurred");
+        } finally {
+            setIsUpdatingIcal(false);
+        }
+    };
+
+    const handleManualSyncAll = async () => {
+        setIsSyncingAll(true);
+        setSyncFailures([]);
+        const loadingToast = toast.loading("Starting global iCal synchronization...");
+        try {
+            const result = await syncAllPropertiesICal();
+            if (result.success) {
+                setLastSyncTime(new Date().toISOString());
+                setSyncFailures(result.failures || []);
+                
+                if (result.failures && result.failures.length > 0) {
+                    toast.warning(`Sync partially complete. ${result.totalNewEvents} new events imported, but ${result.failures.length} properties failed.`, { id: loadingToast });
+                } else {
+                    toast.success(`Sync complete! Found ${result.totalNewEvents} new events across ${result.propertiesSynced} properties`, { id: loadingToast });
+                }
+            } else {
+                toast.error(result.error || "Sync failed", { id: loadingToast });
+            }
+        } catch (error) {
+            toast.error("An error occurred during sync", { id: loadingToast });
+        } finally {
+            setIsSyncingAll(false);
         }
     };
 
@@ -620,6 +678,95 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                         </div>
+                    </div>
+
+                    {/* iCal Synchronization Robot Settings */}
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
+                                    <Zap className="size-5 text-sky-500" />
+                                    iCal Synchronization Robot
+                                </h3>
+                                <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary max-w-md">
+                                    Configure how often the system checks external calendars (Airbnb, etc.) for new reservations.
+                                </p>
+                                {lastSyncTime && (
+                                    <p className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest flex items-center gap-1 mt-2">
+                                        <Clock className="size-3" />
+                                        Last Global Sync: {new Date(lastSyncTime).toLocaleString()}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-4">
+                                <div className="flex flex-wrap bg-[#f5f5f5] dark:bg-admin-dark-bg p-1 rounded-xl border border-[#eaeaea] dark:border-admin-dark-border shrink-0">
+                                    {[1, 2, 5, 10, 30].map((mins) => (
+                                        <button
+                                            key={mins}
+                                            onClick={() => handleUpdateIcalInterval(mins)}
+                                            disabled={isUpdatingIcal}
+                                            className={cn(
+                                                "px-3 md:px-4 py-2 text-xs font-bold rounded-lg transition-all",
+                                                icalInterval === mins 
+                                                    ? "bg-white dark:bg-admin-dark-surface shadow-sm text-[#171717] dark:text-admin-dark-text-primary" 
+                                                    : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
+                                            )}
+                                        >
+                                            {mins === 1 ? '1 min' : `${mins} min`}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                <div className="h-8 w-px bg-[#eaeaea] dark:bg-admin-dark-border mx-2 hidden lg:block" />
+
+                                <button
+                                    onClick={handleManualSyncAll}
+                                    disabled={isSyncingAll}
+                                    className="px-6 py-2.5 bg-sky-500 text-white rounded-xl font-bold text-sm hover:bg-sky-600 transition-all flex items-center gap-2 shadow-sm shadow-sky-500/10 disabled:opacity-50 whitespace-nowrap"
+                                >
+                                    {isSyncingAll ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                                    Sync All Now
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Sync Failures Display */}
+                        {syncFailures.length > 0 && (
+                            <div className="mt-8 pt-6 border-t border-rose-100 dark:border-rose-500/10 transition-all duration-500 animate-in fade-in slide-in-from-top-4">
+                                <div className="flex items-center gap-2 mb-4 text-rose-600 dark:text-rose-400">
+                                    <X className="size-4" />
+                                    <h4 className="text-sm font-bold uppercase tracking-wider">Sync Failures ({syncFailures.length})</h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {syncFailures.map((failure, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-4 bg-rose-50 dark:bg-rose-500/5 border border-rose-100 dark:border-rose-500/10 rounded-xl hover:bg-rose-100/50 dark:hover:bg-rose-500/10 transition-colors group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="size-8 rounded-lg bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
+                                                    <MapPin className="size-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{failure.title}</p>
+                                                    <p className="text-[10px] text-rose-600 dark:text-rose-400 font-medium break-all">{failure.error}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-[9px] font-bold text-[#a3a3a3] uppercase tracking-widest hidden sm:block shrink-0 ml-4">
+                                                ID: {typeof failure.id === 'string' ? failure.id.substring(0, 6) : 'N/A'}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                    <button 
+                                        onClick={() => setSyncFailures([])}
+                                        className="text-xs font-bold text-[#737373] hover:text-[#171717] dark:hover:text-white transition-colors flex items-center gap-1"
+                                    >
+                                        <X className="size-3" />
+                                        Dismiss Error List
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Site Performance & Cache */}

@@ -128,6 +128,7 @@ export const propertySchema = z.object({
     beds: z.coerce.number().min(0).default(0),
     bathrooms: z.coerce.number().min(0).default(0),
     area: z.coerce.number().optional().nullable(),
+    ical_import_urls: z.array(z.string().url("Must be a valid URL").or(z.literal(''))).default([]).catch([]),
 
     // Pricing Rules (Relational table pricing_rules)
     price_per_night: z.coerce.number().min(0).default(0),

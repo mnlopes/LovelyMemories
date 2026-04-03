@@ -113,6 +113,9 @@ export async function upsertProperty(data: PropertyFormData) {
         breakfast_price: validatedData.breakfast_price,
         has_transfer: validatedData.has_transfer,
         transfer_price: validatedData.transfer_price,
+
+        // iCal Settings
+        ical_import_urls: validatedData.ical_import_urls,
     };
 
     try {

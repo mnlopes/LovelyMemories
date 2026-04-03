@@ -31,15 +31,18 @@ export async function getSystemSetting(key: string) {
     const { data, error } = await serverSupabase
         .from('system_settings')
         .select('value')
-        .eq('key', key)
-        .single();
+        .eq('key', key);
 
     if (error) {
         console.error(`Error fetching setting ${key}:`, error);
         return null;
     }
 
-    return data.value;
+    if (!data || data.length === 0) {
+        return null;
+    }
+
+    return data[0].value;
 }
 
 /**

@@ -11,9 +11,9 @@ interface OccupancyDonutProps {
 
 export function OccupancyDonut({ occupied, available, maintenance, delay = 0.4 }: OccupancyDonutProps) {
     const total = occupied + available + maintenance;
-    const occupiedPct = (occupied / total) * 100;
-    const availablePct = (available / total) * 100;
-    const maintenancePct = (maintenance / total) * 100;
+    const occupiedPct = total > 0 ? (occupied / total) * 100 : 0;
+    const availablePct = total > 0 ? (available / total) * 100 : 0;
+    const maintenancePct = total > 0 ? (maintenance / total) * 100 : 0;
 
     // Radius and Circumference
     const radius = 40;

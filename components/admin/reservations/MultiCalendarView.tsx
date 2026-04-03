@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
@@ -61,8 +61,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
 
     const getPropData = (id: string) => {
         const prop = properties[id];
-        if (!prop) return { id, title: id, city: '', mainImage: propertyImages?.[id] || '' };
-        if (typeof prop === 'string') return { id, title: prop, city: '', mainImage: propertyImages?.[id] || '' };
+        if (!prop) return { id, title: id, city: '', mainImage: propertyImages?.[id] || '', is_multi_unit: false };
+        if (typeof prop === 'string') return { id, title: prop, city: '', mainImage: propertyImages?.[id] || '', is_multi_unit: false };
         return {
             id: prop.id || id,
             title: prop.title || id,
@@ -71,7 +71,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
             bedrooms: prop.bedrooms || 0,
             bathrooms: prop.bathrooms || 0,
             max_guests: prop.max_guests || 0,
-            address: prop.address || ''
+            address: prop.address || '',
+            is_multi_unit: prop.is_multi_unit || false
         };
     };
 
@@ -86,7 +87,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     const goToToday = () => setCurrentDate(new Date());
 
     // Filtering logic
-    const allPropertyIds = Object.keys(properties);
+    const allPropertyIds = Object.keys(properties).filter(id => !getPropData(id).is_multi_unit);
     const allRegions = Array.from(new Set(
         allPropertyIds.map(id => getPropData(id).city)
             .filter(city => city && city.trim().length > 0)
@@ -114,6 +115,9 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     const reservationsByProperty = reservations
         .filter(res => {
             if (res.status === 'cancelled') return false;
+            // Filter out airbnb and owner blocks here as they are handled below by the blocked_dates loop
+            if (res.status === 'airbnb' || res.status === 'owner_block') return false;
+
             if (!visiblePropertyIds.includes(res.property_id)) return false;
             const checkIn = new Date(res.check_in);
             const checkOut = new Date(res.check_out);
@@ -169,6 +173,9 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         switch (status) {
             case 'confirmed': return "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600/20";
             case 'pending': return "bg-amber-200 hover:bg-amber-300 text-amber-950 border-amber-300/50";
+            case 'checked-in': return "bg-blue-500 hover:bg-blue-600 text-white border-blue-600/20";
+            case 'checked-out':
+            case 'completed': return "bg-slate-400 hover:bg-slate-500 text-white border-slate-500/20";
             default: return "bg-slate-400 text-white border-slate-500/20";
         }
     };
@@ -238,8 +245,10 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                 <div className="flex items-center justify-end gap-6 w-1/3">
                     <div className="hidden lg:flex items-center gap-4 text-[10px] font-medium text-[#a3a3a3]">
                         <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-emerald-500"></div>{t('legend.confirmed')}</div>
+                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-blue-500"></div>{t('legend.checkedIn')}</div>
                         <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-amber-400"></div>{t('legend.pending')}</div>
-                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full border border-blue-200 bg-blue-50" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(59,130,246,0.1) 2px, rgba(59,130,246,0.1) 4px)' }}></div>{t('legend.blocked')}</div>
+                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full border border-slate-200 bg-slate-50" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(148,163,184,0.1) 2px, rgba(148,163,184,0.1) 4px)' }}></div>{t('legend.blocked')}</div>
+                        <div className="flex items-center gap-1.5"><div className="size-2 rounded-full border border-rose-200 bg-rose-50" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(244,63,94,0.1) 2px, rgba(244,63,94,0.1) 4px)' }}></div>Airbnb</div>
                     </div>
                 </div>
             </div>
@@ -318,8 +327,34 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                         ))}
                                         {reservationsByProperty[propId]?.map((res: any) => {
                                             const style = getBarStyle(res.check_in, res.check_out);
+                                            const resStart = startOfDay(new Date(res.check_in)).getTime();
+                                            const resEnd = startOfDay(new Date(res.check_out)).getTime();
+                                            const viewStart = startOfDay(monthStart).getTime();
+                                            const viewEnd = startOfDay(monthEnd).getTime();
+                                            
+                                            const startsBefore = resStart < viewStart;
+                                            const endsAfter = resEnd > viewEnd;
+
+                                            const today = startOfDay(new Date());
+                                            const resCheckOutDate = startOfDay(new Date(res.check_out));
+
+                                            let effectiveStatus = res.status;
+                                            if (res.status === 'confirmed' && resCheckOutDate.getTime() <= today.getTime()) {
+                                                effectiveStatus = 'completed';
+                                            }
+
                                             return (
-                                                <div key={res.id} onClick={() => setSelectedReservation(res)} className={cn("absolute top-1/2 -translate-y-1/2 h-8 rounded-md cursor-pointer flex items-center px-2 z-10 border transition-all hover:brightness-110", getStatusColor(res.status))} style={{ left: `${style.left}px`, width: `${style.width}px` }}>
+                                                <div 
+                                                    key={res.id} 
+                                                    onClick={() => setSelectedReservation(res)} 
+                                                    className={cn(
+                                                        "absolute top-1/2 -translate-y-1/2 h-8 cursor-pointer flex items-center px-2 z-10 border transition-all hover:brightness-110 shadow-sm", 
+                                                        getStatusColor(effectiveStatus),
+                                                        startsBefore ? "rounded-l-none border-l-0" : "rounded-l-md",
+                                                        endsAfter ? "rounded-r-none border-r-0" : "rounded-r-md"
+                                                    )} 
+                                                    style={{ left: `${style.left}px`, width: `${style.width}px` }}
+                                                >
                                                     <div className="flex justify-between items-center w-full gap-2 overflow-hidden">
                                                         <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
                                                         {res.total_price ? <span className="text-[10px] font-bold whitespace-nowrap shrink-0 leading-none">€{res.total_price}</span> : null}
@@ -329,20 +364,51 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                         })}
                                         {visibleBlockedDates?.filter(b => b.property_id === propId).map(block => {
                                             const style = getBarStyle(block.start_date, block.end_date);
+                                            const isAirbnb = block.source === 'airbnb_booking';
+                                            const blockStart = startOfDay(new Date(block.start_date)).getTime();
+                                            const blockEnd = startOfDay(new Date(block.end_date)).getTime();
+                                            const viewStart = startOfDay(monthStart).getTime();
+                                            const viewEnd = startOfDay(monthEnd).getTime();
+
+                                            const startsBefore = blockStart < viewStart;
+                                            const endsAfter = blockEnd > viewEnd;
+
                                             return (
                                                 <div
                                                     key={block.id}
-                                                    className="absolute top-1/2 -translate-y-1/2 h-8 rounded-md flex items-center px-2 z-0 border border-blue-200 bg-blue-50/80 dark:bg-blue-500/10 dark:border-blue-400/20"
+                                                    className={cn(
+                                                        "absolute top-1/2 -translate-y-1/2 h-9 flex items-center px-2 z-0 border shadow-sm transition-all",
+                                                        isAirbnb
+                                                            ? "border-rose-300/60 bg-rose-100 dark:bg-rose-900/30 dark:border-rose-500/30"
+                                                            : "border-slate-300/60 bg-slate-100 dark:bg-slate-800 dark:border-slate-600",
+                                                        startsBefore ? "rounded-l-none border-l-0" : "rounded-l-lg",
+                                                        endsAfter ? "rounded-r-none border-r-0" : "rounded-r-lg"
+                                                    )}
                                                     style={{
                                                         left: `${style.left}px`,
                                                         width: `${style.width}px`,
-                                                        background: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(59,130,246,0.05) 5px, rgba(59,130,246,0.05) 10px)'
+                                                        background: isAirbnb
+                                                            ? 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 6px, #ffe4e6 6px, #ffe4e6 12px)'
+                                                            : 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #f1f5f9 6px, #f1f5f9 12px)'
                                                     }}
                                                 >
-                                                    <Ban className="size-3 text-blue-400 shrink-0" />
-                                                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 truncate ml-1.5 opacity-80">
-                                                        {block.reason || t('blocked')}
-                                                    </span>
+                                                    {isAirbnb ? (
+                                                        <div className="flex items-center gap-1.5 overflow-hidden">
+                                                            <div className="size-5 rounded-md bg-rose-500 flex items-center justify-center shrink-0 shadow-sm">
+                                                                <Globe className="size-3 text-white" />
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-rose-800 dark:text-rose-200 truncate">
+                                                                Airbnb
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1.5 overflow-hidden">
+                                                            <Ban className="size-3.5 text-slate-500 shrink-0" />
+                                                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate uppercase tracking-wider">
+                                                                {block.reason || t('blocked')}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}
