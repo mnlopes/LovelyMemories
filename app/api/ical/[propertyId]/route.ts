@@ -4,10 +4,10 @@ import ical from 'ical-generator';
 
 export async function GET(
     request: Request,
-    { params }: { params: { propertyId: string } }
+    { params }: { params: Promise<{ propertyId: string }> }
 ) {
     try {
-        const { propertyId } = params;
+        const { propertyId } = await params;
         if (!propertyId) {
             return new NextResponse('Property ID is required', { status: 400 });
         }
@@ -49,7 +49,7 @@ export async function GET(
                     allDay: true,
                     summary: 'Reserved',
                     description: 'LovelyMemories Reservation',
-                    uid: `reservation-${res.id}`
+                    id: `reservation-${res.id}`
                 });
             });
         }
@@ -68,7 +68,7 @@ export async function GET(
                     allDay: true,
                     summary: 'Blocked',
                     description: bd.reason || 'Blocked',
-                    uid: bd.external_id || `block-${bd.id}`
+                    id: bd.external_id || `block-${bd.id}`
                 });
             });
         }
