@@ -522,10 +522,17 @@ export default function AdminReservationsPage() {
                                 const checkOutDate = new Date(reservation.check_out);
                                 const today = startOfDay(new Date());
                                 
-                                // Determine effective status purely for UI: if check out has passed and it was confirmed, it's completed (unless it's a block!)
+                                // Determine effective status purely for UI
                                 let effectiveStatus = reservation.status;
-                                if (!reservation.is_manual_block && reservation.status === 'confirmed' && startOfDay(checkOutDate).getTime() <= today.getTime()) {
-                                    effectiveStatus = 'completed';
+                                if (!reservation.is_manual_block && reservation.status === 'confirmed') {
+                                    const checkInDate = startOfDay(new Date(reservation.check_in));
+                                    const checkOutDate = startOfDay(new Date(reservation.check_out));
+                                    
+                                    if (today.getTime() >= checkInDate.getTime() && today.getTime() < checkOutDate.getTime()) {
+                                        effectiveStatus = 'checked-in';
+                                    } else if (today.getTime() >= checkOutDate.getTime()) {
+                                        effectiveStatus = 'completed';
+                                    }
                                 }
 
                                 return (
