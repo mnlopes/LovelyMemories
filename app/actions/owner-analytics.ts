@@ -24,10 +24,18 @@ export interface DashboardStats {
     occupancyTrend: number;
     activeProperties: number;
     recentActivity: ActivityItem[];
+    totalActivityCount: number;
     isMockData?: boolean;
 }
 
-export async function getOwnerDashboardStats(): Promise<DashboardStats> {
+export async function getOwnerDashboardStats(filters: { 
+    propertyId?: string, 
+    year?: number, 
+    month?: number,
+    page?: number,
+    pageSize?: number
+} = {}): Promise<DashboardStats> {
+    const { propertyId, year, month, page = 1, pageSize = 10 } = filters;
     const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,35 +57,45 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return getEmptyStats();
 
-    // 1. Get Owner Properties
-    const { data: properties, error: propErr } = await supabase
+    // 1. Get Owner Properties (To verify ownership if propertyId is provided)
+    let propertyQuery = supabase
         .from('properties')
-        .select('id, max_guests')
+        .select('id, title, slug, max_guests')
         .eq('owner_id', user.id)
         .eq('is_active', true);
 
+    if (propertyId) {
+        propertyQuery = propertyQuery.eq('id', propertyId);
+    }
+
+    const { data: properties, error: propErr } = await propertyQuery;
     if (!properties || properties.length === 0) return getEmptyStats();
 
-    const propertyIds = properties.map(p => p.id);
+    const allowedPropertyIds = properties.map(p => p.id);
     const activeProperties = properties.length;
 
     // 2. Define Date Ranges
     const today = new Date();
-    const twelveMonthsAgo = startOfMonth(subMonths(today, 11)); // Last 12 months
-    const startOfCurrentMonth = startOfMonth(today);
-    const startOfLastMonth = startOfMonth(subMonths(today, 1));
-    const endOfLastMonth = endOfMonth(subMonths(today, 1));
-    const thirtyDaysAgo = subDays(today, 30);
+    
+    // If year/month provided, adjust reference ranges
+    let referenceDate = today;
+    if (year) {
+        referenceDate = new Date(year, (month || 1) - 1, 1);
+    }
 
-    // 3. Fetch Reservations (All confirmed/completed for metrics)
-    // IMPORTANT: Using service role here temporarily because RLS for owners on reservations table 
-    // is currently restricted to admins. We still scope by propertyIds found via the user session.
+    const twelveMonthsAgo = startOfMonth(subMonths(referenceDate, 11));
+    const startOfCurrentMonth = startOfMonth(referenceDate);
+    const startOfLastMonth = startOfMonth(subMonths(referenceDate, 1));
+    const endOfLastMonth = endOfMonth(subMonths(referenceDate, 1));
+    const thirtyDaysAgo = subDays(referenceDate, 30);
+
+    // 3. Fetch Reservations
     const adminClient = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { data: reservations, error } = await adminClient
+    let reservationsQuery = adminClient
         .from('reservations')
         .select(`
             id,
@@ -95,12 +113,16 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
                 slug
             )
         `)
-        .in('property_id', propertyIds)
+        .in('property_id', propertyId ? [propertyId] : allowedPropertyIds)
         .in('status', ['confirmed', 'completed', 'checked-in', 'checked-out']);
 
-    // Log for verification
-    const logMsg = `[DEBUG-STATS] ${new Date().toISOString()} - User: ${user.id} - Props: ${propertyIds.length} - Res Count: ${reservations?.length || 0}${error ? ` - Error: ${JSON.stringify(error)}` : ''}\n`;
-    require('fs').appendFileSync('debug-owner.log', logMsg);
+    if (year) {
+        const yearStart = format(new Date(year, 0, 1), 'yyyy-MM-dd');
+        const yearEnd = format(new Date(year + 1, 0, 0), 'yyyy-MM-dd');
+        reservationsQuery = reservationsQuery.gte('check_in', yearStart).lte('check_in', yearEnd);
+    }
+
+    const { data: reservations, error } = await reservationsQuery;
 
     if (error) {
         console.error("Error fetching dashboard stats:", error);
@@ -110,9 +132,9 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     // 4. Metrics Calculation
     const monthlyRevenue: Record<string, number> = {};
 
-    // Init last 12 months for chart
+    // Init relevant months for chart
     for (let i = 11; i >= 0; i--) {
-        const d = subMonths(today, i);
+        const d = subMonths(referenceDate, i);
         const key = format(d, 'MMM');
         monthlyRevenue[key] = 0;
     }
@@ -120,13 +142,9 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     let totalRevenue = 0;
     let currentMonthRevenue = 0;
     let lastMonthRevenue = 0;
-
-    // --- Guest Metrics ---
     let totalGuests = 0;
     let currentMonthGuests = 0;
     let lastMonthGuests = 0;
-
-    // --- Occupancy Metrics (Last 30 Days) ---
     let bookedNightsLast30Days = 0;
 
     if (reservations) {
@@ -136,20 +154,17 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
             const amount = Number(res.total_price) || 0;
             const guests = (res.adults || 0) + (res.children || 0) + (res.infants || 0);
 
-            // 1. Total Revenue (All Time)
             totalRevenue += amount;
             totalGuests += guests;
 
-            // 2. Chart Data (Last 12 Months)
-            if (checkIn >= twelveMonthsAgo) {
-                const monthKey = format(checkIn, 'MMM');
-                if (monthlyRevenue.hasOwnProperty(monthKey)) {
-                    monthlyRevenue[monthKey] += amount;
-                }
+            // Chart Data
+            const monthKey = format(checkIn, 'MMM');
+            if (monthlyRevenue.hasOwnProperty(monthKey)) {
+                monthlyRevenue[monthKey] += amount;
             }
 
-            // 3. Current Month Trends
-            if (checkIn >= startOfCurrentMonth) {
+            // Trends
+            if (checkIn >= startOfCurrentMonth && checkIn <= endOfMonth(referenceDate)) {
                 currentMonthRevenue += amount;
                 currentMonthGuests += guests;
             } else if (checkIn >= startOfLastMonth && checkIn <= endOfLastMonth) {
@@ -157,10 +172,9 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
                 lastMonthGuests += guests;
             }
 
-            // 4. Occupancy (Last 30 Days overlap)
+            // Occupancy (Last 30 Days of reference date)
             const rangeStart = checkIn < thirtyDaysAgo ? thirtyDaysAgo : checkIn;
-            const rangeEnd = checkOut > today ? today : checkOut;
-
+            const rangeEnd = checkOut > referenceDate ? referenceDate : checkOut;
             if (rangeStart < rangeEnd) {
                 const days = differenceInDays(rangeEnd, rangeStart);
                 if (days > 0) bookedNightsLast30Days += days;
@@ -171,7 +185,7 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
     // Formatting Chart Data
     const revenueData = [];
     for (let i = 11; i >= 0; i--) {
-        const d = subMonths(today, i);
+        const d = subMonths(referenceDate, i);
         const key = format(d, 'MMM');
         revenueData.push({
             label: key,
@@ -180,35 +194,32 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
         });
     }
 
-    // Calculating Trends
     const revenueTrend = calculateTrend(currentMonthRevenue, lastMonthRevenue);
     const guestsTrend = calculateTrend(currentMonthGuests, lastMonthGuests);
-
-    // Calculating Occupancy
-    // Check-in and out dates tell us nights booked. Capacity is activeProperties * 30 nights.
     const totalAvailableNights = activeProperties * 30;
     const avgOccupancy = totalAvailableNights > 0
         ? Math.round((bookedNightsLast30Days / totalAvailableNights) * 100)
         : 0;
 
-    // Formatting Recent Activity (Latest 10)
-    const recentActivity: ActivityItem[] = (reservations || [])
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 10)
-        .map(res => {
-            const propertyTitle = (res.properties as any)?.title?.en || (res.properties as any)?.title?.pt || (res.properties as any)?.slug || 'Unknown Property';
-            const checkInDate = new Date(res.check_in);
-            const isToday = isWithinInterval(today, { start: startOfMonth(today), end: endOfMonth(today) }); // Simplified toggle for logic
+    // 5. Paginated Activity
+    const sortedActivity = (reservations || [])
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    const totalActivityCount = sortedActivity.length;
+    const startIdx = (page - 1) * pageSize;
+    const paginatedActivity = sortedActivity.slice(startIdx, startIdx + pageSize).map(res => {
+        const propTitleRaw = (res.properties as any)?.title;
+        const propertyTitle = propTitleRaw?.en || propTitleRaw?.pt || (res.properties as any)?.slug || 'Unknown Property';
 
-            return {
-                id: res.id,
-                type: 'booking', // We'll focus on bookings for now
-                title: 'New Booking',
-                subtitle: `${res.guest_name || 'Guest'} · ${propertyTitle}`,
-                amount: res.total_price ? `+ €${Number(res.total_price).toLocaleString()}` : undefined,
-                date: format(new Date(res.created_at), 'MMM d, HH:mm')
-            };
-        });
+        return {
+            id: res.id,
+            type: 'booking' as const,
+            title: 'newBooking',
+            subtitle: `${res.guest_name || 'Guest'} · ${propertyTitle}`,
+            amount: res.total_price ? `+ €${Number(res.total_price).toLocaleString()}` : undefined,
+            date: format(new Date(res.created_at), 'MMM d, HH:mm')
+        };
+    });
 
     return {
         revenueData,
@@ -219,7 +230,8 @@ export async function getOwnerDashboardStats(): Promise<DashboardStats> {
         avgOccupancy: Math.min(avgOccupancy, 100),
         occupancyTrend: 0, 
         activeProperties,
-        recentActivity,
+        recentActivity: paginatedActivity,
+        totalActivityCount,
         isMockData: false
     };
 }
@@ -239,7 +251,8 @@ function getEmptyStats(): DashboardStats {
         avgOccupancy: 0,
         occupancyTrend: 0,
         activeProperties: 0,
-        recentActivity: []
+        recentActivity: [],
+        totalActivityCount: 0
     };
 }
 
@@ -273,6 +286,7 @@ function getMockStats(activeProperties: number): DashboardStats {
         occupancyTrend: 3.2,
         activeProperties: activeProperties || 2, // Default to 2 if 0 passed
         recentActivity: [],
+        totalActivityCount: 0,
         isMockData: true
     };
 }

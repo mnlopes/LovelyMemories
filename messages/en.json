@@ -13,6 +13,14 @@
         "performance": "Performance",
         "signOut": "Sign Out"
     },
+    "OwnerSidebar": {
+        "dashboard": "Dashboard",
+        "properties": "My Properties",
+        "profile": "Profile",
+        "signOut": "Sign Out",
+        "collapse": "Collapse View",
+        "expand": "Expand"
+    },
     "AdminCoupons": {
         "title": "Discount Coupons",
         "subtitle": "Manage promotional codes and special discounts for your guests.",
@@ -470,7 +478,93 @@
         "passwordMismatch": "Passwords do not match",
         "successPassword": "Password set successfully!",
         "rememberMe": "Keep me logged in",
-        "forgotPassword": "Forgot password?"
+        "forgotPassword": "Forgot password?",
+        "checkEmail": "Check Email",
+        "resetPassword": "Reset Password",
+        "resetDesc": "Enter your email to receive a password reset link.",
+        "sendResetLink": "Send Reset Link",
+        "backToLogin": "Back to Login",
+        "linkSent": "Reset link sent!",
+        "checkInbox": "Please check your inbox (and spam folder) for the reset link.",
+        "minChars": "At least 8 characters",
+        "oneLetter": "One letter",
+        "oneNumber": "One number",
+        "passwordDesc": "Password must have at least 8 characters, one letter and one number"
+    },
+    "OwnerProfile": {
+        "title": "Account Settings",
+        "subtitle": "Manage your profile information and security settings.",
+        "personalInfo": "Personal Information",
+        "security": "Security",
+        "fullName": "Full Name",
+        "email": "Email Address",
+        "phone": "Phone Number",
+        "language": "Preferred Language",
+        "portuguese": "Portuguese",
+        "english": "English",
+        "newPassword": "New Password",
+        "confirmPassword": "Confirm New Password",
+        "updateProfile": "Update Profile",
+        "changePassword": "Change Password",
+        "profileUpdated": "Profile updated successfully!",
+        "emailUpdateStarted": "Confirmation email sent to your new address.",
+        "passwordUpdated": "Password changed successfully!",
+        "errorUpdate": "Failed to update profile.",
+        "errorPassword": "Failed to change password.",
+        "confirmPasswordChange": "Confirm Password Change",
+        "areYouSurePassword": "Are you sure you want to change your password? You will need to use the new one for your next login.",
+        "yesChange": "Yes, Change Password",
+        "cancel": "Cancel",
+        "passwordMismatch": "Passwords do not match",
+        "passwordRequirements": "Password requirements:",
+        "reqMinChars": "At least 8 characters",
+        "reqNumber": "At least one number",
+        "reqLetter": "At least one letter"
+    },
+    "OwnerDashboard": {
+        "welcome": "Welcome back, {name}",
+        "subtitle": "Here is an overview of your portfolio performance.",
+        "revenue": "Total Revenue",
+        "activeProperties": "Active Properties",
+        "totalGuests": "Total Guests",
+        "avgOccupancy": "AVG OCCUPANCY",
+        "vsLastMonth": "v. last month",
+        "Filters": {
+            "allProperties": "All Properties",
+            "allMonths": "All Months",
+            "clearFilters": "Clear Filters"
+        }
+    },
+    "OwnerProperties": {
+        "title": "My Properties",
+        "subtitle": "Manage and view details of your assigned properties.",
+        "viewLive": "View Live Page",
+        "active": "Active",
+        "empty": "No properties assigned yet.",
+        "emptySubtitle": "Contact your administrator to assign properties to your account."
+    },
+    "RecentActivity": {
+        "title": "Recent Activity",
+        "viewAll": "View All",
+        "empty": "No recent activity found.",
+        "totalItems": "total items"
+    },
+    "RevenueChart": {
+        "title": "Revenue Overview",
+        "subtitle": "vs previous period"
+    },
+    "OccupancyDonut": {
+        "title": "Occupancy",
+        "properties": "Properties",
+        "occupied": "Occupied",
+        "available": "Available",
+        "maintenance": "Maintenance"
+    },
+    "ActivityTypes": {
+        "newBooking": "New Booking",
+        "checkIn": "Check-In",
+        "maintenance": "Maintenance",
+        "blocked": "Blocked"
     },
     "Footer": {
         "getInTouch": "Get in Touch",

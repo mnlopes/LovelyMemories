@@ -4,11 +4,21 @@ import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/routing";
-import { Lock, Loader2, CheckCircle2, ChevronRight, Eye, EyeOff, Mail, AlertTriangle, LogOut } from "lucide-react";
+import { Lock, Loader2, CheckCircle2, ChevronRight, Eye, EyeOff, Mail, AlertTriangle, LogOut, Check, X } from "lucide-react";
 import { updateUserPassword } from "@/app/actions/user";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
+
+// Reusable Requirement Item Component
+const RequirementItem = ({ label, met }: { label: string; met: boolean }) => (
+    <div className={`flex items-center gap-2 text-xs font-medium transition-all duration-300 ${met ? 'text-emerald-500' : 'text-[#192537]/40'}`}>
+        <div className={`size-4 rounded-full flex items-center justify-center border ${met ? 'bg-emerald-500 border-emerald-500' : 'border-[#192537]/10'}`}>
+            {met ? <Check className="size-2.5 text-white stroke-[3]" /> : <div className="size-1 bg-[#192537]/20 rounded-full" />}
+        </div>
+        {label}
+    </div>
+);
 
 function SetPasswordForm() {
     const t = useTranslations('Auth');
@@ -24,6 +34,12 @@ function SetPasswordForm() {
     const [error, setError] = useState<string | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [isSessionLoading, setIsSessionLoading] = useState(true);
+
+    // Password Complexity States
+    const hasMinLength = password.length >= 8;
+    const hasNumber = /\d/.test(password);
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const isComplexityMet = hasMinLength && hasNumber && hasLetter;
 
     useEffect(() => {
         let isSubscribed = true;
@@ -122,8 +138,8 @@ function SetPasswordForm() {
             return;
         }
 
-        if (password.length < 6) {
-            setError("Password must be at least 6 characters");
+        if (!isComplexityMet) {
+            setError(t('passwordDesc') || "Password must have at least 8 characters, one letter and one number");
             return;
         }
 
@@ -315,6 +331,24 @@ function SetPasswordForm() {
                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
+
+                                    {/* Password Complexity Checklist */}
+                                    <div className="px-1 pt-1 space-y-2">
+                                        <RequirementItem 
+                                            label={t('minChars') || "At least 8 characters"} 
+                                            met={hasMinLength} 
+                                        />
+                                        <div className="flex items-center gap-4">
+                                            <RequirementItem 
+                                                label={t('oneLetter') || "One letter"} 
+                                                met={hasLetter} 
+                                            />
+                                            <RequirementItem 
+                                                label={t('oneNumber') || "One number"} 
+                                                met={hasNumber} 
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2">
@@ -338,7 +372,7 @@ function SetPasswordForm() {
 
                                 <button
                                     type="submit"
-                                    disabled={isLoading || isSessionLoading || !currentUser}
+                                    disabled={isLoading || isSessionLoading || !currentUser || password.length === 0 || !isComplexityMet}
                                     className="w-full h-14 bg-[#192537] text-white rounded-2xl font-bold uppercase tracking-[0.1em] hover:bg-[#253652] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group shadow-lg shadow-[#192537]/20"
                                 >
                                     {isLoading || isSessionLoading ? (

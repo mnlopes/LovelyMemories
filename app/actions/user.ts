@@ -393,6 +393,16 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
 export async function updateUserPassword(password: string) {
     const supabase = await getSupabase();
 
+    // Server-side validation for password complexity
+    const hasMinLength = password.length >= 8;
+    const hasNumber = /\d/.test(password);
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const isComplexityMet = hasMinLength && hasNumber && hasLetter;
+
+    if (!isComplexityMet) {
+        throw new Error('Password does not meet security requirements: at least 8 characters, one letter and one number.');
+    }
+
     // 1. Update the password
     const { data: { user }, error } = await supabase.auth.updateUser({
         password: password

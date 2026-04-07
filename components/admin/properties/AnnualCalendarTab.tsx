@@ -8,7 +8,7 @@ import {
     getMonth, getYear, isSameDay, differenceInCalendarDays
 } from "date-fns";
 import { pt, enUS } from "date-fns/locale";
-import { Loader2, ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Globe, Ban } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Globe, Ban, Building2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface AnnualCalendarTabProps {
@@ -36,7 +36,7 @@ interface Bar {
     containsToday: boolean;
     stackIndex: number;
     status: string;
-    type: "reservation" | "block" | "airbnb";
+    type: "reservation" | "block" | "airbnb" | "booking";
 }
 
 export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: AnnualCalendarTabProps) {
@@ -100,7 +100,8 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
             return d >= start && d < end;
         });
         if (block) return { 
-            type: block.source === "airbnb_booking" ? "airbnb" : "block", 
+            type: block.source === "airbnb_booking" ? "airbnb" : 
+                  block.source === "booking_com" ? "booking" : "block", 
             status: "blocked", 
             checkIn: block.start_date,
             checkOut: block.end_date 
@@ -187,7 +188,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
             const monthStart = new Date(year, month, 1);
             const monthEndExcl = new Date(year, month + 1, 1);
 
-            if (resEnd <= monthStart || resStart >= monthEndExcl) return;
+            if (resEnd < monthStart || resStart >= monthEndExcl) return;
             if (!resOrder.includes(res.id)) resOrder.push(res.id);
 
             const clampedStart = resStart < monthStart ? monthStart : resStart;
@@ -195,13 +196,14 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
             const nights = differenceInCalendarDays(resEnd, resStart);
 
             let dayPointer = new Date(clampedStart);
-            while (dayPointer < clampedEnd) {
+            while (dayPointer <= clampedEnd) {
+                if (dayPointer >= monthEndExcl) break;
                 const dayNum = dayPointer.getDate();
                 const pos = startOffset + dayNum - 1;
                 const row = Math.floor(pos / 7);
                 const col = pos % 7;
                 const daysLeftInRow = 6 - col;
-                const daysLeftInSeg = Math.floor((clampedEnd.getTime() - dayPointer.getTime()) / 86400000) - 1;
+                const daysLeftInSeg = differenceInCalendarDays(clampedEnd, dayPointer);
                 const extent = Math.min(daysLeftInRow, daysLeftInSeg);
                 const colEnd = col + extent;
                 const rowStart = dayPointer;
@@ -223,7 +225,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                     colStart: col,
                     colEnd,
                     isStart: isSameDay(rowStart, resStart),
-                    isEnd: isSameDay(rowEnd, startOfDay(new Date(resEnd.getTime() - 24 * 60 * 60 * 1000))),
+                    isEnd: isSameDay(rowEnd, resEnd),
                     containsToday,
                     stackIndex: 0,
                     status: res.status || "confirmed",
@@ -241,7 +243,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
             const monthStart = new Date(year, month, 1);
             const monthEndExcl = new Date(year, month + 1, 1);
 
-            if (blockEnd <= monthStart || blockStart >= monthEndExcl) return;
+            if (blockEnd < monthStart || blockStart >= monthEndExcl) return;
             if (!resOrder.includes(block.id)) resOrder.push(block.id);
 
             const clampedStart = blockStart < monthStart ? monthStart : blockStart;
@@ -249,13 +251,14 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
             const nights = differenceInCalendarDays(blockEnd, blockStart);
 
             let dayPointer = new Date(clampedStart);
-            while (dayPointer < clampedEnd) {
+            while (dayPointer <= clampedEnd) {
+                if (dayPointer >= monthEndExcl) break;
                 const dayNum = dayPointer.getDate();
                 const pos = startOffset + dayNum - 1;
                 const row = Math.floor(pos / 7);
                 const col = pos % 7;
                 const daysLeftInRow = 6 - col;
-                const daysLeftInSeg = Math.floor((clampedEnd.getTime() - dayPointer.getTime()) / 86400000) - 1;
+                const daysLeftInSeg = differenceInCalendarDays(clampedEnd, dayPointer);
                 const extent = Math.min(daysLeftInRow, daysLeftInSeg);
                 const colEnd = col + extent;
                 const rowStart = dayPointer;
@@ -272,11 +275,12 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                     colStart: col,
                     colEnd,
                     isStart: isSameDay(rowStart, blockStart),
-                    isEnd: isSameDay(rowEnd, startOfDay(new Date(blockEnd.getTime() - 24 * 60 * 60 * 1000))),
+                    isEnd: isSameDay(rowEnd, blockEnd),
                     containsToday: false,
                     stackIndex: 0,
                     status: "blocked",
-                    type: block.source === "airbnb_booking" ? "airbnb" : "block",
+                    type: block.source === "airbnb_booking" ? "airbnb" : 
+                          block.source === "booking_com" ? "booking" : "block",
                 });
 
                 dayPointer = new Date(year, month, dayNum + extent + 1);
@@ -287,17 +291,21 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
         const rowBarGroups: Record<number, Bar[]> = {};
         bars.forEach(b => { if (!rowBarGroups[b.row]) rowBarGroups[b.row] = []; rowBarGroups[b.row].push(b); });
         Object.values(rowBarGroups).forEach(rowBars => {
-            const seen: string[] = [];
-            rowBars.sort((a, b) => resOrder.indexOf(a.resId) - resOrder.indexOf(b.resId));
+            rowBars.sort((a, b) => a.colStart - b.colStart);
+            const levelEnds = [-1, -1, -1];
             rowBars.forEach(bar => {
-                if (!seen.includes(bar.resId)) seen.push(bar.resId);
-                bar.stackIndex = seen.indexOf(bar.resId);
+                let level = 0;
+                while (level < 2 && levelEnds[level] >= bar.colStart) {
+                    level++;
+                }
+                bar.stackIndex = level;
+                if (level <= 2) levelEnds[level] = bar.colEnd;
             });
         });
 
         const BAR_H = 22;
         const BAR_GAP = 2;
-        const DATE_AREA = 30;
+        const DATE_AREA = 42;
         const ROW_H = DATE_AREA + 3 * (BAR_H + BAR_GAP) + 8;
 
         const handleBarMouseEnter = (e: React.MouseEvent, bar: Bar) => {
@@ -337,9 +345,9 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                             className="ml-2 px-3 py-1 text-[11px] font-bold border border-[#e5e5e5] dark:border-white/20 rounded-lg text-[#444] dark:text-white hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors">
                             Today
                         </button>
-                        {pricePerNight && (
+                        {(pricePerNight || pricePerNight === 0) && (
                             <span className="ml-2 text-[10px] font-bold text-[#a3a3a3] bg-[#f5f5f5] dark:bg-white/10 px-2 py-1 rounded-lg">
-                                €{pricePerNight}<span className="font-normal">/night</span>
+                                {pricePerNight > 0 ? `€${pricePerNight}` : '-'}<span className="font-normal">/night</span>
                             </span>
                         )}
                     </div>
@@ -383,7 +391,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                                             `}
                                         >
                                             {valid && (
-                                                <div className="flex flex-col items-center pt-1.5 pb-0.5 gap-0.5">
+                                                <div className="flex flex-col items-center pt-1.5 pb-0.5 gap-0.5 relative z-[6]">
                                                     {/* Date number */}
                                                     <span className={`w-6 h-6 flex items-center justify-center text-[11px] font-semibold rounded-full
                                                         ${isT
@@ -395,9 +403,9 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                                                         {dayNum}
                                                     </span>
                                                     {/* Price — show unless day has an actual guest reservation */}
-                                                    {pricePerNight && date && !isDateReserved(date) && (
+                                                    {(pricePerNight || pricePerNight === 0) && date && !isDateReserved(date) && (
                                                         <span className="text-[8px] font-semibold text-[#bbb] dark:text-admin-dark-text-secondary leading-none">
-                                                            €{pricePerNight}
+                                                            {pricePerNight > 0 ? `€${pricePerNight}` : '-'}
                                                         </span>
                                                     )}
                                                 </div>
@@ -408,79 +416,88 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
 
                                 {/* Reservation bars layer */}
                                 <div className="absolute inset-x-0 pointer-events-none" style={{ top: DATE_AREA, bottom: 0 }}>
-                                    {rowBars.map((bar, bi) => {
-                                        if (bar.stackIndex >= 3) return null;
-                                        const leftPct = (bar.colStart / 7) * 100;
-                                        const widthPct = ((bar.colEnd - bar.colStart + 1) / 7) * 100;
-                                        const topPx = bar.stackIndex * (BAR_H + BAR_GAP);
-                                        const isActive = bar.containsToday;
-                                        const showName = bar.isStart || bar.colStart === 0;
+                                {rowBars.map((bar, bi) => {
+                                    const leftPct = (bar.colStart / 7) * 100;
+                                    const widthPct = ((bar.colEnd - bar.colStart + 1) / 7) * 100;
+                                    const halfCell = 100 / 14;
+                                    const startPadding = bar.isStart ? halfCell : 0;
+                                    const endPadding = bar.isEnd ? halfCell : 0;
+                                    const topPx = bar.stackIndex * (BAR_H + BAR_GAP);
+                                    
+                                    const isAirbnb = bar.type === "airbnb";
+                                    const isBooking = bar.type === "booking";
+                                    const isBlock = bar.type === "block";
+                                    const showName = bar.isStart || bar.colStart === 0;
 
-                                                        const isAirbnb = bar.type === "airbnb";
-                                                        const isBlock = bar.type === "block";
-
-                                                        return (
-                                                                <div
-                                                                    key={`bar-${bi}`}
-                                                                    className={cn(
-                                                                        "absolute pointer-events-auto cursor-pointer group/bar transition-all duration-150 hover:brightness-[1.02] active:scale-[0.99] border shadow-sm",
-                                                                        isAirbnb 
-                                                                            ? "border-rose-300/60 dark:border-rose-500/30" 
-                                                                            : isBlock 
-                                                                                ? "border-slate-300/60 dark:border-slate-600"
-                                                                                : "border-black/10 dark:border-white/10"
-                                                                    )}
-                                                                    style={{
-                                                                        left: `calc(${leftPct}% + ${bar.isStart ? 5 : 0}px)`,
-                                                                        width: `calc(${widthPct}% - ${(bar.isStart ? 5 : 0) + (bar.isEnd ? 5 : 0)}px)`,
-                                                                        top: topPx,
-                                                                        height: BAR_H,
-                                                                        borderRadius: `${bar.isStart ? "18px" : "0px"} ${bar.isEnd ? "18px" : "0px"} ${bar.isEnd ? "18px" : "0px"} ${bar.isStart ? "18px" : "0px"}`,
-                                                                        background: isAirbnb 
-                                                                            ? 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 6px, #ffe4e6 6px, #ffe4e6 12px)'
-                                                                            : isBlock
-                                                                                ? 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #f1f5f9 6px, #f1f5f9 12px)'
-                                                                                : getStatusColor(bar.status, bar.checkIn, bar.checkOut),
-                                                                        zIndex: 5,
-                                                                    }}
-                                                    onMouseEnter={(e) => handleBarMouseEnter(e, bar)}
-                                                    onMouseMove={handleBarMouseMove}
-                                                    onMouseLeave={handleBarMouseLeave}
-                                                >
-                                                    {/* Name and Price container */}
-                                                    <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between pointer-events-none overflow-hidden gap-2">
-                                                        {showName && (
-                                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                                {/* Icon or Initial */}
-                                                                {isAirbnb ? (
-                                                                    <div className="size-5 rounded-md bg-rose-500 flex items-center justify-center shrink-0 shadow-sm">
-                                                                        <Globe className="size-3 text-white" />
-                                                                    </div>
-                                                                ) : isBlock ? (
-                                                                    <Ban className="size-3.5 text-slate-500 shrink-0" />
-                                                                ) : (
-                                                                    <span className="size-4 rounded-full flex-shrink-0 flex items-center justify-center text-[8px] font-bold border border-white/20 bg-white/15 text-white">
-                                                                        {bar.guestName.charAt(0).toUpperCase()}
-                                                                    </span>
-                                                                )}
-                                                                <span className={cn(
-                                                                    "text-[10px] font-bold truncate leading-none",
-                                                                    isAirbnb ? "text-rose-800 dark:text-rose-200" : isBlock ? "text-slate-600 dark:text-slate-300" : "text-white"
-                                                                )}>
-                                                                    {isAirbnb ? "Airbnb" : bar.guestName}
-                                                                </span>
+                                    return (
+                                        <div
+                                            key={`bar-${bi}`}
+                                            className={cn(
+                                                "absolute pointer-events-auto cursor-pointer group/bar transition-all duration-150 hover:brightness-[1.02] active:scale-[0.99] border shadow-sm",
+                                                isAirbnb 
+                                                    ? "border-rose-300/60 dark:border-rose-500/30" 
+                                                    : isBooking
+                                                        ? "border-blue-300/60 dark:border-blue-500/30"
+                                                        : isBlock 
+                                                            ? "border-slate-300/60 dark:border-slate-600"
+                                                            : "border-black/10 dark:border-white/10"
+                                            )}
+                                            style={{
+                                                left: `${leftPct + startPadding}%`,
+                                                width: `${widthPct - startPadding - endPadding}%`,
+                                                top: topPx,
+                                                height: BAR_H,
+                                                borderRadius: `${bar.isStart ? "6px" : "0px"} ${bar.isEnd ? "6px" : "0px"} ${bar.isEnd ? "6px" : "0px"} ${bar.isStart ? "6px" : "0px"}`,
+                                                background: isAirbnb 
+                                                    ? 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 6px, #ffe4e6 6px, #ffe4e6 12px)'
+                                                    : isBooking
+                                                        ? 'repeating-linear-gradient(45deg, #eff6ff, #eff6ff 6px, #dbeafe 6px, #dbeafe 12px)'
+                                                        : isBlock
+                                                            ? 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #f1f5f9 6px, #f1f5f9 12px)'
+                                                            : getStatusColor(bar.status, bar.checkIn, bar.checkOut),
+                                                zIndex: 5,
+                                            }}
+                                            onMouseEnter={(e) => handleBarMouseEnter(e, bar)}
+                                            onMouseMove={handleBarMouseMove}
+                                            onMouseLeave={handleBarMouseLeave}
+                                        >
+                                            <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between pointer-events-none overflow-hidden gap-2">
+                                                {showName && (
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                        {isAirbnb ? (
+                                                            <div className="size-5 rounded-md bg-rose-500 flex items-center justify-center shrink-0 shadow-sm">
+                                                                <Globe className="size-3 text-white" />
                                                             </div>
-                                                        )}
-                                                        {/* Price on last segment */}
-                                                        {bar.isEnd && bar.totalPrice && (
-                                                            <span className="text-[10px] font-bold text-white/90 shrink-0">
-                                                                €{bar.totalPrice.toLocaleString()}
+                                                        ) : isBooking ? (
+                                                            <div className="size-5 rounded-md bg-blue-600 flex items-center justify-center shrink-0 shadow-sm">
+                                                                <Building2 className="size-3 text-white" />
+                                                            </div>
+                                                        ) : isBlock ? (
+                                                            <Ban className="size-3.5 text-slate-500 shrink-0" />
+                                                        ) : (
+                                                            <span className="size-4 rounded-full flex-shrink-0 flex items-center justify-center text-[8px] font-bold border border-white/20 bg-white/15 text-white">
+                                                                {bar.guestName.charAt(0).toUpperCase()}
                                                             </span>
                                                         )}
+                                                        <span className={cn(
+                                                            "text-[10px] font-bold truncate leading-none",
+                                                            isAirbnb ? "text-rose-800 dark:text-rose-200" : 
+                                                            isBooking ? "text-blue-800 dark:text-blue-200" :
+                                                            isBlock ? "text-slate-600 dark:text-slate-300" : "text-white"
+                                                        )}>
+                                                            {isAirbnb ? "Airbnb" : isBooking ? "Booking.com" : bar.guestName}
+                                                        </span>
                                                     </div>
-                                                </div>
-                                        );
-                                    })}
+                                                )}
+                                                {bar.isEnd && bar.totalPrice && (
+                                                    <span className="text-[10px] font-bold text-white/90 shrink-0">
+                                                        €{bar.totalPrice.toLocaleString()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                                 </div>
                             </div>
                         );
@@ -605,13 +622,16 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
                                                                 year === todayDate.getFullYear();
                                                             const reserved = isDateReserved(new Date(year, monthIndex, seg.start));
                                                             const isAirbnb = reserved?.type === "airbnb";
+                                                            const isBooking = reserved?.type === "booking";
                                                             const isBlock = reserved?.type === "block";
                                                             const color = isAirbnb 
                                                                 ? "bg-rose-400 dark:bg-rose-500" 
-                                                                : isBlock 
-                                                                    ? "bg-slate-300 dark:bg-slate-500" 
-                                                                    : "";
-                                                            const customBg = !isAirbnb && !isBlock ? getStatusColor(seg.status, seg.checkIn, seg.checkOut) : null;
+                                                                : isBooking
+                                                                    ? "bg-blue-400 dark:bg-blue-500"
+                                                                    : isBlock 
+                                                                        ? "bg-slate-300 dark:bg-slate-500" 
+                                                                        : "";
+                                                            const customBg = !isAirbnb && !isBooking && !isBlock ? getStatusColor(seg.status, seg.checkIn, seg.checkOut) : null;
 
                                                             return (
                                                                 <div
@@ -738,14 +758,22 @@ function ReservationTooltip({
         >
             {/* Color strip */}
             <div className="h-1.5 w-full" style={{ 
-                backgroundColor: bar.type === "airbnb" ? "#f43f5e" : bar.type === "block" ? "#94a3b8" : getStatusColor(bar.status, bar.checkIn, bar.checkOut) 
+                backgroundColor: bar.type === "airbnb" ? "#f43f5e" : 
+                                 bar.type === "booking" ? "#2563eb" :
+                                 bar.type === "block" ? "#94a3b8" : 
+                                 getStatusColor(bar.status, bar.checkIn, bar.checkOut) 
             }} />
 
             <div className="p-4 space-y-3">
                 {/* Guest */}
                 <div className="flex items-center gap-3">
                     <div className="size-10 rounded-full flex items-center justify-center text-white font-bold text-base flex-shrink-0" 
-                        style={{ backgroundColor: bar.type === "airbnb" ? "#f43f5e" : bar.type === "block" ? "#94a3b8" : getStatusColor(bar.status, bar.checkIn, bar.checkOut) }}>
+                        style={{ 
+                            backgroundColor: bar.type === "airbnb" ? "#f43f5e" : 
+                                             bar.type === "booking" ? "#2563eb" :
+                                             bar.type === "block" ? "#94a3b8" : 
+                                             getStatusColor(bar.status, bar.checkIn, bar.checkOut) 
+                        }}>
                         {bar.guestName.charAt(0).toUpperCase()}
                     </div>
                     <div>

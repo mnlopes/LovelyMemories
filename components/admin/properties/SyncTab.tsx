@@ -42,10 +42,10 @@ export default function SyncTab({ propertyId }: SyncTabProps) {
                 <div className="mb-10 p-6 bg-[#fafafa] dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border">
                     <h4 className="font-bold text-[#171717] dark:text-admin-dark-text-primary mb-2 flex items-center gap-2">
                         <Link className="size-4 text-emerald-500" />
-                        Exportar Calendário (Para o Airbnb)
+                        Exportar Calendário (LovelyMemories → Airbnb/Booking)
                     </h4>
                     <p className="text-sm text-[#a3a3a3] mb-4">
-                        Copie este link e cole-o na secção &quot;Importar Calendário&quot; do painel de anfitrião do Airbnb/Booking.
+                        Copie este link e cole-o na secção &quot;Importar Calendário&quot; do painel de anfitrião do Airbnb, Booking ou outros.
                     </p>
                     
                     {propertyId ? (
@@ -75,10 +75,10 @@ export default function SyncTab({ propertyId }: SyncTabProps) {
                 <div className="p-6 bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border">
                     <h4 className="font-bold text-[#171717] dark:text-admin-dark-text-primary mb-2 flex items-center gap-2">
                         <Link className="size-4 text-blue-500" />
-                        Importar Calendários (Do Airbnb)
+                        Importar Calendários (Airbnb/Booking → LovelyMemories)
                     </h4>
                     <p className="text-sm text-[#a3a3a3] mb-6">
-                        Cole aqui os links de exportação .ics do Airbnb. O nosso sistema vai lutar estes calendários e bloquear as datas correspondentes diariamente.
+                        Cole aqui os links de exportação .ics do Airbnb ou Booking. Pode adicionar vários links (ex: um para cada plataforma). O nosso sistema vai sincronizar estas reservas e bloquear as datas automaticamente.
                     </p>
 
                     <div className="space-y-4">
@@ -87,7 +87,7 @@ export default function SyncTab({ propertyId }: SyncTabProps) {
                                 <div className="flex-1">
                                     <input
                                         {...register(`ical_import_urls.${index}` as any)}
-                                        placeholder="https://www.airbnb.pt/calendar/ical/..."
+                                        placeholder="https://www.airbnb.pt/calendar/ical/... ou https://ical.booking.com/v1/export/..."
                                         className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border p-3 rounded-xl text-sm text-[#171717] dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-mono"
                                     />
                                 </div>

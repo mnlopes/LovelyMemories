@@ -222,8 +222,8 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                             </div>
 
                             {selectedOwner && (
-                                <span className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-admin-dark-bg text-[#171717] dark:text-admin-dark-text-primary text-[10px] font-bold uppercase tracking-wider border border-gray-100 dark:border-admin-dark-border flex items-center gap-1.5 transition-all">
-                                    <User className="size-3" />
+                                <span className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-wider border border-indigo-100 dark:border-indigo-500/30 flex items-center gap-1.5 transition-all shadow-sm">
+                                    <User className="size-3 text-indigo-500" />
                                     {t('basic.ownerLabel') || "Owner"}: {selectedOwner.label.split(' (')[0]}
                                 </span>
                             )}

@@ -1,25 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/routing";
-import { supabase } from "@/lib/supabase";
-import { Mail, Lock, Loader2, ChevronRight, ArrowRight } from "lucide-react";
+import { Mail, Lock, Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { loginWithEmail } from "@/app/actions/auth";
+import { loginWithEmail, requestPasswordReset } from "@/app/actions/auth";
 
 export default function LoginPage() {
     const t = useTranslations('Auth');
     const router = useRouter();
     const params = useParams();
-    const locale = params.locale;
+    const locale = params.locale as string;
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isResetMode, setIsResetMode] = useState(false);
+    const [resetEmailSent, setResetEmailSent] = useState(false);
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(true);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,7 +29,7 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            const result = await loginWithEmail(email, password);
+            const result = await loginWithEmail(email, password, rememberMe);
             if (result.error) throw new Error(result.error);
 
             // Success! Give the browser a moment to resolve redirects
@@ -47,6 +49,22 @@ export default function LoginPage() {
             window.location.href = redirectUrl;
         } catch (err: any) {
             setError(err.message || t('errorInvalid'));
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const result = await requestPasswordReset(email, locale);
+            if (result.error) throw new Error(result.error);
+            setResetEmailSent(true);
+        } catch (err: any) {
+            setError(err.message || "Failed to send reset link. Please try again.");
         } finally {
             setIsLoading(false);
         }
@@ -78,100 +96,206 @@ export default function LoginPage() {
                         />
                     </Link>
                     <h1 className="text-4xl font-playfair font-bold text-[#0A1128] mb-3 tracking-tight">
-                        {t('welcomeBack')}
+                        {isResetMode ? (resetEmailSent ? t('checkEmail') || "Check Email" : "Reset Password") : t('welcomeBack')}
                     </h1>
                     <p className="text-[#0A1128]/50 text-base font-light tracking-wide">
-                        {t('loginDesc') || "Enter your credentials to access your dashboard"}
+                        {isResetMode 
+                            ? (resetEmailSent 
+                                ? "We've sent a recovery link to your email address." 
+                                : "Enter your email to receive a password reset link.") 
+                            : (t('loginDesc') || "Enter your credentials to access your dashboard")}
                     </p>
                 </div>
 
-                {/* Login Card */}
-                <div className="bg-white rounded-[24px] p-8 md:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-[#F0F0F0] relative overflow-hidden">
+                {/* Card Container */}
+                <div className="bg-white rounded-[24px] p-8 md:p-10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-[#F0F0F0] relative overflow-hidden min-h-[400px] flex flex-col justify-center">
                     {/* Top Accent Line */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#C5A059] to-[#B09E80]" />
 
-                    <form onSubmit={handleSubmit} className="space-y-6 pt-2">
-                        {error && (
+                    <AnimatePresence mode="wait">
+                        {resetEmailSent ? (
                             <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium flex items-center gap-2"
+                                key="success"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="text-center py-4"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
-                                    <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
-                                </svg>
-                                {error}
+                                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-[#0A1128] mb-2">Link Sent!</h3>
+                                <p className="text-[#0A1128]/60 text-sm mb-8">
+                                    Please check your inbox (and spam folder) for the reset instructions.
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        setResetEmailSent(false);
+                                        setIsResetMode(false);
+                                    }}
+                                    className="text-sm font-bold text-[#C5A059] uppercase tracking-widest hover:underline"
+                                >
+                                    Back to Login
+                                </button>
                             </motion.div>
-                        )}
-
-                        <div className="space-y-4">
-                            <div className="space-y-1.5 relative group">
-                                <label className="text-xs font-bold text-[#0A1128]/70 uppercase tracking-widest ml-1 mb-1 block">
-                                    {t('email')}
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A1128]/30 group-focus-within:text-[#C5A059] transition-colors duration-300">
-                                        <Mail className="w-5 h-5" strokeWidth={1.5} />
-                                    </span>
-                                    <input
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="name@example.com"
-                                        className="w-full h-14 pl-12 pr-4 bg-[#FAFAFA] border border-[#EBEBEB] rounded-xl focus:outline-none focus:border-[#C5A059] focus:bg-white focus:ring-4 focus:ring-[#C5A059]/5 transition-all outline-none text-[#0A1128] placeholder:text-gray-400 font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5 relative group">
-                                <label className="text-xs font-bold text-[#0A1128]/70 uppercase tracking-widest ml-1 mb-1 block">
-                                    {t('password')}
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A1128]/30 group-focus-within:text-[#C5A059] transition-colors duration-300">
-                                        <Lock className="w-5 h-5" strokeWidth={1.5} />
-                                    </span>
-                                    <input
-                                        type="password"
-                                        required
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        className="w-full h-14 pl-12 pr-4 bg-[#FAFAFA] border border-[#EBEBEB] rounded-xl focus:outline-none focus:border-[#C5A059] focus:bg-white focus:ring-4 focus:ring-[#C5A059]/5 transition-all outline-none text-[#0A1128] placeholder:text-gray-400 font-medium font-sans"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-1">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[#C5A059] focus:ring-[#C5A059] cursor-pointer" />
-                                <span className="text-sm text-[#0A1128]/60 group-hover:text-[#0A1128] transition-colors">{t('rememberMe') || "Keep me logged in"}</span>
-                            </label>
-
-                            <button type="button" className="text-sm font-semibold text-[#B09E80] hover:text-[#9E8C6D] transition-colors">
-                                Forgot password?
-                            </button>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full h-14 bg-[#0A1128] text-white rounded-xl font-bold uppercase tracking-[0.15em] hover:bg-[#152040] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group relative overflow-hidden"
-                        >
-                            <span className="relative z-10 flex items-center gap-2">
-                                {isLoading ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <>
-                                        {t('signInButton')}
-                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                    </>
+                        ) : isResetMode ? (
+                            <motion.form
+                                key="reset-form"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                onSubmit={handleResetPassword}
+                                className="space-y-6 pt-2"
+                            >
+                                {error && (
+                                    <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium flex items-center gap-2">
+                                        <Mail className="w-4 h-4 shrink-0" />
+                                        {error}
+                                    </div>
                                 )}
-                            </span>
-                        </button>
-                    </form>
+
+                                <div className="space-y-1.5 relative group">
+                                    <label className="text-xs font-bold text-[#0A1128]/70 uppercase tracking-widest ml-1 mb-1 block">
+                                        {t('email')}
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A1128]/30 group-focus-within:text-[#C5A059] transition-colors duration-300">
+                                            <Mail className="w-5 h-5" strokeWidth={1.5} />
+                                        </span>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="name@example.com"
+                                            className="w-full h-14 pl-12 pr-4 bg-[#FAFAFA] border border-[#EBEBEB] rounded-xl focus:outline-none focus:border-[#C5A059] focus:bg-white focus:ring-4 focus:ring-[#C5A059]/5 transition-all outline-none text-[#0A1128] placeholder:text-gray-400 font-medium"
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full h-14 bg-[#0A1128] text-white rounded-xl font-bold uppercase tracking-[0.15em] hover:bg-[#152040] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group relative overflow-hidden"
+                                >
+                                    <span className="relative z-10 flex items-center gap-2">
+                                        {isLoading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                Send Reset Link
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                            </>
+                                        )}
+                                    </span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setIsResetMode(false)}
+                                    className="w-full text-center text-sm font-bold text-[#0A1128]/40 hover:text-[#0A1128] transition-colors flex items-center justify-center gap-2 group"
+                                >
+                                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                                    Back to Login
+                                </button>
+                            </motion.form>
+                        ) : (
+                            <motion.form
+                                key="login-form"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                onSubmit={handleSubmit}
+                                className="space-y-6 pt-2"
+                            >
+                                {error && (
+                                    <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0">
+                                            <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
+                                        </svg>
+                                        {error}
+                                    </div>
+                                )}
+
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5 relative group">
+                                        <label className="text-xs font-bold text-[#0A1128]/70 uppercase tracking-widest ml-1 mb-1 block">
+                                            {t('email')}
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A1128]/30 group-focus-within:text-[#C5A059] transition-colors duration-300">
+                                                <Mail className="w-5 h-5" strokeWidth={1.5} />
+                                            </span>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="name@example.com"
+                                                className="w-full h-14 pl-12 pr-4 bg-[#FAFAFA] border border-[#EBEBEB] rounded-xl focus:outline-none focus:border-[#C5A059] focus:bg-white focus:ring-4 focus:ring-[#C5A059]/5 transition-all outline-none text-[#0A1128] placeholder:text-gray-400 font-medium"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5 relative group">
+                                        <label className="text-xs font-bold text-[#0A1128]/70 uppercase tracking-widest ml-1 mb-1 block">
+                                            {t('password')}
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A1128]/30 group-focus-within:text-[#C5A059] transition-colors duration-300">
+                                                <Lock className="w-5 h-5" strokeWidth={1.5} />
+                                            </span>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full h-14 pl-12 pr-4 bg-[#FAFAFA] border border-[#EBEBEB] rounded-xl focus:outline-none focus:border-[#C5A059] focus:bg-white focus:ring-4 focus:ring-[#C5A059]/5 transition-all outline-none text-[#0A1128] placeholder:text-gray-400 font-medium font-sans"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1">
+                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
+                                            className="w-4 h-4 rounded border-gray-300 text-[#C5A059] focus:ring-[#C5A059] cursor-pointer" 
+                                        />
+                                        <span className="text-sm text-[#0A1128]/60 group-hover:text-[#0A1128] transition-colors">{t('rememberMe') || "Keep me logged in"}</span>
+                                    </label>
+
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsResetMode(true)}
+                                        className="text-sm font-semibold text-[#B09E80] hover:text-[#9E8C6D] transition-colors"
+                                    >
+                                        Forgot password?
+                                    </button>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full h-14 bg-[#0A1128] text-white rounded-xl font-bold uppercase tracking-[0.15em] hover:bg-[#152040] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group relative overflow-hidden"
+                                >
+                                    <span className="relative z-10 flex items-center gap-2">
+                                        {isLoading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                {t('signInButton')}
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                            </>
+                                        )}
+                                    </span>
+                                </button>
+                            </motion.form>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Footer Links */}

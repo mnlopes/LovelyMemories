@@ -13,6 +13,14 @@
         "performance": "Desempenho",
         "signOut": "Sair"
     },
+    "OwnerSidebar": {
+        "dashboard": "Painel Principal",
+        "properties": "Minhas Propriedades",
+        "profile": "Perfil",
+        "signOut": "Sair",
+        "collapse": "Colapsar Menu",
+        "expand": "Expandir"
+    },
     "AdminCoupons": {
         "title": "Cupões de Desconto",
         "subtitle": "Gira os códigos promocionais e descontos especiais para os seus hóspedes.",
@@ -467,7 +475,95 @@
         "confirmPassword": "Confirmar Palavra-passe",
         "savePassword": "Guardar e Entrar",
         "passwordMismatch": "As passwords não coincidem",
-        "successPassword": "Password definida com sucesso!"
+        "successPassword": "Password definida com sucesso!",
+        "rememberMe": "Manter sessão iniciada",
+        "forgotPassword": "Esqueceu-se da palavra-passe?",
+        "checkEmail": "Verifique o seu Email",
+        "resetPassword": "Recuperar Palavra-passe",
+        "resetDesc": "Introduza o seu email para receber um link de recuperação.",
+        "sendResetLink": "Enviar Link de Recuperação",
+        "backToLogin": "Voltar ao Login",
+        "linkSent": "Link de redifinição enviado!",
+        "checkInbox": "Por favor verifique a sua caixa de entrada (e pasta de spam) pelo link de redifinição.",
+        "minChars": "Pelo menos 8 caracteres",
+        "oneLetter": "Uma letra",
+        "oneNumber": "Um número",
+        "passwordDesc": "A palavra-passe deve ter pelo menos 8 caracteres, uma letra e um número"
+    },
+    "OwnerProfile": {
+        "title": "Definições de Conta",
+        "subtitle": "Gira as suas informações de perfil e definições de segurança.",
+        "personalInfo": "Informações Pessoais",
+        "security": "Segurança",
+        "fullName": "Nome Completo",
+        "email": "Endereço de Email",
+        "phone": "Telemóvel",
+        "language": "Idioma de Preferência",
+        "portuguese": "Português",
+        "english": "Inglês",
+        "newPassword": "Nova Palavra-passe",
+        "confirmPassword": "Confirmar Nova Palavra-passe",
+        "updateProfile": "Atualizar Perfil",
+        "changePassword": "Alterar Palavra-passe",
+        "profileUpdated": "Perfil atualizado com sucesso!",
+        "emailUpdateStarted": "Email de confirmação enviado para o seu novo endereço.",
+        "passwordUpdated": "Palavra-passe alterada com sucesso!",
+        "errorUpdate": "Falha ao atualizar o perfil.",
+        "errorPassword": "Falha ao alterar a palavra-passe.",
+        "confirmPasswordChange": "Confirmar Alteração de Palavra-passe",
+        "areYouSurePassword": "Tem a certeza que deseja alterar a sua palavra-passe? Terá de usar a nova no seu próximo login.",
+        "yesChange": "Sim, Alterar Palavra-passe",
+        "cancel": "Cancelar",
+        "passwordMismatch": "As palavras-passe não coincidem",
+        "passwordRequirements": "Requisitos da palavra-passe:",
+        "reqMinChars": "Pelo menos 8 caracteres",
+        "reqNumber": "Pelo menos um número",
+        "reqLetter": "Pelo menos uma letra"
+    },
+    "OwnerDashboard": {
+        "welcome": "Bem-vindo de volta, {name}",
+        "subtitle": "Aqui está uma visão geral do desempenho do seu portefólio.",
+        "revenue": "Receita Total",
+        "activeProperties": "Propriedades Ativas",
+        "totalGuests": "Total de Hóspedes",
+        "avgOccupancy": "Ocupação Média",
+        "vsLastMonth": "v. mês anterior",
+        "Filters": {
+            "allProperties": "Todas as Propriedades",
+            "allMonths": "Todos os Meses",
+            "clearFilters": "Limpar Filtros"
+        }
+    },
+    "OwnerProperties": {
+        "title": "Minhas Propriedades",
+        "subtitle": "Gira e visualize os detalhes das suas propriedades atribuídas.",
+        "viewLive": "Ver Página em Direto",
+        "active": "Ativa",
+        "empty": "Nenhuma propriedade atribuída ainda.",
+        "emptySubtitle": "Contacte o seu administrador para atribuir propriedades à sua conta."
+    },
+    "RecentActivity": {
+        "title": "Atividade Recente",
+        "viewAll": "Ver Tudo",
+        "empty": "Nenhuma atividade recente encontrada.",
+        "totalItems": "itens no total"
+    },
+    "RevenueChart": {
+        "title": "Visão Geral de Receita",
+        "subtitle": "vs período anterior"
+    },
+    "OccupancyDonut": {
+        "title": "Ocupação",
+        "properties": "Propriedades",
+        "occupied": "Ocupado",
+        "available": "Disponível",
+        "maintenance": "Manutenção"
+    },
+    "ActivityTypes": {
+        "newBooking": "Nova Reserva",
+        "checkIn": "Check-In",
+        "maintenance": "Manutenção",
+        "blocked": "Bloqueado"
     },
     "Footer": {
         "getInTouch": "Fale Connosco",

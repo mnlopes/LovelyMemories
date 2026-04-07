@@ -83,8 +83,8 @@ export default function AdminUsersPage() {
     const getAvailableRolesForCurrent = () => {
         if (!currentUserProfile) return [];
         // Only allow Team roles (no owners)
-        if (currentUserProfile.role === 'super_admin') return ['super_admin', 'admin', 'editor', 'user'];
-        if (currentUserProfile.role === 'admin') return ['admin', 'editor', 'user'];
+        if (currentUserProfile.role === 'super_admin') return ['super_admin', 'admin', 'editor'];
+        if (currentUserProfile.role === 'admin') return ['admin', 'editor'];
         return [];
     };
 
@@ -291,7 +291,7 @@ export default function AdminUsersPage() {
                 onClose={() => setIsInviteModalOpen(false)}
                 onSuccess={fetchProfiles}
                 currentUserRole={currentUserProfile?.role || 'user'}
-                allowedRoles={['super_admin', 'admin', 'editor', 'user']}
+                allowedRoles={['super_admin', 'admin', 'editor']}
             />
 
             {/* Delete Confirmation Modal */}

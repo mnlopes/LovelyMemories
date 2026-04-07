@@ -30,8 +30,8 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
 
     const getAvailableRoles = (): AppRole[] => {
         let roles: AppRole[] = [];
-        if (currentUserRole === 'super_admin') roles = ['super_admin', 'admin', 'editor', 'user', 'owner'];
-        else if (currentUserRole === 'admin') roles = ['admin', 'editor', 'user', 'owner'];
+        if (currentUserRole === 'super_admin') roles = ['super_admin', 'admin', 'editor', 'owner'];
+        else if (currentUserRole === 'admin') roles = ['admin', 'editor', 'owner'];
 
         if (allowedRoles) {
             return roles.filter(r => allowedRoles.includes(r));
