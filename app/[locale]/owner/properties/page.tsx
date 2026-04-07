@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Link } from "@/i18n/routing";
 import { ArrowRight, MapPin, Bed, Bath, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 export default async function OwnerPropertiesPage({
     params
@@ -24,6 +25,7 @@ export default async function OwnerPropertiesPage({
     );
 
     const { data: { user } } = await supabase.auth.getUser();
+    const t = await getTranslations('OwnerProperties');
 
     // Fetch Owner's Properties
     const { data: properties } = await supabase
@@ -39,12 +41,12 @@ export default async function OwnerPropertiesPage({
     return (
         <div className="space-y-8 max-w-[1400px] mx-auto">
             <div className="flex justify-between items-center">
-                <div>
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <h1 className="text-3xl font-bold font-playfair text-[#0A1128]">
-                        My Properties
+                        {t('title')}
                     </h1>
                     <p className="text-gray-500 font-light tracking-wide mt-2">
-                        Manage and view details of your assigned properties.
+                        {t('subtitle')}
                     </p>
                 </div>
             </div>
@@ -68,7 +70,7 @@ export default async function OwnerPropertiesPage({
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                 />
                                 <div className="absolute top-5 right-5 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-[#0A1128] shadow-sm">
-                                    {property.status || 'Active'}
+                                    {t('active')}
                                 </div>
                             </div>
 
@@ -85,15 +87,15 @@ export default async function OwnerPropertiesPage({
 
                                 <div className="flex items-center justify-between py-6 border-t border-gray-50">
                                     <div className="flex items-center gap-6 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                        <div className="flex items-center gap-2" title="Guests">
+                                        <div className="flex items-center gap-2">
                                             <Users className="size-4 text-[#0A1128]" />
                                             <span className="text-[#0A1128]">{property.max_guests || 0}</span>
                                         </div>
-                                        <div className="flex items-center gap-2" title="Bedrooms">
+                                        <div className="flex items-center gap-2">
                                             <Bed className="size-4 text-[#0A1128]" />
                                             <span className="text-[#0A1128]">{property.bedrooms || 0}</span>
                                         </div>
-                                        <div className="flex items-center gap-2" title="Bathrooms">
+                                        <div className="flex items-center gap-2">
                                             <Bath className="size-4 text-[#0A1128]" />
                                             <span className="text-[#0A1128]">{property.bathrooms || 0}</span>
                                         </div>
@@ -105,7 +107,7 @@ export default async function OwnerPropertiesPage({
                                     target="_blank"
                                     className="flex items-center justify-between w-full px-6 py-4 bg-[#0A1128] rounded-2xl text-[11px] font-black text-white uppercase tracking-[0.2em] hover:bg-[#C5A059] transition-all transform active:scale-95 shadow-lg shadow-navy-100 group/btn"
                                 >
-                                    View Live Page
+                                    {t('viewLive')}
                                     <ArrowRight className="size-4 group-hover/btn:translate-x-1 transition-transform" />
                                 </Link>
                             </div>
@@ -114,9 +116,9 @@ export default async function OwnerPropertiesPage({
                 })}
 
                 {(!properties || properties.length === 0) && (
-                    <div className="col-span-full py-20 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                        <p className="text-gray-400 font-medium">No properties assigned yet.</p>
-                        <p className="text-sm text-gray-400 mt-1">Contact your administrator to assign properties to your account.</p>
+                    <div className="col-span-full py-20 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200 animate-in fade-in zoom-in duration-700">
+                        <p className="text-gray-400 font-medium">{t('empty')}</p>
+                        <p className="text-sm text-gray-400 mt-1">{t('emptySubtitle')}</p>
                     </div>
                 )}
             </div>

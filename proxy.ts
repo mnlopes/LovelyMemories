@@ -3,7 +3,7 @@ import { routing } from './i18n/routing';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export default async function middleware(request: NextRequest, event: NextFetchEvent) {
+export default async function proxy(request: NextRequest, event: NextFetchEvent) {
     const startTime = Date.now();
     const { pathname } = request.nextUrl;
 
@@ -56,7 +56,7 @@ export default async function middleware(request: NextRequest, event: NextFetchE
             }
         }
     } catch (authErr) {
-        console.error("[Middleware] Auth Error:", authErr);
+        console.error("[Proxy] Auth Error:", authErr);
     }
 
     // 4. Maintenance Check & Logging

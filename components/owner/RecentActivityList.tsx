@@ -1,26 +1,51 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Link } from "@/i18n/routing";
-import { ArrowRight, Calendar, UserCheck, Settings, Home } from "lucide-react";
+import { Link, useRouter, usePathname } from "@/i18n/routing";
+import { Calendar, UserCheck, Settings, Home, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
 interface ActivityItem {
     id: string;
     type: 'booking' | 'check-in' | 'maintenance' | 'blocked';
     title: string;
     subtitle: string;
-    date: string; // e.g., "Today, 10:00 AM"
-    amount?: string; // e.g. "+ €450"
+    date: string; 
+    amount?: string;
 }
 
 interface RecentActivityListProps {
     activities: ActivityItem[];
+    totalCount: number;
+    currentPage: number;
     className?: string;
     delay?: number;
 }
 
-export function RecentActivityList({ activities, className, delay = 0.6 }: RecentActivityListProps) {
+export function RecentActivityList({ 
+    activities, 
+    totalCount, 
+    currentPage, 
+    className, 
+    delay = 0.6 
+}: RecentActivityListProps) {
+    const t = useTranslations('RecentActivity');
+    const tTypes = useTranslations('ActivityTypes');
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    const pageSize = 10;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    const handlePageChange = (page: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('page', page.toString());
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    };
+
     const getIcon = (type: ActivityItem['type']) => {
         switch (type) {
             case 'booking': return <Calendar className="w-4 h-4 text-green-600" />;
@@ -46,46 +71,92 @@ export function RecentActivityList({ activities, className, delay = 0.6 }: Recen
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay, ease: "easeOut" }}
-            className={cn("bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 h-full flex flex-col", className)}
+            className={cn("bg-white rounded-[32px] p-8 shadow-sm border border-gray-100 h-full flex flex-col", className)}
         >
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-[#0A1128]">Recent Activity</h3>
-                <Link href="/owner/properties" className="text-sm font-bold text-[#C5A059] hover:text-[#9E8C6D] flex items-center gap-1 transition-colors">
-                    View All <ArrowRight className="w-4 h-4" />
-                </Link>
+            <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-[#0A1128]">{t('title')}</h3>
+                <div className="text-xs font-bold text-gray-400">
+                    {totalCount} {t('totalItems', { defaultValue: 'total items' })}
+                </div>
             </div>
 
-            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                {activities.map((item, i) => (
-                    <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: delay + (i * 0.1), duration: 0.4 }}
-                        className="flex items-center justify-between p-3 rounded-xl hover:bg-[#FAFAFA] transition-colors group cursor-default"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", getBgColor(item.type))}>
-                                {getIcon(item.type)}
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-bold text-[#0A1128]">{item.title}</h4>
-                                <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
-                            </div>
-                        </div>
+            <div className="space-y-4 flex-1">
+                {activities.length > 0 ? (
+                    <>
+                        {activities.map((item, i) => (
+                            <motion.div
+                                key={item.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: delay + (i * 0.05), duration: 0.4 }}
+                                className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50/80 transition-all border border-transparent hover:border-gray-100 group cursor-default"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", getBgColor(item.type))}>
+                                        {getIcon(item.type)}
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-[#0A1128]">
+                                            {tTypes.has(item.title) ? tTypes(item.title) : item.title}
+                                        </h4>
+                                        <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
+                                    </div>
+                                </div>
 
-                        <div className="text-right">
-                            {item.amount && (
-                                <p className="text-sm font-bold text-[#0A1128] mb-0.5">{item.amount}</p>
-                            )}
-                            <p className="text-[10px] text-gray-400 font-medium">{item.date}</p>
-                        </div>
-                    </motion.div>
-                ))}
+                                <div className="text-right">
+                                    {item.amount && (
+                                        <p className="text-sm font-bold text-[#192537] mb-0.5">{item.amount}</p>
+                                    )}
+                                    <p className="text-[10px] text-gray-400 font-medium">{item.date}</p>
+                                </div>
+                            </motion.div>
+                        ))}
 
-                {activities.length === 0 && (
-                    <div className="text-center py-10 text-gray-400 text-sm">
-                        No recent activity found.
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-2 mt-8 pt-4 border-t border-gray-50">
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:bg-gray-50 transition-all group"
+                                >
+                                    <ChevronLeft className="size-4 group-active:scale-95 transition-transform" />
+                                </button>
+                                
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                    .map((p, i, arr) => {
+                                        const showDots = i > 0 && p !== arr[i-1] + 1;
+                                        return (
+                                            <div key={p} className="flex items-center gap-2">
+                                                {showDots && <span className="text-gray-300">...</span>}
+                                                <button
+                                                    onClick={() => handlePageChange(p)}
+                                                    className={cn(
+                                                        "size-9 rounded-xl text-sm font-bold transition-all",
+                                                        currentPage === p 
+                                                            ? "bg-[#0A1128] text-white shadow-lg shadow-blue-900/20" 
+                                                            : "text-gray-500 hover:bg-gray-50"
+                                                    )}
+                                                >
+                                                    {p}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:bg-gray-50 transition-all group"
+                                >
+                                    <ChevronRight className="size-4 group-active:scale-95 transition-transform" />
+                                </button>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="py-12 text-center text-gray-400 text-sm font-medium italic">
+                        {t('empty', { defaultValue: 'No recent activity found.' })}
                     </div>
                 )}
             </div>

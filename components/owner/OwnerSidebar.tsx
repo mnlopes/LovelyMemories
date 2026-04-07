@@ -11,16 +11,7 @@ import { cn } from "@/lib/utils";
 
 export const OwnerSidebar = () => {
     const pathname = usePathname();
-    // const t = useTranslations('OwnerSidebar'); // Fallback to hardcoded if translation missing
-    const t = (key: string) => {
-        const map: Record<string, string> = {
-            'dashboard': 'Dashboard',
-            'properties': 'My Properties',
-            'profile': 'Profile',
-            'signOut': 'Sign Out'
-        };
-        return map[key] || key;
-    };
+    const t = useTranslations('OwnerSidebar');
 
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -39,7 +30,7 @@ export const OwnerSidebar = () => {
     const menuItems = [
         { icon: LayoutDashboard, label: t('dashboard'), path: "/owner" },
         { icon: Hotel, label: t('properties'), path: "/owner/properties" },
-        // { icon: User, label: t('profile'), path: "/owner/profile" },
+        { icon: User, label: t('profile'), path: "/owner/profile" },
     ];
 
     return (
@@ -105,10 +96,10 @@ export const OwnerSidebar = () => {
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     className={`w-full flex items-center transition-colors text-gray-400 hover:text-[#192537] ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2 text-xs font-medium'}`}
-                    title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                    title={isCollapsed ? t('expand') : t('collapse')}
                 >
                     <LayoutGrid className="size-4" />
-                    {!isCollapsed && <span>{isCollapsed ? "Expand" : "Collapse View"}</span>}
+                    {!isCollapsed && <span>{isCollapsed ? t('expand') : t('collapse')}</span>}
                 </button>
 
                 <button

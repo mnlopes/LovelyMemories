@@ -10,9 +10,22 @@ import { revalidatePath } from 'next/cache';
 function parseIcalManual(icsContent: string) {
     const events: any[] = [];
     const lines = icsContent.split(/\r?\n/);
+    const unfoldedLines: string[] = [];
+    
+    // Unfold lines (iCal RFC 5545 specifies that lines starting with space/tab are continuation of previous line)
+    for (const line of lines) {
+        if (line.startsWith(' ') || line.startsWith('\t')) {
+            if (unfoldedLines.length > 0) {
+                unfoldedLines[unfoldedLines.length - 1] += line.substring(1);
+            }
+        } else {
+            unfoldedLines.push(line);
+        }
+    }
+
     let currentEvent: any = null;
 
-    for (const line of lines) {
+    for (const line of unfoldedLines) {
         if (line.startsWith('BEGIN:VEVENT')) {
             currentEvent = {};
         } else if (line.startsWith('END:VEVENT')) {
@@ -21,16 +34,22 @@ function parseIcalManual(icsContent: string) {
             }
             currentEvent = null;
         } else if (currentEvent) {
-            if (line.startsWith('DTSTART')) {
-                const val = line.split(':')[1] || line.split(';')[1]?.split(':')[1];
-                currentEvent.dtstart = parseIcalDate(val);
-            } else if (line.startsWith('DTEND')) {
-                const val = line.split(':')[1] || line.split(';')[1]?.split(':')[1];
-                currentEvent.dtend = parseIcalDate(val);
-            } else if (line.startsWith('SUMMARY')) {
-                currentEvent.summary = line.split(':')[1];
-            } else if (line.startsWith('UID')) {
-                currentEvent.uid = line.split(':')[1];
+            // Handle parameters in keys like DTSTART;VALUE=DATE:20240101
+            const firstColon = line.indexOf(':');
+            if (firstColon === -1) continue;
+            
+            const keyPart = line.substring(0, firstColon);
+            const value = line.substring(firstColon + 1);
+            const key = keyPart.split(';')[0]; // Extract the base key name
+
+            if (key === 'DTSTART') {
+                currentEvent.dtstart = parseIcalDate(value);
+            } else if (key === 'DTEND') {
+                currentEvent.dtend = parseIcalDate(value);
+            } else if (key === 'SUMMARY') {
+                currentEvent.summary = value;
+            } else if (key === 'UID') {
+                currentEvent.uid = value;
             }
         }
     }
@@ -79,15 +98,17 @@ export async function syncPropertyICal(propertyId: string) {
 
         const propertyTitle = typeof property.title === 'object' ? property.title.en : property.title;
         const urls: string[] = property.ical_import_urls || [];
+        let newEventsCount = 0;
         
         if (urls.length === 0) {
             return { success: true, message: 'No iCal URLs to sync', propertyTitle };
         }
 
-        let newEventsCount = 0;
+        const uniqueEventsMap = new Map();
         let totalEventsFound = 0;
-
-        // Process each URL
+        let successfulFetches = 0;
+ 
+        // Process each URL and collect all events
         for (const url of urls) {
             try {
                 console.log(`[iCal Sync] Fetching URL for ${propertyTitle}: ${url.substring(0, 50)}...`);
@@ -99,55 +120,145 @@ export async function syncPropertyICal(propertyId: string) {
                     },
                     cache: 'no-store'
                 });
-
+ 
                 if (!response.ok) {
-                    console.error(`[iCal Sync] Fetch failed: ${response.status}`);
+                    console.error(`[iCal Sync] Fetch failed for ${url.substring(0, 30)}: ${response.status}`);
                     continue;
                 }
                 
                 const icsContent = await response.text();
-                // console.log(`[iCal Sync DEBUG] Body length: ${icsContent.length}`);
-                
                 const vevents = parseIcalManual(icsContent);
-                totalEventsFound += vevents.length;
+ 
+                // Determine source for this URL
+                const lowUrl = url.toLowerCase();
+                const source = lowUrl.includes('booking.com') ? 'booking_com' : 'airbnb_booking';
                 
-                console.log(`[iCal Sync] Found ${vevents.length} total events in ICS`);
-
-                // Fetch existing external blocked dates to avoid duplicates
-                const { data: existingBlocks } = await supabase
-                    .from('blocked_dates')
-                    .select('external_id')
-                    .eq('property_id', propertyId)
-                    .not('external_id', 'is', null);
-
-                const existingExternalIds = new Set(existingBlocks?.map(b => b.external_id));
-                const blocksToInsert: any[] = [];
-
+                // Add to unique map (latest URL wins for same UID if applicable)
                 for (const event of vevents) {
-                    const uid = event.uid;
-                    if (!uid || existingExternalIds.has(uid)) continue;
-
-                    blocksToInsert.push({
-                        property_id: propertyId,
-                        start_date: event.dtstart.toISOString(),
-                        end_date: event.dtend.toISOString(),
-                        reason: event.summary || 'Airbnb Booking',
-                        source: 'airbnb_booking',
-                        external_id: uid
-                    });
-                    
-                    newEventsCount++;
+                    if (event.uid) {
+                        console.log(`[iCal Sync Debug] Parsed event: ${event.uid} | Start: ${event.dtstart.toISOString()} | End: ${event.dtend.toISOString()} | Summary: ${event.summary}`);
+                        uniqueEventsMap.set(event.uid, { ...event, source });
+                    }
                 }
-
-                if (blocksToInsert.length > 0) {
-                    const { error: insertError } = await supabase
-                        .from('blocked_dates')
-                        .insert(blocksToInsert);
-                    if (insertError) console.error('[iCal Sync] Insert error:', insertError);
-                }
+ 
+                totalEventsFound += vevents.length;
+                successfulFetches++;
+                
+                console.log(`[iCal Sync] Parsed ${vevents.length} events from ${url.substring(0, 30)} (${source})`);
             } catch (urlError) {
                 console.error(`[iCal Sync] Error processing URL:`, urlError);
             }
+        }
+ 
+        const uniqueEvents = Array.from(uniqueEventsMap.values());
+        console.log(`[iCal Sync] Mirroring ${uniqueEvents.length} unique events for ${propertyTitle}`);
+
+        if (successfulFetches > 0) {
+            // 1. Fetch existing external blocks to handle Start Date Preservation and Cleanup
+            const { data: existingBlocks } = await supabase
+                .from('blocked_dates')
+                .select('id, external_id, start_date, end_date, property_id')
+                .eq('property_id', propertyId)
+                .in('source', ['airbnb_booking', 'booking_com']);
+
+            const existingMap = new Map();
+            const existingEndMap = new Map(); // Fallback for shifting UIDs
+            
+            existingBlocks?.forEach(b => {
+                if (b.external_id) existingMap.set(b.external_id, b);
+                
+                // Map by end_date as a fallback for shifting UIDs in Airbnb
+                const endStr = b.end_date.split('T')[0];
+                const key = `${b.property_id}_${endStr}`;
+                if (!existingEndMap.has(key)) {
+                    existingEndMap.set(key, b);
+                }
+            });
+
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+
+            // 2. Prepare blocks for upsert
+            const blocksToUpsert = uniqueEvents.map(event => {
+                let start = event.dtstart.toISOString();
+                
+                // Try to find existing record by UID first, then by End Date fallback
+                const existingByUid = existingMap.get(event.uid);
+                const endStr = event.dtend.toISOString().split('T')[0];
+                const existingByEndDate = existingEndMap.get(`${propertyId}_${endStr}`);
+                
+                const existing = existingByUid || existingByEndDate;
+
+                if (existing) {
+                    // PRESERVE START DATE IF:
+                    // 1. New start is after old start (shifted)
+                    // 2. Old start is in the past (or today) - we want to keep the historical start
+                    const existingStartOnly = existing.start_date.split('T')[0];
+                    const newStartOnly = start.split('T')[0];
+
+                    if (newStartOnly > existingStartOnly && existingStartOnly <= todayStr) {
+                        console.log(`[iCal Sync] Preserving start date ${existing.start_date} for UID ${event.uid} (matched via ${existingByUid ? 'UID' : 'End Date'})`);
+                        start = existing.start_date;
+                    }
+                }
+
+                return {
+                    property_id: propertyId,
+                    start_date: start,
+                    end_date: event.dtend.toISOString(),
+                    reason: event.summary || (event.source === 'booking_com' ? 'Booking.com' : 'Airbnb Booking'),
+                    source: event.source,
+                    external_id: event.uid
+                };
+            });
+
+            // 3. Perform UPSERT or manual update
+            if (blocksToUpsert.length > 0) {
+                const { error: upsertError } = await supabase
+                    .from('blocked_dates')
+                    .upsert(blocksToUpsert, { onConflict: 'property_id,external_id' });
+                
+                if (upsertError) {
+                    console.warn('[iCal Sync] Automatic Upsert failed, falling back to manual update:', upsertError.message);
+                    for (const block of blocksToUpsert) {
+                        try {
+                            const existing = existingMap.get(block.external_id);
+                            if (existing) {
+                                await supabase.from('blocked_dates').update(block).eq('id', existing.id);
+                            } else {
+                                await supabase.from('blocked_dates').insert(block);
+                            }
+                        } catch (err) {
+                            console.error(`[iCal Sync] Error in manual sync:`, err);
+                        }
+                    }
+                }
+            }
+
+            // 4. Cleanup: Delete defunct FUTURE or ONGOING records
+            // We delete any record that is no longer in the feed and ends in the future
+            // This catches cancelled bookings and shifting UIDs (since we already have the new UID inserted)
+            const currentUids = new Set(uniqueEvents.map(e => e.uid));
+            const uidsToDelete = existingBlocks?.filter(b => {
+                const isStillInFeed = currentUids.has(b.external_id);
+                const endsInFuture = new Date(b.end_date) >= now;
+                
+                // If it's an Airbnb/Booking block, it's not in the current feed, and it's not a historical past block
+                return !isStillInFeed && endsInFuture;
+            }).map(b => b.id) || [];
+
+            if (uidsToDelete.length > 0) {
+                console.log(`[iCal Sync] Deleting ${uidsToDelete.length} defunct/overlapping blocks`);
+                await supabase
+                    .from('blocked_dates')
+                    .delete()
+                    .in('id', uidsToDelete);
+            }
+
+            newEventsCount = uniqueEvents.length;
+        } else if (urls.length > 0) {
+            console.warn(`[iCal Sync] Sync skipped for ${propertyTitle} as no URLs could be fetched.`);
+            return { success: false, error: 'Could not fetch any iCal URLs', propertyId };
         }
 
         // 5. Update Property Sync Status (Success)

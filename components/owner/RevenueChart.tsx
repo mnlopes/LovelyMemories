@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import {
     BarChart,
     Bar,
@@ -31,32 +31,44 @@ type TimeRange = '3M' | '6M' | '12M' | 'YTD';
 type ChartType = 'bar' | 'area';
 
 export function RevenueChart({ data, height = 350 }: RevenueChartProps) {
-    const t = useTranslations('Owner.Dashboard');
+    const t = useTranslations('RevenueChart');
+    const locale = useLocale();
     const [timeRange, setTimeRange] = useState<TimeRange>('6M');
     const [chartType, setChartType] = useState<ChartType>('bar');
 
     // Formatting for currency
     const formatCurrency = (value: number) =>
-        new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
+        new Intl.NumberFormat(locale === 'pt' ? 'pt-PT' : 'en-US', { style: 'currency', currency: 'EUR' }).format(value);
 
-    // Filter Data based on TimeRange
+    // Filter and Localize Data
     const filteredData = useMemo(() => {
         if (!data || data.length === 0) return [];
 
+        let subset = data;
         switch (timeRange) {
             case '3M':
-                return data.slice(-3);
+                subset = data.slice(-3);
+                break;
             case '6M':
-                return data.slice(-6);
+                subset = data.slice(-6);
+                break;
             case '12M':
-                return data; // Assuming max data is 12M
+                subset = data;
+                break;
             case 'YTD':
                 const currentYear = new Date().getFullYear();
-                return data.filter(d => new Date(d.date).getFullYear() === currentYear);
+                subset = data.filter(d => new Date(d.date).getFullYear() === currentYear);
+                break;
             default:
-                return data.slice(-6);
+                subset = data.slice(-6);
         }
-    }, [data, timeRange]);
+
+        // Localize labels based on the date
+        return subset.map(item => ({
+            ...item,
+            label: new Intl.DateTimeFormat(locale === 'pt' ? 'pt-PT' : 'en-US', { month: 'short' }).format(new Date(item.date))
+        }));
+    }, [data, timeRange, locale]);
 
     // Custom Tooltip
     const CustomTooltip = ({ active, payload, label }: any) => {
@@ -83,9 +95,9 @@ export function RevenueChart({ data, height = 350 }: RevenueChartProps) {
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <div>
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                        Revenue Overview
+                        {t('title')}
                     </h3>
-                    <p className="text-sm text-[#a3a3a3]">vs previous period</p>
+                    <p className="text-sm text-[#a3a3a3]">{t('subtitle')}</p>
                 </div>
 
                 <div className="flex items-center gap-4">
