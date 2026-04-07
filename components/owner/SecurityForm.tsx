@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, X, HelpCircle, Check, Circle } from "lucide-react";
-import { updateUserPassword } from "@/app/actions/auth";
+import { updateUserPassword } from "../../app/actions/auth";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "framer-motion";
 

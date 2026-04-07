@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Globe, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { updateProfileMetadata, updateUserEmail } from "@/app/actions/auth";
+import { updateProfileMetadata, updateUserEmail } from "../../app/actions/auth";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "@/i18n/routing";
 
