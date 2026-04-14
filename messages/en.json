@@ -1139,6 +1139,9 @@
         }
     },
     "Checkout": {
+        "errors": {
+            "temporarilyLocked": "These dates have been temporarily locked by you or another user. Please wait 15 minutes or continue your current booking."
+        },
         "step1": {
             "title": "Contact Information",
             "subtitle": "Provide your details to start the booking.",

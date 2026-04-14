@@ -62,7 +62,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [isInitializingStripe, setIsInitializingStripe] = useState(false);
     const [isStripeValid, setIsStripeValid] = useState(false);
     const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "confirming">("idle");
-    const [sessionId] = useState(() => `sess_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`);
+    const [sessionId] = useState(() => {
+        const urlCode = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('code');
+        return urlCode ? `sess_${urlCode}` : `sess_tmp_${Math.random().toString(36).substring(2, 9)}`;
+    });
 
     const handlePaymentSuccess = async (paymentIntentId: string) => {
         setBookingStatus("confirming");
@@ -143,13 +146,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                 })
             }).then(res => {
                 if (!res.ok) {
-                    res.json().then(data => {
-                        if (data.error === 'errorAlreadyBooked' || data.error === 'errorTemporarilyLocked') {
-                            setError("Infelizmente estas datas acabaram de ficar indisponíveis ou estão reservadas por outro utilizador.");
-                        }
-                    });
+                    const data = await res.json();
+                    if (data.error === 'errorAlreadyBooked' || data.error === 'errorTemporarilyLocked' || data.error === 'Dates unavailable') {
+                        setError(t('errors.temporarilyLocked') || "As datas selecionadas já não estão disponíveis.");
+                    } else {
+                        console.error("Lock error data:", data);
+                    }
                 }
-            }).catch(err => console.error("Lock error:", err));
+            }).catch(err => console.error("Lock connection error:", err));
         }
 
         // Cleanup lock on unmount (only if not finished successfully)

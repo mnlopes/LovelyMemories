@@ -1128,6 +1128,9 @@
         }
     },
     "Checkout": {
+        "errors": {
+            "temporarilyLocked": "Estas datas foram bloqueadas temporariamente por si ou por outro utilizador. Por favor, aguarde 15 minutos ou continue a sua reserva atual."
+        },
         "step1": {
             "title": "Informação de Contacto",
             "subtitle": "Indique os seus dados para iniciar a reserva.",
