@@ -193,7 +193,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                 } else {
                     // Se teve sucesso, limpamos qualquer erro de bloqueio anterior
                     if (error?.includes("temporariamente") || error?.includes("temporarily")) {
-                        setError(null);
+                        setError("");
                     }
                 }
             }).catch(err => console.error("Lock error:", err));
