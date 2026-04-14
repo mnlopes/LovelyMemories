@@ -144,7 +144,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     checkOut: bookingData.checkOut,
                     sessionId
                 })
-            }).then(res => {
+            }).then(async res => {
                 if (!res.ok) {
                     const data = await res.json();
                     if (data.error === 'errorAlreadyBooked' || data.error === 'errorTemporarilyLocked' || data.error === 'Dates unavailable') {
