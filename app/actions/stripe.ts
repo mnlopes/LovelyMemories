@@ -36,6 +36,7 @@ const PaymentIntentSchema = z.object({
   country: z.string().nullish(),
   vat: z.string().nullish(),
   isBillingActive: z.boolean().default(false),
+  sessionId: z.string(),
 });
 
 export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSchema>) {
@@ -44,10 +45,10 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
     const property = await getPropertyBySlug(data.propertySlug);
     if (!property) throw new Error("Property not found");
 
-    // 2. Validate availability
+    // 2. Validate availability (including own lock via sessionId)
     const dateIn = new Date(data.checkIn);
     const dateOut = new Date(data.checkOut);
-    const availability = await verifyAvailability(property.id, dateIn, dateOut);
+    const availability = await verifyAvailability(property.id, dateIn, dateOut, data.sessionId);
     if (!availability.available) throw new Error(availability.error || "Dates unavailable");
 
     // 3. Recalculate price server-side (Tamper proof)

@@ -564,12 +564,17 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     couponCode: appliedCoupon?.code || "",
                     couponDiscount: couponDiscount || 0,
                     sessionId: sessionId,
-                } as any);
+                });
 
                 if (res.success && res.clientSecret) {
                     setClientSecret(res.clientSecret);
+                    // Se o Stripe carregou, significa que passamos a validação de datas.
+                    // Podemos limpar erros de bloqueio que possam ter ficado "presos".
+                    if (error?.includes("temporariamente") || error?.includes("temporarily")) {
+                        setError("");
+                    }
                 } else {
-                    setError(res.error || "Erro ao inicializar pagamento.");
+                    setError(translateError(res.error || "Erro ao inicializar pagamento."));
                     toast.error("Erro ao inicializar Stripe.");
                 }
             } catch (err) {
