@@ -1140,7 +1140,10 @@
     },
     "Checkout": {
         "errors": {
-            "temporarilyLocked": "These dates have been temporarily locked by you or another user. Please wait 15 minutes or continue your current booking."
+            "temporarilyLocked": "These dates are temporarily locked by you or another user. Please wait 15 minutes or continue your current booking.",
+            "alreadyBooked": "Unfortunately, these dates have just been booked. Please choose another period.",
+            "genericError": "An error occurred while processing your booking. Please try again.",
+            "serverError": "Server connection error. Please check your internet."
         },
         "step1": {
             "title": "Contact Information",

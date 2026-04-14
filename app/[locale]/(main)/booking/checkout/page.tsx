@@ -148,12 +148,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                 if (!res.ok) {
                     const data = await res.json();
                     if (data.error === 'errorAlreadyBooked' || data.error === 'errorTemporarilyLocked' || data.error === 'Dates unavailable') {
-                        setError(t('errors.temporarilyLocked') || "As datas selecionadas já não estão disponíveis.");
-                    } else {
-                        console.error("Lock error data:", data);
+                        setError(t('errors.temporarilyLocked'));
                     }
                 }
-            }).catch(err => console.error("Lock connection error:", err));
+            }).catch(err => console.error("Lock error:", err));
         }
 
         // Cleanup lock on unmount (only if not finished successfully)
@@ -580,7 +578,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     breakfastTotal: breakfastTotal,
                     transferTotal: transferTotal,
                     transferType: selectedExtras?.transferType,
-                    paymentMethod: formData.paymentMethod
+                    paymentMethod: formData.paymentMethod,
+                    sessionId: sessionId
                 });
 
                 if (result.success && result.ref) {
@@ -588,7 +587,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     setReservationRef(result.ref);
                     setIsFinished(true);
                 } else {
-                    setError(result.error || t('errors.genericError'));
+                    // Map error code to translation
+                    if (result.error === 'errorTemporarilyLocked') {
+                        setError(t('errors.temporarilyLocked'));
+                    } else if (result.error === 'errorAlreadyBooked') {
+                        setError(t('errors.alreadyBooked') || "As datas já não estão disponíveis.");
+                    } else {
+                        setError(result.error || t('errors.genericError'));
+                    }
                 }
             } catch (err) {
                 setError(t('errors.serverError'));

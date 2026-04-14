@@ -1129,7 +1129,10 @@
     },
     "Checkout": {
         "errors": {
-            "temporarilyLocked": "Estas datas foram bloqueadas temporariamente por si ou por outro utilizador. Por favor, aguarde 15 minutos ou continue a sua reserva atual."
+            "temporarilyLocked": "Estas datas estão temporariamente bloqueadas por si ou por outro utilizador. Por favor, aguarde 15 minutos ou continue a sua reserva atual.",
+            "alreadyBooked": "Infelizmente, estas datas acabaram de ser reservadas. Por favor, escolha outro período.",
+            "genericError": "Ocorreu um erro ao processar a sua reserva. Por favor, tente novamente.",
+            "serverError": "Erro de ligação ao servidor. Verifique a sua internet."
         },
         "step1": {
             "title": "Informação de Contacto",
