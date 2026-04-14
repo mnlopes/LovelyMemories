@@ -1,0 +1,102 @@
+import { NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { verifyAvailability } from '@/lib/pricing';
+import { addMinutes } from 'date-fns';
+
+/**
+ * API to handle 15-minute temporary reservation locks.
+ */
+export async function POST(req: Request) {
+  try {
+    const { propertyId, checkIn, checkOut, sessionId, extend } = await req.json();
+
+    if (!propertyId || !checkIn || !checkOut || !sessionId) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const supabase = await getSupabaseAdmin();
+
+    if (extend) {
+      // HANDLE EXTENSION (15 more minutes, only once)
+      const { data: existing, error: findError } = await supabase
+        .from('locked_dates')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single();
+
+      if (findError || !existing) {
+        return NextResponse.json({ error: 'Lock not found or expired' }, { status: 404 });
+      }
+
+      if (existing.is_extended) {
+        return NextResponse.json({ error: 'Session already extended once' }, { status: 403 });
+      }
+
+      const newExpiry = addMinutes(new Date(), 15);
+      const { error: updateError } = await supabase
+        .from('locked_dates')
+        .update({ 
+          expires_at: newExpiry.toISOString(),
+          is_extended: true 
+        })
+        .eq('session_id', sessionId);
+
+      if (updateError) throw updateError;
+
+      return NextResponse.json({ success: true, expiresAt: newExpiry });
+    } else {
+      // HANDLE INITIAL LOCK
+      // 1. Verify availability (ignoring current session if it somehow existed)
+      const availability = await verifyAvailability(
+        propertyId, 
+        new Date(checkIn), 
+        new Date(checkOut), 
+        sessionId
+      );
+
+      if (!availability.available) {
+        return NextResponse.json({ error: availability.error || 'Dates unavailable' }, { status: 409 });
+      }
+
+      // 2. Clear any old locks for this session (cleanup)
+      await supabase.from('locked_dates').delete().eq('session_id', sessionId);
+
+      // 3. Create new lock
+      const expiresAt = addMinutes(new Date(), 15);
+      const { error: insertError } = await supabase
+        .from('locked_dates')
+        .insert({
+          property_id: propertyId,
+          check_in: checkIn,
+          check_out: checkOut,
+          session_id: sessionId,
+          expires_at: expiresAt.toISOString(),
+          is_extended: false
+        });
+
+      if (insertError) throw insertError;
+
+      return NextResponse.json({ success: true, expiresAt });
+    }
+  } catch (error: any) {
+    console.error('Lock API Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+/**
+ * Cleanup lock manually (e.g. user cancels or navigates away)
+ */
+export async function DELETE(req: Request) {
+  try {
+    const { sessionId } = await req.json();
+    if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+
+    const supabase = await getSupabaseAdmin();
+    await supabase.from('locked_dates').delete().eq('session_id', sessionId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

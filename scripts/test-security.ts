@@ -11,7 +11,7 @@ async function runTests() {
         fullName: "Security Tester",
         email: "test@example.com",
         phone: "912345678",
-        propertySlug: "rdm-ii-premium-apartments",
+        propertySlug: "the-terraced-loft",
         checkIn: "2026-06-10",
         checkOut: "2026-06-15",
         adults: 2,

@@ -36,8 +36,8 @@ import { getPropertyBySlug } from "@/lib/services";
 import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
-import StripePaymentForm from "@/components/booking/StripePaymentForm";
 import { createPaymentIntent, confirmStripePaymentIntent } from "@/app/actions/stripe";
+import CheckoutTimer from "@/components/booking/CheckoutTimer";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -62,6 +62,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [isInitializingStripe, setIsInitializingStripe] = useState(false);
     const [isStripeValid, setIsStripeValid] = useState(false);
     const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "confirming">("idle");
+    const [sessionId] = useState(() => `sess_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`);
 
     const handlePaymentSuccess = async (paymentIntentId: string) => {
         setBookingStatus("confirming");
@@ -125,7 +126,38 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         };
 
         fetchData();
-    }, [code]);
+    }, [code, locale]);
+
+    // Initial lock creation
+    useEffect(() => {
+        if (property && bookingData && sessionId) {
+            console.log("🔒 Creating initial 15min lock for session:", sessionId);
+            fetch('/api/bookings/lock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    propertyId: property.id,
+                    checkIn: bookingData.checkIn,
+                    checkOut: bookingData.checkOut,
+                    sessionId
+                })
+            }).then(res => {
+                if (!res.ok) {
+                    res.json().then(data => {
+                        if (data.error === 'errorAlreadyBooked' || data.error === 'errorTemporarilyLocked') {
+                            setError("Infelizmente estas datas acabaram de ficar indisponíveis ou estão reservadas por outro utilizador.");
+                        }
+                    });
+                }
+            }).catch(err => console.error("Lock error:", err));
+        }
+
+        // Cleanup lock on unmount (only if not finished successfully)
+        return () => {
+            // We can't use async here, so we use sendBeacon for more reliability on tab close
+            // But for now, just skip auto-cleanup on simple unmount to avoid accidental releases on step changes
+        };
+    }, [property, bookingData, sessionId]);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -483,6 +515,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     transferType: selectedExtras?.transferType,
                     couponCode: appliedCoupon?.code || "",
                     couponDiscount: couponDiscount || 0,
+                    sessionId: sessionId,
                 } as any);
 
                 if (res.success && res.clientSecret) {
@@ -1366,6 +1399,15 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                 {/* Summary Sidebar */}
                 <div className="w-full lg:w-[400px] shrink-0">
                     <div className="sticky top-32 space-y-6">
+                        {/* Checkout Timer */}
+                        {property && bookingData && !isFinished && (
+                            <CheckoutTimer 
+                                propertyId={property.id}
+                                checkIn={bookingData.checkIn}
+                                checkOut={bookingData.checkOut}
+                                sessionId={sessionId}
+                            />
+                        )}
                         {/* Property Card */}
                         <div className="bg-white rounded-[40px] overflow-hidden border border-gray-100 shadow-2xl shadow-navy-950/5">
                             <div className="h-40 relative overflow-hidden">

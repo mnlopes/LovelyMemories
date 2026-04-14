@@ -27,6 +27,7 @@ const ReservationSchema = z.object({
     // Security / Honeypot
     website: z.string().nullish().or(z.literal("")),
     bookingCode: z.string().nullish().or(z.literal("")),
+    sessionId: z.string().optional(),
 
     // Payment / Total
     totalPrice: z.number().min(0),
@@ -76,6 +77,20 @@ export async function processReservation(data: ReservationData) {
         return { success: false, error: "Bot activity detected.", warning: undefined, ref: undefined };
     }
 
+    // 2.5 Extra Security: Date Sequence & Past Date Protection
+    const dateIn = new Date(data.checkIn);
+    const dateOut = new Date(data.checkOut);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (dateIn < today) {
+        return { success: false, error: "A data de check-in não pode ser no passado.", warning: undefined, ref: undefined };
+    }
+
+    if (dateOut <= dateIn) {
+        return { success: false, error: "A data de check-out deve ser após a data de check-in.", warning: undefined, ref: undefined };
+    }
+
     // 3. Extra Security: Verify Property Existence & Capacity
     const property = await getPropertyBySlug(data.propertySlug);
     if (!property) {
@@ -88,12 +103,9 @@ export async function processReservation(data: ReservationData) {
     }
 
     // 4. Extra Security: Integrated Availability & Pricing Engine
-    const dateIn = new Date(data.checkIn);
-    const dateOut = new Date(data.checkOut);
-
     // Verificação de Disponibilidade (Bloqueios, Reservas e Meia-Noite)
     const { verifyAvailability, calculateReservationPrice } = await import("@/lib/pricing");
-    const availability = await verifyAvailability(property.id, dateIn, dateOut);
+    const availability = await verifyAvailability(property.id, dateIn, dateOut, data.sessionId);
 
     if (!availability.available) {
         return { success: false, error: availability.error || "Datas indisponíveis.", warning: undefined, ref: undefined };

@@ -1,6 +1,6 @@
 
 import { supabase } from './supabase';
-import { differenceInDays, startOfDay, isWithinInterval, parseISO, subDays, addDays, format } from 'date-fns';
+import { differenceInDays, startOfDay, isWithinInterval, parseISO, subDays, addDays, format, subMinutes } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 export interface PricingBreakdown {
@@ -113,9 +113,9 @@ export async function calculateReservationPrice({
 }
 
 /**
- * Verifica se as datas selecionadas estão disponíveis (reservas + bloqueios + regra da meia-noite).
+ * Verifica se as datas selecionadas estão disponíveis (reservas + bloqueios + regra da meia-noite + locks ativos).
  */
-export async function verifyAvailability(propertyId: string, checkIn: Date, checkOut: Date) {
+export async function verifyAvailability(propertyId: string, checkIn: Date, checkOut: Date, sessionId?: string) {
     // 1. Regra da Meia-Noite (Não permitir para o próprio dia)
     const today = startOfDay(new Date());
     if (startOfDay(checkIn) <= today) {
@@ -147,6 +147,26 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
         return { available: false, error: 'errorAlreadyBooked' };
     }
 
+    // 4. Verificar Bloqueios Temporários (Locks de 15 min)
+    // Se o sessionId for fornecido, ignoramos o lock que pertence a essa sessão
+    let lockQuery = supabase
+        .from('locked_dates')
+        .select('*')
+        .eq('property_id', propertyId)
+        .gt('expires_at', new Date().toISOString()) // Apenas locks que ainda não expiraram
+        .gt('check_out', format(checkIn, 'yyyy-MM-dd'))
+        .lt('check_in', format(checkOut, 'yyyy-MM-dd'));
+
+    if (sessionId) {
+        lockQuery = lockQuery.neq('session_id', sessionId);
+    }
+
+    const { data: activeLocks } = await lockQuery;
+
+    if (activeLocks && activeLocks.length > 0) {
+        return { available: false, error: 'errorTemporarilyLocked' };
+    }
+
     return { available: true };
 }
 
@@ -172,6 +192,13 @@ export async function getUnavailableDates(propertyId: string) {
         .eq('property_id', propertyId)
         .neq('status', 'cancelled');
 
+    // 3. Procurar locks temporários ativos
+    const { data: activeLocks } = await adminSupabase
+        .from('locked_dates')
+        .select('check_in, check_out')
+        .eq('property_id', propertyId)
+        .gt('expires_at', new Date().toISOString());
+
     const unavailable: DateRange[] = [];
 
     // Note: For overlapping logic, we represent the blocked range up to the checkout day
@@ -185,6 +212,12 @@ export async function getUnavailableDates(propertyId: string) {
     reservations?.forEach(r => {
         const from = parseDateLocal(r.check_in);
         const to = parseDateLocal(r.check_out);
+        if (from && to) unavailable.push({ from, to });
+    });
+
+    activeLocks?.forEach(l => {
+        const from = parseDateLocal(l.check_in);
+        const to = parseDateLocal(l.check_out);
         if (from && to) unavailable.push({ from, to });
     });
 
