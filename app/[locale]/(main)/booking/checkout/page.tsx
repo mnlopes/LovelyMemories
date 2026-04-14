@@ -1570,7 +1570,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                             type="submit"
                             variant="luxury"
                             className="w-full h-16 rounded-[32px] text-sm lg:text-base font-bold flex items-center justify-center gap-3 shadow-2xl shadow-[#B08D4A]/30 active:scale-[0.98] transition-all hover:scale-[1.02]"
-                            disabled={isSubmitting || bookingStatus === "confirming" || (step === 3 && formData.paymentMethod === 'card' && !isStripeValid)}
+                            disabled={isSubmitting || !!error || bookingStatus === "confirming" || (step === 3 && formData.paymentMethod === 'card' && !isStripeValid)}
                         >
                             {isSubmitting || bookingStatus === "confirming" ? (
                                 <>
