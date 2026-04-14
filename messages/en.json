@@ -1140,6 +1140,16 @@
     },
     "Checkout": {
         "errorTemporarilyLocked": "These dates are temporarily reserved by you or another user. Please wait 15 minutes or continue your current booking.",
+        "timer": {
+            "reserved": "Your dates are reserved",
+            "needMoreTime": "Need more time? Extend 15 min",
+            "updating": "Updating lock...",
+            "expiredTitle": "Time Expired",
+            "expiredText": "Your dates have been released due to inactivity.\nReloading page in a few moments...",
+            "extendSuccess": "Time extended successfully!",
+            "extendError": "Could not extend time.",
+            "connError": "Server connection error."
+        },
         "errorAlreadyBooked": "Unfortunately, these dates have just been booked. Please choose another period.",
         "errorGeneric": "An error occurred while processing your booking. Please try again.",
         "errorServer": "Server connection error. Please check your internet.",

@@ -1129,6 +1129,16 @@
     },
     "Checkout": {
         "errorTemporarilyLocked": "Estas datas estão temporariamente reservadas por si ou por outro utilizador. Por favor, aguarde 15 minutos ou continue a sua reserva atual.",
+        "timer": {
+            "reserved": "As tuas datas estão reservadas",
+            "needMoreTime": "Precisa de mais tempo? Estenda 15 min",
+            "updating": "A atualizar bloqueio...",
+            "expiredTitle": "Tempo Expirado",
+            "expiredText": "As suas datas foram libertadas por inatividade.\nA recarregar página em breves instantes...",
+            "extendSuccess": "Tempo estendido com sucesso!",
+            "extendError": "Não foi possível estender o tempo.",
+            "connError": "Erro de ligação ao servidor."
+        },
         "errorAlreadyBooked": "Infelizmente, estas datas acabaram de ser reservadas. Por favor, escolha outro período.",
         "errorGeneric": "Ocorreu um erro ao processar a sua reserva. Por favor, tente novamente.",
         "errorServer": "Erro de ligação ao servidor. Verifique a sua internet.",
