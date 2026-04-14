@@ -76,27 +76,33 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         return newSess;
     });
 
-    // Helper to translate errors even if i18n is unstable
+    // Helper to translate errors even if i18n is unstable, respecting the current locale
     const translateError = (errCode: string) => {
-        const dictionary: Record<string, string> = {
-            'errorTemporarilyLocked': t('errorTemporarilyLocked'),
-            'errorAlreadyBooked': t('errorAlreadyBooked'),
-            'errorGeneric': t('errorGeneric'),
-            'errorServer': t('errorServer')
-        };
+        const translated = t(errCode);
         
-        const fallback: Record<string, string> = {
-            'errorTemporarilyLocked': "Estas datas estão temporariamente reservadas por outro utilizador. Aguarde 15 minutos.",
-            'errorAlreadyBooked': "Infelizmente, estas datas acabaram de ser reservadas.",
-            'errorGeneric': "Ocorreu um erro no processamento. Tente novamente.",
-            'errorServer': "Erro de ligação ao servidor."
+        // If translation is successful (doesn't return the raw key), use it
+        if (translated && !translated.includes(errCode)) {
+            return translated;
+        }
+        
+        // Manual fallbacks for safety during dev/cache issues
+        const fallbacks: Record<string, Record<string, string>> = {
+            pt: {
+                'errorTemporarilyLocked': "Estas datas estão temporariamente reservadas por outro utilizador. Aguarde 15 minutos ou continue a sua reserva.",
+                'errorAlreadyBooked': "Infelizmente, estas datas acabaram de ser reservadas.",
+                'errorGeneric': "Ocorreu um erro no processamento. Tente novamente.",
+                'errorServer': "Erro de ligação ao servidor."
+            },
+            en: {
+                'errorTemporarilyLocked': "These dates are temporarily reserved by another user. Please wait 15 minutes or continue your booking.",
+                'errorAlreadyBooked': "Unfortunately, these dates have just been booked.",
+                'errorGeneric': "An error occurred while processing. Please try again.",
+                'errorServer': "Server connection error."
+            }
         };
 
-        const result = dictionary[errCode];
-        if (!result || result.includes(errCode)) {
-            return fallback[errCode] || errCode;
-        }
-        return result;
+        const currentLocale = (locale as string) === 'en' ? 'en' : 'pt';
+        return fallbacks[currentLocale][errCode] || errCode;
     };
 
     const handlePaymentSuccess = async (paymentIntentId: string) => {
