@@ -148,12 +148,11 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
     }
 
     // 4. Verificar Bloqueios Temporários (Locks de 15 min)
-    // Se o sessionId for fornecido, ignoramos o lock que pertence a essa sessão
     let lockQuery = supabaseClient
         .from('locked_dates')
         .select('*')
         .eq('property_id', propertyId)
-        .gt('expires_at', new Date().toISOString()) // Apenas locks que ainda não expiraram
+        .gt('expires_at', new Date().toISOString())
         .gt('check_out', format(checkIn, 'yyyy-MM-dd'))
         .lt('check_in', format(checkOut, 'yyyy-MM-dd'));
 
@@ -161,11 +160,24 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
         lockQuery = lockQuery.neq('session_id', sessionId);
     }
 
-    const { data: activeLocks } = await lockQuery;
+    const { data: activeLocks, error: lockError } = await lockQuery;
+
+    if (lockError) {
+        console.error("❌ Error checking active locks:", lockError);
+        // Em caso de erro técnico na DB, assumimos disponível para não bloquear o utilizador injustamente,
+        // mas logamos o erro para investigação.
+        return { available: true };
+    }
 
     if (activeLocks && activeLocks.length > 0) {
+        console.log(`⚠️ Blocked by ${activeLocks.length} other session(s).`, {
+            mySession: sessionId,
+            blockingSessions: activeLocks.map(l => l.session_id)
+        });
         return { available: false, error: 'errorTemporarilyLocked' };
     }
+
+    return { available: true };
 
     return { available: true };
 }
