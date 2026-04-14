@@ -16,16 +16,9 @@ export async function POST(req: Request) {
 
   try {
     if (!sig || !endpointSecret) {
-      if (isDev) {
-        // Bypass signature check in dev if secret is missing
-        console.warn('⚠️ Webhook bypass: Development mode detected and STRIPE_WEBHOOK_SECRET is missing. Skipping signature verification.');
-        event = JSON.parse(body) as Stripe.Event;
-      } else {
-        throw new Error('Missing stripe-signature or endpoint secret');
-      }
-    } else {
-      event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
+      throw new Error('Missing stripe-signature or endpoint secret');
     }
+    event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
   } catch (err: any) {
     console.error(`Webhook Signature Error: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
