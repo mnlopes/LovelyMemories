@@ -148,7 +148,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                 if (!res.ok) {
                     const data = await res.json();
                     if (data.error === 'errorAlreadyBooked' || data.error === 'errorTemporarilyLocked' || data.error === 'Dates unavailable') {
-                        setError(t('errors.temporarilyLocked'));
+                        setError(t(data.error === 'Dates unavailable' ? 'errorTemporarilyLocked' : data.error));
                     }
                 }
             }).catch(err => console.error("Lock error:", err));
@@ -587,17 +587,15 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     setReservationRef(result.ref);
                     setIsFinished(true);
                 } else {
-                    // Map error code to translation
-                    if (result.error === 'errorTemporarilyLocked') {
-                        setError(t('errors.temporarilyLocked'));
-                    } else if (result.error === 'errorAlreadyBooked') {
-                        setError(t('errors.alreadyBooked') || "As datas já não estão disponíveis.");
+                    // Try to translate the error code directly
+                    if (result.error && (result.error === 'errorTemporarilyLocked' || result.error === 'errorAlreadyBooked')) {
+                        setError(t(result.error));
                     } else {
-                        setError(result.error || t('errors.genericError'));
+                        setError(result.error || t('errorGeneric'));
                     }
                 }
             } catch (err) {
-                setError(t('errors.serverError'));
+                setError(t('errorServer'));
             } finally {
                 setIsSubmitting(false);
             }
