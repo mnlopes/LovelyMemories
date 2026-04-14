@@ -62,7 +62,10 @@ export async function POST(req: Request) {
       );
 
       if (!availability.available) {
-        return NextResponse.json({ error: availability.error || 'Dates unavailable' }, { status: 409 });
+        // Se o bloqueio for de outra pessoa, dá erro. 
+        // Se for nosso (mesmo sessionId), o verifyAvailability já deve ignorar, 
+        // mas vamos garantir que a API é resiliente.
+        return NextResponse.json({ error: availability.error || 'errorTemporarilyLocked' }, { status: 409 });
       }
 
       // 2. Clear any old locks for this session (cleanup)
