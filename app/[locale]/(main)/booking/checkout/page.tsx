@@ -88,16 +88,18 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         // Manual fallbacks for safety during dev/cache issues
         const fallbacks: Record<string, Record<string, string>> = {
             pt: {
-                'errorTemporarilyLocked': "Estas datas estão temporariamente reservadas por outro utilizador. Aguarde 15 minutos ou continue a sua reserva.",
+                'errorTemporarilyLocked': "Estas datas estão temporariamente reservadas por outro utilizador. Aguarde 15 minutos ou escolha outro período.",
                 'errorAlreadyBooked': "Infelizmente, estas datas acabaram de ser reservadas.",
                 'errorGeneric': "Ocorreu um erro no processamento. Tente novamente.",
-                'errorServer': "Erro de ligação ao servidor."
+                'errorServer': "Erro de ligação ao servidor.",
+                'datesSecured': "Datas seguras! Tem 15 minutos para completar a sua reserva."
             },
             en: {
-                'errorTemporarilyLocked': "These dates are temporarily reserved by another user. Please wait 15 minutes or continue your booking.",
+                'errorTemporarilyLocked': "These dates are temporarily reserved by another user. Please wait 15 minutes or choose another period.",
                 'errorAlreadyBooked': "Unfortunately, these dates have just been booked.",
                 'errorGeneric': "An error occurred while processing. Please try again.",
-                'errorServer': "Server connection error."
+                'errorServer': "Server connection error.",
+                'datesSecured': "Dates secured! You have 15 minutes to complete your booking."
             }
         };
 
@@ -187,6 +189,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     const data = await res.json();
                     if (data.error) {
                         setError(translateError(data.error));
+                    }
+                } else {
+                    // Se teve sucesso, limpamos qualquer erro de bloqueio anterior
+                    if (error?.includes("temporariamente") || error?.includes("temporarily")) {
+                        setError(null);
                     }
                 }
             }).catch(err => console.error("Lock error:", err));
