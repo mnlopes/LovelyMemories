@@ -568,6 +568,14 @@ export default function AdminReservationsPage() {
                                                             Airbnb
                                                         </div>
                                                     )}
+                                                    {!reservation.is_manual_block && !reservation.is_airbnb && reservation.payment_method && (
+                                                        <>
+                                                            {reservation.payment_method === 'klarna' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-pink-100 text-pink-700 dark:bg-pink-500/10 dark:text-pink-400 border border-pink-200 dark:border-pink-500/20 uppercase tracking-wide">Klarna</span>}
+                                                            {reservation.payment_method === 'card' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 uppercase tracking-wide">Card</span>}
+                                                            {reservation.payment_method === 'link' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 uppercase tracking-wide">Wallet</span>}
+                                                            {reservation.payment_method === 'wire' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 uppercase tracking-wide">Transfer</span>}
+                                                        </>
+                                                    )}
                                                     {isNew(reservation.created_at) && !reservation.is_manual_block && !reservation.is_airbnb && (
                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 uppercase tracking-wide">{t('table.new')}</span>
                                                     )}

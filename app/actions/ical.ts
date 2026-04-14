@@ -318,17 +318,25 @@ export async function syncAllPropertiesICal() {
         }
 
         let totalNewEvents = 0;
-        let results = [];
-        let failures = [];
+        let results: any[] = [];
+        let failures: any[] = [];
+        const BATCH_SIZE = 10;
 
-        for (const prop of properties) {
-            const res = await syncPropertyICal(prop.id);
-            if (res.success) {
-                totalNewEvents += (res.newEvents || 0);
-            } else {
-                failures.push({ id: prop.id, title: prop.title, error: (res as any).error });
-            }
-            results.push({ id: prop.id, title: prop.title, ...res });
+        // Process properties in batches to balance speed and resource usage
+        for (let i = 0; i < properties.length; i += BATCH_SIZE) {
+            const batch = properties.slice(i, i + BATCH_SIZE);
+            const batchPromises = batch.map(prop => syncPropertyICal(prop.id));
+            const batchResults = await Promise.all(batchPromises);
+
+            batchResults.forEach((res, index) => {
+                const prop = batch[index];
+                if (res.success) {
+                    totalNewEvents += (res.newEvents || 0);
+                } else {
+                    failures.push({ id: prop.id, title: prop.title, error: (res as any).error });
+                }
+                results.push({ id: prop.id, title: prop.title, ...res });
+            });
         }
 
         return { 

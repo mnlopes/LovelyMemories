@@ -4,7 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { getOwnerWithProperties } from '@/app/actions/user';
 import { removePropertyFromOwner } from '@/app/actions/property';
-import { Loader2, ArrowLeft, Building2, MapPin, Trash2, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, MapPin, Trash2, Plus, Eye, ExternalLink, Building2 } from 'lucide-react';
+import { startImpersonation } from '@/app/actions/impersonation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -43,13 +44,15 @@ interface OwnerDetails {
 interface OwnerDetailsClientProps {
     id: string;
     locale: string;
+    currentUserRole: string | null;
 }
 
-export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
+export function OwnerDetailsClient({ id, locale, currentUserRole }: OwnerDetailsClientProps) {
     const t = useTranslations('AdminUsers.AdminOwners');
     const router = useRouter();
     const [owner, setOwner] = useState<OwnerDetails | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isImpersonating, setIsImpersonating] = useState(false);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
@@ -90,7 +93,7 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
     const confirmRemove = (propertyId: string) => {
         setModalConfig({
             isOpen: true,
-            type: 'warning', // Reuse warning or error style for destructive action
+            type: 'warning',
             title: "Remove Property",
             message: "Are you sure you want to remove this property from the owner?",
             actionLabel: "Remove",
@@ -99,7 +102,6 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
     };
 
     const handleRemove = async (propertyId: string) => {
-        // Set loading state in modal
         setModalConfig(prev => ({ ...prev, type: 'loading', title: "Removing...", message: "Please wait while we remove the property." }));
 
         try {
@@ -136,6 +138,19 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
                 actionLabel: "Close",
                 onAction: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
             });
+        }
+    };
+
+    const handleImpersonate = async () => {
+        setIsImpersonating(true);
+        try {
+            await startImpersonation(id);
+            toast.success(`Redirecting to ${owner?.full_name}'s portal...`);
+            router.push('/owner');
+            router.refresh();
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to start impersonation');
+            setIsImpersonating(false);
         }
     };
 
@@ -184,13 +199,29 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
                         <Pencil className="size-4" />
                         Edit details
                     </button>
-                    <button
-                        onClick={() => setIsAssignModalOpen(true)}
-                        className="bg-[#171717] dark:bg-white text-white dark:text-[#171717] px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-black/90 dark:hover:bg-white/90 transition-colors shadow-lg shadow-[#171717]/20"
-                    >
-                        <Plus className="size-4" />
-                        Assign Property
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {currentUserRole === 'super_admin' && (
+                            <button
+                                onClick={handleImpersonate}
+                                disabled={isImpersonating}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-[#171717] border border-[#171717] dark:border-white hover:opacity-90 transition-all font-bold shadow-sm disabled:opacity-50"
+                            >
+                                {isImpersonating ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <Eye className="size-4" />
+                                )}
+                                View as Owner
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setIsAssignModalOpen(true)}
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-white border border-[#eeeeee] dark:border-white/10 hover:bg-[#fafafa] dark:hover:bg-white/5 transition-all font-bold shadow-sm"
+                        >
+                            <Plus className="size-4" />
+                            Assign Property
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -225,7 +256,7 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
                                                     className="size-16 rounded-xl bg-[#f5f5f5] dark:bg-admin-dark-bg flex items-center justify-center text-[#a3a3a3] bg-cover bg-center border border-[#eeeeee] dark:border-white/5 overflow-hidden shrink-0"
                                                     style={mainImage ? { backgroundImage: `url(${mainImage})` } : {}}
                                                 >
-                                                    {!mainImage && <Building2 className="size-6" />}
+                                                    {!mainImage && <Home className="size-6" />}
                                                 </div>
 
                                                 <div>
@@ -245,15 +276,9 @@ export function OwnerDetailsClient({ id, locale }: OwnerDetailsClientProps) {
                                                             {property.city || property.address || property.slug}
                                                         </div>
                                                         <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
-                                                        {property.is_multi_unit ? (
-                                                            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-[9px] font-bold uppercase tracking-wider border border-blue-200 dark:border-blue-500/30">
-                                                                Building
-                                                            </span>
-                                                        ) : (
-                                                            <span>
-                                                                {property.bedrooms || 0} Beds • {property.max_guests || 0} Guests
-                                                            </span>
-                                                        )}
+                                                        <span>
+                                                            {property.bedrooms || 0} Beds • {property.max_guests || 0} Guests
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>

@@ -1,19 +1,23 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useRouter, usePathname } from "@/i18n/routing";
-import { Calendar, UserCheck, Settings, Home, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Calendar, UserCheck, Settings, Home, ChevronLeft, ChevronRight, RefreshCw, ExternalLink, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { OwnerSyncDetailModal } from "./OwnerSyncDetailModal";
 
 interface ActivityItem {
     id: string;
-    type: 'booking' | 'check-in' | 'maintenance' | 'blocked';
+    type: 'booking' | 'check-in' | 'maintenance' | 'blocked' | 'import';
     title: string;
     subtitle: string;
     date: string; 
     amount?: string;
+    payoutAmount?: string;
+    metadata?: any;
 }
 
 interface RecentActivityListProps {
@@ -33,6 +37,7 @@ export function RecentActivityList({
 }: RecentActivityListProps) {
     const t = useTranslations('RecentActivity');
     const tTypes = useTranslations('ActivityTypes');
+    const locale = useLocale();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -52,6 +57,7 @@ export function RecentActivityList({
             case 'check-in': return <UserCheck className="w-4 h-4 text-blue-600" />;
             case 'maintenance': return <Settings className="w-4 h-4 text-orange-600" />;
             case 'blocked': return <Home className="w-4 h-4 text-gray-600" />;
+            case 'import': return <Globe className="w-4 h-4 text-indigo-400" />;
             default: return <Calendar className="w-4 h-4" />;
         }
     };
@@ -62,9 +68,12 @@ export function RecentActivityList({
             case 'check-in': return "bg-blue-50";
             case 'maintenance': return "bg-orange-50";
             case 'blocked': return "bg-gray-50";
+            case 'import': return "bg-indigo-50/40";
             default: return "bg-gray-50";
         }
     };
+
+    const [selectedSync, setSelectedSync] = useState<any | null>(null);
 
     return (
         <motion.div
@@ -85,27 +94,52 @@ export function RecentActivityList({
                     <>
                         {activities.map((item, i) => (
                             <motion.div
+                                onClick={() => {
+                                    if (item.type === 'import') {
+                                        setSelectedSync(item.metadata);
+                                    }
+                                }}
                                 key={item.id}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: delay + (i * 0.05), duration: 0.4 }}
-                                className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50/80 transition-all border border-transparent hover:border-gray-100 group cursor-default"
+                                className={cn(
+                                    "flex items-center justify-between p-4 rounded-2xl transition-all border border-transparent group",
+                                    item.type === 'import' ? "cursor-pointer hover:bg-gray-50 hover:border-gray-100" : "cursor-default"
+                                )}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={cn("size-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", getBgColor(item.type))}>
                                         {getIcon(item.type)}
                                     </div>
                                     <div>
-                                        <h4 className="text-sm font-bold text-[#0A1128]">
-                                            {tTypes.has(item.title) ? tTypes(item.title) : item.title}
-                                        </h4>
-                                        <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="text-sm font-bold text-[#0A1128]">
+                                                {tTypes.has(item.title) ? tTypes(item.title) : item.title}
+                                            </h4>
+                                            {item.type === 'import' && (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-bold uppercase tracking-widest leading-none">
+                                                        {item.metadata?.reservations?.[0]?.check_in ? 
+                                                            new Date(item.metadata.reservations[0].check_in).toLocaleDateString(locale, { month: 'short', year: 'numeric' }) 
+                                                            : ''}
+                                                    </div>
+                                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-indigo-50/50 text-indigo-400 rounded text-[10px] font-bold uppercase tracking-widest leading-none">
+                                                        <Eye className="size-3" />
+                                                        {t('viewDetails', { defaultValue: 'Ver Detalhes' })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-0.5 font-medium">{item.subtitle}</p>
                                     </div>
                                 </div>
 
                                 <div className="text-right">
                                     {item.amount && (
-                                        <p className="text-sm font-bold text-[#192537] mb-0.5">{item.amount}</p>
+                                        <p className="text-sm font-semibold text-emerald-600/90 mb-0.5">
+                                            {item.amount}
+                                        </p>
                                     )}
                                     <p className="text-[10px] text-gray-400 font-medium">{item.date}</p>
                                 </div>
@@ -160,6 +194,12 @@ export function RecentActivityList({
                     </div>
                 )}
             </div>
+
+            <OwnerSyncDetailModal 
+                isOpen={!!selectedSync} 
+                batchData={selectedSync}
+                onClose={() => setSelectedSync(null)} 
+            />
         </motion.div>
     );
 }

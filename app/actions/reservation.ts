@@ -59,7 +59,9 @@ const ReservationSchema = z.object({
     path: ["address"]
 });
 
-export async function processReservation(data: z.infer<typeof ReservationSchema>) {
+export type ReservationData = z.infer<typeof ReservationSchema>;
+
+export async function processReservation(data: ReservationData) {
     // 1. Basic Schema Validation
     const result = ReservationSchema.safeParse(data);
 
@@ -122,15 +124,54 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
     // pricing.totalPrice já inclui (base - desconto + limpeza + city_tax)
     const FINAL_TOTAL = pricing.totalPrice + data.breakfastTotal + data.transferTotal;
 
+    return await finalizeBooking({
+        data,
+        propertyId: property.id,
+        referenceId,
+        status,
+        finalTotal: FINAL_TOTAL,
+        pricingReport: {
+            basePrice: pricing.basePrice,
+            cleaningFee: pricing.cleaningFee,
+            discountAmount: pricing.discountAmount,
+            cityTaxTotal: pricing.cityTaxTotal
+        }
+    });
+}
+
+/**
+ * Core logic to save a reservation, log activity, and send emails.
+ * This is called by processReservation (Wire Transfer) and the Stripe Webhook.
+ */
+export async function finalizeBooking({
+    data,
+    propertyId,
+    referenceId,
+    status,
+    finalTotal,
+    pricingReport
+}: {
+    data: ReservationData;
+    propertyId: string;
+    referenceId: string;
+    status: string;
+    finalTotal: number;
+    pricingReport: {
+        basePrice: number;
+        cleaningFee: number;
+        discountAmount: number;
+        cityTaxTotal: number;
+    };
+}) {
     // 6. Save to Supabase (using Admin Client to bypass RLS for guest insertions)
     const reservationData: any = {
-        property_id: property.id,
+        property_id: propertyId,
         check_in: data.checkIn,
         check_out: data.checkOut,
         adults: data.adults,
         children: data.children,
         infants: data.infants,
-        total_price: FINAL_TOTAL,
+        total_price: finalTotal,
         status: status,
         payment_method: data.paymentMethod,
         reference_id: referenceId,
@@ -140,10 +181,10 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         arrival_time: data.arrivalTime,
         coupon_code: data.couponCode,
         coupon_discount_amount: data.couponDiscount || 0,
-        base_price: pricing.basePrice,
-        cleaning_fee: pricing.cleaningFee,
-        discount_amount: pricing.discountAmount,
-        city_tax_total: pricing.cityTaxTotal, // Novo campo para histórico
+        base_price: pricingReport.basePrice,
+        cleaning_fee: pricingReport.cleaningFee,
+        discount_amount: pricingReport.discountAmount,
+        city_tax_total: pricingReport.cityTaxTotal,
         breakfast_total: data.breakfastTotal,
         transfer_total: data.transferTotal,
         transfer_type: data.transferType,
@@ -155,6 +196,18 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
     };
 
     const adminSupabase = await getSupabaseAdmin();
+
+    // Prevent Duplicates from concurrent Webhooks & Client requests
+    const { data: existing } = await adminSupabase
+        .from('reservations')
+        .select('id')
+        .eq('reference_id', referenceId)
+        .single();
+    if (existing) {
+        console.log(`Duplicate insertion caught for reference: ${referenceId}`);
+        return { success: true, ref: referenceId, warning: "Reservation already exists." };
+    }
+
     const { data: insertedRes, error: dbError } = await adminSupabase
         .from('reservations')
         .insert(reservationData)
@@ -163,28 +216,25 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
 
     if (dbError) {
         console.error('CRITICAL: Database Error saving reservation:', JSON.stringify(dbError, null, 2));
-
-        // Handle specific "Column Not Found" error to guide the user to sync their DB
         if (dbError.code === '42703') {
             return {
                 success: false,
-                error: "Erro de sistema: A base de dados precisa de ser sincronizada (Colunas em falta). Por favor, contacte o administrador.",
+                error: "Erro de sistema: A base de dados precisa de ser sincronizada (Colunas em falta).",
                 warning: undefined,
                 ref: undefined
             };
         }
-
-        return { success: false, error: "Não foi possível guardar a reserva na base de dados. Por favor, tente novamente.", warning: undefined, ref: undefined };
+        return { success: false, error: "Não foi possível guardar a reserva na base de dados.", warning: undefined, ref: undefined };
     }
 
-    console.log("Secure reservation processed and saved for:", data.fullName, "Ref:", referenceId);
+    console.log("Secure reservation finalized for:", data.fullName, "Ref:", referenceId);
 
     // 7. Log Activity
     try {
         const { logActivity } = await import("./audit");
         if (insertedRes) {
             await logActivity(
-                null, // Actor is Guest (Unknown)
+                null, 
                 'CREATE',
                 'RESERVATION',
                 insertedRes.id,
@@ -201,33 +251,26 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
         console.error("Failed to audit log new reservation:", logErr);
     }
 
-    // 7. Trigger Email Notifications (Async - don't block response)
+    // 8. Trigger Email Notifications
     let warning: string | undefined;
     try {
         const { sendEmail } = await import("@/lib/email");
         const { bookingAdminEmail, bookingGuestConfirmationEmail } = await import("@/lib/email-templates");
 
-        // Helper to get string from potentially localized title
-        const getTitleStr = (title: any) => {
-            if (!title) return data.propertySlug;
-            if (typeof title === 'string') return title;
-            return title.pt || title.en || Object.values(title)[0] || data.propertySlug;
-        };
+        const property = await getPropertyBySlug(data.propertySlug);
 
         const emailData = {
             ...reservationData,
             property_slug: data.propertySlug,
-            property_title: getTitleStr(property.title),
+            property_title: property ? (typeof property.title === 'string' ? property.title : property.title.pt || property.title.en) : data.propertySlug,
             reference_id: referenceId,
             guest_name: data.fullName,
             guest_email: data.email,
             guest_phone: data.phone,
-            // Price Breakdown
-            base_price: data.basePrice || 0,
-            cleaning_fee: data.cleaningFee || 0,
+            base_price: pricingReport.basePrice,
+            cleaning_fee: pricingReport.cleaningFee,
             breakfast_total: data.breakfastTotal || 0,
             transfer_total: data.transferTotal || 0,
-            // Billing Info
             billing_address: data.address,
             billing_city: data.city,
             billing_zip: data.zip,
@@ -251,7 +294,6 @@ export async function processReservation(data: z.infer<typeof ReservationSchema>
             subject: `Lovely Memories | Confirmação de Reserva [Ref: ${referenceId}]`,
             html: bookingGuestConfirmationEmail(emailData)
         });
-
     } catch (emailErr) {
         console.error("Non-critical error sending reservation emails:", emailErr);
         warning = "Reservation saved but notification emails failed to send.";

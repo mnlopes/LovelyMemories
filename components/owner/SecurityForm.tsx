@@ -8,7 +8,11 @@ import { updateUserPassword } from "../../app/actions/auth";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "framer-motion";
 
-export const SecurityForm = () => {
+interface SecurityFormProps {
+    isReadOnly?: boolean;
+}
+
+export const SecurityForm = ({ isReadOnly }: SecurityFormProps) => {
     const t = useTranslations('OwnerProfile');
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -82,6 +86,15 @@ export const SecurityForm = () => {
                 <h2 className="text-xl font-bold text-[#0A1128]">{t('security')}</h2>
             </div>
 
+            {isReadOnly && (
+                <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800 text-sm">
+                    <AlertCircle className="size-5 shrink-0" />
+                    <p>
+                        <span className="font-bold">Viewing as Owner:</span> Password changes are disabled during impersonation.
+                    </p>
+                </div>
+            )}
+
             <form onSubmit={handlePreSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* New Password Column */}
@@ -96,13 +109,15 @@ export const SecurityForm = () => {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-2 focus:ring-rose-500/20 transition-all outline-none"
+                                    className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-2 focus:ring-rose-500/20 transition-all outline-none disabled:opacity-75"
                                     required
+                                    disabled={isReadOnly}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-rose-500 transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-rose-500 transition-colors disabled:opacity-50"
+                                    disabled={isReadOnly}
                                 >
                                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                                 </button>
@@ -137,8 +152,9 @@ export const SecurityForm = () => {
                                 type={showPassword ? "text" : "password"}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-2 focus:ring-rose-500/20 transition-all outline-none"
+                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-12 text-sm focus:ring-2 focus:ring-rose-500/20 transition-all outline-none disabled:opacity-75"
                                 required
+                                disabled={isReadOnly}
                             />
                         </div>
                     </div>
@@ -165,13 +181,13 @@ export const SecurityForm = () => {
                 <div className="pt-4 flex justify-end">
                     <button
                         type="submit"
-                        disabled={isSubmitting || !isButtonEnabled}
+                        disabled={isSubmitting || !isButtonEnabled || isReadOnly}
                         className={cn(
                             "bg-rose-600 text-white px-8 py-3.5 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-rose-900/20 flex items-center gap-2",
-                            isComplexityMet 
+                            isComplexityMet && !isReadOnly
                                 ? "hover:scale-[1.02] active:scale-95" 
                                 : "opacity-60 cursor-not-allowed",
-                            (!isButtonEnabled || isSubmitting) && "opacity-50 grayscale cursor-not-allowed"
+                            (!isButtonEnabled || isSubmitting || isReadOnly) && "opacity-50 grayscale cursor-not-allowed"
                         )}
                     >
                         {isSubmitting ? (

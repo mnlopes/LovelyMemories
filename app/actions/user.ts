@@ -614,30 +614,25 @@ export async function getOwnersWithPropertyCounts() {
     }
 
     // Aggregate counts
-    const counts: Record<string, { total: number; buildings: number; units: number }> = {};
+    const counts: Record<string, { total: number }> = {};
     properties?.forEach((p) => {
-        if (p.owner_id) {
+        if (p.owner_id && !p.is_multi_unit) {
             if (!counts[p.owner_id]) {
-                counts[p.owner_id] = { total: 0, buildings: 0, units: 0 };
+                counts[p.owner_id] = { total: 0 };
             }
             counts[p.owner_id].total++;
-            if (p.is_multi_unit) {
-                counts[p.owner_id].buildings++;
-            } else {
-                counts[p.owner_id].units++;
-            }
         }
     });
 
     // Map counts and dates to owners
     return owners.map(owner => {
-        const ownerCounts = counts[owner.id] || { total: 0, buildings: 0, units: 0 };
+        const ownerCounts = counts[owner.id] || { total: 0 };
         return {
             ...owner,
-            created_at: createdAtMap[owner.id] || owner.updated_at, // Fallback to updated_at if fetch fails
+            created_at: createdAtMap[owner.id] || owner.updated_at,
             property_count: ownerCounts.total,
-            buildings_count: ownerCounts.buildings,
-            units_count: ownerCounts.units
+            buildings_count: 0,
+            units_count: ownerCounts.total
         };
     });
 }

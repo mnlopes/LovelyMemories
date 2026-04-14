@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { X, Search, Check, Building2, Loader2, MapPin } from 'lucide-react';
+import { X, Search, Check, Home, Loader2, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { assignPropertiesToOwner, getAvailableProperties } from '@/app/actions/property';
 import { toast } from 'sonner';
@@ -137,7 +137,7 @@ export function AssignPropertyModal({ isOpen, onClose, onSuccess, ownerId }: Ass
                         </div>
                     ) : filteredProperties.length === 0 ? (
                         <div className="py-12 text-center text-[#a3a3a3]">
-                            <Building2 className="size-8 mx-auto mb-3 opacity-30" />
+                            <Home className="size-8 mx-auto mb-3 opacity-30" />
                             <p>No available properties found</p>
                         </div>
                     ) : (
@@ -160,7 +160,7 @@ export function AssignPropertyModal({ isOpen, onClose, onSuccess, ownerId }: Ass
                                                 className={`size-12 rounded-lg flex items-center justify-center transition-colors bg-cover bg-center overflow-hidden shrink-0 ${isSelected ? 'shadow-sm' : ''} ${!mainImage ? (isSelected ? 'bg-[#171717] text-white dark:bg-white dark:text-[#171717]' : 'bg-[#f5f5f5] dark:bg-admin-dark-bg text-[#a3a3a3]') : ''}`}
                                                 style={mainImage ? { backgroundImage: `url(${mainImage})` } : {}}
                                             >
-                                                {!mainImage && <Building2 className="size-5" />}
+                                                {!mainImage && <Home className="size-5" />}
                                             </div>
                                             <div>
                                                 <p className={`font-bold text-sm ${isSelected ? 'text-[#171717] dark:text-white' : 'text-[#171717] dark:text-admin-dark-text-primary'}`}>

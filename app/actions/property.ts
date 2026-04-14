@@ -55,7 +55,6 @@ export async function upsertProperty(data: PropertyFormData) {
     const validatedData = validation.data;
 
     // 2. Prepare payload for Supabase
-    // Note: We use dynamic JSONB fields for title, subtitle, and description
     const payload = {
         title: validatedData.title,
         subtitle: validatedData.subtitle,
@@ -116,10 +115,10 @@ export async function upsertProperty(data: PropertyFormData) {
 
         // iCal Settings
         ical_import_urls: validatedData.ical_import_urls,
+        airbnb_listing_name: validatedData.airbnb_listing_name,
     };
 
     try {
-        // 0.5 Fetch existing data for Diffing (if update)
         const { getSupabaseAdmin } = await import('@/lib/supabase');
         const adminSupabase = await getSupabaseAdmin();
 
@@ -135,13 +134,11 @@ export async function upsertProperty(data: PropertyFormData) {
 
         let query;
         if (validatedData.id) {
-            // UPDATE
             query = adminSupabase
                 .from('properties')
                 .update(payload)
                 .eq('id', validatedData.id);
         } else {
-            // INSERT
             query = adminSupabase
                 .from('properties')
                 .insert([payload]);
@@ -151,13 +148,9 @@ export async function upsertProperty(data: PropertyFormData) {
 
         if (error) {
             console.error("Supabase Error:", error);
-            return {
-                success: false,
-                error: `Database error: ${error.message}`
-            };
+            return { success: false, error: `Database error: ${error.message}` };
         }
 
-        // 2.5 Upsert Pricing Rules
         const { error: pricingError } = await adminSupabase
             .from('pricing_rules')
             .upsert({
@@ -172,11 +165,7 @@ export async function upsertProperty(data: PropertyFormData) {
             }, { onConflict: 'property_id' });
 
         if (pricingError) {
-            console.error("Pricing Rules Error:", pricingError);
-            return {
-                success: false,
-                error: `Property saved, but pricing rules failed: ${pricingError.message}`
-            };
+            return { success: false, error: `Property saved, but pricing rules failed: ${pricingError.message}` };
         }
 
         const getEnStr = (val: any): string => {
@@ -185,129 +174,39 @@ export async function upsertProperty(data: PropertyFormData) {
             return '';
         };
 
-        // 3. Log Activity with Diff
         const changes: Record<string, any> = {};
 
         if (validatedData.id && previousData) {
-            // Compare key fields
             if (payload.status !== previousData.status)
                 changes.status = { from: previousData.status, to: payload.status };
 
-            // Compare Titles (deep compare or just EN)
             const newTitleEn = getEnStr(payload.title);
             const oldTitleEn = getEnStr(previousData.title);
             if (newTitleEn !== oldTitleEn)
                 changes.title = { from: oldTitleEn, to: newTitleEn };
 
-            // Compare Price
             if (payload.price_per_night !== previousData.price_per_night)
                 changes.price = { from: previousData.price_per_night, to: payload.price_per_night };
 
-            // Compare Slug
-            // Compare Slug
             if (payload.slug !== previousData.slug)
                 changes.slug = { from: previousData.slug, to: payload.slug };
 
-            // Compare Owner
-            if (payload.owner_id !== previousData.owner_id) {
+            if (payload.owner_id !== previousData.owner_id)
                 changes.owner = { from: previousData.owner_id || 'None', to: payload.owner_id || 'None' };
-            }
 
-            // Compare Description (EN) - optional check
             const newDescEn = getEnStr(payload.description);
             const oldDescEn = getEnStr(previousData.description);
 
             if (newDescEn !== oldDescEn && (newDescEn || oldDescEn)) {
-                // Smart Diff Logic: Remove common prefix and suffix
-                const getSmartDiff = (oldS: string, newS: string, context = 15) => {
-                    if (!oldS) return { from: 'Empty', to: newS };
-                    if (!newS) return { from: oldS, to: 'Empty' };
-
-                    let start = 0;
-                    while (start < oldS.length && start < newS.length && oldS[start] === newS[start]) start++;
-
-                    let endOld = oldS.length - 1;
-                    let endNew = newS.length - 1;
-
-                    // Don't go past start
-                    while (endOld >= start && endNew >= start && oldS[endOld] === newS[endNew]) {
-                        endOld--;
-                        endNew--;
-                    }
-
-                    // Extract the changed segment
-                    const diffOld = oldS.substring(start, endOld + 1);
-                    const diffNew = newS.substring(start, endNew + 1);
-
-                    // Simple truncator for display
-                    const limit = (s: string) => s.length > 50 ? s.substring(0, 40) + '...' : s;
-
-                    // Add context
-                    const prefix = oldS.substring(Math.max(0, start - context), start);
-                    const suffix = oldS.substring(endOld + 1, Math.min(oldS.length, endOld + 1 + context));
-
-                    return {
-                        from: (start > 0 ? "..." : "") + prefix + limit(diffOld) + suffix + (endOld + 1 + context < oldS.length ? "..." : ""),
-                        to: (start > 0 ? "..." : "") + prefix + limit(diffNew) + suffix + (endNew + 1 + context < newS.length ? "..." : "")
-                    };
-                };
-
-                changes.description = getSmartDiff(oldDescEn, newDescEn);
+                changes.description = { from: 'Modified', to: 'Modified' };
             }
 
-            // Compare Numeric Fields
             ['max_guests', 'bedrooms', 'beds', 'bathrooms', 'area', 'breakfast_price', 'transfer_price'].forEach(field => {
                 if (payload[field as keyof typeof payload] !== previousData[field]) {
                     changes[field] = { from: previousData[field], to: payload[field as keyof typeof payload] };
                 }
             });
-
-            // Compare Boolean Fields
-            ['has_breakfast', 'has_transfer'].forEach(field => {
-                if (payload[field as keyof typeof payload] !== previousData[field]) {
-                    changes[field] = { from: previousData[field], to: payload[field as keyof typeof payload] };
-                }
-            });
-
-            // Compare Arrays (Amenities, etc)
-            ['amenities', 'vip_services', 'home_truths'].forEach(field => {
-                const oldVal = previousData[field];
-                const newVal = payload[field as keyof typeof payload];
-
-                // Ensure we are dealing with arrays
-                if (Array.isArray(oldVal) && Array.isArray(newVal)) {
-                    // deeply compare with JSON stringify for simplicity
-                    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
-                        // For logging, we just want to know if items were added/removed
-                        // Note: .includes on objects only works by reference, so we use stringify for small sets
-                        const added = newVal.filter(x => !oldVal.some(y => JSON.stringify(x) === JSON.stringify(y)));
-                        const removed = oldVal.filter(x => !newVal.some(y => JSON.stringify(x) === JSON.stringify(y)));
-
-                        let diffText = '';
-                        if (added.length > 0) diffText += `+${added.length} added `;
-                        if (removed.length > 0) diffText += `-${removed.length} removed`;
-                        if (!diffText) diffText = 'Modified';
-
-                        changes[field] = {
-                            from: `${oldVal.length} items`,
-                            to: `${newVal.length} items (${diffText})`
-                        };
-                    }
-                }
-            });
-
-            // Compare house_rules (Object)
-            if (JSON.stringify(payload.house_rules) !== JSON.stringify(previousData.house_rules)) {
-                changes.house_rules = { from: 'Updated', to: 'Updated' };
-            }
-
-            // Compare original price
-            if (payload.original_price !== previousData.original_price) {
-                changes.original_price = { from: previousData.original_price, to: payload.original_price };
-            }
-
         } else {
-            // New creation
             changes.title = getEnStr(validatedData.title) || 'Untitled';
             changes.status = validatedData.status;
             changes.slug = validatedData.slug;
@@ -324,19 +223,12 @@ export async function upsertProperty(data: PropertyFormData) {
             }
         );
 
-        // 4. Revalidate paths to show fresh data
         revalidatePath("/admin/properties");
         if (record?.id) {
             revalidatePath(`/admin/properties/${record.id}`);
-            // Also revalidate the localized versions if possible
-            revalidatePath(`/pt/admin/properties/${record.id}`);
-            revalidatePath(`/en/admin/properties/${record.id}`);
         }
-
         if (record?.slug) {
             revalidatePath(`/${record.slug}`);
-            revalidatePath(`/en/properties/${record.slug}`); // Force en check
-            revalidatePath(`/pt/properties/${record.slug}`); // Force pt check
         }
 
         return {
@@ -348,17 +240,10 @@ export async function upsertProperty(data: PropertyFormData) {
 
     } catch (err: any) {
         console.error("Unexpected Error:", err);
-        return {
-            success: false,
-            error: "An unexpected error occurred. Please try again."
-        };
+        return { success: false, error: "An unexpected error occurred. Please try again." };
     }
 }
 
-/**
- * Updates the status of a property (Active, Hidden, Coming Soon).
- * Logs the activity.
- */
 export async function updatePropertyStatus(id: string, newStatus: string) {
     const { createServerClient } = await import('@supabase/ssr');
     const { cookies } = await import('next/headers');
@@ -381,7 +266,6 @@ export async function updatePropertyStatus(id: string, newStatus: string) {
     const { data: { user } } = await serverSupabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Fetch existing for diff
     const { data: previousData } = await serverSupabase
         .from('properties')
         .select('status, is_active, slug, title')
@@ -398,11 +282,8 @@ export async function updatePropertyStatus(id: string, newStatus: string) {
         })
         .eq('id', id);
 
-    if (error) {
-        return { success: false, error: error.message };
-    }
+    if (error) return { success: false, error: error.message };
 
-    // Log Activity
     await logActivity(
         user.id,
         'STATUS_CHANGE',
@@ -411,9 +292,7 @@ export async function updatePropertyStatus(id: string, newStatus: string) {
         {
             slug: previousData.slug,
             title: previousData.title?.en || 'Untitled',
-            changes: {
-                status: { from: previousData.status, to: newStatus }
-            }
+            changes: { status: { from: previousData.status, to: newStatus } }
         }
     );
 
@@ -423,10 +302,6 @@ export async function updatePropertyStatus(id: string, newStatus: string) {
     return { success: true };
 }
 
-/**
- * Deletes a property.
- * Logs the activity.
- */
 export async function deleteProperty(id: string) {
     const { createServerClient } = await import('@supabase/ssr');
     const { cookies } = await import('next/headers');
@@ -449,7 +324,6 @@ export async function deleteProperty(id: string) {
     const { data: { user } } = await serverSupabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Role check
     const { data: profile } = await serverSupabase
         .from('profiles')
         .select('role')
@@ -460,7 +334,6 @@ export async function deleteProperty(id: string) {
         return { success: false, error: 'Not authorized to delete' };
     }
 
-    // Fetch info before delete for log
     const { data: property } = await serverSupabase
         .from('properties')
         .select('slug, title')
@@ -472,16 +345,13 @@ export async function deleteProperty(id: string) {
         .delete()
         .eq('id', id);
 
-    if (error) {
-        return { success: false, error: error.message, code: error.code }; // Pass code for handling FK constraints
-    }
+    if (error) return { success: false, error: error.message, code: error.code };
 
-    // Log Activity
     await logActivity(
         user.id,
         'DELETE',
         'PROPERTY',
-        id, // ID might remain in log even if record deleted
+        id,
         {
             slug: property?.slug,
             title: property?.title?.en || 'Untitled',
@@ -494,9 +364,6 @@ export async function deleteProperty(id: string) {
     return { success: true };
 }
 
-/**
- * Assign multiple properties to an owner
- */
 export async function assignPropertiesToOwner(ownerId: string, propertyIds: string[]) {
     const { createServerClient } = await import('@supabase/ssr');
     const { cookies } = await import('next/headers');
@@ -536,7 +403,6 @@ export async function assignPropertiesToOwner(ownerId: string, propertyIds: stri
 
     if (error) return { success: false, error: error.message };
 
-    // Log activity
     await logActivity(
         user.id,
         'UPDATE',
@@ -549,9 +415,6 @@ export async function assignPropertiesToOwner(ownerId: string, propertyIds: stri
     return { success: true };
 }
 
-/**
- * Remove a property from an owner
- */
 export async function removePropertyFromOwner(propertyId: string) {
     const { createServerClient } = await import('@supabase/ssr');
     const { cookies } = await import('next/headers');
@@ -603,9 +466,6 @@ export async function removePropertyFromOwner(propertyId: string) {
     return { success: true };
 }
 
-/**
- * Fetch properties that are not assigned to any owner (or assigned to this owner)
- */
 export async function getAvailableProperties(currentOwnerId?: string) {
     const { createServerClient } = await import('@supabase/ssr');
     const { cookies } = await import('next/headers');
@@ -627,15 +487,38 @@ export async function getAvailableProperties(currentOwnerId?: string) {
 
     let query = serverSupabase
         .from('properties')
-        .select('id, title, slug, address, city, owner_id, images, status, is_active')
-        .is('owner_id', null);
-
-    // If currentOwnerId is provided, also include properties owned by them (so they show up in list as "already assigned" or just to be safe)
-    // Actually for a "Assign New" dropdown we usually want only unassigned.
-    // Let's stick to unassigned for now. 
+        .select('id, title, slug, address, city, owner_id, images, status, is_active, is_multi_unit')
+        .is('owner_id', null)
+        .or('is_multi_unit.eq.false,is_multi_unit.is.null');
 
     const { data, error } = await query.order('title', { ascending: true });
 
     if (error) throw error;
     return data;
+}
+
+export async function getPropertiesOptions() {
+    const { getSupabaseAdmin } = await import('@/lib/supabase');
+    const adminSupabase = await getSupabaseAdmin();
+
+    const { data, error } = await adminSupabase
+        .from('properties')
+        .select('id, title, is_multi_unit, airbnb_listing_name')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching property options:', error);
+        return [];
+    }
+
+    // Filter properties (not buildings) in JS to handle potential nulls/undefined better
+    // Buildings have is_multi_unit = true. Properties have it false or null.
+    const filtered = (data || []).filter(p => p.is_multi_unit !== true);
+    
+    // Sort by name in JS since it's a JSONB field
+    return filtered.sort((a: any, b: any) => {
+        const nameA = a.title?.pt || a.title?.en || "";
+        const nameB = b.title?.pt || b.title?.en || "";
+        return nameA.localeCompare(nameB);
+    });
 }

@@ -1,42 +1,46 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Link } from "@/i18n/routing";
-import { ArrowRight, MapPin, Bed, Bath, Users } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { ArrowRight, MapPin, Bed, Bath, Users, FileSpreadsheet } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { getOwnerProperties } from "@/app/actions/owner-properties";
+import { ExportMonthlyDataModal } from "@/components/owner/ExportMonthlyDataModal";
 
-export default async function OwnerPropertiesPage({
-    params
-}: {
-    params: Promise<{ locale: string }>;
-}) {
-    const { locale } = await params;
-    const cookieStore = await cookies();
+export default function OwnerPropertiesPage() {
+    const locale = useLocale();
+    const t = useTranslations('OwnerProperties');
+    const [properties, setProperties] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // Modal State
+    const [exportModalProperty, setExportModalProperty] = useState<{id: string, name: string} | null>(null);
 
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return cookieStore.get(name)?.value
-                },
-            },
+    useEffect(() => {
+        async function loadProperties() {
+            try {
+                const data = await getOwnerProperties();
+                setProperties(data);
+            } finally {
+                setIsLoading(false);
+            }
         }
-    );
+        loadProperties();
+    }, []);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    const t = await getTranslations('OwnerProperties');
-
-    // Fetch Owner's Properties
-    const { data: properties } = await supabase
-        .from('properties')
-        .select(`
-            *,
-            locations (*)
-        `)
-        .eq('owner_id', user?.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+    if (isLoading) {
+        return (
+            <div className="space-y-8 max-w-[1400px] mx-auto animate-pulse">
+                <div className="h-10 w-48 bg-gray-100 rounded-lg mb-2" />
+                <div className="h-4 w-64 bg-gray-50 rounded-lg" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-[500px] bg-white rounded-[32px] border border-gray-100" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 max-w-[1400px] mx-auto">
@@ -52,10 +56,9 @@ export default async function OwnerPropertiesPage({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {properties?.map((property) => {
+                {properties.map((property) => {
                     const title = (property.title as any)?.[locale] || (property.title as any)?.en || property.slug;
                     
-                    // Priority: property.images JSONB array or fallback
                     const propertyImages = Array.isArray(property.images) ? property.images : [];
                     const image = propertyImages[0]?.url || propertyImages[0] || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80';
                     
@@ -69,8 +72,18 @@ export default async function OwnerPropertiesPage({
                                     alt={title}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                 />
-                                <div className="absolute top-5 right-5 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-[#0A1128] shadow-sm">
-                                    {t('active')}
+                                <div className="absolute top-5 left-5 right-5 flex justify-between items-start pointer-events-none">
+                                    <div className="bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-[#0A1128] shadow-sm pointer-events-auto">
+                                        {t('active')}
+                                    </div>
+                                    
+                                    <button
+                                        onClick={() => setExportModalProperty({ id: property.id, name: title })}
+                                        className="size-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-indigo-400 hover:text-indigo-600 hover:scale-110 transition-all shadow-sm pointer-events-auto group/export"
+                                        title={t('exportExcel')}
+                                    >
+                                        <FileSpreadsheet className="size-5" />
+                                    </button>
                                 </div>
                             </div>
 
@@ -122,6 +135,14 @@ export default async function OwnerPropertiesPage({
                     </div>
                 )}
             </div>
+
+            {/* Export Modal */}
+            <ExportMonthlyDataModal 
+                isOpen={!!exportModalProperty}
+                onClose={() => setExportModalProperty(null)}
+                propertyId={exportModalProperty?.id || ''}
+                propertyName={exportModalProperty?.name || ''}
+            />
         </div>
     );
 }

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, use } from 'react';
 import { getOwnersWithPropertyCounts, getCurrentUserRole } from '@/app/actions/user';
-import { Loader2, Plus, Search, Building2, User, Phone, Mail, ArrowRight, Home } from 'lucide-react';
+import { Loader2, Plus, Search, User, Phone, Mail, ArrowRight, Home } from 'lucide-react';
 import Link from 'next/link';
 import { InviteUserModal } from '@/components/admin/users/InviteUserModal';
 import { AppRole } from '@/lib/types';
@@ -16,7 +16,6 @@ interface OwnerWithCount {
     phone: string | null;
     created_at: string;
     property_count: number;
-    buildings_count: number;
     units_count: number;
 }
 
@@ -161,19 +160,12 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                                         </td>
                                         <td className="py-4 px-6 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                {owner.buildings_count > 0 && (
-                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20" title="Buildings">
-                                                        <Building2 className="size-3" />
-                                                        {owner.buildings_count}
-                                                    </span>
-                                                )}
-                                                {owner.units_count > 0 && (
+                                                {owner.units_count > 0 ? (
                                                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20" title="Properties">
                                                         <Home className="size-3" />
                                                         {owner.units_count}
                                                     </span>
-                                                )}
-                                                {owner.property_count === 0 && (
+                                                ) : (
                                                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-gray-50 dark:bg-admin-dark-bg text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-admin-dark-border">
                                                         <Home className="size-3" />
                                                         0

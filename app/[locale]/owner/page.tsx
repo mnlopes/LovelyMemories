@@ -1,13 +1,14 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { Link } from "@/i18n/routing";
+import { Link, redirect } from "@/i18n/routing";
 import { DashboardMetricCard } from "@/components/owner/DashboardMetricCard";
 import { RevenueChart } from "@/components/owner/RevenueChart";
 import { OccupancyDonut } from "@/components/owner/OccupancyDonut";
 import { RecentActivityList } from "@/components/owner/RecentActivityList";
 import { Building2, TrendingUp, Users, Wallet } from "lucide-react";
 import { getOwnerDashboardStats } from "@/app/actions/owner-analytics";
+import { getEffectiveUser } from "@/app/actions/auth-context";
 
 import { getMessages, getTranslations } from "next-intl/server";
 
@@ -27,6 +28,13 @@ export default async function OwnerDashboard({
     const sParams = await searchParams;
     const cookieStore = await cookies();
 
+    const { userId, realUser } = await getEffectiveUser();
+    const t = await getTranslations('OwnerDashboard');
+
+    if (!realUser) {
+        redirect({ href: '/login', locale });
+    }
+
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -39,9 +47,6 @@ export default async function OwnerDashboard({
         }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
-    const t = await getTranslations('OwnerDashboard');
-
     // Get Filter Values
     const propertyId = sParams.property as string | undefined;
     const year = sParams.year ? parseInt(sParams.year as string) : undefined;
@@ -49,10 +54,13 @@ export default async function OwnerDashboard({
     const page = sParams.page ? parseInt(sParams.page as string) : 1;
 
     // Fetch Owner Properties for Filter
-    const { data: properties } = await supabase
+    const { getSupabaseAdmin } = await import('@/lib/supabase');
+    const adminSupabase = await getSupabaseAdmin();
+
+    const { data: properties } = await adminSupabase
         .from('properties')
         .select('id, title, slug, owner_id')
-        .eq('owner_id', user?.id)
+        .eq('owner_id', userId)
         .eq('is_active', true);
 
     // Fetch Dashboard Stats with Filters
@@ -63,8 +71,8 @@ export default async function OwnerDashboard({
         page 
     });
 
-    // Fetch user profile for name
-    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user?.id).single();
+    // Fetch profile for name
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', userId).single();
     const displayName = profile?.full_name?.split(' ')[0] || "Owner";
 
     return (

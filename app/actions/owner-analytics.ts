@@ -2,16 +2,34 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { startOfMonth, subMonths, format, endOfMonth, differenceInDays, isWithinInterval, subDays } from "date-fns";
+import { startOfMonth, subMonths, format, endOfMonth, differenceInDays, subDays } from "date-fns";
 import { createClient } from "@supabase/supabase-js";
+import { getEffectiveUser } from "./auth-context";
 
 export interface ActivityItem {
     id: string;
-    type: 'booking' | 'check-in' | 'maintenance' | 'blocked';
+    type: 'booking' | 'check-in' | 'maintenance' | 'blocked' | 'import';
     title: string;
     subtitle: string;
     date: string;
     amount?: string;
+    payoutAmount?: string;
+    metadata?: {
+        id?: string;
+        guest_name?: string;
+        check_in?: string;
+        check_out?: string;
+        total_price?: number;
+        net_amount?: number;
+        service_fee?: number;
+        cleaning_fee?: number;
+        base_price?: number;
+        is_airbnb?: boolean;
+        batch_id?: string;
+        reservations?: any[];
+        property_name?: string;
+        raw_date?: number;
+    };
 }
 
 export interface DashboardStats {
@@ -54,14 +72,19 @@ export async function getOwnerDashboardStats(filters: {
         }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return getEmptyStats();
+    const { userId } = await getEffectiveUser();
+    if (!userId) return getEmptyStats();
+
+    const adminClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // 1. Get Owner Properties (To verify ownership if propertyId is provided)
-    let propertyQuery = supabase
+    let propertyQuery = adminClient
         .from('properties')
         .select('id, title, slug, max_guests')
-        .eq('owner_id', user.id)
+        .eq('owner_id', userId)
         .eq('is_active', true);
 
     if (propertyId) {
@@ -83,23 +106,22 @@ export async function getOwnerDashboardStats(filters: {
         referenceDate = new Date(year, (month || 1) - 1, 1);
     }
 
-    const twelveMonthsAgo = startOfMonth(subMonths(referenceDate, 11));
     const startOfCurrentMonth = startOfMonth(referenceDate);
     const startOfLastMonth = startOfMonth(subMonths(referenceDate, 1));
     const endOfLastMonth = endOfMonth(subMonths(referenceDate, 1));
     const thirtyDaysAgo = subDays(referenceDate, 30);
 
     // 3. Fetch Reservations
-    const adminClient = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
     let reservationsQuery = adminClient
         .from('reservations')
         .select(`
             id,
             total_price,
+            base_price,
+            cleaning_fee,
+            service_fee,
+            net_amount,
             check_in,
             check_out,
             status,
@@ -108,6 +130,8 @@ export async function getOwnerDashboardStats(filters: {
             infants,
             created_at,
             guest_name,
+            platform,
+            import_batch_id,
             properties (
                 title,
                 slug
@@ -201,25 +225,90 @@ export async function getOwnerDashboardStats(filters: {
         ? Math.round((bookedNightsLast30Days / totalAvailableNights) * 100)
         : 0;
 
-    // 5. Paginated Activity
-    const sortedActivity = (reservations || [])
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
-    const totalActivityCount = sortedActivity.length;
-    const startIdx = (page - 1) * pageSize;
-    const paginatedActivity = sortedActivity.slice(startIdx, startIdx + pageSize).map(res => {
+    // 5. Paginated Activity (Grouped by Sync)
+    const processedActivities: ActivityItem[] = [];
+    const batchMap: Record<string, any[]> = {};
+    const individualBookings: any[] = [];
+
+    (reservations || []).forEach(res => {
+        if (res.import_batch_id) {
+            if (!batchMap[res.import_batch_id]) batchMap[res.import_batch_id] = [];
+            batchMap[res.import_batch_id].push(res);
+        } else {
+            individualBookings.push(res);
+        }
+    });
+
+    // Add individual bookings
+    individualBookings.forEach(res => {
         const propTitleRaw = (res.properties as any)?.title;
         const propertyTitle = propTitleRaw?.en || propTitleRaw?.pt || (res.properties as any)?.slug || 'Unknown Property';
-
-        return {
+        
+        processedActivities.push({
             id: res.id,
-            type: 'booking' as const,
+            type: 'booking',
             title: 'newBooking',
             subtitle: `${res.guest_name || 'Guest'} · ${propertyTitle}`,
-            amount: res.total_price ? `+ €${Number(res.total_price).toLocaleString()}` : undefined,
-            date: format(new Date(res.created_at), 'MMM d, HH:mm')
-        };
+            amount: `€${(Number(res.net_amount) || Number(res.total_price) || 0).toLocaleString()}`,
+            payoutAmount: undefined, // Simpler view as requested
+            date: format(new Date(res.created_at), 'MMM d, HH:mm'),
+            metadata: {
+                id: res.id,
+                guest_name: res.guest_name,
+                check_in: res.check_in,
+                check_out: res.check_out,
+                total_price: res.total_price,
+                net_amount: res.net_amount,
+                service_fee: res.service_fee,
+                cleaning_fee: res.cleaning_fee,
+                base_price: res.base_price,
+                property_name: propertyTitle,
+                raw_date: new Date(res.created_at).getTime()
+            }
+        });
     });
+
+    // Add grouped syncs
+    Object.keys(batchMap).forEach(batchId => {
+        const batchRes = batchMap[batchId];
+        const latestCreatedAt = new Date(Math.max(...batchRes.map(r => new Date(r.created_at).getTime())));
+        const totalNet = batchRes.reduce((sum, r) => sum + (Number(r.net_amount) || 0), 0);
+
+        processedActivities.push({
+            id: batchId,
+            type: 'import',
+            title: 'airbnbSync',
+            subtitle: `${batchRes.length} ${batchRes.length === 1 ? 'reserva' : 'reservas'} importadas`,
+            amount: `€${totalNet.toLocaleString()}`,
+            date: format(latestCreatedAt, 'MMM d, HH:mm'),
+            metadata: {
+                batch_id: batchId,
+                raw_date: latestCreatedAt.getTime(),
+                reservations: batchRes.map(r => {
+                    const pTitleRaw = (r.properties as any)?.title;
+                    const pName = pTitleRaw?.en || pTitleRaw?.pt || (r.properties as any)?.slug || 'Unknown Property';
+                    return {
+                        id: r.id,
+                        guest_name: r.guest_name,
+                        check_in: r.check_in,
+                        check_out: r.check_out,
+                        total_price: r.total_price,
+                        net_amount: r.net_amount,
+                        service_fee: r.service_fee,
+                        cleaning_fee: r.cleaning_fee,
+                        base_price: r.base_price,
+                        property_name: pName
+                    };
+                })
+            }
+        });
+    });
+
+    const totalActivityCount = processedActivities.length;
+    const startIdx = (page - 1) * pageSize;
+    const paginatedActivity = processedActivities
+        .sort((a, b) => (b.metadata?.raw_date || 0) - (a.metadata?.raw_date || 0))
+        .slice(startIdx, startIdx + pageSize);
 
     return {
         revenueData,

@@ -27,12 +27,19 @@ import {
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { BookingInvoice } from "@/components/booking/BookingInvoice";
+import { BookingSuccessInvoice } from "@/components/booking/BookingSuccessInvoice";
 import { Button } from "@/components/ui/Button";
 import { ADDRESS_DATA, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
 import { processReservation } from "@/app/actions/reservation";
 import { getBookingSession, BookingSessionData } from "@/lib/booking-session";
 import { getPropertyBySlug } from "@/lib/services";
 import { toast } from "sonner";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import StripePaymentForm from "@/components/booking/StripePaymentForm";
+import { createPaymentIntent, confirmStripePaymentIntent } from "@/app/actions/stripe";
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function CheckoutPage({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = React.use(params);
@@ -51,6 +58,34 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [zipError, setZipError] = useState<string>("");
+    const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [isInitializingStripe, setIsInitializingStripe] = useState(false);
+    const [isStripeValid, setIsStripeValid] = useState(false);
+    const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "confirming">("idle");
+
+    const handlePaymentSuccess = async (paymentIntentId: string) => {
+        setBookingStatus("confirming");
+        try {
+            console.log("Finalizing booking for PaymentIntent:", paymentIntentId);
+            const result = await confirmStripePaymentIntent(paymentIntentId);
+            
+            if (result.success && 'ref' in result && result.ref) {
+                console.log("Stripe booking finalized successfully. Ref:", result.ref);
+                setReservationRef(result.ref);
+                setIsFinished(true);
+            } else {
+                console.error("Failed to finalize booking manually:", result.error);
+                setError(result.error || "Ocorreu um erro ao finalizar a sua reserva. Por favor contacte o suporte.");
+                setBookingStatus("idle");
+                setIsSubmitting(false);
+            }
+        } catch (err) {
+            console.error("Error in handlePaymentSuccess:", err);
+            setError("Erro inesperado ao confirmar o pagamento.");
+            setBookingStatus("idle");
+            setIsSubmitting(false);
+        }
+    };
 
     const code = searchParams.get("code") || "";
     const paymentReference = code ? `LM-${code.toUpperCase()}` : "LM-PENDING";
@@ -429,6 +464,42 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         setIsValidatingCoupon(false);
     };
 
+    const handleSelectPaymentMethod = async (method: string) => {
+        setFormData(prev => ({ ...prev, paymentMethod: method }));
+        
+        if (method === 'card' && !clientSecret) {
+            setIsInitializingStripe(true);
+            try {
+                const res = await createPaymentIntent({
+                    ...formData,
+                    propertySlug: bookingData!.slug,
+                    checkIn: bookingData!.checkIn,
+                    checkOut: bookingData!.checkOut,
+                    adults: bookingData!.adults,
+                    children: bookingData!.children || 0,
+                    infants: bookingData!.infants || 0,
+                    breakfastTotal,
+                    transferTotal,
+                    transferType: selectedExtras?.transferType,
+                    couponCode: appliedCoupon?.code || "",
+                    couponDiscount: couponDiscount || 0,
+                } as any);
+
+                if (res.success && res.clientSecret) {
+                    setClientSecret(res.clientSecret);
+                } else {
+                    setError(res.error || "Erro ao inicializar pagamento.");
+                    toast.error("Erro ao inicializar Stripe.");
+                }
+            } catch (err) {
+                console.error(err);
+                setError("Erro de rede ao inicializar Stripe.");
+            } finally {
+                setIsInitializingStripe(false);
+            }
+        }
+    };
+
     const handleRemoveCoupon = () => {
         setAppliedCoupon(null);
         setFormData(prev => ({ ...prev, couponCode: "" }));
@@ -517,179 +588,29 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
     if (isFinished) {
         return (
-            <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 md:p-6 bg-gradient-to-b from-gray-50 to-white text-navy-950">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="max-w-4xl mx-auto w-full pt-12 pb-24 px-0 md:px-6"
-                >
-                    <div className="text-center mb-12">
-                        <div className="w-20 h-20 bg-[#2d8653] text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#2d8653]/20">
-                            <CheckCircle2 className="w-10 h-10" />
-                        </div>
-                        <h1 className="text-3xl md:text-4xl font-bold font-montserrat text-navy-950 mb-2">{t('success.title')}</h1>
-                        <p className="text-navy-900/60 text-lg">{t('success.subtitle', { email: formData.email })}</p>
-                    </div>
-
-                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                        {/* Order Summary Header */}
-                        <div className="flex flex-col md:flex-row gap-6 md:gap-0 justify-between py-6 px-4 md:px-8 border-b border-gray-100 bg-gray-50/30">
-                            <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('success.reference')}</p>
-                                <p className="text-lg font-mono font-bold tracking-tighter text-navy-950">{reservationRef}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('success.date')}</p>
-                                <p className="text-lg font-bold text-navy-950">{new Date().toLocaleDateString(locale)}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('sidebar.total')}</p>
-                                <p className="text-lg font-bold text-navy-950">€{total}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('success.paymentMethod')}</p>
-                                <p className="text-lg font-bold text-navy-950 capitalize">{formData.paymentMethod === 'wire' ? t('success.bankTransfer') : formData.paymentMethod}</p>
-                            </div>
-                        </div>
-
-                        {/* Order Details Body */}
-                        <div className="p-4 sm:p-6 md:p-8 space-y-6">
-                            <div className="flex justify-between items-center pb-6 border-b border-gray-100">
-                                <h2 className="text-2xl font-bold font-montserrat text-navy-950">{t('success.orderDetails')}</h2>
-                                <button
-                                    onClick={handleDownloadPDF}
-                                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#B08D4A] hover:text-[#967840] transition-colors cursor-pointer"
-                                >
-                                    <FileText className="w-4 h-4" />
-                                    {t('success.downloadPdf')}
-                                </button>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 py-4 border-b border-gray-100">
-                                <span className="font-bold text-navy-950 text-lg leading-tight">
-                                    {t('success.bookingOf')} <span className="text-[#B08D4A]">{property.title?.[locale] || property.title?.en || 'Untitled'}</span>
-                                </span>
-                                <span className="font-bold text-navy-950 text-xl sm:text-lg">€{total}</span>
-                            </div>
-
-                            <div className="space-y-2 text-sm text-navy-900/70">
-                                <div className="flex items-center gap-4 py-2">
-                                    <span className="text-sm font-bold text-navy-950 shrink-0">{t('success.dates')}</span>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium text-navy-900/70">{formatDate(checkIn)}</span>
-                                        <ArrowRight className="w-3 h-3 text-navy-900/20" />
-                                        <span className="text-sm font-medium text-navy-900/70">{formatDate(checkOut)}</span>
-                                    </div>
-                                </div>
-                                <p><span className="font-bold text-navy-950">{t('success.duration')}</span> {t('sidebar.nights', { count: nights })}</p>
-                                <p><span className="font-bold text-navy-950">{t('success.guests')}</span> {t('sidebar.adults', { count: adults })}{children > 0 && `, ${t('sidebar.children', { count: children })}`}{infants > 0 && `, ${t('sidebar.infants', { count: infants })}`}</p>
-                            </div>
-
-                            <div className="space-y-3 pt-4">
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-medium text-navy-900/60">{t('sidebar.subtotal')}:</span>
-                                    <span className="font-bold text-navy-950">€{basePrice}</span>
-                                </div>
-                                {discountAmount > 0 && (
-                                    <div className="flex justify-between text-sm text-[#2d8653]">
-                                        <span className="font-medium">{nights >= 28 ? t('sidebar.monthlyDiscount') : t('sidebar.weeklyDiscount')}:</span>
-                                        <span className="font-bold">−€{discountAmount}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-medium text-navy-900/60">{t('success.cleaningFee')}</span>
-                                    <span className="font-bold text-navy-950">€{cleaningFee}</span>
-                                </div>
-                                {cityTaxTotal > 0 && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-navy-900/60">{t('sidebar.cityTax') || "City Tax"}:</span>
-                                        <span className="font-bold text-navy-950">€{cityTaxTotal}</span>
-                                    </div>
-                                )}
-                                {appliedCoupon && couponDiscount > 0 && (
-                                    <div className="flex justify-between text-sm text-[#2d8653]">
-                                        <span className="font-medium">{t('sidebar.coupon')} ({appliedCoupon.code}):</span>
-                                        <span className="font-bold">−€{couponDiscount}</span>
-                                    </div>
-                                )}
-
-                                {/* Additional Services */}
-                                {selectedExtras?.breakfast && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-navy-900/60">{t('sidebar.breakfast')}:</span>
-                                        <span className="font-bold text-navy-950">€{breakfastTotal}</span>
-                                    </div>
-                                )}
-                                {selectedExtras?.transfer && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-navy-900/60">{t('sidebar.transfer')} ({isRoundTrip ? t('sidebar.roundTrip') : t('sidebar.oneWay')}):</span>
-                                        <span className="font-bold text-navy-950">€{transferTotal}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between gap-4 text-sm pt-4 border-t border-gray-100">
-                                    <span className="font-bold text-navy-950 shrink-0">{t('success.paymentMethod')}:</span>
-                                    <span className="font-bold text-navy-950 capitalize text-right">{formData.paymentMethod === 'wire' ? t('success.bankTransfer') : formData.paymentMethod}</span>
-                                </div>
-                                <div className="flex justify-between gap-4 text-lg pt-4 border-t border-gray-100">
-                                    <span className="font-bold text-navy-950 shrink-0">{t('sidebar.total')}:</span>
-                                    <span className="font-bold text-navy-950">€{total}</span>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div> {/* Added missing closing div here */}
-
-                    {/* Billing Address Card */}
-                    {showBilling && formData.address && ( // Only show if address is filled (implies toggle was likely used or pre-filled)
-                        <div className="mt-8 bg-white border border-gray-100 rounded-3xl p-4 sm:p-6 md:p-12 shadow-sm">
-                            <h2 className="text-2xl font-bold font-montserrat text-navy-950 mb-6">{t('step1.billingTitle')}</h2>
-                            <address className="not-italic space-y-1 text-navy-900/70">
-                                <p className="font-bold text-navy-950">{formData.fullName}</p>
-                                <p>{formData.address}</p>
-                                <p>{formData.zip} {formData.city}</p>
-                                <p>{formData.country}</p>
-                                {formData.vat && <p className="text-navy-900/40 text-xs mt-2 uppercase tracking-wider font-bold">{t('step1.vat').split(' - ')[0]}: {formData.vat}</p>}
-                                <p className="pt-2">{formData.email}</p>
-                                <p>{formData.phoneCode} {formData.phone}</p>
-                            </address>
-                        </div>
-                    )}
-
-                    <div className="mt-12 flex justify-center w-full">
-                        <Link href="/">
-                            <Button variant="luxury" className="px-12 h-14 rounded-full">{t('success.returnHome')}</Button>
-                        </Link>
-                    </div>
-                </motion.div>
-
-                {/* Hidden Invoice for PDF Generation */}
-                <div style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', top: 0, left: 0, zIndex: -1 }}>
-                    <BookingInvoice
-                        reservationRef={reservationRef}
-                        date={new Date().toLocaleDateString(locale)}
-                        propertyTitle={property.title?.[locale] || property.title?.en || 'Untitled'}
-                        propertyLocation={`${property.location?.city || ''}, Portugal`}
-                        checkIn={formatDate(checkIn)}
-                        checkOut={formatDate(checkOut)}
-                        nights={nights}
-                        guests={`${t('sidebar.adults', { count: adults })}${children > 0 ? `, ${t('sidebar.children', { count: children })}` : ''}${infants > 0 ? `, ${t('sidebar.infants', { count: infants })}` : ''}`}
-                        basePrice={basePrice}
-                        cleaningFee={cleaningFee}
-                        discountAmount={discountAmount}
-                        cityTaxTotal={cityTaxTotal}
-                        breakfastTotal={breakfastTotal}
-                        transferTotal={transferTotal}
-                        total={total}
-                        paymentMethod={formData.paymentMethod}
-                        customerName={formData.fullName}
-                        customerEmail={formData.email}
-                        customerPhone={formData.phone}
-                        couponCode={appliedCoupon?.code || ""}
-                        couponDiscount={couponDiscount}
-                        t={t}
-                    />
-                </div>
-            </div>
+            <BookingSuccessInvoice
+                reservationRef={reservationRef}
+                locale={locale}
+                t={t}
+                property={property}
+                formData={formData}
+                total={total}
+                showBilling={showBilling}
+                checkIn={checkIn}
+                checkOut={checkOut}
+                nights={nights}
+                adults={adults}
+                children={children}
+                infants={infants}
+                basePrice={basePrice}
+                cleaningFee={cleaningFee}
+                discountAmount={discountAmount}
+                cityTaxTotal={cityTaxTotal}
+                breakfastTotal={breakfastTotal}
+                transferTotal={transferTotal}
+                appliedCoupon={appliedCoupon}
+                couponDiscount={couponDiscount}
+            />
         );
     }
 
@@ -761,7 +682,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
             <main className="flex-1 max-w-7xl mx-auto w-full px-6 lg:px-20 py-8 lg:py-12 flex flex-col lg:flex-row gap-8 lg:gap-16">
                 {/* Form Section */}
                 <div className="flex-1 max-w-2xl">
-                    <form id="checkout-form" onSubmit={handleSubmit} className="space-y-12">
+                    <div className="space-y-12">
+                        {/* Hidden form to allow sidebar button to trigger submission via the 'form' attribute */}
+                        <form id="checkout-form" onSubmit={handleSubmit} className="hidden" aria-hidden="true" />
                         {/* Honeypot field - Hidden from users */}
                         <div className="hidden" aria-hidden="true">
                             <input
@@ -1325,7 +1248,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
                                         {/* Card Option (Stripe) */}
                                         <div
-                                            onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'card' }))}
+                                            onClick={() => handleSelectPaymentMethod('card')}
                                             className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all duration-300 flex items-center justify-between ${formData.paymentMethod === 'card' ? 'border-navy-950 bg-white shadow-xl' : 'border-gray-100 bg-gray-50/50 hover:border-gray-200'}`}
                                         >
                                             <div className="flex items-center gap-4">
@@ -1334,11 +1257,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                 </div>
                                                 <div>
                                                     <p className="font-bold">{t('step3.card')}</p>
-                                                    <p className="text-navy-900/40 text-[10px] uppercase tracking-wider font-bold">{t('step3.cardTypes')}</p>
+                                                    <p className="text-navy-900/40 text-[10px] uppercase tracking-wider font-bold">Powered By Stripe • {t('step3.cardTypes')}</p>
                                                 </div>
-                                            </div>
-                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.paymentMethod === 'card' ? 'border-navy-950' : 'border-gray-200'}`}>
-                                                {formData.paymentMethod === 'card' && <div className="w-3 h-3 rounded-full bg-navy-950" />}
                                             </div>
                                         </div>
 
@@ -1346,60 +1266,88 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                             <motion.div
                                                 initial={{ opacity: 0, height: 0 }}
                                                 animate={{ opacity: 1, height: 'auto' }}
-                                                className="p-8 border border-gray-100 bg-white shadow-xl shadow-navy-950/5 rounded-[40px] space-y-6 relative overflow-hidden"
+                                                className="p-8 bg-white border-2 border-navy-950 rounded-[32px] space-y-6 shadow-2xl relative overflow-hidden"
                                             >
-                                                <div className="absolute -top-10 -right-10 opacity-[0.03] rotate-12">
-                                                    <ShieldCheck className="w-40 h-40" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step3.cardDetails')}</label>
-                                                    <input disabled type="text" className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-5 outline-none transition-colors" placeholder={t('step3.cardPlaceholder')} />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step3.expiry')}</label>
-                                                        <input disabled type="text" className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-5 outline-none transition-colors" placeholder={t('step3.expiryPlaceholder')} />
+                                                {isInitializingStripe ? (
+                                                    <div className="py-12 flex flex-col items-center justify-center gap-4">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-navy-950" />
+                                                        <p className="text-sm font-medium text-navy-900/60">{t('step3.initializing') || "Initializing secure checkout..."}</p>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-[10px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('step3.cvv')}</label>
-                                                        <input disabled type="text" className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-5 outline-none transition-colors" placeholder={t('step3.cvvPlaceholder')} />
+                                                ) : clientSecret ? (
+                                                    <>
+                                                        {/* Secure Header */}
+                                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-6 h-6 bg-navy-50 rounded-full flex items-center justify-center">
+                                                                    <ShieldCheck className="w-3.5 h-3.5 text-navy-900" />
+                                                                </div>
+                                                                <p className="text-[10px] text-navy-900/40 uppercase tracking-widest font-bold">{t('step3.securePayment') || "Secure Payment"}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 opacity-40 grayscale">
+                                                                <span className="text-[9px] font-bold tracking-widest uppercase">Powered by</span>
+                                                                <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" className="h-3" />
+                                                            </div>
+                                                        </div>
+                                                    <Elements
+                                                        stripe={stripePromise}
+                                                        options={{
+                                                            clientSecret,
+                                                            appearance: {
+                                                                theme: 'stripe',
+                                                                variables: {
+                                                                    colorPrimary: '#03050a',
+                                                                    fontFamily: 'Montserrat, sans-serif',
+                                                                    borderRadius: '16px',
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        <StripePaymentForm
+                                                            amount={total}
+                                                            isLoading={isSubmitting}
+                                                            setIsLoading={setIsSubmitting}
+                                                            onSuccess={handlePaymentSuccess}
+                                                            onValidityChange={setIsStripeValid}
+                                                        />
+                                                    </Elements>
+                                                    </>
+                                                ) : (
+                                                    <div className="py-8 text-center text-red-500 bg-red-50 rounded-2xl">
+                                                        <p className="text-sm font-medium">Error: Could not load payment intent. Please retry.</p>
                                                     </div>
+                                                )}
+
+                                                {/* Security Footer */}
+                                                <div className="pt-4 flex items-center justify-center gap-2 border-t border-gray-50 mt-4">
+                                                    <ShieldCheck className="w-4 h-4 text-[#2d8653]" />
+                                                    <span className="text-[10px] font-bold text-navy-900/30 uppercase tracking-widest">
+                                                        PCI-DSS Compliant • 256-bit SSL
+                                                    </span>
                                                 </div>
-                                                <p className="text-center text-[10px] text-navy-900/40 font-medium">{t('step3.comingSoon')}</p>
                                             </motion.div>
                                         )}
 
                                         {/* PayPal Option */}
                                         <div
-                                            onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'paypal' }))}
-                                            className={`p-6 border-2 rounded-[32px] cursor-pointer transition-all duration-300 flex items-center justify-between ${formData.paymentMethod === 'paypal' ? 'border-navy-950 bg-white shadow-xl' : 'border-gray-100 bg-gray-50/50 hover:border-gray-200'}`}
+                                            className="p-6 border-2 border-gray-100 rounded-[32px] bg-gray-50/50 opacity-60 cursor-not-allowed flex items-center justify-between"
                                         >
                                             <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${formData.paymentMethod === 'paypal' ? 'bg-navy-950 text-white' : 'bg-white text-navy-400 border border-gray-100'}`}>
-                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className={`h-6 ${formData.paymentMethod !== 'paypal' && 'opacity-30'}`} />
+                                                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-gray-100">
+                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" className="h-6 opacity-40 grayscale" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold">PayPal</p>
-                                                    <p className="text-navy-900/40 text-[10px] uppercase tracking-wider font-bold">{t('step3.paypalSubtitle')}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-bold text-gray-500">PayPal</p>
+                                                        <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[9px] font-bold uppercase tracking-wider">
+                                                            {t('step3.comingSoon')}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-400 text-[10px] uppercase tracking-wider font-bold">{t('step3.paypalSubtitle')}</p>
                                                 </div>
                                             </div>
-                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.paymentMethod === 'paypal' ? 'border-navy-950' : 'border-gray-200'}`}>
-                                                {formData.paymentMethod === 'paypal' && <div className="w-3 h-3 rounded-full bg-navy-950" />}
+                                            <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex items-center justify-center bg-gray-100">
                                             </div>
                                         </div>
-
-                                        {formData.paymentMethod === 'paypal' && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                className="p-8 bg-blue-50/30 border border-blue-100 rounded-[32px] text-center"
-                                            >
-                                                <Button variant="luxury" className="bg-[#0070ba] hover:bg-[#003087] text-white border-none px-12 h-12 rounded-full shadow-lg">
-                                                    {t('step3.paypalButton')}
-                                                </Button>
-                                                <p className="mt-4 text-[10px] text-blue-900/40 font-bold uppercase tracking-widest">{t('step3.paypalIntegration')}</p>
-                                            </motion.div>
-                                        )}
                                     </div>
                                 </motion.div>
                             )}
@@ -1412,7 +1360,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         )}
 
 
-                    </form>
+                    </div>
                 </div>
 
                 {/* Summary Sidebar */}
@@ -1530,13 +1478,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                         {/* Security Badge - Sidebar Position */}
                         {/* Primary Action Button - Moved from Header */}
                         <Button
-                            form="checkout-form"
+                            form={step === 3 && formData.paymentMethod === 'card' ? "stripe-payment-form" : "checkout-form"}
                             type="submit"
                             variant="luxury"
                             className="w-full h-16 rounded-[32px] text-sm lg:text-base font-bold flex items-center justify-center gap-3 shadow-2xl shadow-[#B08D4A]/30 active:scale-[0.98] transition-all hover:scale-[1.02]"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || bookingStatus === "confirming" || (step === 3 && formData.paymentMethod === 'card' && !isStripeValid)}
                         >
-                            {isSubmitting ? (
+                            {isSubmitting || bookingStatus === "confirming" ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                     <span>{t('header.processing')}</span>

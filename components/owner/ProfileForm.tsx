@@ -15,9 +15,10 @@ interface ProfileFormProps {
         phone: string;
         language: string;
     };
+    isReadOnly?: boolean;
 }
 
-export const ProfileForm = ({ initialData }: ProfileFormProps) => {
+export const ProfileForm = ({ initialData, isReadOnly }: ProfileFormProps) => {
     const t = useTranslations('OwnerProfile');
     const router = useRouter();
     const pathname = usePathname();
@@ -86,6 +87,17 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                 <h2 className="text-xl font-bold text-[#0A1128]">{t('personalInfo')}</h2>
             </div>
 
+            {isReadOnly && (
+                <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800 text-sm">
+                    <AlertCircle className="size-5 shrink-0" />
+                    <div>
+                        <p className="font-bold">Viewing as Owner:</p>
+                        <p>Editing is disabled during impersonation for security reasons.</p>
+                        <p className="text-[10px] mt-1 opacity-50">Target User ID: {initialData.email ? 'Resolved' : 'Not Resolved'}</p>
+                    </div>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Full Name */}
@@ -99,8 +111,9 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                                 type="text"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
-                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none disabled:opacity-75"
                                 required
+                                disabled={isReadOnly}
                             />
                         </div>
                     </div>
@@ -116,8 +129,9 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none disabled:opacity-75"
                                 required
+                                disabled={isReadOnly}
                             />
                         </div>
                     </div>
@@ -133,8 +147,9 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                                 type="tel"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
-                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none disabled:opacity-75"
                                 placeholder="+351 9XX XXX XXX"
+                                disabled={isReadOnly}
                             />
                         </div>
                     </div>
@@ -148,7 +163,7 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                             <button
                                 type="button"
                                 onClick={async () => {
-                                    if (language === 'pt') return;
+                                    if (language === 'pt' || isReadOnly) return;
                                     setLanguage('pt');
                                     // Immediate background save and redirect
                                     await updateProfileMetadata({ language: 'pt' });
@@ -160,6 +175,7 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                                         ? "bg-white text-[#192537] shadow-sm" 
                                         : "text-gray-400 hover:text-gray-600"
                                 )}
+                                disabled={isReadOnly}
                             >
                                 <span className="text-base text-gray-400">🇵🇹</span>
                                 {t('portuguese')}
@@ -167,7 +183,7 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                             <button
                                 type="button"
                                 onClick={async () => {
-                                    if (language === 'en') return;
+                                    if (language === 'en' || isReadOnly) return;
                                     setLanguage('en');
                                     // Immediate background save and redirect
                                     await updateProfileMetadata({ language: 'en' });
@@ -179,6 +195,7 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                                         ? "bg-white text-[#192537] shadow-sm" 
                                         : "text-gray-400 hover:text-gray-600"
                                 )}
+                                disabled={isReadOnly}
                             >
                                 <span className="text-base text-gray-400">🇬🇧</span>
                                 {t('english')}
@@ -209,8 +226,8 @@ export const ProfileForm = ({ initialData }: ProfileFormProps) => {
                 <div className="pt-4 flex justify-end">
                     <button
                         type="submit"
-                        disabled={isSubmitting}
-                        className="bg-[#192537] text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 flex items-center gap-2 shadow-lg shadow-blue-900/10"
+                        disabled={isSubmitting || isReadOnly}
+                        className="bg-[#192537] text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:scale-100 flex items-center gap-2 shadow-lg shadow-blue-900/10"
                     >
                         {isSubmitting ? (
                             <>

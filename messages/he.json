@@ -579,7 +579,12 @@
             "after18": "אחרי 18:00",
             "selectTime": "בחר זמן הגעה",
             "specialRequests": "בקשות מיוחדות",
-            "specialRequestsPlaceholder": "אלרגיות, צ'ק-אין מאוחר, דרישות לעריסת תינוק..."
+            "specialRequestsPlaceholder": "אלרגיות, צ'ק-אין מאוחר, דרישות לעריסת תינוק...",
+            "couponApplied": "[HE] Coupon Applied",
+            "invalidCoupon": "[HE] Invalid Coupon",
+            "couponCode": "[HE] Coupon Code",
+            "couponPlaceholder": "[HE] Coupon Placeholder",
+            "applyCoupon": "[HE] Apply Coupon"
         },
         "step3": {
             "title": "תשלום",
@@ -603,7 +608,9 @@
             "paypalIntegration": "נקודת אינטגרציה עתידית",
             "cardPlaceholder": "**** **** **** ****",
             "expiryPlaceholder": "MM / YY",
-            "cvvPlaceholder": "123"
+            "cvvPlaceholder": "123",
+            "initializing": "[HE] Initializing",
+            "securePayment": "[HE] Secure Payment"
         },
         "sidebar": {
             "summary": "סיכום הזמנה",
@@ -624,7 +631,11 @@
             "propertyDetails": "פרטי הנכס",
             "dateRange": "טווח תאריכים",
             "additionalServices": "שירותים נוספים",
-            "child": "ילד"
+            "child": "ילד",
+            "monthlyDiscount": "[HE] Monthly Discount",
+            "weeklyDiscount": "[HE] Weekly Discount",
+            "cityTax": "[HE] City Tax",
+            "coupon": "[HE] Coupon"
         },
         "security": {
             "safe": "הנתונים שלך בטוחים",
@@ -675,7 +686,9 @@
             "countryRequired": "מדינה היא שדה חובה",
             "addressRequired": "כתובת היא שדה חובה",
             "cityRequired": "עיר היא שדה חובה",
-            "zipRequired": "מיקוד הוא שדה חובה"
+            "zipRequired": "מיקוד הוא שדה חובה",
+            "phoneError": "[HE] Phone Error",
+            "paymentMethodRequired": "[HE] Payment Method Required"
         }
     },
     "Properties": {
