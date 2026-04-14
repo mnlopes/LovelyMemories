@@ -115,7 +115,7 @@ export async function calculateReservationPrice({
 /**
  * Verifica se as datas selecionadas estão disponíveis (reservas + bloqueios + regra da meia-noite + locks ativos).
  */
-export async function verifyAvailability(propertyId: string, checkIn: Date, checkOut: Date, sessionId?: string) {
+export async function verifyAvailability(propertyId: string, checkIn: Date, checkOut: Date, sessionId?: string, supabaseClient = supabase) {
     // 1. Regra da Meia-Noite (Não permitir para o próprio dia)
     const today = startOfDay(new Date());
     if (startOfDay(checkIn) <= today) {
@@ -123,7 +123,7 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
     }
 
     // 2. Verificar bloqueios manuais
-    const { data: blocks } = await supabase
+    const { data: blocks } = await supabaseClient
         .from('blocked_dates')
         .select('*')
         .eq('property_id', propertyId)
@@ -135,7 +135,7 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
     }
 
     // 3. Verificar reservas existentes (confirmed ou pending)
-    const { data: reservations } = await supabase
+    const { data: reservations } = await supabaseClient
         .from('reservations')
         .select('*')
         .eq('property_id', propertyId)
@@ -149,7 +149,7 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
 
     // 4. Verificar Bloqueios Temporários (Locks de 15 min)
     // Se o sessionId for fornecido, ignoramos o lock que pertence a essa sessão
-    let lockQuery = supabase
+    let lockQuery = supabaseClient
         .from('locked_dates')
         .select('*')
         .eq('property_id', propertyId)

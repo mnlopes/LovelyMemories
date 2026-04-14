@@ -1,20 +1,26 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { verifyAvailability } from '@/lib/pricing';
 import { addMinutes } from 'date-fns';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 /**
  * API to handle 15-minute temporary reservation locks.
  */
 export async function POST(req: Request) {
   try {
-    const { propertyId, checkIn, checkOut, sessionId, extend } = await req.json();
+    const body = await req.json();
+    const { propertyId, checkIn, checkOut, sessionId, extend } = body;
 
     if (!propertyId || !checkIn || !checkOut || !sessionId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, body, { status: 400 });
     }
 
-    const supabase = await getSupabaseAdmin();
+    const supabase = supabaseAdmin;
 
     if (extend) {
       // HANDLE EXTENSION (15 more minutes, only once)
@@ -51,7 +57,8 @@ export async function POST(req: Request) {
         propertyId, 
         new Date(checkIn), 
         new Date(checkOut), 
-        sessionId
+        sessionId,
+        supabase
       );
 
       if (!availability.available) {
@@ -92,8 +99,7 @@ export async function DELETE(req: Request) {
     const { sessionId } = await req.json();
     if (!sessionId) return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
 
-    const supabase = await getSupabaseAdmin();
-    await supabase.from('locked_dates').delete().eq('session_id', sessionId);
+    await supabaseAdmin.from('locked_dates').delete().eq('session_id', sessionId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
