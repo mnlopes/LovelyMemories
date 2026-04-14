@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter, Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import Cookies from 'js-cookie';
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ChevronLeft,
@@ -63,9 +64,40 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [isStripeValid, setIsStripeValid] = useState(false);
     const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "confirming">("idle");
     const [sessionId] = useState(() => {
-        const urlCode = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('code');
-        return urlCode ? `sess_${urlCode}` : `sess_tmp_${Math.random().toString(36).substring(2, 9)}`;
+        const urlCode = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('code') : null;
+        if (urlCode) return `sess_${urlCode}`;
+        
+        // Persistir ID aleatório em cookie para evitar 409 no refresh
+        const existing = Cookies.get('booking_session_id');
+        if (existing) return existing;
+        
+        const newSess = `sess_tmp_${Math.random().toString(36).substring(2, 9)}`;
+        Cookies.set('booking_session_id', newSess, { expires: 1/96 }); // 15 mins
+        return newSess;
     });
+
+    // Helper to translate errors even if i18n is unstable
+    const translateError = (errCode: string) => {
+        const dictionary: Record<string, string> = {
+            'errorTemporarilyLocked': t('errorTemporarilyLocked'),
+            'errorAlreadyBooked': t('errorAlreadyBooked'),
+            'errorGeneric': t('errorGeneric'),
+            'errorServer': t('errorServer')
+        };
+        
+        const fallback: Record<string, string> = {
+            'errorTemporarilyLocked': "Estas datas estão temporariamente reservadas por outro utilizador. Aguarde 15 minutos.",
+            'errorAlreadyBooked': "Infelizmente, estas datas acabaram de ser reservadas.",
+            'errorGeneric': "Ocorreu um erro no processamento. Tente novamente.",
+            'errorServer': "Erro de ligação ao servidor."
+        };
+
+        const result = dictionary[errCode];
+        if (!result || result.includes(errCode)) {
+            return fallback[errCode] || errCode;
+        }
+        return result;
+    };
 
     const handlePaymentSuccess = async (paymentIntentId: string) => {
         setBookingStatus("confirming");
@@ -147,8 +179,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
             }).then(async res => {
                 if (!res.ok) {
                     const data = await res.json();
-                    if (data.error === 'errorAlreadyBooked' || data.error === 'errorTemporarilyLocked' || data.error === 'Dates unavailable') {
-                        setError(t(data.error === 'Dates unavailable' ? 'errorTemporarilyLocked' : data.error));
+                    if (data.error) {
+                        setError(translateError(data.error));
                     }
                 }
             }).catch(err => console.error("Lock error:", err));
@@ -588,14 +620,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     setIsFinished(true);
                 } else {
                     // Try to translate the error code directly
-                    if (result.error && (result.error === 'errorTemporarilyLocked' || result.error === 'errorAlreadyBooked')) {
-                        setError(t(result.error));
+                    if (result.error) {
+                        setError(translateError(result.error));
                     } else {
-                        setError(result.error || t('errorGeneric'));
+                        setError(translateError('errorGeneric'));
                     }
                 }
             } catch (err) {
-                setError(t('errorServer'));
+                setError(translateError('errorServer'));
             } finally {
                 setIsSubmitting(false);
             }
