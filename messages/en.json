@@ -1291,7 +1291,10 @@
             "nights": "{count, plural, =1 {1 night} other {# nights}}",
             "adults": "{count, plural, =1 {1 adult} other {# adults}}",
             "children": "{count, plural, =1 {1 child} other {# children}}",
-            "infants": "{count, plural, =1 {1 infant} other {# infants}}"
+            "infants": "{count, plural, =1 {1 infant} other {# infants}}",
+            "checkIn": "Arrival",
+            "checkOut": "Departure",
+            "cleaningFee": "Cleaning Fee"
         },
         "header": {
             "cancel": "Cancel",
