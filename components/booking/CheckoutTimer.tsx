@@ -12,6 +12,7 @@ interface CheckoutTimerProps {
   checkIn: string;
   checkOut: string;
   slug: string;
+  sessionId: string;
 }
 
 export default function CheckoutTimer({ propertyId, checkIn, checkOut, sessionId, slug }: CheckoutTimerProps) {
