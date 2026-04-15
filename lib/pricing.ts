@@ -187,7 +187,7 @@ import { parseDateLocal } from './utils';
 /**
  * Obtém todas as datas indisponíveis (bloqueios + reservas) para uma propriedade.
  */
-export async function getUnavailableDates(propertyId: string) {
+export async function getUnavailableDates(propertyId: string, sessionId?: string) {
     const { getSupabaseAdmin } = await import('./supabase');
     const adminSupabase = await getSupabaseAdmin();
 
@@ -204,12 +204,18 @@ export async function getUnavailableDates(propertyId: string) {
         .eq('property_id', propertyId)
         .neq('status', 'cancelled');
 
-    // 3. Procurar locks temporários ativos
-    const { data: activeLocks } = await adminSupabase
+    // 3. Procurar locks temporários ativos (ignorando o do próprio utilizador)
+    let lockQuery = adminSupabase
         .from('locked_dates')
         .select('check_in, check_out')
         .eq('property_id', propertyId)
         .gt('expires_at', new Date().toISOString());
+
+    if (sessionId) {
+        lockQuery = lockQuery.neq('session_id', sessionId);
+    }
+
+    const { data: activeLocks } = await lockQuery;
 
     const unavailable: DateRange[] = [];
 

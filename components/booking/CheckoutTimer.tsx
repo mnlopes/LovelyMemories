@@ -5,16 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, AlertTriangle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from "next-intl";
+import { useRouter } from '@/i18n/routing';
 
 interface CheckoutTimerProps {
   propertyId: string;
   checkIn: string;
   checkOut: string;
-  sessionId: string;
+  slug: string;
 }
 
-export default function CheckoutTimer({ propertyId, checkIn, checkOut, sessionId }: CheckoutTimerProps) {
+export default function CheckoutTimer({ propertyId, checkIn, checkOut, sessionId, slug }: CheckoutTimerProps) {
   const t = useTranslations("Checkout.timer");
+  const router = useRouter();
   const INITIAL_SECONDS = 15 * 60; // 15 minutes
   const [timeLeft, setTimeLeft] = useState(INITIAL_SECONDS);
   const [hasExtended, setHasExtended] = useState(false);
@@ -51,6 +53,12 @@ export default function CheckoutTimer({ propertyId, checkIn, checkOut, sessionId
         setHasExtended(true);
         setShowExtension(false);
         toast.success(t('extendSuccess'));
+      } else if (res.status === 403) {
+        setHasExtended(true);
+        setShowExtension(false);
+        toast.error(t('alreadyExtended'));
+      } else if (res.status === 409) {
+        toast.error(useTranslations("Checkout")('errorTemporarilyLocked'));
       } else {
         toast.error(t('extendError'));
       }
@@ -94,7 +102,7 @@ export default function CheckoutTimer({ propertyId, checkIn, checkOut, sessionId
   useEffect(() => {
     if (isDead) {
       const timeout = setTimeout(() => {
-        window.location.reload();
+        router.push(`/properties/${slug}`);
       }, 5000);
       return () => clearTimeout(timeout);
     }

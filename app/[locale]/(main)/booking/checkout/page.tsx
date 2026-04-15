@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import { createPaymentIntent, confirmStripePaymentIntent } from "@/app/actions/stripe";
+import { validatePropertyAvailability } from "@/app/actions/property-actions";
 import CheckoutTimer from "@/components/booking/CheckoutTimer";
 import StripePaymentForm from "@/components/booking/StripePaymentForm";
 
@@ -65,15 +66,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [isStripeValid, setIsStripeValid] = useState(false);
     const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "confirming">("idle");
     const [sessionId] = useState(() => {
-        const urlCode = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('code') : null;
-        if (urlCode) return `sess_${urlCode}`;
-        
-        // Persistir ID aleatório em cookie para evitar 409 no refresh
-        const existing = Cookies.get('booking_session_id');
+        // Persist browser-level lock ID to avoid 409 errors if user goes back/forth or hydrates
+        let existing = typeof window !== 'undefined' ? Cookies.get('booking_session_id') : null;
         if (existing) return existing;
         
         const newSess = `sess_tmp_${Math.random().toString(36).substring(2, 9)}`;
-        Cookies.set('booking_session_id', newSess, { expires: 1/96 }); // 15 mins
+        if (typeof window !== 'undefined') Cookies.set('booking_session_id', newSess, { expires: 1/96 }); // 15 mins
         return newSess;
     });
 
@@ -146,9 +144,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                 if (propData) {
                     setProperty(propData);
 
-                    // SECURITY CHECK: Re-verify availability
-                    const { checkPropertyAvailability } = await import("@/lib/services");
-                    const availability = await checkPropertyAvailability(
+                    // SECURITY CHECK: Re-verify availability (Session-aware)
+                    const availability = await validatePropertyAvailability(
                         propData.id,
                         new Date(data.checkIn),
                         new Date(data.checkOut),
@@ -156,9 +153,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     );
 
                     if (!availability.available) {
-                        setError(availability.error || "This property is no longer available for these dates.");
-                        // Optional: Redirect back if unavailable
-                        // setTimeout(() => router.push(`/${locale}/properties/${data.slug}`), 3000);
+                        setError(translateError(availability.error || "This property is no longer available for these dates."));
                     }
                 }
             }
@@ -1465,6 +1460,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                 checkIn={bookingData.checkIn}
                                 checkOut={bookingData.checkOut}
                                 sessionId={sessionId}
+                                slug={property.slug}
                             />
                         )}
                         {/* Property Card */}

@@ -13,6 +13,7 @@ import { ArrowLeft, MapPin, ChevronRight, X, Share2, Check } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/Button';
 import { parseDateLocal } from '@/lib/utils';
+import { validatePropertyAvailability } from '@/app/actions/property-actions';
 
 // Helper to safely extract string from potential localized object
 const getLocalizedStr = (val: any, locale: string = 'en'): string => {
@@ -116,19 +117,14 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
             if (!property?.id || !selectedRange?.from || !selectedRange?.to) return;
 
             setAvailabilityStatus(prev => ({ ...prev, loading: true }));
-            console.log('[DEBUG] PropertyDetails validation trigger:', {
-                id: property.id,
-                slug: property.slug,
-                guests: adults + childrenCount
-            });
-            const { checkPropertyAvailability } = await import('@/lib/services');
-            const result = await checkPropertyAvailability(
+            
+            const result = await validatePropertyAvailability(
                 property.id,
                 selectedRange.from,
                 selectedRange.to,
                 adults + childrenCount
             );
-            console.log('[DEBUG] PropertyDetails validation result:', result);
+            
             setAvailabilityStatus({ available: result.available, loading: false, error: result.error });
         };
         validate();

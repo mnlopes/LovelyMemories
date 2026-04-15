@@ -24,32 +24,62 @@ export async function POST(req: Request) {
 
     if (extend) {
       // HANDLE EXTENSION (15 more minutes, only once)
+      // Use maybeSingle() to handle missing or duplicate locks gracefully
       const { data: existing, error: findError } = await supabase
         .from('locked_dates')
         .select('*')
         .eq('session_id', sessionId)
-        .single();
+        .maybeSingle();
 
-      if (findError || !existing) {
-        return NextResponse.json({ error: 'Lock not found or expired' }, { status: 404 });
+      if (findError) throw findError;
+
+      // Case 1: Lock exists
+      if (existing) {
+        if (existing.is_extended) {
+          return NextResponse.json({ error: 'Session already extended once' }, { status: 403 });
+        }
+
+        const newExpiry = addMinutes(new Date(), 15);
+        const { error: updateError } = await supabase
+          .from('locked_dates')
+          .update({ 
+            expires_at: newExpiry.toISOString(),
+            is_extended: true 
+          })
+          .eq('session_id', sessionId);
+
+        if (updateError) throw updateError;
+        return NextResponse.json({ success: true, expiresAt: newExpiry });
+      } 
+      
+      // Case 2: Lock not found (Resilient recovery)
+      // Instead of 404, we try to create a NEW lock but mark it as already extended
+      const availability = await verifyAvailability(
+        propertyId, 
+        new Date(checkIn), 
+        new Date(checkOut), 
+        sessionId,
+        supabase
+      );
+
+      if (!availability.available) {
+        return NextResponse.json({ error: 'errorTemporarilyLocked' }, { status: 409 });
       }
 
-      if (existing.is_extended) {
-        return NextResponse.json({ error: 'Session already extended once' }, { status: 403 });
-      }
-
-      const newExpiry = addMinutes(new Date(), 15);
-      const { error: updateError } = await supabase
+      const expiresAt = addMinutes(new Date(), 15);
+      const { error: insertError } = await supabase
         .from('locked_dates')
-        .update({ 
-          expires_at: newExpiry.toISOString(),
-          is_extended: true 
-        })
-        .eq('session_id', sessionId);
+        .insert({
+          property_id: propertyId,
+          check_in: checkIn,
+          check_out: checkOut,
+          session_id: sessionId,
+          expires_at: expiresAt.toISOString(),
+          is_extended: true // Mark as extended because this is a recovery extension
+        });
 
-      if (updateError) throw updateError;
-
-      return NextResponse.json({ success: true, expiresAt: newExpiry });
+      if (insertError) throw insertError;
+      return NextResponse.json({ success: true, expiresAt });
     } else {
       // HANDLE INITIAL LOCK
       // 1. Verify availability (ignoring current session if it somehow existed)
