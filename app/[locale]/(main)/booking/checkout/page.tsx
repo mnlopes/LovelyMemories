@@ -558,6 +558,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     transferType: selectedExtras?.transferType,
                     couponCode: appliedCoupon?.code || "",
                     couponDiscount: couponDiscount || 0,
+                    isBillingActive: showBilling,
                     sessionId: sessionId,
                 });
 
