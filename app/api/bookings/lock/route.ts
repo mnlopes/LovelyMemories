@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const { propertyId, checkIn, checkOut, sessionId, extend } = body;
 
     if (!propertyId || !checkIn || !checkOut || !sessionId) {
-      return NextResponse.json({ error: 'Missing required fields' }, body, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const supabase = supabaseAdmin;
