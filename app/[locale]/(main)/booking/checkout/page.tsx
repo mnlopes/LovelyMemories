@@ -17,6 +17,7 @@ import {
     ArrowRight,
     Loader2,
     CheckCircle2,
+    Landmark,
     AlertCircle,
     FileText,
     MapPin,
@@ -77,6 +78,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
     // Helper to translate errors even if i18n is unstable, respecting the current locale
     const translateError = (errCode: string) => {
+        // Handle guest capacity error with dynamic count
+        if (errCode === "errorCapacityExceeded") {
+            return t("errors.errorCapacityExceeded", { count: property?.guests || 2 });
+        }
+
         const translated = t(errCode);
         
         // If translation is successful (doesn't return the raw key), use it
@@ -1288,7 +1294,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${formData.paymentMethod === 'wire' ? 'bg-navy-950 text-white' : 'bg-white text-navy-400 border border-gray-100'}`}>
-                                                    <CheckCircle2 className="w-6 h-6" />
+                                                    <Landmark className="w-6 h-6" />
                                                 </div>
                                                 <div>
                                                     <p className="font-bold">{t('step3.wire')}</p>
@@ -1600,9 +1606,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
             <footer className="py-12 px-6 lg:px-20 border-t border-gray-100 text-center">
                 <div className="flex items-center justify-center gap-8 mb-6 grayscale opacity-30">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" />
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6" />
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" className="h-5" />
+                    <img src="/legacy/home/images/visa.svg" alt="Visa" className="h-6" />
+                    <img src="/legacy/home/images/mastercard.svg" alt="Mastercard" className="h-10" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe" className="h-6" />
                 </div>
                 <p className="text-[10px] text-navy-900/40 font-bold uppercase tracking-widest mb-2">
                     {t('footer.secured')}

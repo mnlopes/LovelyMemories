@@ -62,6 +62,29 @@ export function BookingSuccessInvoice({
         const element = document.getElementById('booking-invoice');
         if (!element) return;
 
+        // Smart Page-Break Logic: Prevent sections from being cut between pages
+        const PAGE_HEIGHT_PX = 1125; // Safe threshold for Page 1 cut (A4 is ~1131px at 800px width)
+        const sections = element.querySelectorAll('[data-pdf-section]');
+        const createdSpacers: HTMLElement[] = [];
+
+        sections.forEach((sec) => {
+            const htmlSec = sec as HTMLElement;
+            const top = htmlSec.offsetTop;
+            const height = htmlSec.offsetHeight;
+            const bottom = top + height;
+
+            // If section starts on Page 1 but would be cut by the page break
+            if (top < PAGE_HEIGHT_PX && bottom > PAGE_HEIGHT_PX) {
+                const spacer = document.createElement('div');
+                // Calculate gap to push to next page + 64px margin for a cleaner look
+                const gap = PAGE_HEIGHT_PX - top;
+                spacer.style.height = `${gap + 64}px`;
+                spacer.className = "pdf-spacer";
+                htmlSec.parentNode?.insertBefore(spacer, htmlSec);
+                createdSpacers.push(spacer);
+            }
+        });
+
         // Ensure it's visible for capture but behind everything
         element.style.opacity = '1';
 
@@ -72,7 +95,9 @@ export function BookingSuccessInvoice({
             backgroundColor: "#ffffff"
         });
 
+        // Cleanup: remove spacers and revert opacity
         element.style.opacity = '0';
+        createdSpacers.forEach(s => s.remove());
 
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
@@ -82,9 +107,19 @@ export function BookingSuccessInvoice({
         });
 
         const imgWidth = 210; // A4 width in mm
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const pageHeight = 297; // A4 height in mm
+        const canvasImageHeight = (canvas.height * imgWidth) / canvas.width;
 
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        // Page 1
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, canvasImageHeight);
+
+        // Page 2 (only if needed)
+        if (canvasImageHeight > pageHeight) {
+            pdf.addPage();
+            // Offset the image to show the second part
+            pdf.addImage(imgData, 'PNG', 0, -pageHeight, imgWidth, canvasImageHeight);
+        }
+
         pdf.save(`LovelyMemories_Reserva_${reservationRef}.pdf`);
     };
 
@@ -336,6 +371,11 @@ export function BookingSuccessInvoice({
                     customerName={formData.fullName}
                     customerEmail={formData.email}
                     customerPhone={formData.phone}
+                    billingAddress={formData.address}
+                    billingCity={formData.city}
+                    billingZip={formData.zip}
+                    billingCountry={formData.country}
+                    vat={formData.vat}
                     couponCode={appliedCoupon?.code || ""}
                     couponDiscount={couponDiscount}
                     t={t}

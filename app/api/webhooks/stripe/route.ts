@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     try {
         if (typeof paymentIntent.payment_method === 'string') {
             const pmData = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
-            actualPaymentMethod = pmData.type; // e.g. 'card', 'klarna'
+            actualPaymentMethod = pmData.type; // e.g. 'card', 'link'
         } else if (paymentIntent.payment_method && typeof paymentIntent.payment_method === 'object') {
             actualPaymentMethod = (paymentIntent.payment_method as any).type || 'stripe';
         }

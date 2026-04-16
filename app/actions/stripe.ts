@@ -73,7 +73,7 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
     const intent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency: 'eur',
-      payment_method_types: ['card', 'klarna', 'link'],
+      payment_method_types: ['card', 'link'],
       metadata: {
         // Flattened keys to avoid limits and ensure they fit
         fn: data.fullName,
@@ -143,7 +143,7 @@ export async function confirmStripePaymentIntent(paymentIntentId: string) {
     try {
         if (typeof paymentIntent.payment_method === 'string') {
             const pmData = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
-            actualPaymentMethod = pmData.type; // e.g. 'card', 'klarna'
+            actualPaymentMethod = pmData.type; // e.g. 'card', 'link'
         } else if (paymentIntent.payment_method && typeof paymentIntent.payment_method === 'object') {
             actualPaymentMethod = (paymentIntent.payment_method as any).type || 'stripe';
         }

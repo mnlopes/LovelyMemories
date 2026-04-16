@@ -97,9 +97,9 @@ export async function processReservation(data: ReservationData) {
         return { success: false, error: "Propriedade inválida selecionada.", warning: undefined, ref: undefined };
     }
 
-    const totalGuests = data.adults + data.children + data.infants;
-    if (totalGuests > property.guests) {
-        return { success: false, error: `Esta propriedade apenas acomoda até ${property.guests} hóspedes.`, warning: undefined, ref: undefined };
+    const totalOccupants = data.adults + data.children;
+    if (totalOccupants > property.guests) {
+        return { success: false, error: "errorCapacityExceeded", warning: undefined, ref: undefined };
     }
 
     // 4. Extra Security: Integrated Availability & Pricing Engine

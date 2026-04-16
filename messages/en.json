@@ -1253,10 +1253,11 @@
             "value": "Value",
             "vatRate": "Vat Rate",
             "officialDocument": "Official Document",
-            "thankYouLine": "Thank You Line"
+            "thankYouLine": "Thank you for booking with us!"
         },
         "errors": {
             "genericError": "An error occurred. Please try again.",
+            "errorCapacityExceeded": "This property only accommodates up to {count} guests.",
             "serverError": "Connection failed. Please contact support.",
             "nameError": "Name is required",
             "emailError": "Valid email is required",
