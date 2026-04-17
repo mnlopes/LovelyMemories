@@ -67,6 +67,7 @@ export const AdminSidebar = () => {
                 ...(hasAccess('owners') ? [{ icon: KeyRound, label: t('owners'), path: "/admin/owners" }] : []),
                 ...(hasAccess('coupons') ? [{ icon: Ticket, label: t('coupons'), path: "/admin/coupons" }] : []),
                 ...(hasAccess('concierge') ? [{ icon: Sparkles, label: t('concierge'), path: "/admin/concierge" }] : []),
+                ...(hasAccess('content') || role === 'super_admin' || role === 'admin' ? [{ icon: LayoutGrid, label: t('content'), path: "/admin/content" }] : []),
             ]
         },
         // Only show Reports to Super Admins

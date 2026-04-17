@@ -141,7 +141,7 @@ export const Footer = () => {
                         <a href="http://facebook.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
                             <Facebook size={22} strokeWidth={2} />
                         </a>
-                        <a href="https://www.instagram.com/lovely_memories_porto" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
+                        <a href="https://www.instagram.com/lovely_memories_pt/" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">
                             <Instagram size={22} strokeWidth={2} />
                         </a>
                         <a href="http://x.com" target="_blank" rel="noreferrer" className="text-white hover:text-[#a39076] transition-colors">

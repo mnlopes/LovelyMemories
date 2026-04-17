@@ -42,7 +42,7 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
 
             // This refreshed the token if necessary
             const { data: { user } } = await supabase.auth.getUser();
-            
+
             if (user) {
                 userId = user.id;
                 // Use the client instead of raw fetch for better reliability/caching
@@ -51,7 +51,7 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
                     .select('role')
                     .eq('id', user.id)
                     .single();
-                
+
                 userRole = profile?.role || 'authenticated';
             }
         }
@@ -61,7 +61,7 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
 
     // 4. Maintenance Check & Logging
     const isAdminPath = pathname.includes('/admin') || pathname.includes('/owner') || pathname.includes('/login') || pathname.includes('/set-password');
-    
+
     if (supabaseUrl && serviceKey) {
         // Visitor Log logic...
         const country = request.headers.get('x-vercel-ip-country') || 'Unknown';
@@ -100,16 +100,16 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
                 region,
                 device_type: deviceType
             })
-        }).catch(() => {});
+        }).catch(() => { });
 
         // Maintenance Mode Check
         const isMaintenancePage = pathname.includes('/maintenance');
         if (!isMaintenancePage && !isAdminPath) {
-             const mtnRes = await fetch(`${supabaseUrl}/rest/v1/system_settings?key=eq.maintenance_mode&select=value`, {
+            const mtnRes = await fetch(`${supabaseUrl}/rest/v1/system_settings?key=eq.maintenance_mode&select=value`, {
                 headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` },
                 cache: 'no-store'
             }).catch(() => null);
-            
+
             if (mtnRes?.ok) {
                 const mtnData = await mtnRes.json();
                 if (mtnData?.[0]?.value === true && !(userRole === 'admin' || userRole === 'super_admin')) {
@@ -123,7 +123,7 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
         const uaRaw = (request.headers.get("user-agent") || "").toLowerCase();
         const isBot = uaRaw.includes("bot") || uaRaw.includes("vercel") || uaRaw.includes("screenshot");
         if (!isBot && !isPrefetch) {
-             const nexePromise = fetch("https://nexe-control-room.vercel.app/api/logs/ingest", {
+            const nexePromise = fetch("https://nexe-control-room.vercel.app/api/logs/ingest", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -140,8 +140,8 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
                     is_admin_view: isAdminPath,
                     locale: localeContext
                 })
-            }).catch(() => {});
-            
+            }).catch(() => { });
+
             if (typeof event?.waitUntil === 'function') {
                 event.waitUntil(Promise.all([logPromise, nexePromise]));
             }

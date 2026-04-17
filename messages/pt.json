@@ -8,6 +8,7 @@
         "owners": "Proprietários",
         "concierge": "Concierge",
         "coupons": "Cupões",
+        "content": "Conteúdo",
         "reports": "Relatórios",
         "finances": "Finanças",
         "performance": "Desempenho",
@@ -908,6 +909,68 @@
             }
         }
     },
+    "AdminContent": {
+        "title": "Gestão de Conteúdo",
+        "subtitle": "Gira o conteúdo dinâmico do seu site, incluindo artigos do blog e o mural social do Instagram.",
+        "tabs": {
+            "blog": "Artigos do Blog",
+            "social": "Mural Social"
+        },
+        "blog": {
+            "newArticle": "Novo Artigo",
+            "searchPlaceholder": "Procurar artigos...",
+            "allLanguages": "Todos os Idiomas",
+            "table": {
+                "article": "Artigo",
+                "locale": "Idioma",
+                "status": "Estado",
+                "date": "Data",
+                "actions": "Ações",
+                "loading": "A carregar artigos...",
+                "empty": "Nenhum artigo encontrado."
+            },
+            "status": {
+                "published": "Publicado",
+                "draft": "Rascunho"
+            },
+            "deleteModal": {
+                "title": "Excluir Artigo?",
+                "message": "Tens a certeza que desejas excluir este artigo? Esta ação não pode ser revertida.",
+                "confirm": "Excluir"
+            }
+        },
+        "social": {
+            "info": "As alterações aqui refletem-se imediatamente na secção de mural social da página Sobre Nós. Pode gerir exatamente 4 destaques.",
+            "slot": "Slot",
+            "link": "Link do Instagram",
+            "save": "Guardar Alterações",
+            "upload": "Alterar Foto",
+            "empty": "Slot Vazio",
+            "success": "Slot #{order} atualizado!"
+        },
+        "editor": {
+            "edit": "Editar Artigo",
+            "create": "Criar Novo Artigo",
+            "language": "Idioma",
+            "save": "Guardar Artigo",
+            "title": "Título do Artigo",
+            "slug": "Slug do URL",
+            "excerpt": "Resumo (Breve Descrição)",
+            "cover": "Imagem de Capa",
+            "content": "Conteúdo Completo",
+            "toolbar": {
+                "normal": "Normal",
+                "h1": "Título 1",
+                "h2": "Título 2",
+                "h3": "Título 3",
+                "link": "Adicionar Link"
+            },
+            "author": "Informação do Autor",
+            "authorName": "Nome do Autor",
+            "published": "Publicado",
+            "draft": "Rascunho"
+        }
+    },
     "AboutSocialWall": {
         "title": "@lovelymemories",
         "follow": "Siga-nos no Instagram"
@@ -923,8 +986,9 @@
         "successDesc": "Recebemos a sua mensagem e entraremos em contacto brevemente."
     },
     "Blog": {
-        "heroTitle": "Histórias e Insights Encantadores",
-        "heroSubtitle": "Explore a nossa coleção curada dos segredos mais bem guardados do Porto, dicas de viagem e inspiração para um estilo de vida luxuoso."
+        "heroTitle": "Histórias e Memórias Lovely",
+        "heroSubtitle": "Descubra a nossa coleção curada de artigos, dicas de viagem e curiosidades locais do coração do Porto.",
+        "noPosts": "Ainda não foram encontradas histórias para este idioma. Volte em breve!"
     },
     "Contact": {
         "title": "Contacto",
@@ -1129,7 +1193,7 @@
         }
     },
     "Checkout": {
-        "errorTemporarilyLocked": "Estas datas estão temporariamente reservadas por si ou por outro utilizador. Por favor, aguarde 15 minutos ou continue a sua reserva atual.",
+        "errorTemporarilyLocked": "Estas datas estão temporariamente reservadas por si ou por outro utilizador. Por favor, aguarde 15 minutos ou escolha outro período.",
         "timer": {
             "reserved": "As tuas datas estão reservadas",
             "needMoreTime": "Precisa de mais tempo? Estenda 15 min",
@@ -1141,7 +1205,6 @@
             "alreadyExtended": "O tempo já foi estendido uma vez nesta sessão.",
             "connError": "Erro de ligação ao servidor."
         },
-        "errorTemporarilyLocked": "Estas datas estão temporariamente reservadas por si ou por outro utilizador. Por favor, aguarde 15 minutos ou escolha outro período.",
         "errorAlreadyBooked": "Infelizmente, estas datas acabaram de ser reservadas. Por favor, escolha outro período.",
         "errorGeneric": "Ocorreu um erro ao processar a sua reserva. Por favor, tente novamente.",
         "errorServer": "Erro de ligação ao servidor. Verifique a sua internet.",
