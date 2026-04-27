@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ── Config ────────────────────────────────────────────────
-const CITIES = ["Porto", "Lisboa", "Algarve", "Madeira"];
+const CITIES = ["Porto", "Gaia", "Lisboa", "Algarve", "Madeira"];
 const AUTO_DELAY = 4000; // ms before auto-advance
 
 // ── Types ─────────────────────────────────────────────────

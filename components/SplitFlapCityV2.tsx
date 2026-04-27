@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 
 // ── Config ────────────────────────────────────────────────
 const CHARSET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const CITIES = ["PORTO", "LISBOA", "ALGARVE", "MADEIRA"];
+const CITIES = ["PORTO", "GAIA", "LISBOA", "ALGARVE", "MADEIRA"];
 const MAX_LEN = Math.max(...CITIES.map((c) => c.length));
 
 const STAGGER = 80;    // ms between columns starting

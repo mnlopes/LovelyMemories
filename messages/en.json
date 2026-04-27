@@ -725,6 +725,7 @@
         "regions": {
             "all": "All",
             "porto": "Porto",
+            "gaia": "Gaia",
             "lisboa": "Lisboa",
             "algarve": "Algarve"
         }

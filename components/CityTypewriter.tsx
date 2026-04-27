@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // ── Config ────────────────────────────────────────────────
-const CITIES = ["Porto", "Lisboa", "Algarve", "Madeira"];
+const CITIES = ["Porto", "Gaia", "Lisboa", "Algarve", "Madeira"];
 
 const TYPE_SPEED = 95;   // ms per char while typing
 const DELETE_SPEED = 55;  // ms per char while deleting

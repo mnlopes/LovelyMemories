@@ -39,6 +39,7 @@ export default function LocationTab({ activeLang }: LocationTabProps) {
                         {...register("city")}
                         options={[
                             { label: "Porto", value: "Porto" },
+                            { label: "Gaia", value: "Gaia" },
                             { label: "Lisboa", value: "Lisboa" },
                             { label: "Algarve", value: "Algarve" },
                         ]}

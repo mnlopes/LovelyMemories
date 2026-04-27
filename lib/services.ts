@@ -250,9 +250,16 @@ export async function searchProperties(params: {
     if (location && location.trim()) {
         const locLower = location.toLowerCase().trim();
         candidates = candidates.filter(p => {
-            const city = (p.locations?.name_en || p.city || '').toLowerCase();
+            const l = p.locations;
+            const cityEn = (l?.name_en || p.city || '').toLowerCase();
+            const cityPt = (l?.name_pt || '').toLowerCase();
+            const cityHe = (l?.name_he || '').toLowerCase();
             const region = (p.region || '').toLowerCase();
-            return city.includes(locLower) || region.includes(locLower);
+            
+            return cityEn.includes(locLower) || 
+                   cityPt.includes(locLower) || 
+                   cityHe.includes(locLower) || 
+                   region.includes(locLower);
         });
     }
 

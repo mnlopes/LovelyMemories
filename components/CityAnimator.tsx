@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 // ── Config ────────────────────────────────────────────────
 const CITIES = [
     { name: "Porto", accent: "#c9a96e" },
+    { name: "Gaia", accent: "#e2b49a" },
     { name: "Lisboa", accent: "#a8c5da" },
     { name: "Algarve", accent: "#b5d5a0" },
     { name: "Madeira", accent: "#d4a5b0" },

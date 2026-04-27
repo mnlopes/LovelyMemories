@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import { X, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { getLocations } from "@/lib/services";
 
 interface HomeLocationPopoverProps {
@@ -19,6 +19,7 @@ export const HomeLocationPopover = ({
     placement = 'bottom-start'
 }: HomeLocationPopoverProps) => {
     const t = useTranslations('BookingBar');
+    const locale = useLocale();
     const popoverRef = useRef<HTMLDivElement>(null);
 
     // Click outside listener
@@ -108,7 +109,7 @@ export const HomeLocationPopover = ({
                                 </div>
                             ) : (
                                 locations.map((loc) => {
-                                    const isAvailable = loc.name_en === 'Porto' || loc.name_en === 'Algarve';
+                                    const isAvailable = loc.name_en === 'Porto' || loc.name_en === 'Algarve' || loc.name_en === 'Gaia';
                                     return (
                                         <button
                                             type="button"
@@ -116,7 +117,7 @@ export const HomeLocationPopover = ({
                                             disabled={!isAvailable}
                                             onClick={() => {
                                                 if (!isAvailable) return;
-                                                onSelect(loc.name_en); // Or pt based on locale
+                                                onSelect(locale === 'he' ? (loc.name_he || loc.name_en) : locale === 'pt' ? (loc.name_pt || loc.name_en) : loc.name_en);
                                                 onClose();
                                             }}
                                             className={`w-full flex items-center justify-between px-5 py-4 transition-colors group ${!isAvailable ? 'opacity-60 cursor-not-allowed grayscale' : 'hover:bg-gray-50'}`}
@@ -127,7 +128,7 @@ export const HomeLocationPopover = ({
                                                 </div>
                                                 <div className="text-left">
                                                     <p className={`font-bold text-navy-950 text-base leading-tight ${!isAvailable ? 'text-gray-400' : ''}`}>
-                                                        {loc.name_en}
+                                                        {locale === 'he' ? (loc.name_he || loc.name_en) : locale === 'pt' ? (loc.name_pt || loc.name_en) : loc.name_en}
                                                     </p>
                                                     <p className="text-xs text-navy-900/40 font-medium">
                                                         Portugal

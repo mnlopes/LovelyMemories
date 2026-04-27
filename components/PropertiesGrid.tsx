@@ -49,7 +49,7 @@ export const PropertiesGrid = () => {
         fetchProperties();
     }, []);
 
-    const regions = ['all', 'porto', 'lisboa', 'algarve'];
+    const regions = ['all', 'porto', 'gaia', 'lisboa', 'algarve'];
 
     const filteredProperties = properties.filter(p =>
         selectedRegion === 'all' || p.location.region.toLowerCase() === selectedRegion || p.location.city.toLowerCase() === selectedRegion

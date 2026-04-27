@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const CHARS = " ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const CITIES = ["PORTO", "LISBOA", "ALGARVE", "MADEIRA"];
+const CITIES = ["PORTO", "GAIA", "LISBOA", "ALGARVE", "MADEIRA"];
 
 function charIdx(c: string) {
     const i = CHARS.indexOf(c.toUpperCase());
