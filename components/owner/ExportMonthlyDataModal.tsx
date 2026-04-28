@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, FileSpreadsheet, Calendar, ChevronDown, Download, AlertCircle, Check, Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { exportPropertyMonthlyData } from "@/app/actions/owner-export";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +107,7 @@ export function ExportMonthlyDataModal({
     propertyName 
 }: ExportMonthlyDataModalProps) {
     const t = useTranslations('OwnerProperties');
+    const locale = useLocale();
     const [month, setMonth] = useState(new Date().getMonth() + 1);
     const [year, setYear] = useState(new Date().getFullYear());
     const [isLoading, setIsLoading] = useState(false);
@@ -117,18 +118,18 @@ export function ExportMonthlyDataModal({
     const currentMonth = now.getMonth() + 1;
 
     const monthOptions = [
-        { label: "Janeiro", value: 1 },
-        { label: "Fevereiro", value: 2 },
-        { label: "Março", value: 3 },
-        { label: "Abril", value: 4 },
-        { label: "Maio", value: 5 },
-        { label: "Junho", value: 6 },
-        { label: "Julho", value: 7 },
-        { label: "Agosto", value: 8 },
-        { label: "Setembro", value: 9 },
-        { label: "Outubro", value: 10 },
-        { label: "Novembro", value: 11 },
-        { label: "Dezembro", value: 12 }
+        { label: locale === 'en' ? "January" : "Janeiro", value: 1 },
+        { label: locale === 'en' ? "February" : "Fevereiro", value: 2 },
+        { label: locale === 'en' ? "March" : "Março", value: 3 },
+        { label: locale === 'en' ? "April" : "Abril", value: 4 },
+        { label: locale === 'en' ? "May" : "Maio", value: 5 },
+        { label: locale === 'en' ? "June" : "Junho", value: 6 },
+        { label: locale === 'en' ? "July" : "Julho", value: 7 },
+        { label: locale === 'en' ? "August" : "Agosto", value: 8 },
+        { label: locale === 'en' ? "September" : "Setembro", value: 9 },
+        { label: locale === 'en' ? "October" : "Outubro", value: 10 },
+        { label: locale === 'en' ? "November" : "Novembro", value: 11 },
+        { label: locale === 'en' ? "December" : "Dezembro", value: 12 }
     ].filter(opt => {
         if (year < currentYear) return true;
         return opt.value <= currentMonth;
@@ -151,7 +152,7 @@ export function ExportMonthlyDataModal({
         setIsLoading(true);
         setError(null);
         try {
-            const result = await exportPropertyMonthlyData(propertyId, month, year);
+            const result = await exportPropertyMonthlyData(propertyId, month, year, locale);
             
             if (result.success && result.csvContent) {
                 // Add UTF-8 BOM for Excel compatibility (0xEF, 0xBB, 0xBF)

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { startOfMonth, endOfMonth, format, differenceInDays } from "date-fns";
 import { getEffectiveUser } from "./auth-context";
 
-export async function exportPropertyMonthlyData(propertyId: string, month: number, year: number) {
+export async function exportPropertyMonthlyData(propertyId: string, month: number, year: number, locale: string = 'pt') {
     const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,7 +50,20 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
 
     if (resError) throw new Error("Error fetching reservations");
 
-    const headers = [
+    const headers = locale === 'en' ? [
+        "ID",
+        "Guest",
+        "Check-in",
+        "Check-out",
+        "Status",
+        "Platform",
+        "Guests",
+        "Nights",
+        "Gross (€)",
+        "Cleaning (€)",
+        "Fees (€)",
+        "Net (€)"
+    ] : [
         "ID",
         "Hóspede",
         "Check-in",
@@ -76,12 +89,20 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
         const guestName = (res.guest_name || "-").replace(/;/g, ',');
         const id = res.external_confirmation_code || res.id.split('-')[0];
 
+        // Translate status if needed (optional but good)
+        let status = res.status || "-";
+        if (locale === 'en') {
+            if (status === 'confirmada') status = 'Confirmed';
+            if (status === 'cancelada') status = 'Cancelled';
+            if (status === 'concluída') status = 'Completed';
+        }
+
         const row = [
             `="${id}"`, // Force text for ID to avoid scientific notation
             guestName,
             res.check_in || "-",
             res.check_out || "-",
-            res.status || "-",
+            status,
             res.platform || "internal",
             (res.adults || 0) + (res.children || 0),
             nights,
@@ -93,9 +114,12 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
         csvRows.push(row.join(';'));
     });
 
+    const reportLabel = locale === 'en' ? 'Report' : 'Relatorio';
+    const propertyTitle = property.title?.[locale as 'en' | 'pt'] || property.title?.en || property.title?.pt || propertyId;
+
     return {
         success: true,
         csvContent: csvRows.join('\r\n'),
-        filename: `Reservas_${property.title?.en || property.title?.pt || propertyId}_${year}_${month}.csv`
+        filename: `${reportLabel}_${propertyTitle.replace(/\s+/g, '_')}_${year}_${month}.csv`
     };
 }
