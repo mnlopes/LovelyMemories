@@ -112,6 +112,10 @@ export function ExportMonthlyDataModal({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
     const monthOptions = [
         { label: "Janeiro", value: 1 },
         { label: "Fevereiro", value: 2 },
@@ -125,14 +129,23 @@ export function ExportMonthlyDataModal({
         { label: "Outubro", value: 10 },
         { label: "Novembro", value: 11 },
         { label: "Dezembro", value: 12 }
-    ];
+    ].filter(opt => {
+        if (year < currentYear) return true;
+        return opt.value <= currentMonth;
+    });
 
-    const currentYear = new Date().getFullYear();
     const yearOptions = [
         { label: String(currentYear), value: currentYear },
         { label: String(currentYear - 1), value: currentYear - 1 },
         { label: String(currentYear - 2), value: currentYear - 2 }
     ];
+
+    // Ensure selected month is valid for the selected year
+    useEffect(() => {
+        if (year === currentYear && month > currentMonth) {
+            setMonth(currentMonth);
+        }
+    }, [year, month, currentMonth]);
 
     const handleDownload = async () => {
         setIsLoading(true);
@@ -141,7 +154,9 @@ export function ExportMonthlyDataModal({
             const result = await exportPropertyMonthlyData(propertyId, month, year);
             
             if (result.success && result.csvContent) {
-                const blob = new Blob([result.csvContent], { type: 'text/csv;charset=utf-8;' });
+                // Add UTF-8 BOM for Excel compatibility (0xEF, 0xBB, 0xBF)
+                const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+                const blob = new Blob([BOM, result.csvContent], { type: 'text/csv;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.setAttribute("href", url);
@@ -149,7 +164,13 @@ export function ExportMonthlyDataModal({
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 100);
+
                 onClose();
             }
         } catch (err) {

@@ -50,8 +50,6 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
 
     if (resError) throw new Error("Error fetching reservations");
 
-    // 3. Generate CSV with UTF-8 BOM for Excel compatibility
-    const BOM = "\uFEFF";
     const headers = [
         "ID",
         "Hóspede",
@@ -74,9 +72,13 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
             ? differenceInDays(new Date(res.check_out), new Date(res.check_in))
             : 0;
 
+        // Sanitize guest name to avoid splitting columns without using quotes
+        const guestName = (res.guest_name || "-").replace(/;/g, ',');
+        const id = res.external_confirmation_code || res.id.split('-')[0];
+
         const row = [
-            res.external_confirmation_code || res.id.split('-')[0],
-            res.guest_name || "-",
+            `="${id}"`, // Force text for ID to avoid scientific notation
+            guestName,
             res.check_in || "-",
             res.check_out || "-",
             res.status || "-",
@@ -93,7 +95,7 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
 
     return {
         success: true,
-        csvContent: BOM + csvRows.join('\n'),
+        csvContent: csvRows.join('\r\n'),
         filename: `Reservas_${property.title?.en || property.title?.pt || propertyId}_${year}_${month}.csv`
     };
 }
