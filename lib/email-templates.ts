@@ -94,6 +94,7 @@ export const bookingAdminEmail = (data: any) => `
             <p style="margin: 0; font-weight: bold; font-size: 12px; text-transform: uppercase; color: #999;">Observações:</p>
             <p style="margin: 5px 0 0 0; font-style: italic;">"${data.special_requests}"</p>
         </div>
+        ` : ''}
     </div>
 </div>
 `;
