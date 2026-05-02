@@ -281,15 +281,15 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                             </div>
                             <div>
                                 <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', color: '#9ea8ba', marginBottom: '4px', margin: 0 }}>{t('step3.bankName')}</p>
-                                <p style={{ fontSize: '14px', color: '#0a1128', fontWeight: 'bold', margin:0 }}>Millennium BCP</p>
+                                <p style={{ fontSize: '14px', color: '#0a1128', fontWeight: 'bold', margin:0 }}>Novo Banco</p>
                             </div>
                             <div>
                                 <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', color: '#9ea8ba', marginBottom: '4px', margin: 0 }}>{t('step3.iban')}</p>
-                                <p style={{ fontSize: '14px', color: '#0a1128', fontWeight: 'bold', margin:0, fontFamily: 'monospace' }}>PT50 0033 0000 1234 5678 9012 3</p>
+                                <p style={{ fontSize: '14px', color: '#0a1128', fontWeight: 'bold', margin:0, fontFamily: 'monospace' }}>PT50 0007 0000 0849 4629 1132 3</p>
                             </div>
                             <div>
                                 <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', color: '#9ea8ba', marginBottom: '4px', margin: 0 }}>{t('step3.swift')}</p>
-                                <p style={{ fontSize: '14px', color: '#0a1128', fontWeight: 'bold', margin:0 }}>BCPTPLLX</p>
+                                <p style={{ fontSize: '14px', color: '#0a1128', fontWeight: 'bold', margin:0 }}>BESC PTPL</p>
                             </div>
                         </div>
                         <div style={{ backgroundColor: '#ffffff', border: '1px solid #f0e6d2', borderRadius: '16px', padding: '16px', textAlign: 'center' }}>

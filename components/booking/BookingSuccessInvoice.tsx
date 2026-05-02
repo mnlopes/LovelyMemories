@@ -288,15 +288,15 @@ export function BookingSuccessInvoice({
                                         </div>
                                         <div className="space-y-0.5">
                                             <p className="text-[9px] uppercase font-bold tracking-widest text-[#B08D4A]/60">{t('step3.bankName')}</p>
-                                            <p className="text-[13px] font-bold text-navy-950">Millennium BCP</p>
+                                            <p className="text-[13px] font-bold text-navy-950">Novo Banco</p>
                                         </div>
                                         <div className="space-y-0.5">
                                             <p className="text-[9px] uppercase font-bold tracking-widest text-[#B08D4A]/60">{t('step3.iban')}</p>
-                                            <p className="text-[13px] font-mono font-bold tracking-tighter text-navy-950">PT50 0033 0000 1234 5678 9012 3</p>
+                                            <p className="text-[13px] font-mono font-bold tracking-tighter text-navy-950">PT50 0007 0000 0849 4629 1132 3</p>
                                         </div>
                                         <div className="space-y-0.5">
                                             <p className="text-[9px] uppercase font-bold tracking-widest text-[#B08D4A]/60">{t('step3.swift')}</p>
-                                            <p className="text-[13px] font-bold text-navy-950">BCPTPLLX</p>
+                                            <p className="text-[13px] font-bold text-navy-950">BESC PTPL</p>
                                         </div>
                                         <div className="md:col-span-2 p-3 bg-white/50 rounded-xl border border-[#B08D4A]/10">
                                             <p className="text-[9px] uppercase font-bold tracking-widest text-[#B08D4A]/60 mb-0.5">{t('step3.reference')}</p>

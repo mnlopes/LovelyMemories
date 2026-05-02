@@ -267,7 +267,7 @@ export async function finalizeBooking({
     let warning: string | undefined;
     try {
         const { sendEmail } = await import("@/lib/email");
-        const { bookingAdminEmail, bookingGuestConfirmationEmail } = await import("@/lib/email-templates");
+        const { bookingAdminEmail, bookingGuestConfirmationEmail, bookingGuestPaidEmail } = await import("@/lib/email-templates");
 
         const property = await getPropertyBySlug(data.propertySlug);
 
@@ -300,11 +300,16 @@ export async function finalizeBooking({
             replyTo: data.email
         });
 
+        // Determine which email to send to Guest
+        const guestHtml = data.paymentMethod === 'card' 
+            ? bookingGuestPaidEmail(emailData) 
+            : bookingGuestConfirmationEmail(emailData);
+
         // Confirm to Guest
         await sendEmail({
             to: data.email,
             subject: `Lovely Memories | Confirmação de Reserva [Ref: ${referenceId}]`,
-            html: bookingGuestConfirmationEmail(emailData)
+            html: guestHtml
         });
     } catch (emailErr) {
         console.error("Non-critical error sending reservation emails:", emailErr);
