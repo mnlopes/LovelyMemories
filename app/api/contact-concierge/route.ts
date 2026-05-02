@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
         // Disparar Email para o Admin
         const result = await sendEmail({
-            to: "lovelymemories.office@gmail.com",
+            to: "info@lovelymemories.pt",
             subject: `💎 Pedido de Serviço Concierge: ${service}`,
             html: `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">

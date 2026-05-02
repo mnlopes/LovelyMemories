@@ -19,7 +19,7 @@ async function checkUser() {
         return;
     }
 
-    const user = data.users.find(u => u.email === "lovelymemories.office@gmail.com");
+    const user = data.users.find(u => u.email === "info@lovelymemories.pt");
     if (user) {
         console.log("User found:");
         console.log(`ID: ${user.id}`);

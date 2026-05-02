@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
         // Disparar Email para o Admin
         const result = await sendEmail({
-            to: "lovelymemories.office@gmail.com",
+            to: "info@lovelymemories.pt",
             subject: `🏠 Novo LEAD de Proprietário: ${fullName}`,
             html: adminLeadEmail(body),
             replyTo: email

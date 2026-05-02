@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
         // Notify Admin of new subscriber
         const result = await sendEmail({
-            to: "lovelymemories.office@gmail.com",
+            to: "info@lovelymemories.pt",
             subject: `📩 Nova Inscrição na Newsletter: ${email}`,
             html: `
                 <div style="font-family: sans-serif; padding: 20px;">

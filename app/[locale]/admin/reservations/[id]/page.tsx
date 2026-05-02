@@ -575,7 +575,7 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ lo
                     {/* Footer Info (Legal/Notice) */}
                     <div className="mt-20 pt-8 border-t border-[#f5f5f5] dark:border-admin-dark-border flex justify-between items-center opacity-50">
                         <p className="text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">© 2026 Lovely Memories - Documento Gerado Automaticamente</p>
-                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#a3a3a3]">lovelymemories.office@gmail.com</p>
+                        <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#a3a3a3]">info@lovelymemories.pt</p>
                     </div>
                 </div>
 

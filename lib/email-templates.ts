@@ -118,7 +118,7 @@ export const bookingGuestConfirmationEmail = (data: any) => `
                 <p style="margin: 5px 0; font-size: 14px;"><strong>Valor:</strong> €${data.total_price}</p>
                 <p style="margin: 5px 0; font-size: 14px;"><strong>Referência:</strong> ${data.reference_id}</p>
             </div>
-            <p style="font-size: 12px; color: #8a6d3b; margin-top: 10px;">Por favor envie o comprovativo para <a href="mailto:lovelymemories.office@gmail.com" style="color: #B08D4A; text-decoration: none; font-weight: bold;">lovelymemories.office@gmail.com</a></p>
+            <p style="font-size: 12px; color: #8a6d3b; margin-top: 10px;">Por favor envie o comprovativo para <a href="mailto:joao@lovelymemories.pt" style="color: #B08D4A; text-decoration: none; font-weight: bold;">joao@lovelymemories.pt</a></p>
         </div>
 
         <h3 style="color: #0A1128; margin-bottom: 15px;">Detalhes da Estada</h3>

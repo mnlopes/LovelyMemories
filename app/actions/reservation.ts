@@ -294,7 +294,7 @@ export async function finalizeBooking({
 
         // Notify Admin
         await sendEmail({
-            to: "lovelymemories.office@gmail.com",
+            to: "info@lovelymemories.pt",
             subject: `✨ NOVA RESERVA: [Ref: ${referenceId}] - ${data.propertySlug}`,
             html: bookingAdminEmail(emailData),
             replyTo: data.email

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
         // Disparar Email para o Admin
         const result = await sendEmail({
-            to: "lovelymemories.office@gmail.com",
+            to: "info@lovelymemories.pt",
             subject: `Novo Pedido de Estimativa: ${email}`,
             html: adminContactEmail(body),
             replyTo: email
