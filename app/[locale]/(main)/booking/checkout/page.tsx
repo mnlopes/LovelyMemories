@@ -566,6 +566,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     couponDiscount: couponDiscount || 0,
                     isBillingActive: showBilling,
                     sessionId: sessionId,
+                    locale: locale,
                 });
 
                 if (res.success && res.clientSecret) {
@@ -632,7 +633,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     transferTotal: transferTotal,
                     transferType: selectedExtras?.transferType,
                     paymentMethod: formData.paymentMethod,
-                    sessionId: sessionId
+                    sessionId: sessionId,
+                    locale: locale
                 });
 
                 if (result.success && result.ref) {

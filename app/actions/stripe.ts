@@ -37,6 +37,7 @@ const PaymentIntentSchema = z.object({
   vat: z.string().nullish(),
   isBillingActive: z.boolean().default(false),
   sessionId: z.string(),
+  locale: z.string().optional().default('pt'),
 });
 
 export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSchema>) {
@@ -98,6 +99,7 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
         bk: data.country || "",
         bv: data.vat || "",
         is_billing: data.isBillingActive ? "true" : "false",
+        lc: data.locale || "pt",
         // Total price for reference
         tp: totalAmount.toString(),
         bp: pricing.basePrice.toString(),
@@ -183,7 +185,8 @@ export async function confirmStripePaymentIntent(paymentIntentId: string) {
       country: metadata.bk || null,
       vat: metadata.bv || null,
       website: "",
-      bookingCode: ""
+      bookingCode: "",
+      locale: metadata.lc || 'pt'
     };
 
     const property = await getPropertyBySlug(resData.propertySlug);

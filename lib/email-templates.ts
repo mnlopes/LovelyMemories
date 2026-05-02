@@ -95,78 +95,132 @@ export const bookingAdminEmail = (data: any) => `
             <p style="margin: 5px 0 0 0; font-style: italic;">"${data.special_requests}"</p>
         </div>
         ` : ''}
-    </div>
-</div>
-`;
+ export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') => {
+    const isEn = locale === 'en';
+    
+    const content = {
+        title: isEn ? "Thank you for your reservation!" : "Obrigado pela sua reserva!",
+        greeting: isEn ? "Hello" : "Olá",
+        reception: isEn 
+            ? `We have received your reservation request for the property`
+            : `Confirmamos a receção do seu pedido de reserva para a propriedade`,
+        nextStepsTitle: isEn ? "Next Steps: Payment" : "Próximos Passos: Pagamento",
+        nextStepsDesc: isEn 
+            ? "To definitively confirm your reservation, please make the payment via bank transfer:"
+            : "Para confirmar definitivamente a sua reserva, por favor realize o pagamento através de transferência bancária:",
+        proofText: isEn
+            ? "Please send the proof of payment to"
+            : "Por favor envie o comprovativo para",
+        stayDetails: isEn ? "Stay Details" : "Detalhes da Estada",
+        property: isEn ? "Property" : "Imóvel",
+        guests: isEn ? "Guests" : "Hóspedes",
+        adults: isEn ? "adults" : "adultos",
+        children: isEn ? "children" : "crianças",
+        infants: isEn ? "infants" : "bebés",
+        arrival: isEn ? "Estimated Arrival" : "Chegada Estimada",
+        footer: isEn ? "See you soon," : "Até breve,",
+        team: isEn ? "Lovely Memories Team" : "Equipa Lovely Memories"
+    };
 
-export const bookingGuestConfirmationEmail = (data: any) => `
-<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
-    <div style="background-color: #0A1128; padding: 40px; text-align: center;">
-        <h1 style="color: #B08D4A; margin: 0; font-size: 28px; letter-spacing: 2px;">LOVELY MEMORIES</h1>
-        <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">Obrigado pela sua reserva!</h2>
-    </div>
-    <div style="padding: 40px; color: #333; line-height: 1.6;">
-        <p>Olá <strong>${data.guest_name}</strong>,</p>
-        <p>Confirmamos a receção do seu pedido de reserva para a propriedade <strong style="color: #B08D4A;">${data.property_title}</strong>.</p>
-        
-        <div style="border: 1px solid #B08D4A; border-radius: 16px; padding: 30px; margin: 30px 0; background-color: #fdfaf5;">
-            <h3 style="margin-top: 0; color: #0A1128; font-size: 18px;">Próximos Passos: Pagamento</h3>
-            <p style="font-size: 14px;">Para confirmar definitivamente a sua reserva, por favor realize o pagamento através de transferência bancária:</p>
-            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #f0e6d2; margin: 15px 0;">
-                <p style="margin: 5px 0; font-size: 14px;"><strong>IBAN:</strong> PT50 0007 0000 0849 4629 1132 3</p>
-                <p style="margin: 5px 0; font-size: 14px;"><strong>SWIFT/BIC:</strong> BESC PTPL</p>
-                <p style="margin: 5px 0; font-size: 14px;"><strong>Valor:</strong> €${data.total_price}</p>
-                <p style="margin: 5px 0; font-size: 14px;"><strong>Referência:</strong> ${data.reference_id}</p>
+    return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #0A1128; padding: 40px; text-align: center;">
+            <h1 style="color: #B08D4A; margin: 0; font-size: 28px; letter-spacing: 2px;">LOVELY MEMORIES</h1>
+            <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">${content.title}</h2>
+        </div>
+        <div style="padding: 40px; color: #333; line-height: 1.6;">
+            <p>${content.greeting} <strong>${data.guest_name}</strong>,</p>
+            <p>${content.reception} <strong style="color: #B08D4A;">${data.property_title}</strong>.</p>
+            
+            <div style="border: 1px solid #B08D4A; border-radius: 16px; padding: 30px; margin: 30px 0; background-color: #fdfaf5;">
+                <h3 style="margin-top: 0; color: #0A1128; font-size: 18px;">${content.nextStepsTitle}</h3>
+                <p style="font-size: 14px;">${content.nextStepsDesc}</p>
+                <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #f0e6d2; margin: 15px 0;">
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>IBAN:</strong> PT50 0007 0000 0849 4629 1132 3</p>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>SWIFT/BIC:</strong> BESC PTPL</p>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>${isEn ? 'Amount' : 'Valor'}:</strong> €${data.total_price}</p>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>${isEn ? 'Reference' : 'Referência'}:</strong> ${data.reference_id}</p>
+                </div>
+                <p style="font-size: 12px; color: #8a6d3b; margin-top: 10px;">${content.proofText} <a href="mailto:joao@lovelymemories.pt" style="color: #B08D4A; text-decoration: none; font-weight: bold;">joao@lovelymemories.pt</a></p>
             </div>
-            <p style="font-size: 12px; color: #8a6d3b; margin-top: 10px;">Por favor envie o comprovativo para <a href="mailto:joao@lovelymemories.pt" style="color: #B08D4A; text-decoration: none; font-weight: bold;">joao@lovelymemories.pt</a></p>
+
+            <h3 style="color: #0A1128; margin-bottom: 15px;">${content.stayDetails}</h3>
+            <table style="width: 100%; font-size: 14px;">
+                <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${data.property_title}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${data.adults} ${content.adults}, ${data.children} ${content.children}, ${data.infants} ${content.infants}</td></tr>
+                ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
+            </table>
+            
+            <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
+                ${content.footer}<br/>
+                <strong>${content.team}</strong><br/>
+                <span style="font-style: italic;">Creating moments that last.</span>
+            </p>
         </div>
-
-        <h3 style="color: #0A1128; margin-bottom: 15px;">Detalhes da Estada</h3>
-        <table style="width: 100%; font-size: 14px;">
-            <tr><td style="padding: 5px 0; color: #999;">Imóvel:</td><td style="padding: 5px 0; font-weight: bold;">${data.property_title}</td></tr>
-            <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
-            <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
-            <tr><td style="padding: 5px 0; color: #999;">Hóspedes:</td><td style="padding: 5px 0;">${data.adults} adultos, ${data.children} crianças, ${data.infants} bebés</td></tr>
-            ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">Chegada Estimada:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
-        </table>
-        
-        <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
-            Até breve,<br/>
-            <strong>Equipa Lovely Memories</strong><br/>
-            <span style="font-style: italic;">Creating moments that last.</span>
-        </p>
     </div>
-</div>
-`;
+    `;
+};
 
-export const bookingGuestPaidEmail = (data: any) => `
-<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
-    <div style="background-color: #0A1128; padding: 40px; text-align: center;">
-        <h1 style="color: #B08D4A; margin: 0; font-size: 28px; letter-spacing: 2px;">LOVELY MEMORIES</h1>
-        <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">Pagamento Confirmado!</h2>
-    </div>
-    <div style="padding: 40px; color: #333; line-height: 1.6;">
-        <p>Olá <strong>${data.guest_name}</strong>,</p>
-        <p>Confirmamos que o seu pagamento de <strong style="color: #B08D4A;">€${data.total_price}</strong> foi processado com sucesso.</p>
-        <p>A sua reserva para a propriedade <strong style="color: #B08D4A;">${data.property_title}</strong> está agora garantida e confirmada! ✨</p>
-        
-        <div style="border: 1px solid #2d8653; border-radius: 16px; padding: 25px; margin: 30px 0; background-color: #f6fdf9; text-align: center;">
-            <p style="margin: 0; color: #2d8653; font-weight: bold; font-size: 16px;">Referência da Reserva: ${data.reference_id}</p>
+export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
+    const isEn = locale === 'en';
+    
+    const content = {
+        title: isEn ? "Payment Confirmed!" : "Pagamento Confirmado!",
+        greeting: isEn ? "Hello" : "Olá",
+        confirmation: isEn 
+            ? `We confirm that your payment of <strong style="color: #B08D4A;">€${data.total_price}</strong> has been successfully processed.`
+            : `Confirmamos que o seu pagamento de <strong style="color: #B08D4A;">€${data.total_price}</strong> foi processado com sucesso.`,
+        guaranteed: isEn
+            ? `Your reservation for the property <strong style="color: #B08D4A;">${data.property_title}</strong> is now guaranteed and confirmed! ✨`
+            : `A sua reserva para a propriedade <strong style="color: #B08D4A;">${data.property_title}</strong> está agora garantida e confirmada! ✨`,
+        reference: isEn ? "Booking Reference" : "Referência da Reserva",
+        stayDetails: isEn ? "Stay Details" : "Detalhes da Estada",
+        property: isEn ? "Property" : "Imóvel",
+        guests: isEn ? "Guests" : "Hóspedes",
+        adults: isEn ? "adults" : "adultos",
+        children: isEn ? "children" : "crianças",
+        infants: isEn ? "infants" : "bebés",
+        arrival: isEn ? "Estimated Arrival" : "Chegada Estimada",
+        footer: isEn ? "We look forward to your visit," : "Aguardamos a sua visita,",
+        team: isEn ? "Lovely Memories Team" : "Equipa Lovely Memories"
+    };
+
+    return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #0A1128; padding: 40px; text-align: center;">
+            <h1 style="color: #B08D4A; margin: 0; font-size: 28px; letter-spacing: 2px;">LOVELY MEMORIES</h1>
+            <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">${content.title}</h2>
         </div>
+        <div style="padding: 40px; color: #333; line-height: 1.6;">
+            <p>${content.greeting} <strong>${data.guest_name}</strong>,</p>
+            <p>${content.confirmation}</p>
+            <p>${content.guaranteed}</p>
+            
+            <div style="border: 1px solid #2d8653; border-radius: 16px; padding: 25px; margin: 30px 0; background-color: #f6fdf9; text-align: center;">
+                <p style="margin: 0; color: #2d8653; font-weight: bold; font-size: 16px;">${content.reference}: ${data.reference_id}</p>
+            </div>
 
-        <h3 style="color: #0A1128; margin-bottom: 15px;">Detalhes da Estada</h3>
-        <table style="width: 100%; font-size: 14px;">
-            <tr><td style="padding: 5px 0; color: #999;">Imóvel:</td><td style="padding: 5px 0; font-weight: bold;">${data.property_title}</td></tr>
-            <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
-            <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
-            <tr><td style="padding: 5px 0; color: #999;">Hóspedes:</td><td style="padding: 5px 0;">${data.adults} adultos, ${data.children} crianças, ${data.infants} bebés</td></tr>
-            ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">Chegada Estimada:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
-        </table>
-        
-        <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
-            Aguardamos a sua visita,<br/>
-            <strong>Equipa Lovely Memories</strong><br/>
-            <span style="font-style: italic;">Creating moments that last.</span>
+            <h3 style="color: #0A1128; margin-bottom: 15px;">${content.stayDetails}</h3>
+            <table style="width: 100%; font-size: 14px;">
+                <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${data.property_title}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${data.adults} ${content.adults}, ${data.children} ${content.children}, ${data.infants} ${content.infants}</td></tr>
+                ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
+            </table>
+            
+            <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
+                ${content.footer}<br/>
+                <strong>${content.team}</strong><br/>
+                <span style="font-style: italic;">Creating moments that last.</span>
+            </p>
+        </div>
+    </div>
+    `;
+};
+ast.</span>
         </p>
     </div>
 </div>

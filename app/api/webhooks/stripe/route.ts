@@ -75,7 +75,8 @@ export async function POST(req: Request) {
         vat: metadata.bv || null,
         // Security fields can be empty as we are post-payment
         website: "",
-        bookingCode: ""
+        bookingCode: "",
+        locale: metadata.lc || 'pt'
       };
 
       const property = await getPropertyBySlug(resData.propertySlug);

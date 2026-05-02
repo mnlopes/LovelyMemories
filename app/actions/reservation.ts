@@ -49,6 +49,7 @@ const ReservationSchema = z.object({
     zip: z.string().nullish().or(z.literal("")),
     country: z.string().nullish().or(z.literal("")),
     vat: z.string().nullish().or(z.literal("")),
+    locale: z.string().optional().default('pt'),
 }).refine((data) => {
     // If billing is active, check required core fields
     if (data.isBillingActive) {
@@ -204,7 +205,8 @@ export async function finalizeBooking({
         billing_city: data.city,
         billing_zip: data.zip,
         billing_country: data.country,
-        billing_vat: data.vat
+        billing_vat: data.vat,
+        locale: data.locale || 'pt'
     };
 
     const adminSupabase = await getSupabaseAdmin();
@@ -302,13 +304,16 @@ export async function finalizeBooking({
 
         // Determine which email to send to Guest
         const guestHtml = data.paymentMethod === 'card' 
-            ? bookingGuestPaidEmail(emailData) 
-            : bookingGuestConfirmationEmail(emailData);
+            ? bookingGuestPaidEmail(emailData, data.locale) 
+            : bookingGuestConfirmationEmail(emailData, data.locale);
 
         // Confirm to Guest
+        const isEn = data.locale === 'en';
         await sendEmail({
             to: data.email,
-            subject: `Lovely Memories | Confirmação de Reserva [Ref: ${referenceId}]`,
+            subject: isEn 
+                ? `Lovely Memories | Booking Confirmation [Ref: ${referenceId}]`
+                : `Lovely Memories | Confirmação de Reserva [Ref: ${referenceId}]`,
             html: guestHtml
         });
     } catch (emailErr) {
