@@ -94,8 +94,11 @@ export const bookingAdminEmail = (data: any) => `
             <p style="margin: 0; font-weight: bold; font-size: 12px; text-transform: uppercase; color: #999;">Observações:</p>
             <p style="margin: 5px 0 0 0; font-style: italic;">"${data.special_requests}"</p>
         </div>
-        ` : ''}
- export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') => {
+    </div>
+</div>
+`;
+
+export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') => {
     const isEn = locale === 'en';
     
     const content = {
@@ -210,8 +213,3 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
     </div>
     `;
 };
-ast.</span>
-        </p>
-    </div>
-</div>
-`;
