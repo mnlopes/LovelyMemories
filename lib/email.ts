@@ -20,8 +20,8 @@ export async function sendEmail({
     to,
     subject,
     html,
-    replyTo,
-    from = "Lovely Memories <onboarding@resend.dev>" // Standard Resend testing sender
+    from = "Lovely Memories <info@lovelymemories.pt>",
+    replyTo = "info@lovelymemories.pt"
 }: SendEmailProps) {
     if (!process.env.RESEND_API_KEY) {
         console.error("CRITICAL: RESEND_API_KEY is not defined.");
