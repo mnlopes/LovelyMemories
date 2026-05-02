@@ -101,16 +101,10 @@ export const bookingAdminEmail = (data: any) => `
     const content = {
         title: isEn ? "Thank you for your reservation!" : "Obrigado pela sua reserva!",
         greeting: isEn ? "Hello" : "Olá",
-        reception: isEn 
-            ? `We have received your reservation request for the property`
-            : `Confirmamos a receção do seu pedido de reserva para a propriedade`,
+        reception: isEn ? `We have received your reservation request for the property` : `Confirmamos a receção do seu pedido de reserva para a propriedade`,
         nextStepsTitle: isEn ? "Next Steps: Payment" : "Próximos Passos: Pagamento",
-        nextStepsDesc: isEn 
-            ? "To definitively confirm your reservation, please make the payment via bank transfer:"
-            : "Para confirmar definitivamente a sua reserva, por favor realize o pagamento através de transferência bancária:",
-        proofText: isEn
-            ? "Please send the proof of payment to"
-            : "Por favor envie o comprovativo para",
+        nextStepsDesc: isEn ? "To definitively confirm your reservation, please make the payment via bank transfer:" : "Para confirmar definitivamente a sua reserva, por favor realize o pagamento através de transferência bancária:",
+        proofText: isEn ? "Please send the proof of payment to" : "Por favor envie o comprovativo para",
         stayDetails: isEn ? "Stay Details" : "Detalhes da Estada",
         property: isEn ? "Property" : "Imóvel",
         guests: isEn ? "Guests" : "Hóspedes",
@@ -169,12 +163,8 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
     const content = {
         title: isEn ? "Payment Confirmed!" : "Pagamento Confirmado!",
         greeting: isEn ? "Hello" : "Olá",
-        confirmation: isEn 
-            ? `We confirm that your payment of <strong style="color: #B08D4A;">€${data.total_price}</strong> has been successfully processed.`
-            : `Confirmamos que o seu pagamento de <strong style="color: #B08D4A;">€${data.total_price}</strong> foi processado com sucesso.`,
-        guaranteed: isEn
-            ? `Your reservation for the property <strong style="color: #B08D4A;">${data.property_title}</strong> is now guaranteed and confirmed! ✨`
-            : `A sua reserva para a propriedade <strong style="color: #B08D4A;">${data.property_title}</strong> está agora garantida e confirmada! ✨`,
+        confirmation: isEn ? `We confirm that your payment of <strong style="color: #B08D4A;">€${data.total_price}</strong> has been successfully processed.` : `Confirmamos que o seu pagamento de <strong style="color: #B08D4A;">€${data.total_price}</strong> foi processado com sucesso.`,
+        guaranteed: isEn ? `Your reservation for the property <strong style="color: #B08D4A;">${data.property_title}</strong> is now guaranteed and confirmed! ✨` : `A sua reserva para a propriedade <strong style="color: #B08D4A;">${data.property_title}</strong> está agora garantida e confirmada! ✨`,
         reference: isEn ? "Booking Reference" : "Referência da Reserva",
         stayDetails: isEn ? "Stay Details" : "Detalhes da Estada",
         property: isEn ? "Property" : "Imóvel",
