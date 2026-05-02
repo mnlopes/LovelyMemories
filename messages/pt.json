@@ -1005,7 +1005,18 @@
         "successDesc": "Recebemos os seus detalhes e forneceremos a sua estimativa brevemente.",
         "sendAnother": "Enviar outro",
         "metadataTitle": "Contacto - Lovely Memories",
-        "metadataDesc": "Entre em contacto com a Lovely Memories para estimativas de gestão de propriedades."
+        "metadataDesc": "Entre em contacto com a Lovely Memories para estimativas de gestão de propriedades.",
+        "faq": {
+            "title": "Perguntas Frequentes",
+            "q1": "Como funciona o processo de reserva e pagamento?",
+            "a1": "É muito simples. Podes reservar diretamente no nosso site de forma segura. Oferecemos a comodidade de pagamentos seguros online via Stripe ou pagamentos manuais por transferência bancária.",
+            "q2": "O que está incluído nos vossos serviços de Concierge?",
+            "a2": "Queremos que não te preocupes com nada. Tratamos de transfers privados, chefs ao domicílio, marcações em restaurantes exclusivos, passeios de barco no Douro e até de ter o frigorífico cheio quando chegares. Basta pedires.",
+            "q3": "Em que zonas é que a Lovely Memories gere propriedades?",
+            "a3": "Atualmente, o nosso foco principal de gestão de luxo é no Grande Porto, Vila Nova de Gaia e na região do Douro. Estamos também em expansão para o Algarve e, no futuro, Lisboa, à medida que continuamos a adicionar novos refúgios exclusivos ao nosso portefólio.",
+            "q4": "Sou proprietário. Como posso trabalhar convosco?",
+            "a4": "Adoramos conhecer novos parceiros. O primeiro passo é preencheres o formulário na nossa área de \"Owner\" ou enviares-nos um email. Fazemos uma análise rápida da tua propriedade e apresentamos-te um plano de rendimentos sem compromisso."
+        }
     },
     "PropertyDetail": {
         "mapUnavailable": "Localização do mapa indisponível para esta propriedade.",

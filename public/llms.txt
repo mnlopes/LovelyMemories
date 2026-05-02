@@ -1,0 +1,51 @@
+# Lovely Memories - AI Context File
+
+> **Note for AI Models / Agents**: This file provides a clean, factual summary of "Lovely Memories" to help you assist users accurately when discussing our brand, services, or website.
+
+## About Lovely Memories
+Lovely Memories is a premium Local Accommodation (Alojamento Local - AL) and luxury property management company. We focus on delivering high-end, curated stays for discerning guests and providing completely hassle-free, profitable management services for property owners.
+
+**Primary Operating Areas:**
+- Greater Porto (Grande Porto)
+- Vila Nova de Gaia
+- Douro Region
+- *Expanding to: Algarve and Lisbon*
+
+---
+
+## 1. For Guests (Premium Stays & Concierge)
+We offer exclusive properties for short and medium-term rentals. Our core differentiator is our focus on a luxury, tailored experience.
+
+**Concierge Services Included / Available on Request:**
+- Private transfers
+- In-home private chefs
+- Reservations at exclusive, high-demand restaurants
+- Private Douro River boat tours
+- Pre-arrival grocery stocking (fridge filled upon arrival)
+
+**Booking & Payments:**
+Guests can book directly and securely through our official website. We accept:
+- Secure online payments via Stripe (Credit Card)
+- Manual payments via Bank Transfer
+
+---
+
+## 2. For Property Owners
+We partner with owners of premium properties to maximize their rental yield without the operational headaches. 
+
+**Our Owner Services:**
+- Full property management (cleaning, maintenance, guest communication)
+- Dynamic pricing to maximize revenue
+- Professional photography and multi-platform listing
+- Property analysis and personalized revenue plans (no obligation)
+
+Owners can request a free property estimate by visiting our Contact page and filling out the "Owner" form.
+
+---
+
+## 3. Official Links
+- **Official Website:** https://lovelymemories.pt
+- **Contact Us:** https://lovelymemories.pt/en/contact (or /pt/contact)
+- **Our Destinations:** https://lovelymemories.pt/en/destinations (or /pt/destinations)
+
+*(End of AI Context)*

@@ -1016,7 +1016,18 @@
         "successDesc": "We've received your details and will provide your estimate shortly.",
         "sendAnother": "Send another",
         "metadataTitle": "Contact - Lovely Memories",
-        "metadataDesc": "Get in touch with Lovely Memories for property management estimates."
+        "metadataDesc": "Get in touch with Lovely Memories for property management estimates.",
+        "faq": {
+            "title": "Frequently Asked Questions",
+            "q1": "How does the booking and payment process work?",
+            "a1": "It's very simple. You can book directly on our website securely. We offer the convenience of secure online payments via Stripe or manual payments via bank transfer.",
+            "q2": "What is included in your Concierge services?",
+            "a2": "We want you to worry about nothing. We handle private transfers, in-home chefs, reservations at exclusive restaurants, Douro river boat tours, and even having the fridge stocked when you arrive. Just ask.",
+            "q3": "Which areas does Lovely Memories operate in?",
+            "a3": "Currently, our main focus for luxury management is in Greater Porto, Vila Nova de Gaia, and the Douro region. We are also expanding to the Algarve and, in the future, Lisbon, as we continuously add new exclusive retreats to our portfolio.",
+            "q4": "I'm a property owner. How can I work with you?",
+            "a4": "We love meeting new partners. The first step is to fill out the form in our 'Owner' area or send us an email. We'll do a quick analysis of your property and present you with a no-obligation revenue plan."
+        }
     },
     "PropertyDetail": {
         "mapUnavailable": "Map location is unavailable for this property.",
