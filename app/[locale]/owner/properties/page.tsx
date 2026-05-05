@@ -7,6 +7,30 @@ import { useTranslations, useLocale } from "next-intl";
 import { getOwnerProperties } from "@/app/actions/owner-properties";
 import { ExportMonthlyDataModal } from "@/components/owner/ExportMonthlyDataModal";
 
+function PropertyImage({ src, alt, fallbackImages = [] }: { src: string, alt: string, fallbackImages?: string[] }) {
+    const [imgSrc, setImgSrc] = useState(src);
+    const [retryIndex, setRetryIndex] = useState(0);
+
+    const handleError = () => {
+        if (retryIndex < fallbackImages.length) {
+            const nextImage = fallbackImages[retryIndex];
+            setImgSrc(nextImage);
+            setRetryIndex(prev => prev + 1);
+        } else {
+            setImgSrc('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80');
+        }
+    };
+
+    return (
+        <img
+            src={imgSrc}
+            alt={alt}
+            onError={handleError}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+        />
+    );
+}
+
 export default function OwnerPropertiesPage() {
     const locale = useLocale();
     const t = useTranslations('OwnerProperties');
@@ -68,10 +92,10 @@ export default function OwnerPropertiesPage() {
                     return (
                         <div key={property.id} className="bg-white rounded-[32px] border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-500">
                             <div className="relative aspect-[4/3] overflow-hidden">
-                                <img
+                                <PropertyImage
                                     src={image}
                                     alt={title}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                                    fallbackImages={Array.isArray(property.images) ? property.images.map((img: any) => typeof img === 'string' ? img : img.url) : []}
                                 />
                                 <div className="absolute top-5 left-5 right-5 flex justify-between items-start pointer-events-none">
                                     <div className="bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-[#0A1128] shadow-sm pointer-events-auto">

@@ -21,6 +21,40 @@ interface PropertyGalleryProps {
 
 type GalleryState = "closed" | "grid" | "slider";
 
+function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImages = [] }: any) {
+    const [imgSrc, setImgSrc] = useState(src);
+    const [retryIndex, setRetryIndex] = useState(0);
+
+    // Update imgSrc if the src prop changes (e.g. when slider moves)
+    useEffect(() => {
+        setImgSrc(src);
+        setRetryIndex(0);
+    }, [src]);
+
+    const handleError = () => {
+        // Find next image that isn't the current one
+        const nextAvailable = fallbackImages.slice(retryIndex).find(img => img !== imgSrc);
+        if (nextAvailable) {
+            setImgSrc(nextAvailable);
+            setRetryIndex(prev => prev + 1);
+        } else {
+            setImgSrc('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80');
+        }
+    };
+
+    return (
+        <Image
+            src={imgSrc || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'}
+            alt={alt}
+            fill={fill}
+            className={className}
+            sizes={sizes}
+            priority={priority}
+            onError={handleError}
+        />
+    );
+}
+
 export function PropertyGallery({ images, title, metadata }: PropertyGalleryProps) {
     const t = useTranslations('PropertyDetail');
     const [viewState, setViewState] = useState<GalleryState>("closed");
@@ -57,13 +91,14 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                     className="md:col-span-2 md:row-span-2 relative overflow-hidden cursor-pointer group"
                     onClick={() => openSlider(0)}
                 >
-                    <Image
-                        src={mainImage}
+                    <GalleryImage
+                        src={images[0]}
                         alt={title}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, 50vw"
                         priority
+                        fallbackImages={images}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                 </div>
@@ -72,12 +107,13 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                     className="hidden md:block col-span-2 row-span-2 relative overflow-hidden cursor-pointer group"
                     onClick={() => openSlider(1)}
                 >
-                    <Image
-                        src={secondaryImage}
+                    <GalleryImage
+                        src={images[1] || images[0]}
                         alt={title}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="50vw"
+                        fallbackImages={images}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                 </div>
@@ -133,12 +169,13 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                                             }`}
                                         onClick={() => openSlider(idx)}
                                     >
-                                        <Image
+                                        <GalleryImage
                                             src={img}
                                             alt={title}
                                             fill
                                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                                             sizes={isLarge ? "100vw" : "33vw"}
+                                            fallbackImages={images}
                                         />
                                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                                     </motion.div>
@@ -193,13 +230,14 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                                         transition={{ duration: 0.3, ease: "easeOut" }}
                                         className="relative w-full h-full"
                                     >
-                                        <Image
+                                        <GalleryImage
                                             src={images[activeIndex]}
                                             alt={title}
                                             fill
                                             className="object-contain"
                                             sizes="100vw"
                                             priority
+                                            fallbackImages={images}
                                         />
                                     </motion.div>
                                 </AnimatePresence>
