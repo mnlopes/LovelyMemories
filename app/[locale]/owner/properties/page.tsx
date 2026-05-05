@@ -59,8 +59,9 @@ export default function OwnerPropertiesPage() {
                 {properties.map((property) => {
                     const title = (property.title as any)?.[locale] || (property.title as any)?.en || property.slug;
                     
-                    const propertyImages = Array.isArray(property.images) ? property.images : [];
-                    const image = propertyImages[0]?.url || propertyImages[0] || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80';
+                    const image = property.main_image || (Array.isArray(property.images) && property.images.length > 0 
+                        ? (typeof property.images[0] === 'string' ? property.images[0] : property.images[0].url) 
+                        : 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80');
                     
                     const city = (property.locations as any)?.[`name_${locale}`] || (property.locations as any)?.name_en || property.city || 'Portugal';
 

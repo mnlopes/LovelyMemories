@@ -393,29 +393,14 @@ export function ExportMonthlyDataModal({
                                 <button
                                     onClick={handleDownloadPDF}
                                     disabled={isLoading}
-                                    className="w-full h-16 bg-[#B09E80] hover:bg-[#9a896d] disabled:bg-[#d6cdbe] text-white rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#B09E80]/30 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 group"
-                                >
-                                    {isLoading ? (
-                                        <Loader2 className="size-6 animate-spin" />
-                                    ) : (
-                                        <>
-                                            <Download className="size-6 group-hover:translate-y-0.5 transition-transform" />
-                                            {t('exportModal.downloadPdf')}
-                                        </>
-                                    )}
-                                </button>
-
-                                <button
-                                    onClick={handleDownload}
-                                    disabled={isLoading}
                                     className="w-full h-16 bg-white border-2 border-indigo-100 hover:border-indigo-200 text-indigo-500 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 group"
                                 >
                                     {isLoading ? (
-                                        <Loader2 className="size-6 animate-spin" />
+                                        <Loader2 className="size-6 animate-spin text-indigo-500" />
                                     ) : (
                                         <>
-                                            <Download className="size-6 group-hover:translate-y-0.5 transition-transform" />
-                                            {t('exportModal.download')}
+                                            <Download className="size-6 text-indigo-400 group-hover:translate-y-0.5 transition-transform" />
+                                            {t('exportModal.downloadPdf')}
                                         </>
                                     )}
                                 </button>
