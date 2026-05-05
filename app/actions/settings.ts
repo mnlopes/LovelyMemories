@@ -654,3 +654,46 @@ export async function purgeLogs(days = 7) {
         return { success: false, error: error.message };
     }
 }
+
+/**
+ * Fetch all properties with their iCal sync status.
+ * Restricted to Super Admin.
+ */
+export async function getPropertySyncStatuses() {
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll() { },
+            },
+        }
+    );
+
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Role check
+    const { data: profile } = await serverSupabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || profile.role !== 'super_admin') {
+        throw new Error('Unauthorized');
+    }
+
+    const { data, error } = await serverSupabase
+        .from('properties')
+        .select('id, title, last_sync_at, sync_status, last_sync_error, is_active, ical_import_urls')
+        .order('last_sync_at', { ascending: false, nullsFirst: false });
+
+    if (error) throw error;
+
+    return { success: true, properties: data };
+}

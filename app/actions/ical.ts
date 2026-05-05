@@ -351,3 +351,76 @@ export async function syncAllPropertiesICal() {
         return { success: false, error: e.message };
     }
 }
+
+/**
+ * Sync properties that haven't been synced in a while.
+ * This is the scalable "Robot" sync.
+ * @param batchSize Number of properties to sync in one run (default 70 for 200 properties / 3 min cycle)
+ * @param intervalInMinutes The sync interval threshold
+ */
+export async function syncOverduePropertiesICal(batchSize: number = 70, intervalInMinutes: number = 3) {
+    try {
+        const supabase = await getSupabaseAdmin();
+        const now = new Date();
+        const cutoff = new Date(now.getTime() - (intervalInMinutes * 60 * 1000));
+
+        // Find properties that:
+        // 1. Are active
+        // 2. Have ical urls
+        // 3. Haven't been synced since the cutoff OR have never been synced (null)
+        // Order by last_sync_at ASC to get the ones that have been waiting the longest
+        const { data: properties, error } = await supabase
+            .from('properties')
+            .select('id, title, last_sync_at')
+            .eq('is_active', true)
+            .not('ical_import_urls', 'eq', '[]')
+            .or(`last_sync_at.is.null,last_sync_at.lte.${cutoff.toISOString()}`)
+            .order('last_sync_at', { ascending: true, nullsFirst: true })
+            .limit(batchSize);
+
+        if (error) {
+            console.error('[iCal Robot] Query error:', error);
+            return { success: false, error: error.message };
+        }
+
+        if (!properties || properties.length === 0) {
+            return { success: true, message: 'All properties are up to date', count: 0 };
+        }
+
+        console.log(`[iCal Robot] Syncing ${properties.length} overdue properties... (Cutoff: ${cutoff.toISOString()})`);
+
+        let totalNewEvents = 0;
+        let results: any[] = [];
+        let failures: any[] = [];
+
+        // We can process these in smaller sub-batches of 5 for safety within the serverless function
+        const SUB_BATCH_SIZE = 5;
+        for (let i = 0; i < properties.length; i += SUB_BATCH_SIZE) {
+            const batch = properties.slice(i, i + SUB_BATCH_SIZE);
+            const batchPromises = batch.map(prop => syncPropertyICal(prop.id));
+            const batchResults = await Promise.all(batchPromises);
+
+            batchResults.forEach((res, index) => {
+                const prop = batch[index];
+                if (res.success) {
+                    totalNewEvents += (res.newEvents || 0);
+                } else {
+                    failures.push({ id: prop.id, title: prop.title, error: (res as any).error });
+                }
+                results.push({ id: prop.id, title: prop.title, ...res });
+            });
+        }
+
+        return {
+            success: true,
+            totalNewEvents,
+            propertiesSynced: properties.length - failures.length,
+            failures,
+            results,
+            batchSizeUsed: properties.length
+        };
+    } catch (e: any) {
+        console.error('Robot sync error:', e);
+        return { success: false, error: e.message };
+    }
+}

@@ -13,13 +13,13 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { TrafficTimeline } from "@/components/admin/TrafficTimeline";
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight, Zap } from "lucide-react";
+import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight, Zap, Link2Off, AlertTriangle } from "lucide-react";
 import { syncAllPropertiesICal } from "@/app/actions/ical";
 
 export default function SettingsPage() {
     const router = useRouter();
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-    const [activeTab, setActiveTab] = useState<'general' | 'translations' | 'analytics'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'translations' | 'analytics' | 'ical'>('general');
 
     const [isTranslating, setIsTranslating] = useState(false);
     const [provider, setProvider] = useState<'gemini' | 'openai'>('gemini');
@@ -65,6 +65,10 @@ export default function SettingsPage() {
     const [isSyncingAll, setIsSyncingAll] = useState(false);
     const [syncFailures, setSyncFailures] = useState<any[]>([]);
 
+    // iCal Robot Monitor State
+    const [propertySyncData, setPropertySyncData] = useState<any[]>([]);
+    const [isLoadingIcal, setIsLoadingIcal] = useState(false);
+
     // ... (AUTH EFFECT - Skipped for brevity in replacement if unchanged, but included if needed) ...
 
     // Auto-refresh logic (Polling)
@@ -73,10 +77,33 @@ export default function SettingsPage() {
             const interval = setInterval(() => {
                 loadAnalytics();
             }, 5000); // Poll every 5 seconds
-
             return () => clearInterval(interval);
         }
     }, [isAuthorized, isLive, activeTab, timeRange, showAdminLogs]);
+
+    // Polling for iCal tab
+    useEffect(() => {
+        if (isAuthorized && activeTab === 'ical') {
+            loadPropertySyncData();
+            const interval = setInterval(() => {
+                loadPropertySyncData();
+            }, 5000); // Poll every 5 seconds
+
+            return () => clearInterval(interval);
+        }
+    }, [isAuthorized, activeTab]);
+
+    const loadPropertySyncData = async () => {
+        try {
+            const { getPropertySyncStatuses } = await import('@/app/actions/settings');
+            const res = await getPropertySyncStatuses();
+            if (res.success) {
+                setPropertySyncData(res.properties || []);
+            }
+        } catch (error) {
+            console.error("Failed to load property sync data:", error);
+        }
+    };
 
     const loadAnalytics = async (customLimit?: number) => {
         // Don't show global loading spinner on background refreshes
@@ -415,6 +442,16 @@ export default function SettingsPage() {
                         <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#171717] dark:bg-white rounded-t-full"></span>
                     )}
                 </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('ical')}
+                    className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'ical' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                >
+                    iCal Robot
+                    {activeTab === 'ical' && (
+                        <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#171717] dark:bg-white rounded-t-full"></span>
+                    )}
+                </button>
             </div>
 
             {/* Content */}
@@ -701,7 +738,7 @@ export default function SettingsPage() {
 
                             <div className="flex flex-wrap items-center gap-4">
                                 <div className="flex flex-wrap bg-[#f5f5f5] dark:bg-admin-dark-bg p-1 rounded-xl border border-[#eaeaea] dark:border-admin-dark-border shrink-0">
-                                    {[1, 2, 5, 10, 30].map((mins) => (
+                                    {[1, 2, 3, 5, 10, 30].map((mins) => (
                                         <button
                                             key={mins}
                                             onClick={() => handleUpdateIcalInterval(mins)}
@@ -1045,6 +1082,164 @@ export default function SettingsPage() {
                                             </td>
                                         </tr>
                                     )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'ical' && (
+                <div className="space-y-8 animate-in fade-in duration-500">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-xl font-bold text-[#171717] dark:text-white uppercase tracking-tighter">iCal Synchronization Robot</h2>
+                            <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary">Monitor real-time synchronization across all properties.</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => loadPropertySyncData()}
+                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-xl text-sm font-bold text-[#171717] dark:text-white hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all shadow-sm"
+                            >
+                                <RefreshCw className={cn("size-4", isLoadingIcal && "animate-spin")} />
+                                Refresh Status
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-6 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 rounded-lg bg-sky-500/10 text-sky-500">
+                                    <Globe className="size-5" />
+                                </div>
+                                <h4 className="font-bold text-xs uppercase tracking-widest text-[#737373]">Total Properties</h4>
+                            </div>
+                            <p className="text-4xl font-black text-[#171717] dark:text-white tracking-tighter">
+                                {propertySyncData.length}
+                            </p>
+                        </div>
+                        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-6 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                                    <Check className="size-5" />
+                                </div>
+                                <h4 className="font-bold text-xs uppercase tracking-widest text-[#737373]">Healthy</h4>
+                            </div>
+                            <p className="text-4xl font-black text-emerald-500 tracking-tighter">
+                                {propertySyncData.filter(p => p.sync_status === 'success').length}
+                            </p>
+                        </div>
+                        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-6 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+                                    <Activity className="size-5" />
+                                </div>
+                                <h4 className="font-bold text-xs uppercase tracking-widest text-[#737373]">Issues Found</h4>
+                            </div>
+                            <p className="text-4xl font-black text-rose-500 tracking-tighter">
+                                {propertySyncData.filter(p => p.sync_status === 'failed').length}
+                            </p>
+                        </div>
+                        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-6 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                                    <Link2Off className="size-5" />
+                                </div>
+                                <h4 className="font-bold text-xs uppercase tracking-widest text-[#737373]">Missing Links</h4>
+                            </div>
+                            <p className="text-4xl font-black text-amber-500 tracking-tighter">
+                                {propertySyncData.filter(p => !p.ical_import_urls || p.ical_import_urls.length === 0).length}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Properties Table */}
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm overflow-hidden transition-colors duration-300">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-[#f5f5f5] dark:bg-admin-dark-bg border-b border-[#eaeaea] dark:border-admin-dark-border">
+                                    <tr>
+                                        <th className="px-6 py-4 text-[10px] font-black text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-widest">Property</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-widest">Last Sync</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-widest">Status</th>
+                                        <th className="px-6 py-4 text-[10px] font-black text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-widest">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#eaeaea] dark:divide-admin-dark-border">
+                                    {propertySyncData.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-12 text-center text-[#a3a3a3] text-sm italic">
+                                                No properties with iCal URLs found.
+                                            </td>
+                                        </tr>
+                                    ) : propertySyncData.map((property) => {
+                                        const lastSync = property.last_sync_at ? new Date(property.last_sync_at) : null;
+                                        const now = new Date();
+                                        const intervalMs = (icalInterval || 3) * 60 * 1000;
+                                        const isOverdue = lastSync ? (now.getTime() - lastSync.getTime() > intervalMs) : true;
+                                        
+                                        return (
+                                            <tr key={property.id} className="hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-[#171717] dark:text-white text-sm leading-tight">
+                                                            {typeof property.title === "object" 
+                                                                ? (property.title?.pt || property.title?.en || "Unnamed Property") 
+                                                                : (property.title || `Property ${property.id.substring(0, 8)}`)}
+                                                        </span>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-[10px] text-[#a3a3a3] font-mono uppercase">ID: {property.id.substring(0, 8)}</span>
+                                                            {(!property.ical_import_urls || property.ical_import_urls.length === 0) && (
+                                                                <>
+                                                                    <span className="text-[#a3a3a3] text-[10px]">•</span>
+                                                                    <span className="flex items-center gap-1 text-[9px] font-black text-rose-500 uppercase tracking-widest">
+                                                                        <AlertTriangle className="size-3" />
+                                                                        Sync Link Missing
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <Clock className="size-3.5 text-[#a3a3a3]" />
+                                                        <span className="text-sm text-[#171717] dark:text-white font-medium">
+                                                            {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : 'Never'}
+                                                        </span>
+                                                        {isOverdue && property.is_active && property.ical_import_urls?.length > 0 && (
+                                                            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-tighter animate-pulse border border-amber-500/20">
+                                                                In Queue
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className={cn(
+                                                        "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest w-fit border",
+                                                        property.sync_status === 'success' 
+                                                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                                            : property.sync_status === 'failed'
+                                                                ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                                                                : "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                                                    )}>
+                                                        {property.sync_status || 'Pending'}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {property.last_sync_error ? (
+                                                        <p className="text-[11px] text-rose-500 dark:text-rose-400 font-medium max-w-[200px] truncate hover:whitespace-normal transition-all" title={property.last_sync_error}>
+                                                            {property.last_sync_error}
+                                                        </p>
+                                                    ) : (
+                                                        <span className="text-xs text-[#a3a3a3]">Synced successfully</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

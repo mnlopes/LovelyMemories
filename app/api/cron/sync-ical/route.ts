@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { syncAllPropertiesICal } from '@/app/actions/ical';
+import { syncOverduePropertiesICal } from '@/app/actions/ical';
 
 // Vercel Cron will hit this endpoint automatically.
-// We implement a "Lazy Cron" logic: hits every 1 min but only syncs if enough time has passed.
+// We run every 1 minute to spread the load across 200+ properties.
 export async function GET(request: Request) {
     try {
         const authHeader = request.headers.get('authorization');
@@ -13,46 +13,35 @@ export async function GET(request: Request) {
 
         const supabase = await getSupabaseAdmin();
 
-        // 1. Check if enough time has passed since last sync
-        const { data: settings, error: settingsError } = await supabase
+        // 1. Fetch current sync settings
+        const { data: settings } = await supabase
             .from('system_settings')
             .select('*')
-            .in('key', ['ical_sync_interval', 'ical_last_sync_at']);
+            .eq('key', 'ical_sync_interval')
+            .single();
 
-        const intervalSetting = settings?.find(s => s.key === 'ical_sync_interval')?.value || 5;
-        const lastSyncAt = settings?.find(s => s.key === 'ical_last_sync_at')?.value;
-        
-        const intervalInMinutes = Number(intervalSetting);
-        const lastSyncDate = lastSyncAt ? new Date(lastSyncAt) : new Date(0);
+        const intervalInMinutes = Number(settings?.value) || 3;
         const now = new Date();
-        const diffInMinutes = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60);
 
-        if (diffInMinutes < intervalInMinutes) {
-            return NextResponse.json({ 
-                success: true, 
-                skipped: true, 
-                message: `Too early. Last sync was ${Math.round(diffInMinutes)} min ago. Interval is ${intervalInMinutes} min.`,
+        // 2. Perform Priority-Based Batch Sync
+        // We use a batch size of 70 to handle 200 properties in a 3-minute cycle
+        const result = await syncOverduePropertiesICal(70, intervalInMinutes);
+
+        // 3. Update global informational timestamp in settings
+        await supabase
+            .from('system_settings')
+            .upsert({
+                key: 'ical_last_sync_at',
+                value: now.toISOString(),
+                updated_at: now.toISOString(),
+                description: `Global robot run (Batch Size: ${result.success ? (result as any).batchSizeUsed : 0})`
             });
-        }
-
-        // 2. Perform Global Sync
-        const result = await syncAllPropertiesICal();
-
-        // 3. Update last sync timestamp in settings
-        if (result.success) {
-            await supabase
-                .from('system_settings')
-                .upsert({
-                    key: 'ical_last_sync_at',
-                    value: now.toISOString(),
-                    updated_at: new Date().toISOString()
-                });
-        }
 
         return NextResponse.json({ 
             success: result.success, 
-            newEventsImported: result.success ? (result as any).totalNew : 0,
-            propertiesSynced: result.success ? (result as any).results?.length : 0,
+            newEventsImported: result.success ? (result as any).totalNewEvents : 0,
+            propertiesSynced: result.success ? (result as any).propertiesSynced : 0,
+            batchSizeUsed: result.success ? (result as any).batchSizeUsed : 0,
             syncStartedAt: now.toISOString(),
             syncFinishedAt: new Date().toISOString()
         });
