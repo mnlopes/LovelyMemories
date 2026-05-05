@@ -21,7 +21,15 @@ interface PropertyGalleryProps {
 
 type GalleryState = "closed" | "grid" | "slider";
 
-function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImages = [] }: any) {
+function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImages = [] }: { 
+    src: string; 
+    alt: string; 
+    fill?: boolean; 
+    className?: string; 
+    sizes?: string; 
+    priority?: boolean; 
+    fallbackImages?: string[];
+}) {
     const [imgSrc, setImgSrc] = useState(src);
     const [retryIndex, setRetryIndex] = useState(0);
 
@@ -33,7 +41,7 @@ function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImag
 
     const handleError = () => {
         // Find next image that isn't the current one
-        const nextAvailable = fallbackImages.slice(retryIndex).find(img => img !== imgSrc);
+        const nextAvailable = (fallbackImages || []).slice(retryIndex).find((img: string) => img !== imgSrc);
         if (nextAvailable) {
             setImgSrc(nextAvailable);
             setRetryIndex(prev => prev + 1);
