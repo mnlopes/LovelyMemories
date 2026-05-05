@@ -265,6 +265,7 @@
             "loading": "Loading...",
             "viewFullPage": "View Full Page",
             "history": "History",
+            "additionalGuests": "Additional Guests",
             "successApprove": "Reservation confirmed successfully!",
             "successReject": "Reservation rejected successfully!",
             "unexpectedError": "An unexpected error occurred."

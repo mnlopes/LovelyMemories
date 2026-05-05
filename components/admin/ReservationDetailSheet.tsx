@@ -366,20 +366,43 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                             {/* Guest Breakdown (Compact) */}
                             {reservation.status !== 'owner_block' && (
                                 <section className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
-                                        <div className="flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-wider">
-                                            <User className="size-3.5" /> {t('guests')}
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {[
-                                                reservation.adults > 0 && `${reservation.adults} ${t('adults')}`,
-                                                reservation.children > 0 && `${reservation.children} ${t('children')}`,
-                                                reservation.infants > 0 && `${reservation.infants} ${t('infants')}`
-                                            ].filter(Boolean).map((text: any, i) => (
-                                                <span key={i} className="px-2 py-1 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 text-[10px] font-bold text-gray-900 dark:text-white shadow-sm">
-                                                    {text}
-                                                </span>
-                                            ))}
+                                    <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
+                                        <div className="flex flex-col gap-4 w-full">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-gray-400 font-bold text-[10px] uppercase tracking-wider">
+                                                    <User className="size-3.5" /> {t('guests')}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {[
+                                                        reservation.adults > 0 && `${reservation.adults} ${t('adults')}`,
+                                                        reservation.children > 0 && `${reservation.children} ${t('children')}`,
+                                                        reservation.infants > 0 && `${reservation.infants} ${t('infants')}`
+                                                    ].filter(Boolean).map((text: any, i) => (
+                                                        <span key={i} className="px-2 py-1 rounded bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 text-[10px] font-bold text-gray-900 dark:text-white shadow-sm">
+                                                            {text}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Additional Guest Names (SEF Compliance) */}
+                                            {reservation.extra_guests && reservation.extra_guests.length > 0 && (
+                                                <div className="pt-4 border-t border-gray-200 dark:border-white/10 space-y-2">
+                                                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2">
+                                                        {t('additionalGuests')}
+                                                    </p>
+                                                    <div className="space-y-1.5">
+                                                        {reservation.extra_guests.map((name: string, idx: number) => (
+                                                            <div key={idx} className="flex items-center gap-2">
+                                                                <div className="size-1.5 rounded-full bg-gold-500/40" />
+                                                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                                                    {name}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </section>

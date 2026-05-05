@@ -400,6 +400,23 @@ export default function ReservationDetailPage({ params }: { params: Promise<{ lo
                                             <p className="text-sm font-medium text-[#171717] dark:text-gray-300 whitespace-nowrap">{reservation.guest_phone}</p>
                                         </div>
                                     </div>
+
+                                    {/* Additional Guests (SEF Compliance) */}
+                                    {reservation.extra_guests && reservation.extra_guests.length > 0 && (
+                                        <div className="pt-6 border-t border-gray-100 dark:border-admin-dark-border space-y-3">
+                                            <p className="text-[10px] text-[#a3a3a3] uppercase font-bold tracking-widest">Hóspedes Adicionais</p>
+                                            <div className="space-y-2">
+                                                {reservation.extra_guests.map((name: string, idx: number) => (
+                                                    <div key={idx} className="flex items-center gap-3">
+                                                        <div className="size-1.5 rounded-full bg-gold-500/40" />
+                                                        <span className="text-sm font-medium text-[#171717] dark:text-gray-300">
+                                                            {name}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </section>
 
