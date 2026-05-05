@@ -15,6 +15,7 @@ interface BookingGuestPopoverProps {
     infants: number;
     setInfants: (count: number) => void;
     maxGuests?: number;
+    maxInfants?: number;
     placement?: 'side' | 'bottom' | 'bottom-start' | 'bottom-end' | 'bottom-center' | 'top-start' | 'top-end' | 'top-center';
 }
 
@@ -28,6 +29,7 @@ export function BookingGuestPopover({
     infants,
     setInfants,
     maxGuests = 10,
+    maxInfants = 6,
     placement = 'side',
 }: BookingGuestPopoverProps) {
     const t = useTranslations('PropertyDetail');
@@ -202,7 +204,7 @@ export function BookingGuestPopover({
                                     <button
                                         type="button"
                                         onClick={() => setInfants(infants + 1)}
-                                        disabled={infants >= 6}
+                                        disabled={infants >= maxInfants}
                                         className="w-9 h-9 rounded-full border border-[#E1E6EC] flex items-center justify-center hover:border-[#B08D4A] hover:bg-[#B08D4A]/5 text-navy-950 hover:text-[#B08D4A] transition-all disabled:opacity-20 disabled:cursor-not-allowed active:scale-90"
                                     >
                                         <Plus className="h-4 w-4" />

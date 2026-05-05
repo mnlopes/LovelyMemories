@@ -320,6 +320,12 @@ export function BookingSuccessInvoice({
                                     <p className="text-[8px] uppercase font-bold tracking-widest text-navy-900/30 mb-0.5">{t('step1.email')}</p>
                                     <p className="text-[13px] font-bold text-navy-950">{formData.email}</p>
                                 </div>
+                                {formData.extraGuestNames?.map((name: string, index: number) => name && (
+                                    <div key={index} className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm md:col-span-2">
+                                        <p className="text-[8px] uppercase font-bold tracking-widest text-navy-900/30 mb-0.5">{t('step1.guest')} {index + 2}</p>
+                                        <p className="text-[13px] font-bold text-navy-950">{name}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -371,6 +377,7 @@ export function BookingSuccessInvoice({
                     customerName={formData.fullName}
                     customerEmail={formData.email}
                     customerPhone={formData.phone}
+                    extraGuests={formData.extraGuestNames}
                     billingAddress={formData.address}
                     billingCity={formData.city}
                     billingZip={formData.zip}

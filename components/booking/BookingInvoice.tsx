@@ -23,6 +23,7 @@ interface BookingInvoiceProps {
     customerName: string;
     customerEmail: string;
     customerPhone: string;
+    extraGuests?: string[];
     // Billing info
     billingAddress?: string;
     billingCity?: string;
@@ -54,6 +55,7 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
     customerName,
     customerEmail,
     customerPhone,
+    extraGuests,
     billingAddress,
     billingCity,
     billingZip,
@@ -122,6 +124,16 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#6e7a91' }}>
                                     <Phone style={{ width: '14px', height: '14px' }} />
                                     <span style={{ fontSize: '13px' }}>{customerPhone}</span>
+                                </div>
+                            )}
+                            {extraGuests && extraGuests.length > 0 && (
+                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #eef0f2' }}>
+                                    <p style={{ fontSize: '11px', color: '#9ea8ba', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 'bold' }}>{t('step1.extraGuestsTitle')}</p>
+                                    <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {extraGuests.map((name, i) => name && (
+                                            <li key={i} style={{ fontSize: '13px', color: '#0a1128', fontWeight: '500' }}>• {name}</li>
+                                        ))}
+                                    </ul>
                                 </div>
                             )}
                         </div>

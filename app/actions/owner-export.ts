@@ -45,7 +45,8 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
         .from('reservations')
         .select('*')
         .eq('property_id', propertyId)
-        .or(`check_in.gte.${startDate.toISOString()},check_out.lte.${endDate.toISOString()}`)
+        .lte('check_in', endDate.toISOString())
+        .gte('check_out', startDate.toISOString())
         .order('check_in', { ascending: true });
 
     if (resError) throw new Error("Error fetching reservations");
@@ -121,5 +122,125 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
         success: true,
         csvContent: csvRows.join('\r\n'),
         filename: `${reportLabel}_${propertyTitle.replace(/\s+/g, '_')}_${year}_${month}.csv`
+    };
+}
+
+export async function exportPropertyMonthlyDataRaw(propertyId: string, month: number, year: number, locale: string = 'pt') {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return cookieStore.getAll()
+                },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+
+    const { userId } = await getEffectiveUser();
+    if (!userId) throw new Error("Unauthorized");
+
+    // 1. Verify Ownership
+    const { data: property, error: propError } = await supabase
+        .from('properties')
+        .select('id, title')
+        .eq('id', propertyId)
+        .eq('owner_id', userId)
+        .single();
+
+    if (propError || !property) throw new Error("Property not found or unauthorized");
+
+    // 2. Fetch Reservations for the period
+    const startDate = startOfMonth(new Date(year, month - 1));
+    const endDate = endOfMonth(new Date(year, month - 1));
+
+    const { data: reservations, error: resError } = await supabase
+        .from('reservations')
+        .select('*')
+        .eq('property_id', propertyId)
+        .lte('check_in', endDate.toISOString())
+        .gte('check_out', startDate.toISOString())
+        .order('check_in', { ascending: true });
+
+    if (resError) throw new Error("Error fetching reservations");
+
+    const headers = locale === 'en' ? [
+        "ID",
+        "Guest",
+        "Check-in",
+        "Check-out",
+        "Status",
+        "Platform",
+        "Guests",
+        "Nights",
+        "Gross (€)",
+        "Cleaning (€)",
+        "Fees (€)",
+        "Net (€)"
+    ] : [
+        "ID",
+        "Hóspede",
+        "Check-in",
+        "Check-out",
+        "Estado",
+        "Plataforma",
+        "Hóspedes",
+        "Noites",
+        "Bruto (€)",
+        "Limpeza (€)",
+        "Taxas (€)",
+        "Líquido (€)"
+    ];
+
+    const rows: (string | number)[][] = [];
+
+    reservations?.forEach(res => {
+        const nights = res.check_in && res.check_out 
+            ? differenceInDays(new Date(res.check_out), new Date(res.check_in))
+            : 0;
+
+        const guestName = res.guest_name || "-";
+        const id = res.external_confirmation_code || res.id.split('-')[0];
+
+        let status = res.status || "-";
+        if (locale === 'en') {
+            if (status === 'confirmada') status = 'Confirmed';
+            if (status === 'cancelada') status = 'Cancelled';
+            if (status === 'concluída') status = 'Completed';
+        }
+
+        const row = [
+            id,
+            guestName,
+            res.check_in || "-",
+            res.check_out || "-",
+            status,
+            res.platform || "internal",
+            (res.adults || 0) + (res.children || 0),
+            nights,
+            Number(res.total_price || 0).toFixed(2),
+            Number(res.cleaning_fee || 0).toFixed(2),
+            Number(res.service_fee || 0).toFixed(2),
+            Number(res.net_amount || res.total_price || 0).toFixed(2)
+        ];
+        rows.push(row);
+    });
+
+    const reportLabel = locale === 'en' ? 'Report' : 'Relatorio';
+    const propertyTitle = property.title?.[locale as 'en' | 'pt'] || property.title?.en || property.title?.pt || propertyId;
+
+    return {
+        success: true,
+        headers,
+        rows,
+        propertyName: propertyTitle,
+        filename: `${reportLabel}_${propertyTitle.replace(/\s+/g, '_')}_${year}_${month}.pdf`
     };
 }

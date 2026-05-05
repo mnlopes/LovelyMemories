@@ -1,4 +1,9 @@
 {
+    "Common": {
+        "gotIt": "Entendi",
+        "cancel": "Cancelar",
+        "close": "Fechar"
+    },
     "AdminSidebar": {
         "management": "Gestão",
         "overview": "Visão Geral",
@@ -448,7 +453,7 @@
     },
     "Navbar": {
         "book": "Reservar",
-        "owner": "Proprietário",
+        "owner": "Gestão",
         "about": "Sobre Nós",
         "properties": "Propriedades",
         "concierge": "Concierge",
@@ -549,6 +554,7 @@
             "month": "Mês",
             "year": "Ano",
             "download": "Descarregar CSV",
+            "downloadPdf": "Descarregar PDF",
             "cancel": "Cancelar"
         },
         "csvHeaders": {
@@ -1040,8 +1046,8 @@
         "sleepsUpTo": "Capacidade até {count} pessoas",
         "backToGrid": "Voltar à grelha",
         "ageRanges": {
-            "children": "(1-12 anos)",
-            "infants": "(menos de 12 meses)"
+            "children": "(2-16 anos)",
+            "infants": "(menos de 2 anos)"
         },
         "whatToExpect": "O que esperar",
         "whatToExpectIntro": "As nossas casas são selecionadas e decoradas de acordo com os mais elevados padrões, garantindo que cada detalhe contribua para uma experiência verdadeiramente acolhedora. Descubra os detalhes e destaques que tornam esta estadia excecional.",
@@ -1243,7 +1249,10 @@
             "city": "Cidade",
             "cityPlaceholder": "Ex: Porto",
             "zip": "Código Postal",
-            "vatPlaceholder": "Ex: 500123456"
+            "vatPlaceholder": "Ex: 500123456",
+            "extraGuestsTitle": "Hóspedes Adicionais",
+            "extraGuestsSubtitle": "Requisito legal SEF",
+            "guest": "Hóspede"
         },
         "step2": {
             "title": "Detalhes da Reserva",
@@ -1867,6 +1876,7 @@
         },
         "units": {
             "maxGuests": "Hóspedes Máx.",
+            "maxInfants": "Bebés Máx.",
             "bedrooms": "Quartos",
             "totalBeds": "Total de Camas",
             "bathrooms": "Casas de Banho",
@@ -2026,7 +2036,11 @@
             "nextUpdate": "Este módulo fará parte da próxima atualização.",
             "auditLog": "Registo de Auditoria",
             "saveFirstTitle": "Guarde o Edifício Primeiro",
-            "saveFirstDesc": "Antes de poder visualizar ou adicionar unidades a este edifício, por favor preencha as informações básicas e guarde."
+            "saveFirstDesc": "Antes de poder visualizar ou adicionar unidades a este edifício, por favor preencha as informações básicas e guarde.",
+            "noPriceWarningTitle": "Preço não configurado",
+            "noPriceWarningMessage": "A propriedade será guardada como 'Coming Soon' sem um preço definido. Deseja continuar ou voltar para definir o preço agora?",
+            "noPriceWarningAction": "Continuar como Coming Soon",
+            "noPriceWarningCancel": "Voltar para meter o preço"
         },
         "magicTranslate": {
             "view": "Ver:",

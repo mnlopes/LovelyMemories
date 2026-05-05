@@ -3,7 +3,7 @@
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { ArrowLeft, Save, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Eye, Loader2, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -35,9 +35,12 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
     const [isSaving, setIsSaving] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
-        type: 'success' | 'error' | 'loading';
+        type: 'success' | 'error' | 'loading' | 'warning';
         title: string;
         message: string;
+        actionLabel?: string;
+        onAction?: () => void;
+        cancelLabel?: string;
     }>({
         isOpen: false,
         type: 'loading',
@@ -132,26 +135,31 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
             weekly_discount_percent: (initialData as any)?.weekly_discount_percent ?? 5,
             monthly_discount_percent: (initialData as any)?.monthly_discount_percent ?? 15,
             city_tax_per_night: (initialData as any)?.city_tax_per_night ?? 2,
-            
+
             // Fix: Initialize hierarchy and type fields to prevent validation errors
             is_multi_unit: initialData?.is_multi_unit ?? (mode === 'building'),
             parent_id: initialData?.parent_id ?? null,
             type: initialData?.type ?? 'apartment',
             ical_import_urls: initialData?.ical_import_urls ?? [],
             airbnb_listing_name: initialData?.airbnb_listing_name ?? null,
-            
+
             // Extra Flags
             has_breakfast: initialData?.has_breakfast ?? false,
             has_transfer: initialData?.has_transfer ?? false,
             breakfast_price: initialData?.breakfast_price ?? 15,
             transfer_price: initialData?.transfer_price ?? 55,
-            
+
             // Capacity
             max_guests: initialData?.max_guests ?? 0,
+            max_infants: initialData?.max_infants ?? 0,
             bedrooms: initialData?.bedrooms ?? 0,
             beds: initialData?.beds ?? 0,
             bathrooms: initialData?.bathrooms ?? 0,
             area: initialData?.area ?? null,
+
+            // Status
+            status: initialData?.status ?? 'coming_soon',
+            is_active: initialData?.is_active ?? false,
         } as any
     });
 
@@ -167,6 +175,28 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
 
     const onSubmit = async (data: PropertyFormData) => {
         console.log("🚀 Submit trigger - data:", data);
+
+        // Warning check for Coming Soon without price (only for individual units, not buildings)
+        if (!data.is_multi_unit && data.status === 'coming_soon' && (!data.price_per_night || data.price_per_night <= 0)) {
+            setModalConfig({
+                isOpen: true,
+                type: 'warning',
+                title: t('system.noPriceWarningTitle'),
+                message: t('system.noPriceWarningMessage'),
+                actionLabel: t('system.noPriceWarningAction'),
+                cancelLabel: t('system.noPriceWarningCancel'),
+                onAction: () => {
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    performSave(data);
+                }
+            });
+            return;
+        }
+
+        performSave(data);
+    };
+
+    const performSave = async (data: PropertyFormData) => {
         setIsSaving(true);
         setModalConfig({
             isOpen: true,
@@ -285,12 +315,20 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             <ArrowLeft className="size-5" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">
-                                {isEditing
-                                    ? t('header.editTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
-                                    : t('header.createTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
-                                }
-                            </h1>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">
+                                    {isEditing
+                                        ? t('header.editTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
+                                        : t('header.createTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
+                                    }
+                                </h1>
+                                {!isEditing && initialData && (
+                                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400 text-[10px] font-bold rounded flex items-center gap-1 border border-slate-200 dark:border-white/10">
+                                        <Globe className="size-3" />
+                                        Airbnb Import
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-[#a3a3a3] text-sm font-medium">
                                 {isEditing
                                     ? t('header.editDesc', { name: (initialData?.title as any)?.en || t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
@@ -322,7 +360,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 </div>
 
                 {/* Language Switcher & Tabs */}
-                <div className="border-b border-[#eaeaea] dark:border-admin-dark-border transition-colors">
+                <div className="border-b border-[#eaeaea] dark:border-admin-dark-border transition-colors px-10">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
                             {tabs.map((tab) => {
@@ -350,7 +388,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                                     >
                                         {tab.label}
                                         {activeTab === tab.id && (
-                                            <span className="absolute bottom-0 left-0 w-full h-[2px] bg-[#171717] dark:bg-white rounded-t-full"></span>
+                                            <span className="absolute bottom-0 left-0 w-full h-[3px] bg-[#171717] dark:bg-white rounded-t-full z-10"></span>
                                         )}
                                         {hasError && <span className="ml-1.5 text-red-500 text-[10px] align-top">●</span>}
                                     </button>
@@ -359,29 +397,29 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         </div>
 
                         {isEditing && (
-                        <div className="flex flex-wrap items-center gap-3 p-1.5 bg-[#f5f5f5] dark:bg-admin-dark-bg rounded-2xl border border-[#f0f0f0] dark:border-admin-dark-border mb-3 transition-colors">
-                            {/* View Selector */}
-                            <div className="flex items-center gap-2 px-1.5">
-                                <span className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-wider">{t('magicTranslate.view')}</span>
-                                <div className="flex gap-1">
-                                    {languages.map((lang) => (
-                                        <button
-                                            key={lang.id}
-                                            type="button"
-                                            onClick={() => setActiveLang(lang.id)}
-                                            className={`h-7 px-2.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 ${activeLang === lang.id
-                                                ? 'bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-admin-dark-text-primary shadow-sm'
-                                                : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'
-                                                }`}
-                                        >
-                                            <span className="text-xs">{lang.flag}</span>
-                                            <span className="hidden sm:inline">{lang.id.toUpperCase()}</span>
-                                        </button>
-                                    ))}
+                            <div className="flex flex-wrap items-center gap-3 p-1.5 bg-[#f5f5f5] dark:bg-admin-dark-bg rounded-2xl border border-[#f0f0f0] dark:border-admin-dark-border mb-3 transition-colors">
+                                {/* View Selector */}
+                                <div className="flex items-center gap-2 px-1.5">
+                                    <span className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-wider">{t('magicTranslate.view')}</span>
+                                    <div className="flex gap-1">
+                                        {languages.map((lang) => (
+                                            <button
+                                                key={lang.id}
+                                                type="button"
+                                                onClick={() => setActiveLang(lang.id)}
+                                                className={`h-7 px-2.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 ${activeLang === lang.id
+                                                    ? 'bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-admin-dark-text-primary shadow-sm'
+                                                    : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'
+                                                    }`}
+                                            >
+                                                <span className="text-xs">{lang.flag}</span>
+                                                <span className="hidden sm:inline">{lang.id.toUpperCase()}</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
 
-                        </div>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -435,7 +473,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         )}
 
                         {activeTab === 'pricing' && <PricingAvailabilityTab />}
-                        
+
                         {activeTab === 'sync' && <SyncTab propertyId={initialData?.id as string | undefined} />}
 
                         {activeTab === 'history' && initialData?.id && (
@@ -467,6 +505,9 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 type={modalConfig.type}
                 title={modalConfig.title}
                 message={modalConfig.message}
+                actionLabel={modalConfig.actionLabel}
+                onAction={modalConfig.onAction}
+                cancelLabel={modalConfig.cancelLabel}
             />
 
         </FormProvider>

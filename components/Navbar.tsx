@@ -63,8 +63,11 @@ export const Navbar = () => {
                                 <li key={link.path}>
                                     <Link
                                         href={link.path}
-                                        className={`text-base font-bold uppercase tracking-widest hover:text-[#b09e80] transition-colors ${isActive(link.path) ? 'text-[#b09e80]' : 'text-white'
-                                            }`}
+                                        className={`text-base font-bold uppercase tracking-widest transition-all duration-300 ${
+                                            link.path === '/' 
+                                                ? 'border border-[#b09e80]/50 rounded-full px-5 py-2 hover:bg-[#b09e80]/10 hover:border-[#b09e80]' 
+                                                : 'hover:text-[#b09e80]'
+                                        } ${isActive(link.path) ? 'text-[#b09e80]' : 'text-white'}`}
                                     >
                                         {link.label}
                                     </Link>
@@ -116,8 +119,11 @@ export const Navbar = () => {
                                     <Link
                                         href={link.path}
                                         onClick={() => setIsMenuOpen(false)}
-                                        className={`text-2xl font-bold uppercase tracking-widest hover:text-[#b09e80] transition-colors ${isActive(link.path) ? 'text-[#b09e80]' : 'text-white'
-                                            }`}
+                                        className={`text-2xl font-bold uppercase tracking-widest transition-all duration-300 ${
+                                            link.path === '/' 
+                                                ? 'border border-[#b09e80]/50 rounded-full px-8 py-3 hover:bg-[#b09e80]/10 hover:border-[#b09e80]' 
+                                                : 'hover:text-[#b09e80]'
+                                        } ${isActive(link.path) ? 'text-[#b09e80]' : 'text-white'}`}
                                     >
                                         {link.label}
                                     </Link>

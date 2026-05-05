@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, FileSpreadsheet, Calendar, ChevronDown, Download, AlertCircle, Check, Loader2 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { exportPropertyMonthlyData } from "@/app/actions/owner-export";
+import { exportPropertyMonthlyData, exportPropertyMonthlyDataRaw } from "@/app/actions/owner-export";
 import { cn } from "@/lib/utils";
 
 interface ExportMonthlyDataModalProps {
@@ -182,6 +182,149 @@ export function ExportMonthlyDataModal({
         }
     };
 
+    const handleDownloadPDF = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await exportPropertyMonthlyDataRaw(propertyId, month, year, locale);
+            
+            if (result.success && result.rows) {
+                // Dynamic imports to avoid SSR issues if this component was SSR
+                const jsPDF = (await import('jspdf')).default;
+                const autoTable = (await import('jspdf-autotable')).default;
+
+                const doc = new jsPDF('landscape');
+                
+                // Helper to load and tint the logo SVG
+                const loadLogoBase64 = (): Promise<string | null> => {
+                    return new Promise((resolve) => {
+                        const img = new window.Image();
+                        img.crossOrigin = "Anonymous";
+                        img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            // The logo is wide, approximate aspect ratio 3:1
+                            canvas.width = 300;
+                            canvas.height = 100;
+                            const ctx = canvas.getContext("2d");
+                            if (ctx) {
+                                // Apply the navy color filter used in the sidebar
+                                ctx.filter = 'brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(1210%) hue-rotate(188deg) brightness(96%) contrast(97%)';
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                resolve(canvas.toDataURL("image/png"));
+                            } else {
+                                resolve(null);
+                            }
+                        };
+                        img.onerror = () => resolve(null);
+                        img.src = "/legacy/home/images/logo.svg";
+                    });
+                };
+
+                const logoData = await loadLogoBase64();
+                
+                let currentY = 20;
+
+                if (logoData) {
+                    // Add logo only, slightly reduced size
+                    doc.addImage(logoData, 'PNG', 14, 14, 48, 16);
+                    currentY = 38;
+                } else {
+                    // Fallback if logo fails to load
+                    doc.setTextColor(176, 158, 128); // #B09E80 Copper
+                    doc.setFontSize(22);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Lovely Memories", 14, 25);
+                    currentY = 38;
+                }
+                
+                // Add Property Name
+                doc.setTextColor(10, 17, 40); // #0A1128 Navy
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text(result.propertyName || 'Property Report', 14, currentY);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.setTextColor(100); 
+                const monthName = monthOptions.find(o => o.value === month)?.label || month;
+                const reportTitleText = locale === 'en' ? `Monthly Report: ${monthName} ${year}` : `Relatório Mensal: ${monthName} ${year}`;
+                doc.text(reportTitleText, 14, currentY + 6);
+                
+                // Calculate Totals
+                let totalNights = 0;
+                let totalGross = 0;
+                let totalCleaning = 0;
+                let totalFees = 0;
+                let totalNet = 0;
+
+                result.rows.forEach(row => {
+                    totalNights += Number(row[7]) || 0;
+                    totalGross += Number(row[8]) || 0;
+                    totalCleaning += Number(row[9]) || 0;
+                    totalFees += Number(row[10]) || 0;
+                    totalNet += Number(row[11]) || 0;
+                });
+
+                const totalsRow = [
+                    "", "", "", "", "", "", 
+                    "TOTAL", // Column 6 (Guests index, serves as label)
+                    totalNights,
+                    totalGross.toFixed(2),
+                    totalCleaning.toFixed(2),
+                    totalFees.toFixed(2),
+                    totalNet.toFixed(2)
+                ];
+
+                // Generate table with clean theme (no vertical lines)
+                autoTable(doc, {
+                    startY: currentY + 12,
+                    head: [result.headers],
+                    body: result.rows,
+                    foot: [totalsRow],
+                    theme: 'plain', // Removes all grid lines for a much cleaner look
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 3, // Reduced from 5 to prevent text wrapping in columns
+                        textColor: [40, 40, 40]
+                    },
+                    headStyles: {
+                        fillColor: [10, 17, 40], // #0A1128 Navy
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+                    footStyles: {
+                        fillColor: [176, 158, 128], // #B09E80 Copper
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        fontSize: 9, // Slightly smaller than 10 to ensure it fits, but larger than 8
+                        halign: 'right'
+                    },
+                    columnStyles: {
+                        0: { halign: 'center' },
+                        6: { halign: 'center' }, // Guests
+                        7: { halign: 'center' }, // Nights
+                        8: { halign: 'right' },  // Gross
+                        9: { halign: 'right' },  // Cleaning
+                        10: { halign: 'right' }, // Fees
+                        11: { halign: 'right' }  // Net
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 250, 252] // light slate gray for clean stripes
+                    }
+                });
+
+                doc.save(result.filename);
+                onClose();
+            }
+        } catch (err) {
+            console.error("PDF Download error:", err);
+            setError("Ocorreu um erro ao gerar o PDF. Tente novamente.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <AnimatePresence mode="wait">
             {isOpen && (
@@ -248,9 +391,24 @@ export function ExportMonthlyDataModal({
 
                             <div className="space-y-4 pb-2">
                                 <button
+                                    onClick={handleDownloadPDF}
+                                    disabled={isLoading}
+                                    className="w-full h-16 bg-[#B09E80] hover:bg-[#9a896d] disabled:bg-[#d6cdbe] text-white rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] shadow-lg shadow-[#B09E80]/30 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 group"
+                                >
+                                    {isLoading ? (
+                                        <Loader2 className="size-6 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Download className="size-6 group-hover:translate-y-0.5 transition-transform" />
+                                            {t('exportModal.downloadPdf')}
+                                        </>
+                                    )}
+                                </button>
+
+                                <button
                                     onClick={handleDownload}
                                     disabled={isLoading}
-                                    className="w-full h-16 bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-300 text-white rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 group"
+                                    className="w-full h-16 bg-white border-2 border-indigo-100 hover:border-indigo-200 text-indigo-500 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 group"
                                 >
                                     {isLoading ? (
                                         <Loader2 className="size-6 animate-spin" />
@@ -265,7 +423,7 @@ export function ExportMonthlyDataModal({
                                 <button
                                     onClick={onClose}
                                     disabled={isLoading}
-                                    className="w-full h-14 bg-transparent text-gray-400 hover:text-gray-600 rounded-2xl text-[12px] font-bold uppercase tracking-[0.2em] transition-all"
+                                    className="w-full h-14 bg-transparent text-gray-400 hover:text-gray-600 rounded-2xl text-[12px] font-bold uppercase tracking-[0.2em] transition-all mt-4"
                                 >
                                     {t('exportModal.cancel')}
                                 </button>

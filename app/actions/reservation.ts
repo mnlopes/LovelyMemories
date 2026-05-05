@@ -10,6 +10,7 @@ const ReservationSchema = z.object({
     fullName: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
     email: z.string().email("Endereço de email inválido"),
     phone: z.string().min(9, "Número de telefone inválido"),
+    extraGuestNames: z.array(z.string().min(3, "Nome do hóspede inválido")).optional(),
 
     // Property Info
     propertySlug: z.string(),
@@ -206,7 +207,8 @@ export async function finalizeBooking({
         billing_zip: data.zip,
         billing_country: data.country,
         billing_vat: data.vat,
-        locale: data.locale || 'pt'
+        locale: data.locale || 'pt',
+        extra_guests: data.extraGuestNames || []
     };
 
     const adminSupabase = await getSupabaseAdmin();

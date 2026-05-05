@@ -124,6 +124,7 @@ export const propertySchema = z.object({
 
     // Details
     max_guests: z.coerce.number().min(0).default(0),
+    max_infants: z.coerce.number().min(0).default(0),
     bedrooms: z.coerce.number().min(0).default(0),
     beds: z.coerce.number().min(0).default(0),
     bathrooms: z.coerce.number().min(0).default(0),
@@ -147,8 +148,8 @@ export const propertySchema = z.object({
     transfer_price: z.coerce.number().min(0).default(55),
 
     // Flags
-    status: z.enum(['active', 'coming_soon', 'hidden']).default('active'),
-    is_active: z.boolean().default(true),
+    status: z.enum(['active', 'coming_soon', 'hidden']).default('coming_soon'),
+    is_active: z.boolean().default(false),
     type: z.enum(['apartment', 'villa', 'studio']).default('apartment').catch('apartment'),
 
     // Amenities
@@ -221,6 +222,14 @@ export const propertySchema = z.object({
             code: z.ZodIssueCode.custom,
             message: "English description is required for individual properties",
             path: ["description", "en"],
+        });
+    }
+
+    if (!data.is_multi_unit && data.status === 'active' && (!data.price_per_night || data.price_per_night <= 0)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Price per night must be greater than 0 to activate the property",
+            path: ["price_per_night"],
         });
     }
 });

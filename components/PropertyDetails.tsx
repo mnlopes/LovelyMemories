@@ -454,6 +454,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                                 infants={infants}
                                 setInfants={setInfants}
                                 maxGuests={property.guests}
+                                maxInfants={property.max_infants ?? 6}
                                 availabilityStatus={availabilityStatus}
                             />
                         </div>
@@ -578,6 +579,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                                     infants={infants}
                                     setInfants={setInfants}
                                     maxGuests={property.guests}
+                                    maxInfants={property.max_infants ?? 6}
                                     availabilityStatus={availabilityStatus}
                                     hideHeader={true}
                                 />

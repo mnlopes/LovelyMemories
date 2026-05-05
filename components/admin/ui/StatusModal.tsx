@@ -2,6 +2,7 @@
 
 import { CheckCircle2, XCircle, AlertCircle, X, Loader2 } from "lucide-react";
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 interface StatusModalProps {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface StatusModalProps {
     message: string;
     actionLabel?: string;
     onAction?: () => void;
+    cancelLabel?: string;
 }
 
 export function StatusModal({
@@ -20,8 +22,11 @@ export function StatusModal({
     title,
     message,
     actionLabel,
-    onAction
+    onAction,
+    cancelLabel
 }: StatusModalProps) {
+    const t = useTranslations('Common');
+
     // Close on ESC
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
@@ -97,7 +102,7 @@ export function StatusModal({
                                 }}
                                 className={`w-full py-3.5 rounded-xl font-bold transition-all transform active:scale-[0.98] ${current.button}`}
                             >
-                                {actionLabel || 'Entendi'}
+                                {actionLabel || t('gotIt')}
                             </button>
                         )}
 
@@ -111,7 +116,7 @@ export function StatusModal({
                                 }}
                                 className="w-full py-3 text-sm font-bold text-[#737373] dark:text-admin-dark-text-secondary hover:text-[#171717] dark:hover:text-white transition-all"
                             >
-                                Cancelar
+                                {cancelLabel || t('cancel')}
                             </button>
                         )}
                     </div>

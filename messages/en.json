@@ -1,4 +1,9 @@
 {
+    "Common": {
+        "gotIt": "Got it",
+        "cancel": "Cancel",
+        "close": "Close"
+    },
     "AdminSidebar": {
         "management": "Management",
         "overview": "Overview",
@@ -458,8 +463,8 @@
         "viewDetails": "View Details"
     },
     "Navbar": {
-        "book": "Book",
-        "owner": "Owner",
+        "book": "Reserve",
+        "owner": "Management",
         "about": "About Us",
         "properties": "Properties",
         "concierge": "Concierge",
@@ -560,6 +565,7 @@
             "month": "Month",
             "year": "Year",
             "download": "Download CSV",
+            "downloadPdf": "Download PDF",
             "cancel": "Cancel"
         },
         "csvHeaders": {
@@ -1058,8 +1064,8 @@
         "sleepsUpTo": "Sleeps up to {count}",
         "backToGrid": "Back to grid",
         "ageRanges": {
-            "children": "(1-12 years)",
-            "infants": "(under 12 months)"
+            "children": "(2-16 years)",
+            "infants": "(under 2 years)"
         },
         "enSuite": "En-suite",
         "viewFloorPlan": "View floor plan",
@@ -1254,7 +1260,10 @@
             "city": "City",
             "cityPlaceholder": "City Placeholder",
             "zip": "Zip",
-            "vatPlaceholder": "Vat Placeholder"
+            "vatPlaceholder": "e.g. 500123456",
+            "extraGuestsTitle": "Additional Guests",
+            "extraGuestsSubtitle": "SEF Legal Requirement",
+            "guest": "Guest"
         },
         "step2": {
             "title": "Reservation Details",
@@ -1878,6 +1887,7 @@
         },
         "units": {
             "maxGuests": "Max Guests",
+            "maxInfants": "Max Infants",
             "bedrooms": "Bedrooms",
             "totalBeds": "Total Beds",
             "bathrooms": "Bathrooms",
@@ -2037,7 +2047,11 @@
             "nextUpdate": "This module will be part of the next update.",
             "auditLog": "Property Audit Log",
             "saveFirstTitle": "Save Building First",
-            "saveFirstDesc": "Before you can view or add units to this building, please fill in the basic information and save it."
+            "saveFirstDesc": "Before you can view or add units to this building, please fill in the basic information and save it.",
+            "noPriceWarningTitle": "Price not configured",
+            "noPriceWarningMessage": "The property will be saved as 'Coming Soon' without a defined price. Do you want to continue or go back to set the price now?",
+            "noPriceWarningAction": "Continue as Coming Soon",
+            "noPriceWarningCancel": "Back to set price"
         },
         "magicTranslate": {
             "view": "View:",

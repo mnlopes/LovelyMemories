@@ -82,6 +82,7 @@ export async function upsertProperty(data: PropertyFormData) {
 
         // Details
         max_guests: validatedData.max_guests,
+        max_infants: validatedData.max_infants,
         bedrooms: validatedData.bedrooms,
         beds: validatedData.beds,
         bathrooms: validatedData.bathrooms,
@@ -201,7 +202,7 @@ export async function upsertProperty(data: PropertyFormData) {
                 changes.description = { from: 'Modified', to: 'Modified' };
             }
 
-            ['max_guests', 'bedrooms', 'beds', 'bathrooms', 'area', 'breakfast_price', 'transfer_price'].forEach(field => {
+            ['max_guests', 'max_infants', 'bedrooms', 'beds', 'bathrooms', 'area', 'breakfast_price', 'transfer_price'].forEach(field => {
                 if (payload[field as keyof typeof payload] !== previousData[field]) {
                     changes[field] = { from: previousData[field], to: payload[field as keyof typeof payload] };
                 }
@@ -268,11 +269,18 @@ export async function updatePropertyStatus(id: string, newStatus: string) {
 
     const { data: previousData } = await serverSupabase
         .from('properties')
-        .select('status, is_active, slug, title')
+        .select('status, is_active, slug, title, price_per_night, is_multi_unit')
         .eq('id', id)
         .single();
 
     if (!previousData) return { success: false, error: 'Property not found' };
+
+    if (!previousData.is_multi_unit && newStatus === 'active' && (!previousData.price_per_night || previousData.price_per_night <= 0)) {
+        return {
+            success: false,
+            error: 'Cannot activate property with price 0€. Please set a price per night first in the Pricing tab.'
+        };
+    }
 
     const { error } = await serverSupabase
         .from('properties')

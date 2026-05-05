@@ -2,6 +2,7 @@
 
 import { useFormContext, useFieldArray, useWatch, Control } from "react-hook-form";
 import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { Plus, Trash2, Bed, Bath, User, Layout, Image as ImageIcon, Ruler, Upload, Loader2, Baby, Car, Zap } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { supabase } from "@/lib/supabase";
@@ -233,10 +234,20 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
         name: "rooms",
     });
 
+    const maxInfants = useWatch({ control, name: 'max_infants' });
+
+    useEffect(() => {
+        if (maxInfants > 0) {
+            setValue('house_rules.infantsAllowed', true, { shouldValidate: true });
+        } else if (maxInfants === 0) {
+            setValue('house_rules.infantsAllowed', false, { shouldValidate: true });
+        }
+    }, [maxInfants, setValue]);
+
     return (
         <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Property Capacity & Layout */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <label className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors cursor-text block">
                     <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
                         <User className="size-4" />
@@ -245,6 +256,18 @@ export default function RoomsTab({ activeLang, dir }: RoomsTabProps) {
                     <input
                         type="number"
                         {...register("max_guests")}
+                        min={0}
+                        className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                </label>
+                <label className="p-4 bg-white dark:bg-admin-dark-bg rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border shadow-sm space-y-3 group hover:border-[#171717] dark:hover:border-white transition-all transition-colors cursor-text block">
+                    <div className="flex items-center gap-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary group-hover:text-[#171717] dark:group-hover:text-white transition-colors">
+                        <Baby className="size-4" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t('units.maxInfants')}</span>
+                    </div>
+                    <input
+                        type="number"
+                        {...register("max_infants")}
                         min={0}
                         className="w-full bg-transparent text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />

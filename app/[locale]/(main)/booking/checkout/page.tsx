@@ -145,6 +145,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
             const data = getBookingSession(code);
             if (data) {
                 setBookingData(data);
+                
+                // Initialize SEF extra guests array based on adults + children - 1 (main guest)
+                const totalExtraGuests = Math.max(0, data.adults + (data.children || 0) - 1);
+                setFormData(prev => ({
+                    ...prev,
+                    extraGuestNames: Array(totalExtraGuests).fill("")
+                }));
+
                 // Fetch property from Supabase
                 const propData = await getPropertyBySlug(data.slug);
                 if (propData) {
@@ -223,6 +231,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         website: "", // Honeypot
         paymentMethod: "wire", // Default to wire for now
         phoneCode: "+351",
+        extraGuestNames: [] as string[],
     });
 
     const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -275,6 +284,20 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         if (error) setError("");
     };
 
+    const handleExtraGuestChange = (index: number, value: string) => {
+        const newExtraGuests = [...formData.extraGuestNames];
+        newExtraGuests[index] = value;
+        setFormData(prev => ({ ...prev, extraGuestNames: newExtraGuests }));
+        
+        // Clear field-specific error when user typing
+        const fieldName = `extraGuest_${index}`;
+        if (fieldErrors[fieldName]) {
+            const newErrors = { ...fieldErrors };
+            delete newErrors[fieldName];
+            setFieldErrors(newErrors);
+        }
+    };
+
     const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newCountryName = e.target.value;
         setFormData(prev => ({
@@ -299,6 +322,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
             }
             if (!formData.phone || formData.phone.trim().length < 9) {
                 newErrors.phone = t('errors.phoneError');
+            }
+
+            // SEF Extra Guests Validation
+            if (formData.extraGuestNames && formData.extraGuestNames.length > 0) {
+                formData.extraGuestNames.forEach((name, index) => {
+                    if (!name || name.trim().length < 3) {
+                        // We use a generic fallback string if translation is missing, but preferably use translation
+                        newErrors[`extraGuest_${index}`] = t('errors.nameError') || "O nome deve ter pelo menos 3 caracteres";
+                    }
+                });
             }
 
             // Validate billing fields if the toggle is ON
@@ -634,7 +667,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     transferType: selectedExtras?.transferType,
                     paymentMethod: formData.paymentMethod,
                     sessionId: sessionId,
-                    locale: locale
+                    locale: locale,
+                    extraGuestNames: formData.extraGuestNames
                 });
 
                 if (result.success && result.ref) {
@@ -951,6 +985,54 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                             </AnimatePresence>
                                         </motion.div>
                                     </div>
+
+                                    {/* SEF Extra Guests Section */}
+                                    {formData.extraGuestNames && formData.extraGuestNames.length > 0 && (
+                                        <div className="pt-2 space-y-3">
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <div className="w-8 h-8 rounded-full bg-[#B08D4A]/10 flex items-center justify-center">
+                                                    <Users className="w-4 h-4 text-[#B08D4A]" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-navy-950 font-montserrat">{t('step1.extraGuestsTitle')}</h3>
+                                                </div>
+                                            </div>
+                                            
+                                            {formData.extraGuestNames.map((name, index) => (
+                                                <motion.div
+                                                    key={`extraGuest_${index}`}
+                                                    variants={shakeVariants}
+                                                    animate={fieldErrors[`extraGuest_${index}`] ? "shake" : ""}
+                                                    className="space-y-2"
+                                                >
+                                                    <label className={`text-[10px] uppercase font-bold tracking-widest transition-colors ${fieldErrors[`extraGuest_${index}`] ? 'text-[#9B1D20]' : 'text-[#B08D4A]'}`}>
+                                                        {t('step1.guest')} {index + 2} - {t('step1.fullName')}
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            value={name}
+                                                            onChange={(e) => handleExtraGuestChange(index, e.target.value)}
+                                                            type="text"
+                                                            className={`w-full h-14 bg-white border rounded-2xl px-12 focus:border-[#B08D4A] outline-none transition-all ${fieldErrors[`extraGuest_${index}`] ? 'border-[#9B1D20] bg-[#9B1D20]/5 shadow-[0_0_10px_rgba(155,29,32,0.05)]' : 'border-gray-100 focus:shadow-lg focus:shadow-gray-200/50'}`}
+                                                            placeholder={t('step1.fullNamePlaceholder')}
+                                                        />
+                                                        <User className={`absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${fieldErrors[`extraGuest_${index}`] ? 'text-[#9B1D20]' : 'text-navy-900/30'}`} />
+                                                    </div>
+                                                    <AnimatePresence>
+                                                        {fieldErrors[`extraGuest_${index}`] && (
+                                                            <motion.p
+                                                                initial={{ opacity: 0, y: -5 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                className="text-[9px] text-[#9B1D20] font-bold uppercase tracking-[0.15em] pl-1"
+                                                            >
+                                                                {fieldErrors[`extraGuest_${index}`]}
+                                                            </motion.p>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     {/* Billing Address Section */}
                                     <div className="pt-8">

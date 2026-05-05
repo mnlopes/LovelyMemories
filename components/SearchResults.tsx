@@ -253,6 +253,7 @@ function SearchResultsContent() {
                                     setChildren={setChildren}
                                     infants={infants}
                                     setInfants={setInfants}
+                                    maxInfants={6}
                                     placement="bottom-start"
                                 />
                             </div>

@@ -101,6 +101,7 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                         {standardRules.filter(r => !removedRules.includes(r.id)).map(rule => (
                             <RuleToggle
                                 key={rule.id}
+                                id={rule.id}
                                 label={rule.label}
                                 name={rule.name}
                                 register={register}
@@ -274,17 +275,21 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
     );
 }
 
-function RuleToggle({ label, name, register, watch, onRemove }: { label: string, name: any, register: any, watch: any, onRemove: () => void }) {
+function RuleToggle({ id, label, name, register, watch, onRemove }: { id: string, label: string, name: any, register: any, watch: any, onRemove: () => void }) {
     const value = watch(name);
+    const isDeletable = !['childrenAllowed', 'infantsAllowed', 'petsAllowed'].includes(id);
+
     return (
         <div className="relative group">
-            <button
-                type="button"
-                onClick={onRemove}
-                className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
-            >
-                <Trash2 className="size-3" />
-            </button>
+            {isDeletable && (
+                <button
+                    type="button"
+                    onClick={onRemove}
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+                >
+                    <Trash2 className="size-3" />
+                </button>
+            )}
             <label className={`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${value ? 'bg-[#171717]/[0.02] dark:bg-[#B08D4A]/5 border-[#171717] dark:border-[#B08D4A] text-[#171717] dark:text-[#B08D4A]' : 'bg-white dark:bg-admin-dark-surface border-[#eaeaea] dark:border-admin-dark-border text-[#a3a3a3]'}`}>
                 <div className="flex items-center gap-3">
                     {value ? <CheckCircle2 className="size-4 text-[#171717] dark:text-[#B08D4A]" /> : <XCircle className="size-4 opacity-20" />}

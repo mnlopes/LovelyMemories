@@ -41,6 +41,7 @@ interface BookingCardProps {
     infants: number;
     setInfants: (count: number) => void;
     maxGuests?: number;
+    maxInfants?: number;
     availabilityStatus: { available: boolean; loading: boolean; error?: string };
     pricingRules?: {
         min_nights: number;
@@ -69,6 +70,7 @@ export function BookingCard({
     infants,
     setInfants,
     maxGuests = 10,
+    maxInfants = 6,
     availabilityStatus,
     pricingRules = {
         min_nights: 2,
@@ -610,6 +612,7 @@ export function BookingCard({
                 infants={infants}
                 setInfants={setInfants}
                 maxGuests={maxGuests}
+                maxInfants={maxInfants}
             />
 
             {/* Calendar Popover */}

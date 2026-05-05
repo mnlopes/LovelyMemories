@@ -32,11 +32,12 @@ export default function AdminProperties() {
     // Modal State
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
-        type: 'success' | 'error' | 'loading' | 'warning'; // Warning reused as error style mostly or custom
+        type: 'success' | 'error' | 'loading' | 'warning';
         title: string;
         message: string;
         actionLabel?: string;
         onAction?: () => void;
+        cancelLabel?: string;
     }>({
         isOpen: false,
         type: 'success',

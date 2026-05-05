@@ -63,6 +63,7 @@ export const bookingAdminEmail = (data: any) => `
         <p style="margin: 5px 0;"><strong>Propriedade:</strong> ${data.property_title}</p>
         <p style="margin: 5px 0;"><strong>Datas:</strong> ${data.check_in} a ${data.check_out}</p>
         <p style="margin: 5px 0;"><strong>Hóspedes:</strong> ${data.adults} adultos, ${data.children} crianças, ${data.infants} bebés</p>
+        ${data.extra_guests && data.extra_guests.length > 0 ? `<p style="margin: 5px 0;"><strong>Hóspedes Adicionais:</strong> ${data.extra_guests.join(', ')}</p>` : ''}
         ${data.arrival_time ? `<p style="margin: 5px 0;"><strong>Hora de Chegada Estimada:</strong> ${data.arrival_time}</p>` : ''}
         
         <div style="background: #fdfaf5; border: 1px solid #f0e6d2; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -112,6 +113,7 @@ export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') 
         stayDetails: isEn ? "Stay Details" : "Detalhes da Estada",
         property: isEn ? "Property" : "Imóvel",
         guests: isEn ? "Guests" : "Hóspedes",
+        extraGuests: isEn ? "Additional Guests" : "Hóspedes Adicionais",
         adults: isEn ? "adults" : "adultos",
         children: isEn ? "children" : "crianças",
         infants: isEn ? "infants" : "bebés",
@@ -148,6 +150,7 @@ export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') 
                 <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
                 <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
                 <tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${data.adults} ${content.adults}, ${data.children} ${content.children}, ${data.infants} ${content.infants}</td></tr>
+                ${data.extra_guests && data.extra_guests.length > 0 ? `<tr><td style="padding: 5px 0; color: #999;">${content.extraGuests}:</td><td style="padding: 5px 0;">${data.extra_guests.join(', ')}</td></tr>` : ''}
                 ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
             </table>
             
@@ -173,6 +176,7 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
         stayDetails: isEn ? "Stay Details" : "Detalhes da Estada",
         property: isEn ? "Property" : "Imóvel",
         guests: isEn ? "Guests" : "Hóspedes",
+        extraGuests: isEn ? "Additional Guests" : "Hóspedes Adicionais",
         adults: isEn ? "adults" : "adultos",
         children: isEn ? "children" : "crianças",
         infants: isEn ? "infants" : "bebés",
@@ -202,6 +206,7 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
                 <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
                 <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
                 <tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${data.adults} ${content.adults}, ${data.children} ${content.children}, ${data.infants} ${content.infants}</td></tr>
+                ${data.extra_guests && data.extra_guests.length > 0 ? `<tr><td style="padding: 5px 0; color: #999;">${content.extraGuests}:</td><td style="padding: 5px 0;">${data.extra_guests.join(', ')}</td></tr>` : ''}
                 ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
             </table>
             

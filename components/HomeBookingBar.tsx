@@ -226,6 +226,7 @@ export const HomeBookingBar = () => {
                                 setChildren={setChildren}
                                 infants={infants}
                                 setInfants={setInfants}
+                                maxInfants={6}
                                 placement={placement}
                             />
                         </div>
