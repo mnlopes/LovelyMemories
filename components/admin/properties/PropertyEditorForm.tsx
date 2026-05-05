@@ -58,7 +58,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         values: {
             ...initialData,
             slug: initialData?.slug || "",
-            status: initialData?.status || "active",
+            status: initialData?.status || "coming_soon",
             title: typeof initialData?.title === 'object' ? {
                 en: initialData.title?.en || "",
                 pt: initialData.title?.pt || "",
@@ -157,8 +157,6 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
             bathrooms: initialData?.bathrooms ?? 0,
             area: initialData?.area ?? null,
 
-            // Status
-            status: initialData?.status ?? 'coming_soon',
             is_active: initialData?.is_active ?? false,
         } as any
     });
