@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Search, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown, Check, Ban, Globe } from "lucide-react";
+import { Calendar, Search, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown, Check, Ban, Globe, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -31,6 +31,12 @@ export default function AdminReservationsPage() {
     const [blockedDates, setBlockedDates] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [role, setRole] = useState<string | null>(null);
+
+    // New filters states
+    const [showAirbnb, setShowAirbnb] = useState(true);
+    const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
+    const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
+    const [propertySearchQuery, setPropertySearchQuery] = useState("");
 
     // Multi-Calendar Data
     const [propertiesMap, setPropertiesMap] = useState<{ [key: string]: any }>({});
@@ -67,6 +73,7 @@ export default function AdminReservationsPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const propertyDropdownRef = useRef<HTMLDivElement>(null);
 
     // Modal State
     const [modalConfig, setModalConfig] = useState<{
@@ -243,6 +250,9 @@ export default function AdminReservationsPage() {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setOpenMenuId(null);
             }
+            if (propertyDropdownRef.current && !propertyDropdownRef.current.contains(event.target as Node)) {
+                setShowPropertyDropdown(false);
+            }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -381,7 +391,10 @@ export default function AdminReservationsPage() {
             matchesTab = true;
         }
 
-        return matchesSearch && matchesDate && matchesTab;
+        const matchesProperty = selectedPropertyIds.length === 0 || selectedPropertyIds.includes(res.property_id);
+        const matchesAirbnb = showAirbnb || !res.is_airbnb;
+
+        return matchesSearch && matchesDate && matchesTab && matchesProperty && matchesAirbnb;
     }).sort((a, b) => {
         if (sortConfig.key === 'check_in') {
             const dateA = new Date(a.check_in).getTime();
@@ -450,8 +463,8 @@ export default function AdminReservationsPage() {
                         </div>
 
                         {/* Search & Dates */}
-                        <div className="flex items-center gap-4 w-full md:w-auto pb-2">
-                            <div className="relative w-full md:w-80">
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto pb-2">
+                            <div className="relative w-full md:w-64">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4" />
                                 <input
                                     type="text"
@@ -461,6 +474,143 @@ export default function AdminReservationsPage() {
                                     className="w-full bg-white dark:bg-admin-dark-surface border border-[#e5e5e5] dark:border-admin-dark-border pl-10 pr-4 py-2 rounded-lg text-sm focus:ring-1 focus:ring-[#171717] dark:focus:ring-white outline-none shadow-sm dark:text-admin-dark-text-primary transition-colors"
                                 />
                             </div>
+
+                            {/* Property Multi-Select Dropdown */}
+                            <div className="relative" ref={propertyDropdownRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPropertyDropdown(!showPropertyDropdown)}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-admin-dark-surface border border-[#e5e5e5] dark:border-admin-dark-border rounded-lg text-sm font-semibold transition-all hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer text-left focus:outline-none shadow-sm text-gray-700 dark:text-admin-dark-text-primary"
+                                >
+                                    <Home className="size-4 text-[#a3a3a3] shrink-0" />
+                                    <span className="truncate max-w-[150px]">
+                                        {selectedPropertyIds.length === 0
+                                            ? "All Properties"
+                                            : selectedPropertyIds.length === 1
+                                                ? propertiesMap[selectedPropertyIds[0]]?.title || "1 Property"
+                                                : `${selectedPropertyIds.length} Properties`}
+                                    </span>
+                                    <ChevronDown className="size-3.5 text-gray-400 shrink-0 ml-1" />
+                                </button>
+
+                                {showPropertyDropdown && (
+                                    <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1a2331] border border-[#e5e5e5] dark:border-[#2a3547] rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[350px]">
+                                        {/* Search Input inside Dropdown */}
+                                        <div className="p-3 border-b border-[#f5f5f5] dark:border-white/5 bg-[#fafafa] dark:bg-admin-dark-bg/50">
+                                            <div className="relative">
+                                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 size-3.5" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search properties..."
+                                                    value={propertySearchQuery}
+                                                    onChange={(e) => setPropertySearchQuery(e.target.value)}
+                                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#e5e5e5] dark:border-white/10 pl-8 pr-3 py-1.5 rounded-md text-xs outline-none focus:ring-1 focus:ring-admin-accent transition-all dark:text-admin-dark-text-primary"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Options List */}
+                                        <div className="flex-1 overflow-y-auto py-1 custom-scrollbar max-h-[220px]">
+                                            {(() => {
+                                                const propertiesList = Object.values(propertiesMap);
+                                                const filteredPropertiesList = propertiesList.filter(p => 
+                                                    (p.title || "").toLowerCase().includes(propertySearchQuery.toLowerCase()) ||
+                                                    (p.city || "").toLowerCase().includes(propertySearchQuery.toLowerCase())
+                                                );
+                                                
+                                                if (filteredPropertiesList.length === 0) {
+                                                    return (
+                                                        <div className="px-4 py-3 text-center text-xs text-gray-400 italic">
+                                                            No properties found
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return filteredPropertiesList.map((prop) => {
+                                                    const isChecked = selectedPropertyIds.includes(prop.id);
+                                                    return (
+                                                        <button
+                                                            key={prop.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedPropertyIds(prev => 
+                                                                    isChecked 
+                                                                        ? prev.filter(id => id !== prop.id) 
+                                                                        : [...prev, prop.id]
+                                                                );
+                                                            }}
+                                                            className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-[#fafafa] dark:hover:bg-white/5 transition-colors group"
+                                                        >
+                                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                                <div className="size-7 rounded bg-gray-100 overflow-hidden shrink-0 border border-black/5 dark:border-white/5">
+                                                                    {prop.mainImage ? (
+                                                                        <img src={prop.mainImage} alt="" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
+                                                                            <Home className="size-3" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-xs font-bold text-gray-700 dark:text-admin-dark-text-primary truncate">{prop.title}</p>
+                                                                    {prop.city && <p className="text-[10px] text-gray-400 truncate">{prop.city}</p>}
+                                                                </div>
+                                                            </div>
+                                                            <div className={cn(
+                                                                "size-4 rounded border flex items-center justify-center shrink-0 transition-all",
+                                                                isChecked 
+                                                                    ? "border-[#c5a059] bg-[#c5a059] text-white" 
+                                                                    : "border-gray-300 dark:border-white/10 group-hover:border-gray-400"
+                                                            )}>
+                                                                {isChecked && <Check className="size-2.5 stroke-[3px]" />}
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
+
+                                        {/* Footer Actions */}
+                                        <div className="p-2.5 border-t border-[#f5f5f5] dark:border-white/5 bg-[#fafafa] dark:bg-admin-dark-bg/50 flex items-center justify-between text-[10px] font-black uppercase tracking-wider shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedPropertyIds([])}
+                                                className="text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors px-2 py-1"
+                                            >
+                                                Clear
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const propertiesList = Object.values(propertiesMap);
+                                                    setSelectedPropertyIds(propertiesList.map(p => p.id));
+                                                }}
+                                                className="text-[#c5a059] hover:opacity-80 transition-colors px-2 py-1"
+                                            >
+                                                Select All
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Airbnb Visibility Toggle */}
+                            <button
+                                type="button"
+                                onClick={() => setShowAirbnb(!showAirbnb)}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-all cursor-pointer shadow-sm",
+                                    showAirbnb 
+                                        ? "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-400"
+                                        : "bg-white dark:bg-admin-dark-surface border-[#e5e5e5] dark:border-admin-dark-border text-[#a3a3a3] hover:bg-gray-50 dark:hover:bg-white/5"
+                                )}
+                            >
+                                <Globe className={cn("size-4 shrink-0 transition-all", showAirbnb ? "text-rose-500" : "text-[#a3a3a3]")} />
+                                <span className="text-xs font-semibold">
+                                    Airbnb: {showAirbnb ? "ON" : "OFF"}
+                                </span>
+                            </button>
+
                             <DateRangePicker date={dateRange} setDate={setDateRange} />
                         </div>
                     </div>
