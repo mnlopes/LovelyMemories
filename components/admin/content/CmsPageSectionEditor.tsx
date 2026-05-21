@@ -1,11 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { X, Save, Loader2, Plus, Trash2 } from "lucide-react";
+import { 
+    X, 
+    Save, 
+    Loader2, 
+    Plus, 
+    Trash2,
+    Shield,
+    Cookie,
+    UserCheck,
+    Mail,
+    FileText,
+    Calendar,
+    CreditCard,
+    AlertCircle,
+    ChevronDown,
+    Check
+} from "lucide-react";
 import { upsertPageSection } from "@/app/actions/cms";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { CmsPageSection } from "@/lib/types";
+
+const iconOptions = [
+    { value: "Shield", label: "Shield (Security/Privacy)", icon: Shield },
+    { value: "Cookie", label: "Cookie (Cookies Policy)", icon: Cookie },
+    { value: "UserCheck", label: "User Check (User Rights)", icon: UserCheck },
+    { value: "Mail", label: "Mail (Contacts/Emails)", icon: Mail },
+    { value: "FileText", label: "File Text (General Terms)", icon: FileText },
+    { value: "Calendar", label: "Calendar (Bookings)", icon: Calendar },
+    { value: "CreditCard", label: "Credit Card (Payments)", icon: CreditCard },
+    { value: "AlertCircle", label: "Alert Circle (Responsibilities)", icon: AlertCircle },
+];
 
 interface CmsPageSectionEditorProps {
     section: CmsPageSection | null;
@@ -29,6 +56,7 @@ export default function CmsPageSectionEditor({ section, pageSlug, locale, onClos
     });
 
     const [isSaving, setIsSaving] = useState(false);
+    const [showIconDropdown, setShowIconDropdown] = useState(false);
     
     // States for adding a new list item
     const [newItemLabel, setNewItemLabel] = useState("");
@@ -118,23 +146,66 @@ export default function CmsPageSectionEditor({ section, pageSlug, locale, onClos
                     </div>
 
                     <div className="flex-1 space-y-2">
-                        <label className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-widest px-1">
+                        <label className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-widest px-1 block">
                             {t('icon')}
                         </label>
-                        <select 
-                            value={formData.icon} 
-                            onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))} 
-                            className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 py-3.5 px-5 rounded-2xl text-xs font-bold outline-none focus:ring-1 focus:ring-admin-accent transition-all cursor-pointer"
-                        >
-                            <option value="Shield">Shield (Security/Privacy)</option>
-                            <option value="Cookie">Cookie (Cookies Policy)</option>
-                            <option value="UserCheck">User Check (User Rights)</option>
-                            <option value="Mail">Mail (Contacts/Emails)</option>
-                            <option value="FileText">File Text (General Terms)</option>
-                            <option value="Calendar">Calendar (Bookings)</option>
-                            <option value="CreditCard">Credit Card (Payments)</option>
-                            <option value="AlertCircle">Alert Circle (Responsibilities)</option>
-                        </select>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setShowIconDropdown(!showIconDropdown)}
+                                className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 py-3.5 px-5 rounded-2xl text-xs font-bold outline-none focus:ring-1 focus:ring-admin-accent transition-all cursor-pointer flex items-center justify-between text-left"
+                            >
+                                <span className="flex items-center gap-3 min-w-0">
+                                    {(() => {
+                                        const selected = iconOptions.find(o => o.value === formData.icon);
+                                        const IconComp = selected?.icon || FileText;
+                                        return (
+                                            <>
+                                                <IconComp className="size-4 text-[#a39076] shrink-0" />
+                                                <span className="truncate text-[#171717] dark:text-admin-dark-text-primary">{selected?.label || formData.icon}</span>
+                                            </>
+                                        );
+                                    })()}
+                                </span>
+                                <ChevronDown className="size-4 text-gray-400 shrink-0 ml-2" />
+                            </button>
+
+                            {showIconDropdown && (
+                                <>
+                                    <div 
+                                        className="fixed inset-0 z-40" 
+                                        onClick={() => setShowIconDropdown(false)} 
+                                    />
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1a2331] border border-[#f0f0f0] dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-[#f5f5f5] dark:divide-white/5 animate-in fade-in slide-in-from-top-2 duration-150 max-h-60 overflow-y-auto custom-scrollbar">
+                                        {iconOptions.map((opt) => {
+                                            const OptIcon = opt.icon;
+                                            const isSelected = formData.icon === opt.value;
+                                            return (
+                                                <button
+                                                    key={opt.value}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData(prev => ({ ...prev, icon: opt.value }));
+                                                        setShowIconDropdown(false);
+                                                    }}
+                                                    className={`w-full px-5 py-3 flex items-center justify-between text-left text-xs font-bold transition-colors ${
+                                                        isSelected 
+                                                            ? 'bg-[#a39076]/10 text-[#a39076] dark:bg-[#a39076]/20' 
+                                                            : 'text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-white/5'
+                                                    }`}
+                                                >
+                                                    <span className="flex items-center gap-3 min-w-0">
+                                                        <OptIcon className="size-4 shrink-0 text-[#a39076]" />
+                                                        <span className="truncate">{opt.label}</span>
+                                                    </span>
+                                                    {isSelected && <Check className="size-3.5 text-[#a39076] shrink-0 ml-2" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
