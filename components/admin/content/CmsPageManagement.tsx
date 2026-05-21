@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Search, Loader2, Edit2, Trash2, Globe, AlertCircle, HelpCircle, GripVertical } from "lucide-react";
+import { Plus, Search, Loader2, Edit2, Trash2, Globe, AlertCircle, HelpCircle, GripVertical, ChevronDown, Check } from "lucide-react";
 import { getPageSections, deletePageSection, reorderPageSections } from "@/app/actions/cms";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -32,6 +32,7 @@ export default function CmsPageManagement({ pageSlug, locale }: CmsPageManagemen
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterLocale, setFilterLocale] = useState(locale);
+    const [showLangFilterDropdown, setShowLangFilterDropdown] = useState(false);
     const [editingSection, setEditingSection] = useState<CmsPageSection | null>(null);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -39,6 +40,13 @@ export default function CmsPageManagement({ pageSlug, locale }: CmsPageManagemen
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const filterLanguages = [
+        { code: 'en', label: 'English (EN)', flag: '/legacy/home/images/english-flag.svg' },
+        { code: 'pt', label: 'Português (PT)', flag: '/legacy/home/images/portuguese-flag.svg' },
+        { code: 'he', label: 'Hebrew (HE)', flag: '/legacy/home/images/he.svg' },
+        { code: 'all', label: t('allLanguages'), isAll: true }
+    ];
 
     const triggerRefresh = useCallback(() => {
         setRefreshTrigger(prev => prev + 1);
@@ -176,18 +184,76 @@ export default function CmsPageManagement({ pageSlug, locale }: CmsPageManagemen
                             className="w-full pl-11 pr-4 py-3 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 rounded-2xl text-sm font-medium outline-none focus:ring-1 focus:ring-admin-accent transition-all"
                         />
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-3 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 rounded-2xl group">
-                        <Globe className="size-4 text-[#a3a3a3]" />
-                        <select 
-                            value={filterLocale}
-                            onChange={(e) => setFilterLocale(e.target.value)}
-                            className="bg-transparent text-xs font-bold outline-none cursor-pointer"
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => setShowLangFilterDropdown(!showLangFilterDropdown)}
+                            className="flex items-center gap-2 px-4 py-3 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 rounded-2xl group text-xs font-bold transition-all cursor-pointer text-left focus:outline-none"
                         >
-                            <option value="en">English</option>
-                            <option value="pt">Português</option>
-                            <option value="he">Hebrew</option>
-                            <option value="all">{t('allLanguages')}</option>
-                        </select>
+                            {(() => {
+                                const selected = filterLanguages.find(l => l.code === filterLocale);
+                                return (
+                                    <span className="flex items-center gap-2 min-w-0">
+                                        {selected?.isAll ? (
+                                            <Globe className="size-4 text-[#a3a3a3] shrink-0" />
+                                        ) : (
+                                            selected?.flag && (
+                                                <img 
+                                                    src={selected.flag} 
+                                                    alt={selected.label} 
+                                                    className="w-4 h-4 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0" 
+                                                />
+                                            )
+                                        )}
+                                        <span className="truncate text-[#171717] dark:text-admin-dark-text-primary">{selected?.label}</span>
+                                    </span>
+                                );
+                            })()}
+                            <ChevronDown className="size-3.5 text-gray-400 shrink-0 ml-1" />
+                        </button>
+
+                        {showLangFilterDropdown && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setShowLangFilterDropdown(false)} 
+                                />
+                                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-[#1a2331] border border-[#f0f0f0] dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-[#f5f5f5] dark:divide-white/5 animate-in fade-in slide-in-from-top-2 duration-150 w-48 max-h-60 overflow-y-auto custom-scrollbar">
+                                    {filterLanguages.map((lang) => {
+                                        const isSelected = filterLocale === lang.code;
+                                        return (
+                                            <button
+                                                key={lang.code}
+                                                type="button"
+                                                onClick={() => {
+                                                    setFilterLocale(lang.code);
+                                                    setShowLangFilterDropdown(false);
+                                                }}
+                                                className={`w-full px-4 py-2.5 flex items-center justify-between text-left text-xs font-bold transition-colors ${
+                                                    isSelected 
+                                                        ? 'bg-[#a39076]/10 text-[#a39076] dark:bg-[#a39076]/20' 
+                                                        : 'text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-white/5'
+                                                }`}
+                                            >
+                                                <span className="flex items-center gap-2 min-w-0">
+                                                    {lang.isAll ? (
+                                                        <Globe className="size-4 text-[#a3a3a3] shrink-0" />
+                                                    ) : (
+                                                        <img 
+                                                            src={lang.flag} 
+                                                            alt={lang.label} 
+                                                            className="w-4 h-4 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0" 
+                                                        />
+                                                    )}
+                                                    <span className="truncate">{lang.label}</span>
+                                                </span>
+                                                {isSelected && <Check className="size-3 text-[#a39076] shrink-0 ml-1" />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
