@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Search, Filter, Plus, ChevronLeft, ChevronRight, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown, Check, Ban, Globe, ChevronDown } from "lucide-react";
+import { Search, Filter, MoreHorizontal, User, Mail, Phone, Home, Trash2, ArrowUpDown, Check, Ban, Globe, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +37,7 @@ export default function AdminReservationsPage() {
     const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
     const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
     const [propertySearchQuery, setPropertySearchQuery] = useState("");
+    const [showFiltersBar, setShowFiltersBar] = useState(false);
 
     // Multi-Calendar Data
     const [propertiesMap, setPropertiesMap] = useState<{ [key: string]: any }>({});
@@ -462,8 +463,45 @@ export default function AdminReservationsPage() {
                             ))}
                         </div>
 
-                        {/* Search & Dates */}
-                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto pb-2">
+                        {/* Filters Toggle Button */}
+                        <div className="flex items-center gap-3 pb-2 w-full md:w-auto justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setShowFiltersBar(!showFiltersBar)}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-2 bg-white dark:bg-admin-dark-surface border rounded-lg text-sm font-semibold transition-all hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer shadow-sm text-gray-700 dark:text-admin-dark-text-primary",
+                                    showFiltersBar 
+                                        ? "border-[#171717] dark:border-white text-[#171717] dark:text-white" 
+                                        : "border-[#e5e5e5] dark:border-admin-dark-border text-gray-700 dark:text-admin-dark-text-primary"
+                                )}
+                            >
+                                <Filter className={cn("size-4 shrink-0 transition-colors", showFiltersBar ? "text-[#171717] dark:text-white" : "text-[#a3a3a3]")} />
+                                <span className="text-xs">{t('filters')}</span>
+                                {(() => {
+                                    const activeFiltersCount = [
+                                        searchQuery.trim().length > 0,
+                                        selectedPropertyIds.length > 0,
+                                        !showAirbnb,
+                                        !!dateRange?.from
+                                    ].filter(Boolean).length;
+                                    
+                                    if (activeFiltersCount > 0) {
+                                        return (
+                                            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-[#c5a059] text-white rounded-full min-w-4 h-4 flex items-center justify-center">
+                                                {activeFiltersCount}
+                                            </span>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Collapsible Filters Row */}
+                    {showFiltersBar && (
+                        <div className="flex flex-wrap items-center gap-3 p-4 bg-gray-50/50 dark:bg-white/5 border border-[#e5e5e5]/80 dark:border-admin-dark-border/40 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                            {/* Search input */}
                             <div className="relative w-full md:w-64">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3] size-4" />
                                 <input
@@ -483,7 +521,7 @@ export default function AdminReservationsPage() {
                                     className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-admin-dark-surface border border-[#e5e5e5] dark:border-admin-dark-border rounded-lg text-sm font-semibold transition-all hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer text-left focus:outline-none shadow-sm text-gray-700 dark:text-admin-dark-text-primary"
                                 >
                                     <Home className="size-4 text-[#a3a3a3] shrink-0" />
-                                    <span className="truncate max-w-[150px]">
+                                    <span className="truncate max-w-[150px] text-xs">
                                         {selectedPropertyIds.length === 0
                                             ? "All Properties"
                                             : selectedPropertyIds.length === 1
@@ -494,7 +532,7 @@ export default function AdminReservationsPage() {
                                 </button>
 
                                 {showPropertyDropdown && (
-                                    <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1a2331] border border-[#e5e5e5] dark:border-[#2a3547] rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[350px]">
+                                    <div className="absolute left-0 md:right-0 md:left-auto mt-2 w-72 bg-white dark:bg-[#1a2331] border border-[#e5e5e5] dark:border-[#2a3547] rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col max-h-[350px]">
                                         {/* Search Input inside Dropdown */}
                                         <div className="p-3 border-b border-[#f5f5f5] dark:border-white/5 bg-[#fafafa] dark:bg-admin-dark-bg/50">
                                             <div className="relative">
@@ -611,9 +649,38 @@ export default function AdminReservationsPage() {
                                 </span>
                             </button>
 
+                            {/* Date Range Picker */}
                             <DateRangePicker date={dateRange} setDate={setDateRange} />
+
+                            {/* Clear All Filters Button */}
+                            {(() => {
+                                const activeFiltersCount = [
+                                    searchQuery.trim().length > 0,
+                                    selectedPropertyIds.length > 0,
+                                    !showAirbnb,
+                                    !!dateRange?.from
+                                ].filter(Boolean).length;
+
+                                if (activeFiltersCount > 0) {
+                                    return (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearchQuery("");
+                                                setSelectedPropertyIds([]);
+                                                setShowAirbnb(true);
+                                                setDateRange(undefined);
+                                            }}
+                                            className="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors px-2.5 py-1.5 border border-dashed border-gray-300 dark:border-white/10 rounded-lg hover:border-gray-400 dark:hover:border-white/20 ml-auto"
+                                        >
+                                            {t('clearFilters')}
+                                        </button>
+                                    );
+                                }
+                                return null;
+                            })()}
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
 
@@ -669,7 +736,6 @@ export default function AdminReservationsPage() {
                                     </td>
                                 </tr>
                             ) : filteredReservations.map((reservation) => {
-                                const checkOutDate = new Date(reservation.check_out);
                                 const today = startOfDay(new Date());
                                 
                                 // Determine effective status purely for UI

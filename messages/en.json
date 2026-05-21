@@ -137,6 +137,8 @@
     "AdminReservations": {
         "title": "Reservations",
         "subtitle": "Manage bookings and availability.",
+        "filters": "Filters",
+        "clearFilters": "Clear Filters",
         "calendar": "Calendar",
         "list": "List",
         "searchPlaceholder": "Search by guest, email or property...",

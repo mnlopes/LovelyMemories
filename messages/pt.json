@@ -138,6 +138,8 @@
     "AdminReservations": {
         "title": "Reservas",
         "subtitle": "Faça a gestão de reservas e disponibilidade.",
+        "filters": "Filtros",
+        "clearFilters": "Limpar Filtros",
         "calendar": "Calendário",
         "list": "Lista",
         "searchPlaceholder": "Pesquisar por hóspede, email ou propriedade...",
