@@ -136,7 +136,7 @@ values
     (
         'privacy-policy', 
         '3. Your Rights', 
-        'Under GDPR, you have the right to access, rectify, or delete your personal data. You can also withdraw your consent for cookies at any time through our interactive cookie settings widget located at the bottom-right of your screen.', 
+        'Under GDPR, you have the right to access, rectify, or delete your personal data. You can also withdraw your consent for cookies at any time using the cookie preferences panel below.', 
         'UserCheck', 
         3, 
         'en', 
@@ -174,7 +174,7 @@ values
     (
         'privacy-policy', 
         '3. Os Seus Direitos', 
-        'Ao abrigo do RGPD, tem o direito de aceder, retificar ou eliminar os seus dados pessoais. Pode também retirar o seu consentimento para cookies a qualquer momento através do nosso widget interativo de definições de cookies localizado no canto inferior direito do seu ecrã.', 
+        'Ao abrigo do RGPD, tem o direito de aceder, retificar ou eliminar os seus dados pessoais. Pode também retirar o seu consentimento para cookies a qualquer momento utilizando o painel de preferências de cookies abaixo.', 
         'UserCheck', 
         3, 
         'pt', 

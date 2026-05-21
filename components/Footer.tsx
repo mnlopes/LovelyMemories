@@ -177,12 +177,6 @@ export const Footer = () => {
                             <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors">
                                 {t('privacyPolicy')}
                             </Link>
-                            <button 
-                                onClick={() => window.dispatchEvent(new CustomEvent('open-cookie-settings'))}
-                                className="!font-bold hover:text-white transition-colors uppercase tracking-widest"
-                            >
-                                {t('cookieSettings')}
-                            </button>
                             <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors">
                                 {t('termsConditions')}
                             </Link>

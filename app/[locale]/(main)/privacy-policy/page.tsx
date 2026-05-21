@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
                     locale: 'pt',
                     icon: 'UserCheck',
                     title: "3. Os Seus Direitos",
-                    content: "Ao abrigo do RGPD, tem o direito de aceder, retificar ou eliminar os seus dados pessoais. Pode também retirar o seu consentimento para cookies a qualquer momento através do nosso widget interativo de definições de cookies localizado no canto inferior direito do seu ecrã.",
+                    content: "Ao abrigo do RGPD, tem o direito de aceder, retificar ou eliminar os seus dados pessoais. Pode também retirar o seu consentimento para cookies a qualquer momento utilizando o painel de preferências de cookies abaixo.",
                     list_items: []
                 },
                 {
@@ -98,7 +98,7 @@ export default function PrivacyPolicyPage() {
                 locale: 'en',
                 icon: 'UserCheck',
                 title: "3. Your Rights",
-                content: "Under GDPR, you have the right to access, rectify, or delete your personal data. You can also withdraw your consent for cookies at any time through our interactive cookie settings widget located at the bottom-right of your screen.",
+                content: "Under GDPR, you have the right to access, rectify, or delete your personal data. You can also withdraw your consent for cookies at any time using the cookie preferences panel below.",
                 list_items: []
             },
             {
@@ -197,6 +197,38 @@ export default function PrivacyPolicyPage() {
                             </motion.section>
                         );
                     })}
+
+                    {/* Dedicated Cookie Preferences Manager Card */}
+                    <motion.section
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: sections.length * 0.1 }}
+                        className="bg-white/5 backdrop-blur-sm border border-[#a39076]/30 rounded-[32px] p-8 md:p-12 hover:border-[#a39076]/50 transition-all duration-500 flex flex-col md:flex-row items-center justify-between gap-6"
+                    >
+                        <div className="flex items-center gap-6 flex-1 text-left">
+                            <div className="w-14 h-14 bg-[#a39076]/10 rounded-2xl flex items-center justify-center border border-[#a39076]/30 shrink-0">
+                                <Cookie className="w-6 h-6 text-[#a39076]" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white tracking-wide mb-2">
+                                    {locale === 'pt' ? 'Preferências de Cookies' : 'Cookie Preferences'}
+                                </h3>
+                                <p className="text-gray-400 text-base leading-relaxed">
+                                    {locale === 'pt' 
+                                        ? 'Pode gerir, aceitar ou rejeitar os cookies utilizados neste website a qualquer momento.'
+                                        : 'You can manage, accept or reject cookies used on this website at any time.'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('open-cookie-settings'))}
+                            className="w-full md:w-auto px-8 py-4 bg-[#a39076] hover:bg-[#8e7d65] text-white rounded-full text-base font-bold shadow-lg shadow-[#a39076]/10 transition-all duration-300 whitespace-nowrap active:scale-95 cursor-pointer"
+                        >
+                            {locale === 'pt' ? 'Gerir Consentimento' : 'Manage Consent'}
+                        </button>
+                    </motion.section>
                 </div>
 
                 {/* Footer Note */}
