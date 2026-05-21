@@ -847,21 +847,25 @@ export default function AdminReservationsPage() {
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                            effectiveStatus === 'confirmed'
-                                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/30'
-                                                : effectiveStatus === 'checked-in'
-                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/30'
-                                                    : effectiveStatus === 'completed' || effectiveStatus === 'checked-out'
-                                                        ? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/20'
-                                                        : effectiveStatus === 'pending'
-                                                            ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
-                                                            : effectiveStatus === 'owner_block'
-                                                                ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/30'
-                                                                : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
-                                            }`}>
-                                            {effectiveStatus ? t(`status.${effectiveStatus}`) : t('status.pending')}
-                                        </span>
+                                        {effectiveStatus === 'airbnb' ? (
+                                            <span className="text-[#a3a3a3] dark:text-admin-dark-text-secondary font-semibold text-xs px-3">-</span>
+                                        ) : (
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                                effectiveStatus === 'confirmed'
+                                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/30'
+                                                    : effectiveStatus === 'checked-in'
+                                                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/30'
+                                                        : effectiveStatus === 'completed' || effectiveStatus === 'checked-out'
+                                                            ? 'bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/20'
+                                                            : effectiveStatus === 'pending'
+                                                                ? 'bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-500/30'
+                                                                : effectiveStatus === 'owner_block'
+                                                                    ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/30'
+                                                                    : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/30'
+                                                }`}>
+                                                {effectiveStatus ? t(`status.${effectiveStatus}`) : t('status.pending')}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-8 py-6 text-right font-medium relative" onClick={(e) => e.stopPropagation()}>
                                         <button
