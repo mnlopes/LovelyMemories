@@ -9,6 +9,12 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 
+const languages = [
+    { code: 'en', label: 'English (EN)', flag: '/legacy/home/images/english-flag.svg' },
+    { code: 'pt', label: 'Português (PT)', flag: '/legacy/home/images/portuguese-flag.svg' },
+    { code: 'he', label: 'Hebrew (HE)', flag: '/legacy/home/images/he.svg' }
+];
+
 interface BlogEditorProps {
     post: any | null;
     locale: string;
@@ -32,6 +38,7 @@ export default function BlogEditor({ post, locale, onClose, onSave }: BlogEditor
 
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [showLangDropdown, setShowLangDropdown] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
     
     // Selection and Link Modal State
@@ -252,12 +259,72 @@ export default function BlogEditor({ post, locale, onClose, onSave }: BlogEditor
                                 <input type="text" placeholder="auto-generated-slug" value={formData.slug} onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))} className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 py-3 px-5 rounded-2xl text-xs font-semibold outline-none focus:ring-1 focus:ring-admin-accent transition-all" />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-widest px-1">{t('language')}</label>
-                                <select value={formData.locale} onChange={(e) => setFormData(prev => ({ ...prev, locale: e.target.value }))} className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 py-3 px-5 rounded-2xl text-xs font-bold outline-none focus:ring-1 focus:ring-admin-accent transition-all appearance-none cursor-pointer">
-                                    <option value="en">English (EN)</option>
-                                    <option value="pt">Português (PT)</option>
-                                    <option value="he">Hebrew (HE)</option>
-                                </select>
+                                <label className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-widest px-1 block">{t('language')}</label>
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowLangDropdown(!showLangDropdown)}
+                                        className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 py-3.5 px-5 rounded-2xl text-xs font-bold outline-none focus:ring-1 focus:ring-admin-accent transition-all cursor-pointer flex items-center justify-between text-left"
+                                    >
+                                        <span className="flex items-center gap-3 min-w-0">
+                                            {(() => {
+                                                const selected = languages.find(l => l.code === formData.locale);
+                                                return (
+                                                    <>
+                                                        {selected?.flag && (
+                                                            <img 
+                                                                src={selected.flag} 
+                                                                alt={selected.label} 
+                                                                className="w-5 h-5 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0" 
+                                                            />
+                                                        )}
+                                                        <span className="truncate text-[#171717] dark:text-admin-dark-text-primary">{selected?.label || formData.locale.toUpperCase()}</span>
+                                                    </>
+                                                );
+                                            })()}
+                                        </span>
+                                        <ChevronDown className="size-4 text-gray-400 shrink-0 ml-2" />
+                                    </button>
+
+                                    {showLangDropdown && (
+                                        <>
+                                            <div 
+                                                className="fixed inset-0 z-40" 
+                                                onClick={() => setShowLangDropdown(false)} 
+                                            />
+                                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1a2331] border border-[#f0f0f0] dark:border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-[#f5f5f5] dark:divide-white/5 animate-in fade-in slide-in-from-top-2 duration-150 max-h-60 overflow-y-auto custom-scrollbar">
+                                                {languages.map((lang) => {
+                                                    const isSelected = formData.locale === lang.code;
+                                                    return (
+                                                        <button
+                                                            key={lang.code}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setFormData(prev => ({ ...prev, locale: lang.code }));
+                                                                setShowLangDropdown(false);
+                                                            }}
+                                                            className={`w-full px-5 py-3 flex items-center justify-between text-left text-xs font-bold transition-colors ${
+                                                                isSelected 
+                                                                    ? 'bg-[#a39076]/10 text-[#a39076] dark:bg-[#a39076]/20' 
+                                                                    : 'text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-white/5'
+                                                            }`}
+                                                        >
+                                                            <span className="flex items-center gap-3 min-w-0">
+                                                                <img 
+                                                                    src={lang.flag} 
+                                                                    alt={lang.label} 
+                                                                    className="w-5 h-5 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0" 
+                                                                />
+                                                                <span className="truncate">{lang.label}</span>
+                                                            </span>
+                                                            {isSelected && <Check className="size-3.5 text-[#a39076] shrink-0 ml-2" />}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <div className="space-y-2">
