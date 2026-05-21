@@ -147,9 +147,9 @@ export default function PrivacyPolicyPage() {
                     </Link>
                     <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
                         {locale === 'pt' ? (
-                            <>Privacidade <span className="text-[#a39076]">&</span> <br /> Cookies</>
+                            <>Privacidade <span className="text-[#a39076]">&</span> Cookies</>
                         ) : (
-                            <>Privacy <span className="text-[#a39076]">&</span> <br /> Cookies</>
+                            <>Privacy <span className="text-[#a39076]">&</span> Cookies</>
                         )}
                     </h1>
                     <div className="w-24 h-1 bg-[#a39076] mx-auto rounded-full opacity-50" />

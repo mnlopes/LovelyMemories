@@ -153,9 +153,9 @@ export default function TermsConditionsPage() {
                     </Link>
                     <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
                         {locale === 'pt' ? (
-                            <>Termos <span className="text-[#a39076]">&</span> <br /> Condições</>
+                            <>Termos <span className="text-[#a39076]">&</span> Condições</>
                         ) : (
-                            <>Terms <span className="text-[#a39076]">&</span> <br /> Conditions</>
+                            <>Terms <span className="text-[#a39076]">&</span> Conditions</>
                         )}
                     </h1>
                     <div className="w-24 h-1 bg-[#a39076] mx-auto rounded-full opacity-50" />
