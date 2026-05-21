@@ -42,7 +42,7 @@ export const Navbar = () => {
         <header
             className="fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 bg-[#192537] py-6 shadow-lg"
         >
-            <div className="container mx-auto px-4">
+            <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-6">
                 <div className="flex items-center justify-between">
 
                     {/* Brand / Logo */}
@@ -57,15 +57,15 @@ export const Navbar = () => {
                     </Link>
 
                     {/* Desktop Navigation */}
-                    <nav className="hidden lg:flex items-center gap-8 self-center mt-5">
-                        <ul className="flex items-center gap-8 m-0 p-0 list-none">
+                    <nav className="hidden lg:flex items-center self-center mt-5">
+                        <ul className="flex items-center gap-3 xl:gap-5 2xl:gap-8 m-0 p-0 list-none">
                             {navLinks.map((link) => (
                                 <li key={link.path}>
                                     <Link
                                         href={link.path}
-                                        className={`text-base font-bold uppercase tracking-widest transition-all duration-300 ${
+                                        className={`text-[12px] xl:text-[13px] 2xl:text-base font-bold uppercase tracking-widest transition-all duration-300 ${
                                             link.path === '/' 
-                                                ? 'border border-[#b09e80]/50 rounded-full px-5 py-2 hover:bg-[#b09e80]/10 hover:border-[#b09e80]' 
+                                                ? 'border border-[#b09e80]/50 rounded-full px-3 xl:px-4 2xl:px-5 py-1.5 2xl:py-2 hover:bg-[#b09e80]/10 hover:border-[#b09e80]' 
                                                 : 'hover:text-[#b09e80]'
                                         } ${isActive(link.path) ? 'text-[#b09e80]' : 'text-white'}`}
                                     >
@@ -77,7 +77,7 @@ export const Navbar = () => {
                     </nav>
 
                     {/* Right Side Actions (Login / Lang) */}
-                    <div className="hidden lg:flex items-center gap-6 self-center mt-5">
+                    <div className="hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-6 self-center mt-5">
                         <Link
                             href="/login"
                             className="flex items-center gap-2 text-white hover:text-[#b09e80] transition-colors group"
@@ -88,7 +88,7 @@ export const Navbar = () => {
                                     <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
                             </span>
-                            <span className="text-base font-bold uppercase tracking-widest hidden xl:block">{t('login')}</span>
+                            <span className="text-[12px] xl:text-[13px] 2xl:text-base font-bold uppercase tracking-widest hidden xl:block">{t('login')}</span>
                         </Link>
 
                         {/* Language Switcher */}

@@ -156,12 +156,11 @@ export const Footer = () => {
                 </div>
 
                 {/* Bottom Divider & Links */}
-                <div className="w-full border-t border-[#b09e80] pt-20 md:pt-8 flex flex-col md:flex-row justify-between items-center text-xs tracking-widest uppercase text-[#b09e80] gap-4 relative mt-16 md:mt-12">
+                <div className="w-full border-t border-[#b09e80] pt-20 lg:pt-8 text-[11px] xl:text-xs tracking-widest uppercase text-[#b09e80] relative mt-16 lg:mt-12">
 
                     {/* Logo Centered on Line */}
                     <div
-                        className="absolute left-1/2 top-0"
-                        style={{ transform: "translate(-50%, -62%)" }}
+                        className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[62%]"
                     >
                         <Image
                             src="/legacy/home/images/logo-1.svg"
@@ -172,22 +171,30 @@ export const Footer = () => {
                         />
                     </div>
 
-                    <div className="flex flex-wrap justify-center md:justify-between w-full md:w-auto gap-4 md:gap-6">
-                        <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors">
-                            {t('privacyPolicy')}
-                        </Link>
-                        <button 
-                            onClick={() => window.dispatchEvent(new CustomEvent('open-cookie-settings'))}
-                            className="!font-bold hover:text-white transition-colors uppercase tracking-widest"
-                        >
-                            {t('cookieSettings')}
-                        </button>
-                        <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors">
-                            {t('termsConditions')}
-                        </Link>
-                    </div>
-                    <div className="text-center md:text-right">
-                        <p className="!font-bold">{t('rights')}</p>
+                    <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_280px_1fr] items-center gap-6 lg:gap-4">
+                        {/* Links Column */}
+                        <div className="flex flex-wrap justify-center lg:justify-start gap-4 lg:gap-x-4 xl:gap-x-6 gap-y-2">
+                            <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors">
+                                {t('privacyPolicy')}
+                            </Link>
+                            <button 
+                                onClick={() => window.dispatchEvent(new CustomEvent('open-cookie-settings'))}
+                                className="!font-bold hover:text-white transition-colors uppercase tracking-widest"
+                            >
+                                {t('cookieSettings')}
+                            </button>
+                            <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors">
+                                {t('termsConditions')}
+                            </Link>
+                        </div>
+
+                        {/* Spacer for Centered Logo */}
+                        <div className="hidden lg:block h-1" />
+
+                        {/* Copyright Column */}
+                        <div className="text-center lg:text-right">
+                            <p className="!font-bold">{t('rights')}</p>
+                        </div>
                     </div>
                 </div>
 
