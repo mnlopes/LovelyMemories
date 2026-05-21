@@ -19,7 +19,7 @@ export default function SyncTab({ propertyId }: SyncTabProps) {
     });
 
     // Handle Copy logic
-    const exportUrl = propertyId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/api/ical/${propertyId}` : '';
+    const exportUrl = propertyId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/api/ical/${propertyId}.ics` : '';
 
     const handleCopy = () => {
         if (!exportUrl) return;

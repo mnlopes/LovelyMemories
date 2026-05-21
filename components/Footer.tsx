@@ -172,11 +172,17 @@ export const Footer = () => {
                         />
                     </div>
 
-                    <div className="flex justify-between w-full md:w-auto md:gap-6">
-                        <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors text-left">
+                    <div className="flex flex-wrap justify-center md:justify-between w-full md:w-auto gap-4 md:gap-6">
+                        <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors">
                             {t('privacyPolicy')}
                         </Link>
-                        <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors text-right">
+                        <button 
+                            onClick={() => window.dispatchEvent(new CustomEvent('open-cookie-settings'))}
+                            className="!font-bold hover:text-white transition-colors uppercase tracking-widest"
+                        >
+                            {t('cookieSettings')}
+                        </button>
+                        <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors">
                             {t('termsConditions')}
                         </Link>
                     </div>

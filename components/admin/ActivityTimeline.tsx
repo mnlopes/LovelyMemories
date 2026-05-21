@@ -6,10 +6,7 @@ import { pt } from "date-fns/locale";
 import {
     Activity,
     User,
-    Home,
-    Calendar,
     Settings,
-    Shield,
     Trash2,
     Edit,
     PlusCircle,
@@ -19,6 +16,17 @@ import { getAuditLogs } from "@/app/actions/audit";
 import { AuditLog } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+
+interface AuditLogDetails {
+    changes?: Record<string, unknown>;
+    field?: string;
+    old_role?: string;
+    new_role?: string;
+    previous_email?: string;
+    email?: string;
+    role?: string;
+    title?: string;
+}
 
 interface ActivityTimelineProps {
     resourceId?: string;
@@ -147,7 +155,7 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
     const formatDescription = (log: AuditLog) => {
         const resource = log.resource_type.toLowerCase();
         const action = log.action_type;
-        const details = log.details as any;
+        const details = log.details as AuditLogDetails | null;
         const resourceNameStr = details?.title ? `: ${details.title}` : '';
 
         const actionKey = action === 'CREATE' ? 'create' :
@@ -163,18 +171,19 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
         });
     };
 
-    const renderDetails = (details: any) => {
+    const renderDetails = (details: AuditLogDetails) => {
         if (details.changes) {
             return (
                 <div className="flex flex-col gap-1 text-xs">
-                    {Object.entries(details.changes).map(([key, value]: [string, any]) => {
+                    {Object.entries(details.changes).map(([key, value]) => {
                         if (typeof value === 'object' && value !== null && 'from' in value && 'to' in value) {
+                            const valObj = value as { from?: unknown; to?: unknown };
                             return (
                                 <div key={key} className="flex flex-wrap gap-x-1 items-baseline">
                                     <span className="font-semibold text-gray-500 capitalize">{key.replace('_', ' ')}:</span>
-                                    <span className="text-red-400 line-through decoration-red-400/50 opacity-80">{String(value.from || '---')}</span>
+                                    <span className="text-red-400 line-through decoration-red-400/50 opacity-80">{String(valObj.from || '---')}</span>
                                     <span className="text-gray-400 text-[10px]">➜</span>
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{String(value.to || '---')}</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{String(valObj.to || '---')}</span>
                                 </div>
                             );
                         }
@@ -310,9 +319,9 @@ export function ActivityTimeline({ resourceId, resourceType, limit = 50, classNa
                                 </span>
                             </div>
 
-                            {log.details && Object.keys(log.details).length > 0 && (
+                            {!!log.details && typeof log.details === "object" && Object.keys(log.details).length > 0 && (
                                 <div className="mt-2 text-xs bg-admin-bg/50 p-2 rounded border border-admin-border">
-                                    {renderDetails(log.details)}
+                                    {renderDetails(log.details as AuditLogDetails)}
                                 </div>
                             )}
                         </div>

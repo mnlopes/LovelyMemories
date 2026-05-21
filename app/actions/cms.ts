@@ -3,6 +3,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { Faq, CmsPageSection } from "@/lib/types";
 
 async function getSupabase() {
     const cookieStore = await cookies();
@@ -46,7 +47,7 @@ export async function fetchAndStoreInstagramImage(order: number, url: string) {
     
     try {
         // 1. Normalize
-        let cleanUrl = url.split('?')[0];
+        const cleanUrl = url.split('?')[0];
         const match = cleanUrl.match(/\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
         if (!match) throw new Error("Invalid Instagram link format");
         
@@ -123,7 +124,7 @@ export async function fetchAndStoreInstagramImage(order: number, url: string) {
         const fileName = `social-${code}-${Date.now()}.jpg`;
         const filePath = `instagram/${fileName}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
             .from('social-images')
             .upload(filePath, buffer, {
                 contentType: 'image/jpeg',
@@ -153,13 +154,14 @@ export async function fetchAndStoreInstagramImage(order: number, url: string) {
         revalidatePath('/[locale]/about-us', 'layout');
         return { success: true, imageUrl: publicUrl };
 
-    } catch (error: any) {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         console.error("fetchAndStoreInstagramImage Error:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: errorMessage };
     }
 }
 
-export async function upsertInstagramPost(data: any) {
+export async function upsertInstagramPost(data: Record<string, unknown>) {
     const supabase = await getSupabase();
     
     // Use upsert to handle both new and existing slots
@@ -180,7 +182,7 @@ export async function upsertInstagramPost(data: any) {
 
 // --- Blog Actions ---
 
-export async function upsertBlogPost(data: any) {
+export async function upsertBlogPost(data: Record<string, unknown>) {
     const supabase = await getSupabase();
     
     const { data: result, error } = await supabase
@@ -248,3 +250,165 @@ export async function toggleBlogPostStatus(id: string, isPublished: boolean) {
     revalidatePath('/[locale]/blog', 'layout');
     return { success: true };
 }
+
+// --- FAQ Actions ---
+
+export async function getFaqs(locale?: string) {
+    const supabase = await getSupabase();
+    
+    let query = supabase
+        .from('faqs')
+        .select('*')
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false });
+
+    if (locale && locale !== 'all') {
+        query = query.eq('locale', locale);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        console.error("Error fetching FAQs:", error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function upsertFaq(data: Faq) {
+    const supabase = await getSupabase();
+    
+    const { data: result, error } = await supabase
+        .from('faqs')
+        .upsert({
+            ...data,
+            updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/[locale]/contact', 'layout');
+    return { success: true, data: result };
+}
+
+export async function deleteFaq(id: string) {
+    const supabase = await getSupabase();
+    
+    const { error } = await supabase
+        .from('faqs')
+        .delete()
+        .eq('id', id);
+
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/[locale]/contact', 'layout');
+    return { success: true };
+}
+
+export async function reorderFaqs(faqs: Faq[]) {
+    const supabase = await getSupabase();
+    
+    const payloads = faqs.map(faq => ({
+        id: faq.id,
+        question: faq.question,
+        answer: faq.answer,
+        locale: faq.locale,
+        display_order: faq.display_order,
+        updated_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabase
+        .from('faqs')
+        .upsert(payloads);
+
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/[locale]/contact', 'layout');
+    return { success: true };
+}
+
+// --- CMS Page Sections Actions ---
+
+export async function getPageSections(pageSlug: string, locale?: string) {
+    const supabase = await getSupabase();
+    
+    let query = supabase
+        .from('cms_page_sections')
+        .select('*')
+        .eq('page_slug', pageSlug)
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false });
+
+    if (locale && locale !== 'all') {
+        query = query.eq('locale', locale);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+        console.error(`Error fetching CMS page sections for ${pageSlug}:`, error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function upsertPageSection(data: CmsPageSection) {
+    const supabase = await getSupabase();
+    
+    const { data: result, error } = await supabase
+        .from('cms_page_sections')
+        .upsert({
+            ...data,
+            updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/[locale]/terms-conditions', 'layout');
+    revalidatePath('/[locale]/privacy-policy', 'layout');
+    return { success: true, data: result };
+}
+
+export async function deletePageSection(id: string) {
+    const supabase = await getSupabase();
+    
+    const { error } = await supabase
+        .from('cms_page_sections')
+        .delete()
+        .eq('id', id);
+
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/[locale]/terms-conditions', 'layout');
+    revalidatePath('/[locale]/privacy-policy', 'layout');
+    return { success: true };
+}
+
+export async function reorderPageSections(sections: CmsPageSection[]) {
+    const supabase = await getSupabase();
+    
+    const payloads = sections.map(section => ({
+        id: section.id,
+        page_slug: section.page_slug,
+        title: section.title,
+        content: section.content,
+        icon: section.icon,
+        locale: section.locale,
+        display_order: section.display_order,
+        list_items: section.list_items,
+        updated_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabase
+        .from('cms_page_sections')
+        .upsert(payloads);
+
+    if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/[locale]/terms-conditions', 'layout');
+    revalidatePath('/[locale]/privacy-policy', 'layout');
+    return { success: true };
+}
+

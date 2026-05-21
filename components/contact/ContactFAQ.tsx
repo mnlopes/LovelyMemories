@@ -1,21 +1,57 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import { getFaqs } from '@/app/actions/cms';
 
 export default function ContactFAQ() {
     const t = useTranslations('Contact.faq');
+    const params = useParams();
+    const locale = (params?.locale as string) || 'en';
     const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const [dbFaqs, setDbFaqs] = useState<{ q: string; a: string }[]>([]);
+    const [hasLoaded, setHasLoaded] = useState(false);
 
-    // FAQ Data
-    const faqs = [
-        { q: t('q1'), a: t('a1') },
-        { q: t('q2'), a: t('a2') },
-        { q: t('q3'), a: t('a3') },
-        { q: t('q4'), a: t('a4') },
-    ];
+    useEffect(() => {
+        const fetchDbFaqs = async () => {
+            try {
+                const data = await getFaqs(locale);
+                if (data && data.length > 0) {
+                    setDbFaqs(data.map(item => ({ q: item.question, a: item.answer })));
+                }
+            } catch (err) {
+                console.error("Failed to load FAQs from database:", err);
+            } finally {
+                setHasLoaded(true);
+            }
+        };
+        fetchDbFaqs();
+    }, [locale]);
+
+    // Hardcoded fallback data from next-intl
+    const getFallbackFaqs = () => {
+        try {
+            // Check if key exists (if missing, next-intl returns the key itself)
+            const q1 = t('q1');
+            if (q1 && q1 !== 'Contact.faq.q1' && q1 !== 'q1') {
+                return [
+                    { q: t('q1'), a: t('a1') },
+                    { q: t('q2'), a: t('a2') },
+                    { q: t('q3'), a: t('a3') },
+                    { q: t('q4'), a: t('a4') },
+                ];
+            }
+        } catch {
+            // Fallback to empty
+        }
+        return [];
+    };
+
+    const fallbackFaqs = getFallbackFaqs();
+    const faqs = hasLoaded && dbFaqs.length > 0 ? dbFaqs : fallbackFaqs;
 
     // Generate JSON-LD Schema for SEO
     const faqSchema = {

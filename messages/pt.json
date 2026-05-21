@@ -623,6 +623,7 @@
         "enterEmail": "Introduza o seu email",
         "rights": "© 2026 Lovely Memories. Todos os direitos reservados.",
         "privacyPolicy": "Política de Privacidade e Cookies",
+        "cookieSettings": "Definições de Cookies",
         "termsConditions": "Termos e Condições"
     },
     "Home": {
@@ -922,7 +923,43 @@
         "subtitle": "Gira o conteúdo dinâmico do seu site, incluindo artigos do blog e o mural social do Instagram.",
         "tabs": {
             "blog": "Artigos do Blog",
-            "social": "Mural Social"
+            "social": "Mural Social",
+            "faq": "FAQ",
+            "terms": "Termos & Condições",
+            "privacy": "Política de Privacidade"
+        },
+        "cmsPage": {
+            "newSection": "Nova Secção",
+            "searchPlaceholder": "Procurar secções...",
+            "allLanguages": "Todos os Idiomas",
+            "table": {
+                "title": "Título / Cabeçalho",
+                "locale": "Idioma",
+                "order": "Ordem",
+                "actions": "Ações",
+                "loading": "A carregar secções...",
+                "empty": "Nenhuma secção encontrada."
+            },
+            "deleteModal": {
+                "title": "Excluir Secção?",
+                "message": "Tens a certeza que desejas excluir esta secção? Esta ação não pode ser revertida.",
+                "confirm": "Excluir"
+            },
+            "editor": {
+                "create": "Criar Secção",
+                "edit": "Editar Secção",
+                "title": "Título da Secção",
+                "content": "Conteúdo da Secção",
+                "icon": "Ícone da Secção",
+                "locale": "Idioma",
+                "order": "Ordem de Exibição",
+                "save": "Guardar Secção",
+                "listItems": "Itens da Lista / Sub-lista",
+                "addItem": "Adicionar Item",
+                "itemLabel": "Etiqueta / Prefixo a Negrito",
+                "itemDesc": "Descrição",
+                "removeItem": "Remover"
+            }
         },
         "blog": {
             "newArticle": "Novo Artigo",
@@ -945,6 +982,33 @@
                 "title": "Excluir Artigo?",
                 "message": "Tens a certeza que desejas excluir este artigo? Esta ação não pode ser revertida.",
                 "confirm": "Excluir"
+            }
+        },
+        "faq": {
+            "newFaq": "Nova FAQ",
+            "searchPlaceholder": "Procurar FAQs...",
+            "allLanguages": "Todos os Idiomas",
+            "table": {
+                "question": "Pergunta",
+                "locale": "Idioma",
+                "order": "Ordem",
+                "actions": "Ações",
+                "loading": "A carregar FAQs...",
+                "empty": "Nenhuma FAQ encontrada."
+            },
+            "deleteModal": {
+                "title": "Excluir FAQ?",
+                "message": "Tens a certeza que desejas excluir esta FAQ? Esta ação não pode ser revertida.",
+                "confirm": "Excluir"
+            },
+            "editor": {
+                "create": "Criar FAQ",
+                "edit": "Editar FAQ",
+                "question": "Pergunta",
+                "answer": "Resposta",
+                "locale": "Idioma",
+                "order": "Ordem de Exibição",
+                "save": "Guardar FAQ"
             }
         },
         "social": {
@@ -2256,6 +2320,26 @@
                 "Tickets": "Bilhetes para Eventos",
                 "Calendar": "Planeamento"
             }
+        }
+    },
+    "CookieConsent": {
+        "title": "Valorizamos a sua privacidade",
+        "description": "Utilizamos cookies para melhorar a sua experiência de navegação, exibir anúncios ou conteúdos personalizados e analisar o nosso tráfego. Ao clicar em \"Aceitar Tudo\", consente a nossa utilização de cookies.",
+        "acceptAll": "Aceitar Tudo",
+        "rejectAll": "Rejeitar Tudo",
+        "customize": "Personalizar",
+        "save": "Guardar Preferências",
+        "necessary": {
+            "title": "Necessários",
+            "description": "Obrigatórios para o funcionamento correto do website. Não podem ser desativados."
+        },
+        "analytics": {
+            "title": "Analíticos",
+            "description": "Ajudam-nos a compreender como os visitantes interagem com o website."
+        },
+        "marketing": {
+            "title": "Marketing",
+            "description": "Utilizados para apresentar anúncios relevantes e acompanhar o desempenho."
         }
     }
 }

@@ -7,10 +7,13 @@ export async function GET(
     { params }: { params: Promise<{ propertyId: string }> }
 ) {
     try {
-        const { propertyId } = await params;
+        let { propertyId } = await params;
         if (!propertyId) {
             return new NextResponse('Property ID is required', { status: 400 });
         }
+
+        // Support .ics extension in URL as recommended by Airbnb
+        propertyId = propertyId.replace(/\.ics$/, '');
 
         const supabaseAdmin = await getSupabaseAdmin();
 
@@ -37,9 +40,9 @@ export async function GET(
         // 1. Fetch Confirmed Reservations for this property
         const { data: reservations, error: resError } = await supabaseAdmin
             .from('reservations')
-            .select('id, check_in, check_out')
+            .select('id, check_in, check_out, guest_name')
             .eq('property_id', propertyId)
-            .eq('status', 'confirmed');
+            .in('status', ['confirmed', 'pending']);
 
         if (!resError && reservations) {
             reservations.forEach(res => {

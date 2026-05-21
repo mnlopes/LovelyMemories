@@ -634,6 +634,7 @@
         "enterEmail": "Enter your email",
         "rights": "© 2026 Lovely Memories. All rights reserved.",
         "privacyPolicy": "Privacy & Cookie Policy",
+        "cookieSettings": "Cookie Settings",
         "termsConditions": "Terms & Conditions"
     },
     "Home": {
@@ -933,7 +934,43 @@
         "subtitle": "Manage your website's dynamic content, including blog articles and the Instagram social wall.",
         "tabs": {
             "blog": "Blog Posts",
-            "social": "Social Wall"
+            "social": "Social Wall",
+            "faq": "FAQ",
+            "terms": "Terms & Conditions",
+            "privacy": "Privacy Policy"
+        },
+        "cmsPage": {
+            "newSection": "New Section",
+            "searchPlaceholder": "Search sections...",
+            "allLanguages": "All Languages",
+            "table": {
+                "title": "Title / Header",
+                "locale": "Locale",
+                "order": "Order",
+                "actions": "Actions",
+                "loading": "Loading sections...",
+                "empty": "No sections found."
+            },
+            "deleteModal": {
+                "title": "Delete Section?",
+                "message": "Are you sure you want to delete this section? This action cannot be undone.",
+                "confirm": "Delete"
+            },
+            "editor": {
+                "create": "Create Section",
+                "edit": "Edit Section",
+                "title": "Section Title",
+                "content": "Section Content",
+                "icon": "Section Icon",
+                "locale": "Language",
+                "order": "Display Order",
+                "save": "Save Section",
+                "listItems": "List Items / Sub-list",
+                "addItem": "Add Item",
+                "itemLabel": "Label / Bold Prefix",
+                "itemDesc": "Description",
+                "removeItem": "Remove"
+            }
         },
         "blog": {
             "newArticle": "New Article",
@@ -956,6 +993,33 @@
                 "title": "Delete Article?",
                 "message": "Are you sure you want to delete this article? This action cannot be undone.",
                 "confirm": "Delete"
+            }
+        },
+        "faq": {
+            "newFaq": "New FAQ",
+            "searchPlaceholder": "Search FAQs...",
+            "allLanguages": "All Languages",
+            "table": {
+                "question": "Question",
+                "locale": "Locale",
+                "order": "Order",
+                "actions": "Actions",
+                "loading": "Loading FAQs...",
+                "empty": "No FAQs found."
+            },
+            "deleteModal": {
+                "title": "Delete FAQ?",
+                "message": "Are you sure you want to delete this FAQ? This action cannot be undone.",
+                "confirm": "Delete"
+            },
+            "editor": {
+                "create": "Create FAQ",
+                "edit": "Edit FAQ",
+                "question": "Question",
+                "answer": "Answer",
+                "locale": "Language",
+                "order": "Display Order",
+                "save": "Save FAQ"
             }
         },
         "social": {
@@ -2267,6 +2331,26 @@
                 "Tickets": "Event Tickets",
                 "Calendar": "Planning"
             }
+        }
+    },
+    "CookieConsent": {
+        "title": "We value your privacy",
+        "description": "We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. By clicking \"Accept All\", you consent to our use of cookies.",
+        "acceptAll": "Accept All",
+        "rejectAll": "Reject All",
+        "customize": "Customize",
+        "save": "Save Preferences",
+        "necessary": {
+            "title": "Necessary",
+            "description": "Required for the website to function properly. Cannot be disabled."
+        },
+        "analytics": {
+            "title": "Analytics",
+            "description": "Help us understand how visitors interact with the website."
+        },
+        "marketing": {
+            "title": "Marketing",
+            "description": "Used to deliver relevant advertisements and track performance."
         }
     }
 }

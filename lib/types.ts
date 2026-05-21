@@ -17,7 +17,7 @@ export interface AuditLog {
     action_type: string;
     resource_type: string;
     resource_id: string | null;
-    details: any;
+    details: unknown;
     severity: 'INFO' | 'WARNING' | 'CRITICAL';
     actor?: Profile; // Joined field
 }
@@ -31,3 +31,27 @@ export interface RolePermission {
     created_at: string;
     updated_at: string;
 }
+
+export interface Faq {
+    id?: string;
+    question: string;
+    answer: string;
+    locale: string;
+    display_order: number;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface CmsPageSection {
+    id?: string;
+    page_slug: string;
+    title: string;
+    content: string;
+    icon: string;
+    display_order: number;
+    locale: string;
+    list_items: { label: string; desc: string; }[];
+    created_at?: string;
+    updated_at?: string;
+}
+

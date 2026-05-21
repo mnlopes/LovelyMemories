@@ -14,6 +14,8 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { GuestSelectorWrapper } from "@/components/GuestSelectorWrapper";
 import { DateSelectorWrapper } from "@/components/DateSelectorWrapper";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { CookieConsent } from "@/components/CookieConsent";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -63,6 +65,8 @@ export default async function LocaleLayout({
           <Preloader />
           <ScrollAnimations />
           {children}
+          <CookieConsent />
+          <GoogleAnalytics />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { FileText, Instagram, LayoutGrid } from "lucide-react";
+import { FileText, Instagram, LayoutGrid, HelpCircle, Shield, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BlogManagement from "@/components/admin/content/BlogManagement";
 import SocialWallManagement from "@/components/admin/content/SocialWallManagement";
+import FaqManagement from "@/components/admin/content/FaqManagement";
+import CmsPageManagement from "@/components/admin/content/CmsPageManagement";
 
-type TabType = "blog" | "social";
+type TabType = "blog" | "social" | "faq" | "terms" | "privacy";
 
 export default function AdminContentPage() {
     const params = useParams();
@@ -61,14 +63,56 @@ export default function AdminContentPage() {
                     <Instagram className="size-4" />
                     {t('tabs.social')}
                 </button>
+                <button
+                    onClick={() => setActiveTab("faq")}
+                    className={cn(
+                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        activeTab === "faq"
+                            ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
+                            : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
+                    )}
+                >
+                    <HelpCircle className="size-4" />
+                    {t('tabs.faq')}
+                </button>
+                <button
+                    onClick={() => setActiveTab("terms")}
+                    className={cn(
+                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        activeTab === "terms"
+                            ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
+                            : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
+                    )}
+                >
+                    <Scale className="size-4" />
+                    {t('tabs.terms')}
+                </button>
+                <button
+                    onClick={() => setActiveTab("privacy")}
+                    className={cn(
+                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        activeTab === "privacy"
+                            ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
+                            : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
+                    )}
+                >
+                    <Shield className="size-4" />
+                    {t('tabs.privacy')}
+                </button>
             </div>
 
             {/* Content Area */}
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {activeTab === "blog" ? (
                     <BlogManagement locale={locale} />
-                ) : (
+                ) : activeTab === "social" ? (
                     <SocialWallManagement locale={locale} />
+                ) : activeTab === "faq" ? (
+                    <FaqManagement locale={locale} />
+                ) : activeTab === "terms" ? (
+                    <CmsPageManagement pageSlug="terms-conditions" locale={locale} />
+                ) : (
+                    <CmsPageManagement pageSlug="privacy-policy" locale={locale} />
                 )}
             </div>
         </div>
