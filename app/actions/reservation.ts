@@ -247,6 +247,12 @@ export async function finalizeBooking({
 
     if (dbError) {
         console.error('CRITICAL: Database Error saving reservation:', JSON.stringify(dbError, null, 2));
+        // Unique violation on reference_id: a concurrent finalize (webhook + manual confirm)
+        // already created this reservation. Treat as a benign duplicate, not an error.
+        if (dbError.code === '23505') {
+            console.log(`Duplicate insertion caught via unique constraint for reference: ${referenceId}`);
+            return { success: true, ref: referenceId, warning: "Reservation already exists." };
+        }
         if (dbError.code === '42703') {
             return {
                 success: false,
