@@ -4,6 +4,8 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Share2, Check } from 'lucide-react';
+import { useLocale } from 'next-intl';
 
 interface BlogPostCardProps {
     title: string;
@@ -17,6 +19,23 @@ interface BlogPostCardProps {
 }
 
 export const BlogPostCard = ({ title, date, excerpt, image, slug, index, authorName, authorImage }: BlogPostCardProps) => {
+    const locale = useLocale();
+    const [copied, setCopied] = React.useState(false);
+
+    const handleShare = async (e: React.SyntheticEvent) => {
+        // The whole card is a <Link>; prevent navigation when copying.
+        e.preventDefault();
+        e.stopPropagation();
+        const url = `${window.location.origin}/${locale}/blog/${slug}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Clipboard unavailable — silently ignore (no toast, just no check).
+        }
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -67,7 +86,7 @@ export const BlogPostCard = ({ title, date, excerpt, image, slug, index, authorN
                             )}
                         </div>
 
-                        <div className="mt-auto pt-8">
+                        <div className="mt-auto pt-8 flex items-center justify-between gap-4">
                             <span className="inline-flex items-center text-sm font-bold text-gray-900 group/link">
                                 <span className="relative">
                                     Read more
@@ -81,6 +100,17 @@ export const BlogPostCard = ({ title, date, excerpt, image, slug, index, authorN
                                 >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                 </svg>
+                            </span>
+
+                            <span
+                                role="button"
+                                tabIndex={0}
+                                aria-label={copied ? (locale === 'en' ? 'Link copied' : 'Link copiado') : (locale === 'en' ? 'Copy link' : 'Copiar link')}
+                                onClick={handleShare}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleShare(e); }}
+                                className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition-colors shrink-0 ${copied ? 'border-green-500 text-green-600' : 'border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900'}`}
+                            >
+                                {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
                             </span>
                         </div>
                     </div>
