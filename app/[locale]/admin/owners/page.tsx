@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, use } from 'react';
-import { getOwnersWithPropertyCounts, getCurrentUserRole } from '@/app/actions/user';
-import { Loader2, Plus, Search, User, Phone, Mail, ArrowRight, Home } from 'lucide-react';
+import { getOwnersWithPropertyCounts, getCurrentUserRole, resendOwnerInvite } from '@/app/actions/user';
+import { Loader2, Plus, Search, User, Phone, Mail, ArrowRight, Home, Send, Check } from 'lucide-react';
 import Link from 'next/link';
 import { InviteUserModal } from '@/components/admin/users/InviteUserModal';
 import { AppRole } from '@/lib/types';
@@ -27,6 +27,26 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
     const [searchTerm, setSearchTerm] = useState('');
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [currentUserRole, setCurrentUserRole] = useState<AppRole | null>(null);
+    const [resendState, setResendState] = useState<Record<string, 'loading' | 'done'>>({});
+
+    const handleResend = async (owner: OwnerWithCount) => {
+        if (!owner.email || resendState[owner.id]) return;
+        setResendState((s) => ({ ...s, [owner.id]: 'loading' }));
+        try {
+            const res = await resendOwnerInvite(owner.email, locale);
+            if (res.success) {
+                setResendState((s) => ({ ...s, [owner.id]: 'done' }));
+                toast.success(locale === 'en' ? 'Invite resent' : 'Convite reenviado');
+                setTimeout(() => setResendState((s) => { const n = { ...s }; delete n[owner.id]; return n; }), 2500);
+            } else {
+                setResendState((s) => { const n = { ...s }; delete n[owner.id]; return n; });
+                toast.error(res.error || (locale === 'en' ? 'Failed to resend' : 'Falha ao reenviar'));
+            }
+        } catch (err: any) {
+            setResendState((s) => { const n = { ...s }; delete n[owner.id]; return n; });
+            toast.error(err.message || (locale === 'en' ? 'Failed to resend' : 'Falha ao reenviar'));
+        }
+    };
 
     const fetchOwners = async () => {
         try {
@@ -174,13 +194,31 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-right">
-                                            <Link
-                                                href={`/${locale}/admin/owners/${owner.id}`}
-                                                className="inline-flex items-center gap-2 text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:underline"
-                                            >
-                                                {t('actions.manage')}
-                                                <ArrowRight className="size-3" />
-                                            </Link>
+                                            <div className="inline-flex items-center gap-3 justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleResend(owner)}
+                                                    disabled={!owner.email || !!resendState[owner.id]}
+                                                    title={locale === 'en' ? 'Resend invite email' : 'Reenviar email de convite'}
+                                                    className={`inline-flex items-center gap-1.5 text-xs font-bold transition-colors disabled:opacity-60 ${resendState[owner.id] === 'done' ? 'text-emerald-600' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-admin-dark-text-primary'}`}
+                                                >
+                                                    {resendState[owner.id] === 'loading' ? (
+                                                        <Loader2 className="size-3 animate-spin" />
+                                                    ) : resendState[owner.id] === 'done' ? (
+                                                        <Check className="size-3" />
+                                                    ) : (
+                                                        <Send className="size-3" />
+                                                    )}
+                                                    {locale === 'en' ? 'Resend' : 'Reenviar'}
+                                                </button>
+                                                <Link
+                                                    href={`/${locale}/admin/owners/${owner.id}`}
+                                                    className="inline-flex items-center gap-2 text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:underline"
+                                                >
+                                                    {t('actions.manage')}
+                                                    <ArrowRight className="size-3" />
+                                                </Link>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

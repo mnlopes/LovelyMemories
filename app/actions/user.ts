@@ -435,6 +435,74 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
 }
 
 /**
+ * Resend an access link to an EXISTING owner, using our branded email.
+ * A normal invite (type 'invite') fails for users that already exist, so we generate a
+ * recovery link — it routes through /api/auth/confirm -> /set-password just like the invite —
+ * and send the branded ownerInviteEmail via Resend.
+ */
+export async function resendOwnerInvite(email: string, locale: string = 'pt') {
+    const isAuthorized = await checkRole(['super_admin', 'admin']);
+    if (!isAuthorized) throw new Error('Not authorized to resend invites');
+
+    if (!email) return { success: false, error: 'Missing email' };
+
+    const adminSupabase = await getSupabaseAdmin();
+
+    const getBaseUrl = () => {
+        if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+        const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+        const vercelUrl = process.env.VERCEL_URL;
+        if (vercelProductionUrl) return `https://${vercelProductionUrl}`;
+        if (vercelUrl) return `https://${vercelUrl}`;
+        return 'http://localhost:3000';
+    };
+    const redirectTo = `${getBaseUrl()}/api/auth/confirm?next=/set-password&email=${encodeURIComponent(email)}`;
+
+    const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
+        type: 'recovery',
+        email,
+        options: { redirectTo }
+    });
+    if (linkError) return { success: false, error: linkError.message };
+
+    // Best-effort: greet the owner by name.
+    const { data: profile } = await adminSupabase
+        .from('profiles')
+        .select('full_name')
+        .eq('email', email)
+        .single();
+
+    const inviteLocale = locale === 'en' ? 'en' : 'pt';
+    const { sendEmail } = await import('@/lib/email');
+    const { ownerInviteEmail } = await import('@/lib/email-templates');
+
+    const emailResult = await sendEmail({
+        to: email,
+        subject: inviteLocale === 'en'
+            ? 'Welcome to the Lovely Memories Owner Portal'
+            : 'Bem-vindo ao Portal de Proprietário | Lovely Memories',
+        html: ownerInviteEmail({ fullName: profile?.full_name || undefined, link: linkData.properties.action_link, email }, inviteLocale)
+    });
+
+    if (!emailResult.success) {
+        return { success: false, error: emailResult.error || 'Failed to send email' };
+    }
+
+    // Audit log (best-effort).
+    try {
+        const supabase = await getSupabase();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+            await logActivity(currentUser.id, 'INVITE', 'USER', email, { email, resend: true, locale: inviteLocale });
+        }
+    } catch (logErr) {
+        console.error('Failed to audit log resend invite:', logErr);
+    }
+
+    return { success: true };
+}
+
+/**
  * Update the password for the currently authenticated user
  */
 export async function updateUserPassword(password: string) {
