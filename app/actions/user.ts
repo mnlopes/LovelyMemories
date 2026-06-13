@@ -367,6 +367,22 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
             }
         }
 
+        // SECURITY: Server-authoritative role assignment.
+        // The DB trigger (handle_new_user) intentionally defaults every new profile to 'user'
+        // and does NOT trust client-supplied user_metadata.initial_role (that would allow
+        // self-signup privilege escalation). The role is therefore set here, after the invite
+        // created the auth user, using the service-role client which has already verified the
+        // caller is an admin/super_admin above.
+        if (user?.id) {
+            const { error: roleError } = await adminSupabase
+                .from('profiles')
+                .update({ role, full_name: options?.fullName, phone: options?.phone })
+                .eq('id', user.id);
+            if (roleError) {
+                console.error('SERVER ACTION ERROR [Invite Role Assignment]:', roleError);
+            }
+        }
+
         // Get actor ID for logging
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (currentUser) {
@@ -410,8 +426,11 @@ export async function updateUserPassword(password: string) {
 
     if (error) throw error;
 
-    // 2. Safety Fallback: Ensure the profile has the correct role 
-    // (In case the SQL trigger wasn't updated/applied)
+    // 2. Safety Fallback: Sync name/phone from invite metadata if missing.
+    // SECURITY: We deliberately do NOT elevate the role from user_metadata here.
+    // Roles are assigned server-side at invite time (see inviteUser) and the DB trigger
+    // defaults new profiles to 'user'. Trusting user_metadata.initial_role here would
+    // re-introduce the self-signup privilege-escalation path.
     if (user) {
         const { data: profile } = await supabase
             .from('profiles')
@@ -419,14 +438,10 @@ export async function updateUserPassword(password: string) {
             .eq('id', user.id)
             .single();
 
-        const initialRole = user.user_metadata?.initial_role;
         const fullName = user.user_metadata?.full_name;
         const phone = user.user_metadata?.phone;
 
         const updates: any = {};
-        if (profile && profile.role === 'user' && initialRole && initialRole !== 'user') {
-            updates.role = initialRole;
-        }
         if (profile && !profile.full_name && fullName) {
             updates.full_name = fullName;
         }

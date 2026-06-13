@@ -6,8 +6,10 @@ import { syncOverduePropertiesICal } from '@/app/actions/ical';
 // We run every 1 minute to spread the load across 200+ properties.
 export async function GET(request: Request) {
     try {
+        // SECURITY: fail closed. If CRON_SECRET is not configured, reject all requests
+        // instead of leaving the endpoint open to the public.
         const authHeader = request.headers.get('authorization');
-        if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
