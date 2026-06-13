@@ -3,11 +3,24 @@
 import { z } from "zod";
 import { supabase, getSupabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
+import { getCurrentUserRole } from "./user";
 
 // Schema for coupon validation
 const CouponSchema = z.object({
     code: z.string().min(1, "Código do cupão é obrigatório"),
 });
+
+/**
+ * SECURITY: Coupon management uses the service-role client (bypasses RLS), so it MUST
+ * verify the caller is an admin. Server actions are publicly invocable POST endpoints —
+ * without this check, anyone could create/modify/delete coupons (e.g. a 100%-off code).
+ */
+async function assertCouponAdmin() {
+    const role = await getCurrentUserRole();
+    if (role !== 'super_admin' && role !== 'admin') {
+        throw new Error('Not authorized to manage coupons');
+    }
+}
 
 /**
  * Validates a coupon code and returns its details if valid.
@@ -53,6 +66,7 @@ export async function validateCoupon(code: string) {
  * Gets all coupons (Admin only)
  */
 export async function getCoupons() {
+    await assertCouponAdmin();
     const { data, error } = await supabase
         .from('coupons')
         .select('*')
@@ -70,6 +84,7 @@ export async function getCoupons() {
  * Creates or updates a coupon (Admin only)
  */
 export async function saveCoupon(couponData: any) {
+    await assertCouponAdmin();
     const adminSupabase = await getSupabaseAdmin();
     
     // Ensure code is uppercase
@@ -96,6 +111,7 @@ export async function saveCoupon(couponData: any) {
  * Deletes a coupon (Admin only)
  */
 export async function deleteCoupon(id: string) {
+    await assertCouponAdmin();
     const adminSupabase = await getSupabaseAdmin();
     const { error } = await adminSupabase
         .from('coupons')
@@ -115,6 +131,7 @@ export async function deleteCoupon(id: string) {
  * Toggles coupon active status (Admin only)
  */
 export async function toggleCouponActive(id: string, active: boolean) {
+    await assertCouponAdmin();
     const adminSupabase = await getSupabaseAdmin();
     const { error } = await adminSupabase
         .from('coupons')

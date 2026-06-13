@@ -17,11 +17,15 @@ const PaymentIntentSchema = z.object({
   infants: z.number().int().min(0),
   
   // Extra extras
-  breakfastTotal: z.number().default(0),
-  transferTotal: z.number().default(0),
+  // SECURITY: these client-supplied amounts are added to the Stripe charge, so they must
+  // never be negative (a negative value would reduce the amount charged). They are still
+  // trusted values — ideally they should be recomputed server-side from the property's
+  // breakfast/transfer configuration. min(0) blocks the price-reduction attack.
+  breakfastTotal: z.number().min(0).default(0),
+  transferTotal: z.number().min(0).default(0),
   transferType: z.string().nullish(),
   couponCode: z.string().nullish(),
-  couponDiscount: z.number().default(0),
+  couponDiscount: z.number().min(0).default(0),
 
   // Guest Info (for metadata)
   fullName: z.string(),
@@ -109,10 +113,27 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
       },
     });
 
-    return { 
-      success: true, 
+    // SECURITY: bind this PaymentIntent to the buyer's browser so that its details
+    // (which include guest PII: name, email, phone, billing address, VAT) can only be
+    // retrieved by whoever initiated the payment. See getPaymentIntentDetails.
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      cookieStore.set("lm_pi", intent.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 2, // 2 hours
+        path: "/",
+      });
+    } catch (cookieErr) {
+      console.warn("Could not set PaymentIntent binding cookie:", cookieErr);
+    }
+
+    return {
+      success: true,
       clientSecret: intent.client_secret,
-      amount: totalAmount 
+      amount: totalAmount
     };
 
   } catch (error: any) {
@@ -220,6 +241,17 @@ export async function confirmStripePaymentIntent(paymentIntentId: string) {
 
 export async function getPaymentIntentDetails(paymentIntentId: string) {
     try {
+        // SECURITY: this returns guest PII (name, email, phone, billing, VAT) from the
+        // PaymentIntent metadata. Only the browser that created the PaymentIntent (and thus
+        // holds the httpOnly binding cookie set in createPaymentIntent) may read it. This
+        // prevents anyone holding/guessing a pi_... id from harvesting the guest's data.
+        const { cookies } = await import("next/headers");
+        const cookieStore = await cookies();
+        const boundPi = cookieStore.get("lm_pi")?.value;
+        if (!boundPi || boundPi !== paymentIntentId) {
+            return { success: false, error: "Not authorized" };
+        }
+
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
         
         let actualPaymentMethod = 'stripe';

@@ -210,12 +210,19 @@ export async function updateProfileMetadata(data: { fullName?: string, phone?: s
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Not authenticated' }
 
+    // SECURITY: only an explicit allowlist of self-editable fields is ever written.
+    // `role` is deliberately never part of this update. We use the service-role client
+    // (scoped to the caller's own id) so this works regardless of profiles RLS policies,
+    // while the DB trigger prevent_role_self_escalation blocks any role change anyway.
     const updateData: any = {};
     if (data.fullName !== undefined) updateData.full_name = data.fullName;
     if (data.phone !== undefined) updateData.phone = data.phone;
     if (data.language !== undefined) updateData.preferred_language = data.language;
 
-    const { error } = await supabase
+    const { getSupabaseAdmin } = await import('@/lib/supabase')
+    const adminSupabase = await getSupabaseAdmin()
+
+    const { error } = await adminSupabase
         .from('profiles')
         .update(updateData)
         .eq('id', user.id)

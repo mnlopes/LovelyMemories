@@ -79,6 +79,21 @@ export async function processReservation(data: ReservationData) {
         return { success: false, error: "Bot activity detected.", warning: undefined, ref: undefined };
     }
 
+    // 2.1 SECURITY: Payment bypass protection.
+    // This server action creates ONLY unpaid wire-transfer reservations (status 'pending').
+    // Card payments MUST go through the Stripe-verified flow
+    // (createPaymentIntent -> Stripe -> webhook / confirmStripePaymentIntent).
+    // Without this guard, anyone could call this public server action with
+    // paymentMethod !== 'wire' to obtain a "confirmed" reservation without paying.
+    if (data.paymentMethod !== 'wire') {
+        return {
+            success: false,
+            error: "errorInvalidPaymentMethod",
+            warning: undefined,
+            ref: undefined
+        };
+    }
+
     // 2.5 Extra Security: Date Sequence & Past Date Protection
     const dateIn = new Date(data.checkIn);
     const dateOut = new Date(data.checkOut);
