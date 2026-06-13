@@ -5,7 +5,7 @@ import { X, Mail, Shield, Loader2, UserPlus, Copy, Check } from "lucide-react";
 import { inviteUser } from "@/app/actions/user";
 import { toast } from "sonner";
 import { AppRole } from "@/lib/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 interface InviteUserModalProps {
     isOpen: boolean;
@@ -20,6 +20,8 @@ interface InviteUserModalProps {
 export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, initialRole = "editor", allowedRoles, title }: InviteUserModalProps) => {
     const t = useTranslations("AdminUsers.inviteModal");
     const nt = useTranslations("AdminUsers.notifications");
+    const uiLocale = useLocale();
+    const [inviteLocale, setInviteLocale] = useState<'pt' | 'en'>(uiLocale === 'en' ? 'en' : 'pt');
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<AppRole>(initialRole);
     const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
         e.preventDefault();
         setLoading(true);
         try {
-            const result = await inviteUser(email, role, { fullName, phone });
+            const result = await inviteUser(email, role, { fullName, phone, locale: inviteLocale });
 
             if (result.actionLink) {
                 setGeneratedLink(result.actionLink);
@@ -188,6 +190,30 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                                 </div>
                             )}
 
+                            {/* Invite Language (Specific for Owners) */}
+                            {role === 'owner' && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
+                                        {uiLocale === 'en' ? 'Invite language' : 'Idioma do convite'}
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(['pt', 'en'] as const).map((lng) => (
+                                            <button
+                                                key={lng}
+                                                type="button"
+                                                onClick={() => setInviteLocale(lng)}
+                                                className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${inviteLocale === lng
+                                                    ? "bg-[#171717] dark:bg-white border-transparent text-white dark:text-black shadow-lg"
+                                                    : "bg-[#fafafa] dark:bg-admin-dark-bg border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary hover:border-gray-300"
+                                                    }`}
+                                            >
+                                                {lng === 'pt' ? 'Português' : 'English'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Role Selection */}
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
@@ -246,7 +272,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                                         onClick={async () => {
                                             setLoading(true);
                                             try {
-                                                const result = await inviteUser(email, role, { skipEmail: true, fullName, phone });
+                                                const result = await inviteUser(email, role, { skipEmail: true, fullName, phone, locale: inviteLocale });
                                             if (result.actionLink) {
                                                 setGeneratedLink(result.actionLink);
                                                 toast.success(nt('linkGenerated'));

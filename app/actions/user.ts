@@ -256,7 +256,7 @@ export async function updateUserRole(userId: string, newRole: string) {
 /**
  * Invite a new user via email
  */
-export async function inviteUser(email: string, role: string, options?: { skipEmail?: boolean; fullName?: string; phone?: string }) {
+export async function inviteUser(email: string, role: string, options?: { skipEmail?: boolean; fullName?: string; phone?: string; locale?: string }) {
     const isAuthorized = await checkRole(['super_admin', 'admin']);
     if (!isAuthorized) {
         throw new Error('Not authorized to invite users');
@@ -328,6 +328,37 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
 
             user = linkData.user;
             actionLink = linkData.properties.action_link;
+        } else if (role === 'owner') {
+            // Owners receive a branded Lovely Memories invite (not Supabase's default template).
+            // We generate the invite link and send it ourselves via Resend.
+            const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
+                type: 'invite',
+                email: email,
+                options: {
+                    data: { initial_role: role, full_name: options?.fullName, phone: options?.phone },
+                    redirectTo: redirectTo
+                }
+            });
+
+            if (linkError) throw linkError;
+
+            user = linkData.user;
+            const inviteLink = linkData.properties.action_link;
+
+            const { sendEmail } = await import('@/lib/email');
+            const { ownerInviteEmail } = await import('@/lib/email-templates');
+            const inviteLocale = options?.locale === 'en' ? 'en' : 'pt';
+
+            const emailResult = await sendEmail({
+                to: email,
+                subject: inviteLocale === 'en'
+                    ? 'Welcome to the Lovely Memories Owner Portal'
+                    : 'Bem-vindo ao Portal de Proprietário | Lovely Memories',
+                html: ownerInviteEmail({ fullName: options?.fullName, link: inviteLink, email }, inviteLocale)
+            });
+
+            // If our branded email failed to send, surface the link so the admin can share it manually.
+            if (!emailResult.success) actionLink = inviteLink;
         } else {
             // Normal flow: try to send email first
             const { data, error } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
