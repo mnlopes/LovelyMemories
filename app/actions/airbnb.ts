@@ -110,7 +110,26 @@ export async function scrapeAirbnbListing(url: string): Promise<{ success: boole
         const titleSection = titleSecObj?.section?.title || titleSecObj?.section?.titleText || titleSecObj?.sectionData?.title || "";
         
         const descSection = findSection("DESCRIPTION_DEFAULT")?.section || findSection("DESCRIPTION_DEFAULT")?.sectionData;
-        const photosSection = findSection("PHOTO_TOUR_DEFAULT") || findSection("HERO_DEFAULT") || findSection("PHOTO_TOUR_SCROLLABLE");
+        // Robustly collect every array stored under a given key anywhere in the parsed tree.
+        // Airbnb splits section "placements" (which carry the sectionId) from the actual data
+        // containers, and it renames sectionIds over time, so navigating by sectionId →
+        // section.X is fragile and silently breaks (which is what happened with photos &
+        // amenities). Searching the tree for the data arrays directly is far more resilient.
+        const collectArraysByKey = (root: any, key: string): any[][] => {
+            const out: any[][] = [];
+            const seen = new Set<any>();
+            const rec = (o: any) => {
+                if (!o || typeof o !== "object" || seen.has(o)) return;
+                seen.add(o);
+                if (Array.isArray((o as any)[key]) && (o as any)[key].length) out.push((o as any)[key]);
+                for (const k in o) {
+                    const v = (o as any)[k];
+                    if (v && typeof v === "object") rec(v);
+                }
+            };
+            rec(root);
+            return out;
+        };
         const detailsSection = findSection("OVERVIEW_DEFAULT_V2")?.section?.items || 
                                findSection("GUEST_STAY_OVERVIEW_DEFAULT")?.section?.items || [];
 
@@ -129,40 +148,45 @@ export async function scrapeAirbnbListing(url: string): Promise<{ success: boole
             if (label.includes("bath")) bathrooms = parseFloat(label.replace(',', '.')) || bathrooms;
         });
 
-        // Photos extraction
+        // Photos extraction — Airbnb now serves listing photos as the largest `mediaItems`
+        // array (inside PHOTO_TOUR_SCROLLABLE_MODAL), with high-res URLs in `baseUrl` and
+        // captions under `imageMetadata`. We pick the biggest mediaItems array and dedupe.
         const images: any[] = [];
-        if (photosSection) {
-            const mediaItems = photosSection.section?.mediaItems || 
-                               photosSection.section?.photos || 
-                               photosSection.sectionData?.photos || 
-                               photosSection.section?.previewImages || [];
-            
-            mediaItems.forEach((img: any, index: number) => {
-                const url = img.baseUrl || img.picture || img.largeUrl || img.originalUrl;
-                if (url) {
-                    images.push({
-                        url: url.split('?')[0], // Get high-res version without query params
-                        alt: { 
-                            en: img.caption || `Property Image ${index + 1}`, 
-                            pt: img.caption || `Imagem da Propriedade ${index + 1}`, 
-                            he: "" 
-                        },
-                        is_main: index === 0,
-                        order: index
-                    });
-                }
-            });
-        }
+        const mediaItems = collectArraysByKey(jsonData, "mediaItems")
+            .sort((a, b) => b.length - a.length)[0] || [];
+        const seenImageUrls = new Set<string>();
 
-        // Amenities extraction
+        mediaItems.forEach((img: any) => {
+            const rawUrl = img.baseUrl || img.picture || img.largeUrl || img.originalUrl;
+            if (!rawUrl || typeof rawUrl !== "string") return;
+            const cleanUrl = rawUrl.split("?")[0]; // high-res version without query params
+            if (seenImageUrls.has(cleanUrl)) return;
+            seenImageUrls.add(cleanUrl);
+
+            const caption = img.imageMetadata?.localizedCaption?.text ||
+                            img.imageMetadata?.caption ||
+                            img.accessibilityLabel ||
+                            img.caption || "";
+            const idx = images.length;
+            images.push({
+                url: cleanUrl,
+                alt: {
+                    en: caption || `Property Image ${idx + 1}`,
+                    pt: caption || `Imagem da Propriedade ${idx + 1}`,
+                    he: ""
+                },
+                is_main: idx === 0,
+                order: idx
+            });
+        });
+
+        // Amenities extraction — the real data lives in a `seeAllAmenitiesGroups` array that
+        // is no longer reachable via AMENITIES_DEFAULT.section, so we search the tree for it.
         const amenities: any[] = [];
-        const amenitiesSecObj = findSection("AMENITIES_DEFAULT") || findSectionByType("StayPdpAmenitiesSection");
-        
-        if (amenitiesSecObj) {
-            const groups = (amenitiesSecObj.section?.seeAllAmenitiesGroups || 
-                          amenitiesSecObj.sectionData?.seeAllAmenitiesGroups || 
-                          amenitiesSecObj.sectionData?.amenitiesGroups || []);
-            
+        const groups = collectArraysByKey(jsonData, "seeAllAmenitiesGroups")
+            .sort((a, b) => b.length - a.length)[0] || [];
+
+        if (groups.length > 0) {
             groups.forEach((group: any) => {
                 const airbnbGroupTitle = group.title || "Other";
                 

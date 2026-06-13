@@ -607,25 +607,28 @@ export async function getOwnersWithPropertyCounts() {
         // We can continue with 0 counts if this fails, but better to know
     }
 
-    // Fetch creation dates from auth.users using Admin client
+    // Fetch creation dates via the Auth Admin API. The `auth` schema is NOT exposed over
+    // PostgREST (it would error PGRST106), so we use listUsers() and map by id.
     const adminSupabase = await getSupabaseAdmin();
-    // We cannot easily query auth.users with select().in() usually, 
-    // so we attempt to list users or just use updated_at as fallback if this is too complex/slow.
-    // However, for a list of owners, we can fetch them. 
-    // Trying the schema 'auth' approach which works with Service Role key.
-    const { data: authUsers, error: authError } = await adminSupabase
-        .schema('auth')
-        .from('users')
-        .select('id, created_at')
-        .in('id', ownerIds);
-
     const createdAtMap: Record<string, string> = {};
-    if (authUsers) {
-        authUsers.forEach((u: any) => {
-            createdAtMap[u.id] = u.created_at;
-        });
-    } else if (authError) {
-        console.error('Error fetching auth users:', authError);
+    try {
+        const ownerIdSet = new Set(ownerIds);
+        const perPage = 1000;
+        // Page through auth users until everyone is covered (capped for safety).
+        for (let page = 1; page <= 10; page++) {
+            const { data: list, error: authError } = await adminSupabase.auth.admin.listUsers({ page, perPage });
+            if (authError) {
+                console.error('Error fetching auth users:', authError);
+                break;
+            }
+            const users = list?.users || [];
+            users.forEach((u) => {
+                if (ownerIdSet.has(u.id)) createdAtMap[u.id] = u.created_at;
+            });
+            if (users.length < perPage) break; // reached the last page
+        }
+    } catch (authErr) {
+        console.error('Error fetching auth users:', authErr);
     }
 
     // Aggregate counts
