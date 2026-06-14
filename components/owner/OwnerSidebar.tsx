@@ -35,7 +35,7 @@ export const OwnerSidebar = () => {
 
     return (
         <aside
-            className={`bg-white border-r border-gray-200 flex flex-col shrink-0 h-screen sticky top-0 z-50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-72'}`}
+            className={`bg-white border-r border-gray-200 hidden lg:flex lg:flex-col shrink-0 h-screen sticky top-0 z-50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-72'}`}
         >
             {/* Logo Area */}
             <Link
