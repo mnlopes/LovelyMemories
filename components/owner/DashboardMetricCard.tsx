@@ -34,7 +34,7 @@ export function DashboardMetricCard({ title, value, iconName, trend, delay = 0 }
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay, ease: "easeOut" }}
-            className="bg-white rounded-[20px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-100 relative overflow-hidden group hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-300"
+            className="bg-white rounded-[20px] p-4 lg:p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-100 relative overflow-hidden group hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-300"
         >
             {/* Background Decoration */}
             <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] group-hover:scale-110 transition-all duration-500">
@@ -46,12 +46,12 @@ export function DashboardMetricCard({ title, value, iconName, trend, delay = 0 }
                     <div className="p-2.5 rounded-xl bg-[#FDFBF7] text-[#0A1128]/80 group-hover:bg-[#0A1128] group-hover:text-[#C5A059] transition-colors duration-300 shadow-sm">
                         <Icon className="w-5 h-5" strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-sm font-bold text-[#0A1128]/60 uppercase tracking-wider">{title}</h3>
+                    <h3 className="text-[11px] lg:text-sm font-bold text-[#0A1128]/60 uppercase tracking-wider">{title}</h3>
                 </div>
 
                 <div className="flex items-end justify-between gap-2">
                     <div className="flex flex-col">
-                        <span className="text-3xl font-playfair font-bold text-[#0A1128] tracking-tight">{value}</span>
+                        <span className="text-2xl lg:text-3xl font-playfair font-bold text-[#0A1128] tracking-tight">{value}</span>
                         {trend && (
                             <div className="flex items-center gap-2 mt-2">
                                 <span className={cn(

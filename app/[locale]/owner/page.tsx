@@ -98,7 +98,7 @@ export default async function OwnerDashboard({
             <DashboardFilters properties={properties || []} locale={locale} />
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
                 <DashboardMetricCard
                     title={t('revenue')}
                     value={`€${stats.totalRevenue.toLocaleString()}`}
@@ -129,9 +129,9 @@ export default async function OwnerDashboard({
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                 {/* Revenue Chart - Spans 2 cols */}
-                <div className="lg:col-span-2 h-[400px]">
+                <div className="lg:col-span-2 h-[300px] lg:h-[400px]">
                     <RevenueChart data={stats.revenueData} height={400} />
                 </div>
 
