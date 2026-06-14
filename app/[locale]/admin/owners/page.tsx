@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, use } from 'react';
-import { getOwnersWithPropertyCounts, getCurrentUserRole, resendOwnerInvite } from '@/app/actions/user';
-import { Loader2, Plus, Search, User, Phone, Mail, ArrowRight, Home, Send, Check } from 'lucide-react';
+import { getOwnersWithPropertyCounts, getCurrentUserRole, resendOwnerInvite, deleteOwner } from '@/app/actions/user';
+import { Loader2, Plus, Search, User, Phone, Mail, Home, Send, Check, MoreVertical, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { InviteUserModal } from '@/components/admin/users/InviteUserModal';
 import { AppRole } from '@/lib/types';
@@ -48,6 +48,28 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
         }
     };
 
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<OwnerWithCount | null>(null);
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleting(true);
+        try {
+            const res = await deleteOwner(deleteTarget.id);
+            if (res?.success) {
+                toast.success(locale === 'en' ? 'Owner deleted' : 'Proprietário eliminado');
+                setDeleteTarget(null);
+                fetchOwners();
+            }
+        } catch (err: any) {
+            toast.error(err.message || (locale === 'en' ? 'Failed to delete' : 'Falha ao eliminar'));
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const fetchOwners = async () => {
         try {
             const [ownersData, role] = await Promise.all([
@@ -75,7 +97,7 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-playfair font-bold text-[#171717] dark:text-admin-dark-text-primary">
                         {t('title')}
@@ -83,9 +105,9 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                     <p className="text-[#a3a3a3] mt-1">{t('subtitle')}</p>
                 </div>
 
-                <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-3 w-full md:w-auto">
                     {/* Search */}
-                    <div className="relative w-full md:w-auto min-w-[300px]">
+                    <div className="relative flex-1 md:flex-none md:w-72">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-[#a3a3a3]" />
                         <input
                             type="text"
@@ -98,7 +120,7 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
 
                     <button
                         onClick={() => setIsInviteModalOpen(true)}
-                        className="bg-[#171717] dark:bg-white text-white dark:text-[#171717] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black/90 dark:hover:bg-white/90 transition-colors shadow-sm inline-flex items-center gap-2"
+                        className="bg-[#171717] dark:bg-white text-white dark:text-[#171717] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-black/90 dark:hover:bg-white/90 transition-colors shadow-sm inline-flex items-center justify-center gap-2 shrink-0"
                     >
                         <Plus className="size-4" />
                         {t('addOwner')}
@@ -194,30 +216,62 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-right">
-                                            <div className="inline-flex items-center gap-3 justify-end">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleResend(owner)}
-                                                    disabled={!owner.email || !!resendState[owner.id]}
-                                                    title={locale === 'en' ? 'Resend invite email' : 'Reenviar email de convite'}
-                                                    className={`inline-flex items-center gap-1.5 text-xs font-bold transition-colors disabled:opacity-60 ${resendState[owner.id] === 'done' ? 'text-emerald-600' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-admin-dark-text-primary'}`}
-                                                >
-                                                    {resendState[owner.id] === 'loading' ? (
-                                                        <Loader2 className="size-3 animate-spin" />
-                                                    ) : resendState[owner.id] === 'done' ? (
-                                                        <Check className="size-3" />
-                                                    ) : (
-                                                        <Send className="size-3" />
-                                                    )}
-                                                    {locale === 'en' ? 'Resend' : 'Reenviar'}
-                                                </button>
+                                            <div className="inline-flex items-center gap-2 justify-end">
                                                 <Link
                                                     href={`/${locale}/admin/owners/${owner.id}`}
-                                                    className="inline-flex items-center gap-2 text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:underline"
+                                                    className="inline-flex items-center text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:underline"
                                                 >
                                                     {t('actions.manage')}
-                                                    <ArrowRight className="size-3" />
                                                 </Link>
+
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            if (openMenuId === owner.id) {
+                                                                setOpenMenuId(null);
+                                                            } else {
+                                                                const r = e.currentTarget.getBoundingClientRect();
+                                                                setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+                                                                setOpenMenuId(owner.id);
+                                                            }
+                                                        }}
+                                                        aria-label={locale === 'en' ? 'More actions' : 'Mais ações'}
+                                                        className="size-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-[#171717] dark:hover:text-admin-dark-text-primary hover:bg-gray-100 dark:hover:bg-admin-dark-bg transition-colors"
+                                                    >
+                                                        <MoreVertical className="size-4" />
+                                                    </button>
+
+                                                    {openMenuId === owner.id && (
+                                                        <>
+                                                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                                                            <div
+                                                                className="fixed w-56 bg-white dark:bg-admin-dark-surface rounded-xl shadow-xl border border-gray-100 dark:border-admin-dark-border p-1.5 z-50 text-left"
+                                                                style={{ top: menuPos?.top, right: menuPos?.right }}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => { setOpenMenuId(null); handleResend(owner); }}
+                                                                    disabled={!owner.email}
+                                                                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg transition-colors disabled:opacity-50"
+                                                                >
+                                                                    <Send className="size-4 text-gray-400" />
+                                                                    {locale === 'en' ? 'Resend invite' : 'Reenviar convite'}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => { setOpenMenuId(null); setDeleteTarget(owner); }}
+                                                                    disabled={owner.units_count > 0}
+                                                                    title={owner.units_count > 0 ? (locale === 'en' ? 'Remove properties first' : 'Remova os imóveis primeiro') : undefined}
+                                                                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                                                >
+                                                                    <Trash2 className="size-4" />
+                                                                    {locale === 'en' ? 'Delete owner' : 'Eliminar proprietário'}
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -236,6 +290,48 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                 initialRole="owner"
                 allowedRoles={['owner']}
             />
+
+            {/* Delete confirmation */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-[#0a1128]/40 backdrop-blur-sm"
+                        onClick={() => !deleting && setDeleteTarget(null)}
+                    />
+                    <div className="relative w-full max-w-sm bg-white dark:bg-admin-dark-surface rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="size-12 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-4">
+                            <Trash2 className="size-6 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
+                            {locale === 'en' ? 'Delete owner?' : 'Eliminar proprietário?'}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {locale === 'en'
+                                ? `This permanently removes ${deleteTarget.full_name || deleteTarget.email}. This action cannot be undone.`
+                                : `Isto remove permanentemente ${deleteTarget.full_name || deleteTarget.email}. Esta ação não pode ser desfeita.`}
+                        </p>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setDeleteTarget(null)}
+                                disabled={deleting}
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-admin-dark-border text-sm font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-admin-dark-bg transition-colors disabled:opacity-50"
+                            >
+                                {locale === 'en' ? 'Cancel' : 'Cancelar'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                disabled={deleting}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                            >
+                                {deleting && <Loader2 className="size-4 animate-spin" />}
+                                {locale === 'en' ? 'Delete' : 'Eliminar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

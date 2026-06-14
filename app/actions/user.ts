@@ -503,6 +503,61 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
 }
 
 /**
+ * Delete an owner — ONLY allowed when they have no properties assigned.
+ * Admin/super_admin only. The 0-properties rule is enforced server-side (not just in the UI).
+ */
+export async function deleteOwner(ownerId: string) {
+    const supabase = await getSupabase();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) throw new Error('Not authenticated');
+    if (currentUser.id === ownerId) throw new Error('You cannot delete your own account');
+
+    const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+    if (!currentProfile || (currentProfile.role !== 'super_admin' && currentProfile.role !== 'admin')) {
+        throw new Error('Not authorized to delete owners');
+    }
+
+    const adminSupabase = await getSupabaseAdmin();
+
+    const { data: target } = await adminSupabase
+        .from('profiles')
+        .select('role, email')
+        .eq('id', ownerId)
+        .single();
+    if (!target) throw new Error('Owner not found');
+    if (target.role !== 'owner') throw new Error('This user is not an owner');
+
+    // INTEGRITY: refuse to delete an owner that still has properties assigned.
+    const { count, error: countError } = await adminSupabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('owner_id', ownerId);
+    if (countError) throw new Error('Could not verify owner properties');
+    if ((count || 0) > 0) {
+        throw new Error('Owner still has properties assigned. Remove or reassign them first.');
+    }
+
+    const { error } = await adminSupabase.auth.admin.deleteUser(ownerId);
+    if (error) throw error;
+
+    await logActivity(
+        currentUser.id,
+        'DELETE',
+        'USER',
+        ownerId,
+        { target_email: target.email, target_role: 'owner' },
+        'CRITICAL'
+    );
+
+    revalidatePath('/[locale]/admin/owners', 'page');
+    return { success: true };
+}
+
+/**
  * Update the password for the currently authenticated user
  */
 export async function updateUserPassword(password: string) {
