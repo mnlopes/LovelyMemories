@@ -108,6 +108,8 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
             if (res?.success) {
                 setPwDone(true);
                 toast.success(locale === 'en' ? 'Password updated' : 'Password atualizada');
+            } else {
+                toast.error(res?.error || (locale === 'en' ? 'Failed to set password' : 'Falha ao definir password'));
             }
         } catch (err: any) {
             toast.error(err.message || (locale === 'en' ? 'Failed to set password' : 'Falha ao definir password'));

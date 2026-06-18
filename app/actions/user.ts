@@ -522,54 +522,59 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
  * The admin types a password, we set it via the service-role Admin API, force-confirm the
  * account, and the owner changes it themselves after logging in.
  */
-export async function setOwnerPassword(ownerId: string, newPassword: string) {
-    const supabase = await getSupabase();
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) throw new Error('Not authenticated');
+export async function setOwnerPassword(ownerId: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const supabase = await getSupabase();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) return { success: false, error: 'Not authenticated' };
 
-    const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', currentUser.id)
-        .single();
-    if (!currentProfile || (currentProfile.role !== 'super_admin' && currentProfile.role !== 'admin')) {
-        throw new Error('Not authorized to reset passwords');
+        const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
+        if (!currentProfile || (currentProfile.role !== 'super_admin' && currentProfile.role !== 'admin')) {
+            return { success: false, error: 'Not authorized to reset passwords' };
+        }
+
+        // Same complexity rules enforced everywhere else in the app.
+        const isComplexityMet =
+            newPassword.length >= 8 && /\d/.test(newPassword) && /[a-zA-Z]/.test(newPassword);
+        if (!isComplexityMet) {
+            return { success: false, error: 'Password must be at least 8 characters and include a letter and a number' };
+        }
+
+        const adminSupabase = await getSupabaseAdmin();
+
+        // Only owners can be reset through this path (admins/super_admins are out of scope here).
+        const { data: target, error: targetError } = await adminSupabase
+            .from('profiles')
+            .select('role, email')
+            .eq('id', ownerId)
+            .single();
+        if (targetError || !target) return { success: false, error: 'Owner not found' };
+        if (target.role !== 'owner') return { success: false, error: 'This user is not an owner' };
+
+        const { error } = await adminSupabase.auth.admin.updateUserById(ownerId, {
+            password: newPassword,
+            email_confirm: true, // force-confirm so the owner can log in straight away
+        });
+        if (error) return { success: false, error: error.message };
+
+        await logActivity(
+            currentUser.id,
+            'UPDATE',
+            'USER',
+            ownerId,
+            { field: 'password', target_email: target.email, method: 'admin_set' },
+            'WARNING'
+        );
+
+        return { success: true };
+    } catch (err: any) {
+        console.error('SERVER ACTION ERROR [setOwnerPassword]:', err);
+        return { success: false, error: err?.message || 'Failed to set password' };
     }
-
-    // Same complexity rules enforced everywhere else in the app.
-    const isComplexityMet =
-        newPassword.length >= 8 && /\d/.test(newPassword) && /[a-zA-Z]/.test(newPassword);
-    if (!isComplexityMet) {
-        throw new Error('Password must be at least 8 characters and include a letter and a number');
-    }
-
-    const adminSupabase = await getSupabaseAdmin();
-
-    // Only owners can be reset through this path (admins/super_admins are out of scope here).
-    const { data: target } = await adminSupabase
-        .from('profiles')
-        .select('role, email')
-        .eq('id', ownerId)
-        .single();
-    if (!target) throw new Error('Owner not found');
-    if (target.role !== 'owner') throw new Error('This user is not an owner');
-
-    const { error } = await adminSupabase.auth.admin.updateUserById(ownerId, {
-        password: newPassword,
-        email_confirm: true, // force-confirm so the owner can log in straight away
-    });
-    if (error) throw error;
-
-    await logActivity(
-        currentUser.id,
-        'UPDATE',
-        'USER',
-        ownerId,
-        { field: 'password', target_email: target.email, method: 'admin_set' },
-        'WARNING'
-    );
-
-    return { success: true };
 }
 
 /**
