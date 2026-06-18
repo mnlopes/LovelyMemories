@@ -5,6 +5,9 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { type EmailOtpType } from '@supabase/supabase-js'
+import { assertNotImpersonating } from './auth-context'
 
 export async function loginWithEmail(email: string, password: string, rememberMe: boolean = true) {
     const cookieStore = await cookies()
@@ -64,6 +67,54 @@ export async function loginWithEmail(email: string, password: string, rememberMe
 }
 
 /**
+ * Confirm an invite/recovery link AFTER the user explicitly clicks "Continue" on the
+ * interstitial page. This is the scanner-safe step: email prefetchers (Gmail, Outlook
+ * Safe Links, antivirus) only follow GET links, so the token_hash is NOT consumed until
+ * a real human submits this form. Here we exchange the single-use token_hash for a
+ * session (cookies) and redirect to /set-password.
+ */
+export async function confirmAuthLink(formData: FormData) {
+    const token_hash = formData.get('token_hash') as string | null
+    const type = formData.get('type') as EmailOtpType | null
+    const next = (formData.get('next') as string | null) || '/en/set-password'
+    const locale = next.split('/').filter(Boolean)[0] || 'en'
+
+    let verified = false
+    if (token_hash && type) {
+        const cookieStore = await cookies()
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() {
+                        return cookieStore.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) =>
+                                cookieStore.set(name, value, options)
+                            )
+                        } catch {
+                            // Ignore — set from a context where cookies are read-only.
+                        }
+                    },
+                },
+            }
+        )
+
+        const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+        verified = !error
+        if (error) {
+            console.error('confirmAuthLink verifyOtp error:', error.message)
+        }
+    }
+
+    // redirect() throws NEXT_REDIRECT, so it must live outside the verify block.
+    redirect(verified ? next : `/${locale}/auth-error`)
+}
+
+/**
  * Request a password reset email
  */
 export async function requestPasswordReset(email: string, locale: string = 'en') {
@@ -115,6 +166,7 @@ export async function requestPasswordReset(email: string, locale: string = 'en')
  * Update the current user's email
  */
 export async function updateUserEmail(email: string) {
+    await assertNotImpersonating()
     const cookieStore = await cookies()
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -150,6 +202,7 @@ export async function updateUserEmail(email: string) {
  * Update the current user's password
  */
 export async function updateUserPassword(password: string) {
+    await assertNotImpersonating()
     const cookieStore = await cookies()
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -185,6 +238,7 @@ export async function updateUserPassword(password: string) {
  * Update the current user's profile metadata (e.g. name, phone, language)
  */
 export async function updateProfileMetadata(data: { fullName?: string, phone?: string, language?: string }) {
+    await assertNotImpersonating()
     const cookieStore = await cookies()
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,

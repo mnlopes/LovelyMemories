@@ -62,3 +62,17 @@ export async function getEffectiveUser() {
         isImpersonating: false
     };
 }
+
+/**
+ * Guard for owner-side mutations. "View as owner" is strictly read-only, so any write
+ * action an admin could reach while impersonating must refuse server-side too (the UI
+ * already disables the forms, this is defense-in-depth — and prevents an impersonating
+ * admin from accidentally mutating their OWN account, since these actions run on the
+ * real session).
+ */
+export async function assertNotImpersonating() {
+    const { isImpersonating } = await getEffectiveUser();
+    if (isImpersonating) {
+        throw new Error('Read-only: you are viewing this account as an admin. Exit view mode to make changes.');
+    }
+}

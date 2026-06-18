@@ -2,9 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, use } from 'react';
-import { getOwnersWithPropertyCounts, getCurrentUserRole, resendOwnerInvite, deleteOwner } from '@/app/actions/user';
-import { Loader2, Plus, Search, User, Phone, Mail, Home, Send, Check, MoreVertical, Trash2 } from 'lucide-react';
+import { getOwnersWithPropertyCounts, getCurrentUserRole, resendOwnerInvite, deleteOwner, setOwnerPassword } from '@/app/actions/user';
+import { startImpersonation } from '@/app/actions/impersonation';
+import { Loader2, Plus, Search, User, Phone, Mail, Home, Send, Check, MoreVertical, Trash2, KeyRound, Eye, EyeOff, Copy } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { InviteUserModal } from '@/components/admin/users/InviteUserModal';
 import { AppRole } from '@/lib/types';
 import { toast } from 'sonner';
@@ -21,6 +23,7 @@ interface OwnerWithCount {
 
 export default function AdminOwnersPage({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = use(params);
+    const router = useRouter();
     const t = useTranslations('AdminUsers.AdminOwners');
     const [owners, setOwners] = useState<OwnerWithCount[]>([]);
     const [loading, setLoading] = useState(true);
@@ -52,6 +55,66 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
     const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<OwnerWithCount | null>(null);
     const [deleting, setDeleting] = useState(false);
+
+    // Reset-password modal state
+    const [pwTarget, setPwTarget] = useState<OwnerWithCount | null>(null);
+    const [pwValue, setPwValue] = useState('');
+    const [pwConfirm, setPwConfirm] = useState('');
+    const [pwShow, setPwShow] = useState(false);
+    const [pwSaving, setPwSaving] = useState(false);
+    const [pwDone, setPwDone] = useState(false);
+
+    const pwHasMin = pwValue.length >= 8;
+    const pwHasNum = /\d/.test(pwValue);
+    const pwHasLetter = /[a-zA-Z]/.test(pwValue);
+    const pwValid = pwHasMin && pwHasNum && pwHasLetter && pwValue === pwConfirm;
+
+    const openPasswordModal = (owner: OwnerWithCount) => {
+        setPwTarget(owner);
+        setPwValue('');
+        setPwConfirm('');
+        setPwShow(false);
+        setPwDone(false);
+    };
+
+    const generatePassword = () => {
+        const digits = Math.floor(1000 + Math.random() * 9000);
+        const suffix = Math.random().toString(36).slice(2, 6);
+        const pw = `Lovely-${digits}-${suffix}`;
+        setPwValue(pw);
+        setPwConfirm(pw);
+        setPwShow(true);
+    };
+
+    const [viewingAsId, setViewingAsId] = useState<string | null>(null);
+    const handleViewAs = async (owner: OwnerWithCount) => {
+        setViewingAsId(owner.id);
+        try {
+            await startImpersonation(owner.id);
+            toast.success(locale === 'en' ? `Opening ${owner.full_name || owner.email}'s portal…` : `A abrir o portal de ${owner.full_name || owner.email}…`);
+            router.push(`/${locale}/owner`);
+            router.refresh();
+        } catch (err: any) {
+            toast.error(err.message || (locale === 'en' ? 'Failed to open portal' : 'Falha ao abrir o portal'));
+            setViewingAsId(null);
+        }
+    };
+
+    const handleSetPassword = async () => {
+        if (!pwTarget || !pwValid) return;
+        setPwSaving(true);
+        try {
+            const res = await setOwnerPassword(pwTarget.id, pwValue);
+            if (res?.success) {
+                setPwDone(true);
+                toast.success(locale === 'en' ? 'Password updated' : 'Password atualizada');
+            }
+        } catch (err: any) {
+            toast.error(err.message || (locale === 'en' ? 'Failed to set password' : 'Falha ao definir password'));
+        } finally {
+            setPwSaving(false);
+        }
+    };
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
@@ -249,6 +312,17 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                                                                 className="fixed w-56 bg-white dark:bg-admin-dark-surface rounded-xl shadow-xl border border-gray-100 dark:border-admin-dark-border p-1.5 z-50 text-left"
                                                                 style={{ top: menuPos?.top, right: menuPos?.right }}
                                                             >
+                                                                {currentUserRole === 'super_admin' && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => { setOpenMenuId(null); handleViewAs(owner); }}
+                                                                        disabled={viewingAsId === owner.id}
+                                                                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg transition-colors disabled:opacity-50"
+                                                                    >
+                                                                        {viewingAsId === owner.id ? <Loader2 className="size-4 animate-spin text-gray-400" /> : <Eye className="size-4 text-gray-400" />}
+                                                                        {locale === 'en' ? 'View as owner (read-only)' : 'Ver como owner (só leitura)'}
+                                                                    </button>
+                                                                )}
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => { setOpenMenuId(null); handleResend(owner); }}
@@ -257,6 +331,14 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                                                                 >
                                                                     <Send className="size-4 text-gray-400" />
                                                                     {locale === 'en' ? 'Resend invite' : 'Reenviar convite'}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => { setOpenMenuId(null); openPasswordModal(owner); }}
+                                                                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg transition-colors"
+                                                                >
+                                                                    <KeyRound className="size-4 text-gray-400" />
+                                                                    {locale === 'en' ? 'Reset password' : 'Repor password'}
                                                                 </button>
                                                                 <button
                                                                     type="button"
@@ -329,6 +411,120 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                                 {locale === 'en' ? 'Delete' : 'Eliminar'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reset password modal */}
+            {pwTarget && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-[#0a1128]/40 backdrop-blur-sm"
+                        onClick={() => !pwSaving && setPwTarget(null)}
+                    />
+                    <div className="relative w-full max-w-md bg-white dark:bg-admin-dark-surface rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
+                        <div className="size-12 rounded-full bg-[#171717]/5 dark:bg-white/10 flex items-center justify-center mb-4">
+                            <KeyRound className="size-6 text-[#171717] dark:text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
+                            {locale === 'en' ? 'Reset password' : 'Repor password'}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {locale === 'en'
+                                ? `Set a new password for ${pwTarget.full_name || pwTarget.email}. Share it with the owner — they can change it after logging in.`
+                                : `Define uma nova password para ${pwTarget.full_name || pwTarget.email}. Partilha-a com o proprietário — ele pode alterá-la após entrar.`}
+                        </p>
+
+                        {pwDone ? (
+                            <div className="mt-5 space-y-4">
+                                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
+                                    <p className="text-[10px] uppercase tracking-widest font-bold text-emerald-600/70 mb-1">
+                                        {locale === 'en' ? 'Password set' : 'Password definida'}
+                                    </p>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <code className="text-sm font-bold text-[#171717] dark:text-white break-all">{pwValue}</code>
+                                        <button
+                                            type="button"
+                                            onClick={() => { navigator.clipboard.writeText(pwValue); toast.success(locale === 'en' ? 'Copied' : 'Copiado'); }}
+                                            className="shrink-0 size-8 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-[#171717] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-admin-dark-bg transition-colors"
+                                            aria-label={locale === 'en' ? 'Copy' : 'Copiar'}
+                                        >
+                                            <Copy className="size-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setPwTarget(null)}
+                                    className="w-full px-4 py-2.5 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-[#171717] text-sm font-bold hover:opacity-90 transition-opacity"
+                                >
+                                    {locale === 'en' ? 'Done' : 'Concluir'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="mt-5 space-y-4">
+                                <div className="relative">
+                                    <input
+                                        type={pwShow ? 'text' : 'password'}
+                                        value={pwValue}
+                                        onChange={(e) => setPwValue(e.target.value)}
+                                        placeholder={locale === 'en' ? 'New password' : 'Nova password'}
+                                        className="w-full bg-white dark:bg-admin-dark-bg border border-gray-200 dark:border-admin-dark-border rounded-xl pl-4 pr-11 py-3 text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setPwShow(!pwShow)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#171717] dark:hover:text-white transition-colors"
+                                    >
+                                        {pwShow ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                    </button>
+                                </div>
+                                <input
+                                    type={pwShow ? 'text' : 'password'}
+                                    value={pwConfirm}
+                                    onChange={(e) => setPwConfirm(e.target.value)}
+                                    placeholder={locale === 'en' ? 'Confirm password' : 'Confirmar password'}
+                                    className="w-full bg-white dark:bg-admin-dark-bg border border-gray-200 dark:border-admin-dark-border rounded-xl px-4 py-3 text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none"
+                                />
+
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                                    <span className={pwHasMin ? 'text-emerald-600' : 'text-gray-400'}>{locale === 'en' ? '8+ chars' : '8+ caracteres'}</span>
+                                    <span className={pwHasLetter ? 'text-emerald-600' : 'text-gray-400'}>{locale === 'en' ? '1 letter' : '1 letra'}</span>
+                                    <span className={pwHasNum ? 'text-emerald-600' : 'text-gray-400'}>{locale === 'en' ? '1 number' : '1 número'}</span>
+                                    {pwConfirm.length > 0 && (
+                                        <span className={pwValue === pwConfirm ? 'text-emerald-600' : 'text-red-500'}>{locale === 'en' ? 'match' : 'coincide'}</span>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={generatePassword}
+                                    className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:underline"
+                                >
+                                    {locale === 'en' ? 'Generate a strong password' : 'Gerar password forte'}
+                                </button>
+
+                                <div className="flex gap-3 pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPwTarget(null)}
+                                        disabled={pwSaving}
+                                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-admin-dark-border text-sm font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-admin-dark-bg transition-colors disabled:opacity-50"
+                                    >
+                                        {locale === 'en' ? 'Cancel' : 'Cancelar'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSetPassword}
+                                        disabled={pwSaving || !pwValid}
+                                        className="flex-1 px-4 py-2.5 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-[#171717] text-sm font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {pwSaving && <Loader2 className="size-4 animate-spin" />}
+                                        {locale === 'en' ? 'Set password' : 'Definir password'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

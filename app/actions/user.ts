@@ -343,11 +343,15 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
             if (linkError) throw linkError;
 
             user = linkData.user;
-            const inviteLink = linkData.properties.action_link;
+            const inviteLocale = options?.locale === 'en' ? 'en' : 'pt';
+            // Scanner-safe link: route through our interstitial /confirm page (verifies only on
+            // an explicit click) instead of Supabase's single-use action_link, which email
+            // prefetchers (Gmail, Outlook Safe Links) would consume before the owner ever clicks.
+            const hashedToken = linkData.properties.hashed_token;
+            const inviteLink = `${baseUrl}/${inviteLocale}/confirm?token_hash=${hashedToken}&type=invite&next=${encodeURIComponent(`/${inviteLocale}/set-password`)}&email=${encodeURIComponent(email)}`;
 
             const { sendEmail } = await import('@/lib/email');
             const { ownerInviteEmail } = await import('@/lib/email-templates');
-            const inviteLocale = options?.locale === 'en' ? 'en' : 'pt';
 
             const emailResult = await sendEmail({
                 to: email,
@@ -456,7 +460,11 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
         if (vercelUrl) return `https://${vercelUrl}`;
         return 'http://localhost:3000';
     };
-    const redirectTo = `${getBaseUrl()}/api/auth/confirm?next=/set-password&email=${encodeURIComponent(email)}`;
+    const baseUrl = getBaseUrl();
+    const inviteLocale = locale === 'en' ? 'en' : 'pt';
+    // redirectTo is only used as a fallback; the email actually points at our scanner-safe
+    // interstitial (built from hashed_token below), never the consumable action_link.
+    const redirectTo = `${baseUrl}/api/auth/confirm?next=/set-password&email=${encodeURIComponent(email)}`;
 
     const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
         type: 'recovery',
@@ -465,6 +473,11 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
     });
     if (linkError) return { success: false, error: linkError.message };
 
+    // Scanner-safe link: route through our /confirm interstitial (single verifyOtp on an
+    // explicit click) with type=recovery — coherent with how confirmAuthLink verifies it.
+    const hashedToken = linkData.properties.hashed_token;
+    const inviteLink = `${baseUrl}/${inviteLocale}/confirm?token_hash=${hashedToken}&type=recovery&next=${encodeURIComponent(`/${inviteLocale}/set-password`)}&email=${encodeURIComponent(email)}`;
+
     // Best-effort: greet the owner by name.
     const { data: profile } = await adminSupabase
         .from('profiles')
@@ -472,7 +485,6 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
         .eq('email', email)
         .single();
 
-    const inviteLocale = locale === 'en' ? 'en' : 'pt';
     const { sendEmail } = await import('@/lib/email');
     const { ownerInviteEmail } = await import('@/lib/email-templates');
 
@@ -481,7 +493,7 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
         subject: inviteLocale === 'en'
             ? 'Welcome to the Lovely Memories Owner Portal'
             : 'Bem-vindo ao Portal de Proprietário | Lovely Memories',
-        html: ownerInviteEmail({ fullName: profile?.full_name || undefined, link: linkData.properties.action_link, email }, inviteLocale)
+        html: ownerInviteEmail({ fullName: profile?.full_name || undefined, link: inviteLink, email }, inviteLocale)
     });
 
     if (!emailResult.success) {
@@ -498,6 +510,64 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
     } catch (logErr) {
         console.error('Failed to audit log resend invite:', logErr);
     }
+
+    return { success: true };
+}
+
+/**
+ * Set (reset) an owner's password directly from the admin UI. Admin/super_admin only.
+ *
+ * This is the bullet-proof unblock path when an owner is stuck on the invite/recovery
+ * email flow (token consumed by a scanner, old link, etc.): no email, no single-use token.
+ * The admin types a password, we set it via the service-role Admin API, force-confirm the
+ * account, and the owner changes it themselves after logging in.
+ */
+export async function setOwnerPassword(ownerId: string, newPassword: string) {
+    const supabase = await getSupabase();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) throw new Error('Not authenticated');
+
+    const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', currentUser.id)
+        .single();
+    if (!currentProfile || (currentProfile.role !== 'super_admin' && currentProfile.role !== 'admin')) {
+        throw new Error('Not authorized to reset passwords');
+    }
+
+    // Same complexity rules enforced everywhere else in the app.
+    const isComplexityMet =
+        newPassword.length >= 8 && /\d/.test(newPassword) && /[a-zA-Z]/.test(newPassword);
+    if (!isComplexityMet) {
+        throw new Error('Password must be at least 8 characters and include a letter and a number');
+    }
+
+    const adminSupabase = await getSupabaseAdmin();
+
+    // Only owners can be reset through this path (admins/super_admins are out of scope here).
+    const { data: target } = await adminSupabase
+        .from('profiles')
+        .select('role, email')
+        .eq('id', ownerId)
+        .single();
+    if (!target) throw new Error('Owner not found');
+    if (target.role !== 'owner') throw new Error('This user is not an owner');
+
+    const { error } = await adminSupabase.auth.admin.updateUserById(ownerId, {
+        password: newPassword,
+        email_confirm: true, // force-confirm so the owner can log in straight away
+    });
+    if (error) throw error;
+
+    await logActivity(
+        currentUser.id,
+        'UPDATE',
+        'USER',
+        ownerId,
+        { field: 'password', target_email: target.email, method: 'admin_set' },
+        'WARNING'
+    );
 
     return { success: true };
 }
