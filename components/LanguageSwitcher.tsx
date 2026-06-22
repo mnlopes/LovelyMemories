@@ -8,8 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const LANGUAGES = [
     { code: 'en', label: 'English', flag: '/legacy/home/images/english-flag.svg' },
-    { code: 'pt', label: 'Português', flag: '/legacy/home/images/portuguese-flag.svg' },
-    { code: 'he', label: 'עברית', flag: '/legacy/home/images/he.svg' }
+    { code: 'pt', label: 'Português', flag: '/legacy/home/images/portuguese-flag.svg' }
 ];
 
 export const LanguageSwitcher = () => {

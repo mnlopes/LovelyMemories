@@ -35,6 +35,7 @@ export const Navbar = () => {
         { path: '/about-us', label: t('about') },
         { path: '/properties', label: t('properties') },
         { path: '/concierge', label: t('concierge') },
+        { path: '/blog', label: t('blog') },
         { path: '/contact', label: t('contact') },
     ];
 
@@ -63,7 +64,7 @@ export const Navbar = () => {
                                 <li key={link.path}>
                                     <Link
                                         href={link.path}
-                                        className={`text-[12px] xl:text-[13px] 2xl:text-base font-bold uppercase tracking-widest transition-all duration-300 ${
+                                        className={`text-[11px] xl:text-[12px] 2xl:text-[15px] font-bold uppercase tracking-widest transition-all duration-300 ${
                                             link.path === '/' 
                                                 ? 'border border-[#b09e80]/50 rounded-full px-3 xl:px-4 2xl:px-5 py-1.5 2xl:py-2 hover:bg-[#b09e80]/10 hover:border-[#b09e80]' 
                                                 : 'hover:text-[#b09e80]'
@@ -88,7 +89,7 @@ export const Navbar = () => {
                                     <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
                             </span>
-                            <span className="text-[12px] xl:text-[13px] 2xl:text-base font-bold uppercase tracking-widest hidden xl:block">{t('login')}</span>
+                            <span className="text-[11px] xl:text-[12px] 2xl:text-[15px] font-bold uppercase tracking-widest hidden xl:block">{t('login')}</span>
                         </Link>
 
                         {/* Language Switcher */}

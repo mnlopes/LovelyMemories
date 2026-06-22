@@ -581,11 +581,14 @@ export async function setOwnerPassword(ownerId: string, newPassword: string): Pr
  * Delete an owner — ONLY allowed when they have no properties assigned.
  * Admin/super_admin only. The 0-properties rule is enforced server-side (not just in the UI).
  */
-export async function deleteOwner(ownerId: string) {
+export async function deleteOwner(ownerId: string, locale: string = 'en') {
+    // Localized error messages so the UI surfaces them in the admin's language.
+    const tr = (pt: string, en: string) => (locale === 'pt' ? pt : en);
+
     const supabase = await getSupabase();
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) throw new Error('Not authenticated');
-    if (currentUser.id === ownerId) throw new Error('You cannot delete your own account');
+    if (!currentUser) throw new Error(tr('Sessão não iniciada', 'Not authenticated'));
+    if (currentUser.id === ownerId) throw new Error(tr('Não pode eliminar a sua própria conta', 'You cannot delete your own account'));
 
     const { data: currentProfile } = await supabase
         .from('profiles')
@@ -593,7 +596,7 @@ export async function deleteOwner(ownerId: string) {
         .eq('id', currentUser.id)
         .single();
     if (!currentProfile || (currentProfile.role !== 'super_admin' && currentProfile.role !== 'admin')) {
-        throw new Error('Not authorized to delete owners');
+        throw new Error(tr('Sem autorização para eliminar proprietários', 'Not authorized to delete owners'));
     }
 
     const adminSupabase = await getSupabaseAdmin();
@@ -603,17 +606,17 @@ export async function deleteOwner(ownerId: string) {
         .select('role, email')
         .eq('id', ownerId)
         .single();
-    if (!target) throw new Error('Owner not found');
-    if (target.role !== 'owner') throw new Error('This user is not an owner');
+    if (!target) throw new Error(tr('Proprietário não encontrado', 'Owner not found'));
+    if (target.role !== 'owner') throw new Error(tr('Este utilizador não é um proprietário', 'This user is not an owner'));
 
     // INTEGRITY: refuse to delete an owner that still has properties assigned.
     const { count, error: countError } = await adminSupabase
         .from('properties')
         .select('id', { count: 'exact', head: true })
         .eq('owner_id', ownerId);
-    if (countError) throw new Error('Could not verify owner properties');
+    if (countError) throw new Error(tr('Não foi possível verificar os imóveis do proprietário', 'Could not verify owner properties'));
     if ((count || 0) > 0) {
-        throw new Error('Owner still has properties assigned. Remove or reassign them first.');
+        throw new Error(tr('O proprietário ainda tem imóveis associados. Remova-os ou reatribua-os primeiro.', 'Owner still has properties assigned. Remove or reassign them first.'));
     }
 
     const { error } = await adminSupabase.auth.admin.deleteUser(ownerId);

@@ -122,7 +122,7 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
         if (!deleteTarget) return;
         setDeleting(true);
         try {
-            const res = await deleteOwner(deleteTarget.id);
+            const res = await deleteOwner(deleteTarget.id, locale);
             if (res?.success) {
                 toast.success(locale === 'en' ? 'Owner deleted' : 'Proprietário eliminado');
                 setDeleteTarget(null);
