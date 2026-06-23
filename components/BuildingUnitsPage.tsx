@@ -44,6 +44,17 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
         return 0;
     });
 
+    // Identity intro (highlights_intro) with subtitle fallback for legacy buildings
+    const identityIntro = getLocalizedStr(building.highlights_intro, locale) || getLocalizedStr(building.subtitle, locale);
+
+    // Description arrives as { en: string[], pt: string[], he: string[] } from transformProperty
+    const descriptionParagraphs: string[] = (() => {
+        const d = building.description;
+        if (!d) return [];
+        const arr = Array.isArray(d) ? d : (d[locale] || d.en || d.pt || d.he);
+        return Array.isArray(arr) ? arr.filter((p: string) => typeof p === 'string' && p.trim() !== '') : [];
+    })();
+
     return (
         <div className="flex flex-col lg:flex-row min-h-screen bg-[#f8f9fa] pt-24 lg:pt-28">
             {/* Left Sidebar - Building Information */}
@@ -77,7 +88,7 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                         {t('backToAllHomes')}
                     </Link>
 
-                    <div className="mb-8 relative aspect-video w-full overflow-hidden rounded-2xl shadow-md">
+                    <div className="mb-8 shrink-0 relative aspect-video w-full overflow-hidden rounded-2xl shadow-md">
                         <Image
                             src={building.image}
                             alt={building.title}
@@ -98,9 +109,31 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
 
                         <div className="h-px w-20 bg-[#AD9C7E]/30 my-2" />
 
-                        <p className="text-gray-500 text-lg leading-relaxed">
-                            {getLocalizedStr(building.subtitle, locale)}
-                        </p>
+                        {/* Identity intro — premium lead line */}
+                        {identityIntro && (
+                            <p className="text-gray-600 text-base md:text-lg leading-relaxed">
+                                {identityIntro}
+                            </p>
+                        )}
+
+                        {/* Building description */}
+                        {descriptionParagraphs.length > 0 && (
+                            <div className="space-y-3 mt-1">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#AD9C7E] whitespace-nowrap">
+                                        {t('aboutBuilding')}
+                                    </span>
+                                    <div className="h-px flex-1 bg-[#AD9C7E]/15" />
+                                </div>
+                                <div className="space-y-2.5">
+                                    {descriptionParagraphs.map((para, i) => (
+                                        <p key={i} className="text-gray-500 text-[15px] leading-relaxed">
+                                            {para}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex items-center gap-3 mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                             <Building2 className="w-5 h-5 text-[#AD9C7E]" />

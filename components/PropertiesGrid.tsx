@@ -51,6 +51,11 @@ export const PropertiesGrid = () => {
 
     const regions = ['all', 'porto', 'gaia', 'lisboa', 'algarve'];
 
+    // Count real bookable properties: a building contributes its number of units,
+    // a standalone counts as one. Mirrors the "X Apartamentos" label on each card.
+    const countProperties = (list: any[]) =>
+        list.reduce((sum, p) => sum + (p.is_multi_unit ? safeCount(p.unitsCount) : 1), 0);
+
     const filteredProperties = properties.filter(p =>
         selectedRegion === 'all' || p.location.region.toLowerCase() === selectedRegion || p.location.city.toLowerCase() === selectedRegion
     );
@@ -98,8 +103,8 @@ export const PropertiesGrid = () => {
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-5 sm:gap-x-8 md:gap-x-12 gap-y-4 md:gap-y-6 border-b border-gray-100 pb-2 relative">
                         {regions.map(region => {
                             const count = region === 'all'
-                                ? properties.length
-                                : properties.filter(p => (p.location.region.toLowerCase() === region || p.location.city.toLowerCase() === region)).length;
+                                ? countProperties(properties)
+                                : countProperties(properties.filter(p => (p.location.region.toLowerCase() === region || p.location.city.toLowerCase() === region)));
                             const isActive = selectedRegion === region;
 
                             return (

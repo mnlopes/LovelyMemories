@@ -350,12 +350,15 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                         />
                     </div>
                 </div>
-                <div className="space-y-6 pt-10">
-                    <HighlightsManager activeLang={activeLang} dir={dir} />
-                </div>
+                {mode !== 'building' && (
+                    <div className="space-y-6 pt-10">
+                        <HighlightsManager activeLang={activeLang} dir={dir} />
+                    </div>
+                )}
             </div>
 
-            {/* Bottom Section: Rules & Hours */}
+            {/* Bottom Section: Rules & Hours — units/standalones only, not buildings */}
+            {mode !== 'building' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 border-t border-[#f5f5f5] dark:border-admin-dark-border pt-12 transition-colors">
                 <div className="space-y-6">
                     <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary pb-2 border-b border-[#f5f5f5] dark:border-admin-dark-border transition-colors">
@@ -439,6 +442,7 @@ export default function BasicInfoTab({ mode, activeLang, dir }: BasicInfoTabProp
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 }
