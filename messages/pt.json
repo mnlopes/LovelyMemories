@@ -717,6 +717,8 @@
         "people": "Pessoas",
         "apartmentsIn": "Apartamentos em",
         "aboutBuilding": "Sobre o edifício",
+        "availableApartments": "Apartamentos Disponíveis",
+        "chooseFromApartments": "Escolha entre {count} apartamentos únicos neste edifício.",
         "exitBuildingMode": "Sair do modo edifício",
         "guest": "Hóspede",
         "guests": "Hóspedes",

@@ -147,8 +147,8 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
             <main className="flex-1 p-6 md:p-12 overflow-y-auto">
                 <div className="max-w-[1600px] mx-auto">
                     <div className="mb-8">
-                        <h2 className="text-2xl font-bold text-[#192537] mb-2">Available Apartments</h2>
-                        <p className="text-gray-500">Choose from {activeUnits.length} unique apartments within this building.</p>
+                        <h2 className="text-2xl font-bold text-[#192537] mb-2">{t('availableApartments')}</h2>
+                        <p className="text-gray-500">{t('chooseFromApartments', { count: activeUnits.length })}</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
