@@ -31,7 +31,7 @@ interface NearbyPlace {
     subtitle?: string;
     time: string;
     icon: "car" | "walk";
-    coordinates?: [number, number];
+    coordinates?: [number, number] | null;
 }
 
 interface NearbyCategory {
@@ -42,7 +42,7 @@ interface NearbyCategory {
 interface LocationSectionProps {
     propertyId: string;
     nearbyPlaces: NearbyCategory[];
-    coordinates?: [number, number];
+    coordinates?: [number, number] | null;
     address: string;
 }
 

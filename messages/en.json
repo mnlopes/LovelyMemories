@@ -1186,11 +1186,11 @@
         "checkInCheckOut": "Check-in & Check-out",
         "cancellationPolicy": "Cancellation policy",
         "rules": {
-            "children": "Children welcome",
-            "infants": "Infants welcome",
-            "pets": "No pets",
-            "parties": "No parties or events",
-            "smoking": "No smoking"
+            "children": { "yes": "Children welcome", "no": "No children" },
+            "infants": { "yes": "Infants welcome", "no": "No infants" },
+            "pets": { "yes": "Pets welcome", "no": "No pets" },
+            "parties": { "yes": "Parties & events allowed", "no": "No parties or events" },
+            "smoking": { "yes": "Smoking allowed", "no": "No smoking" }
         },
         "from": "from",
         "before": "before",
@@ -1982,9 +1982,18 @@
             "noRooms": "No rooms configured",
             "noRoomsDesc": "Add bedrooms and bathrooms to show them clearly on the property page.",
             "getStarted": "Get Started",
+            "deleteRoomTitle": "Delete space?",
+            "deleteRoomMessage": "This will remove this room/space from the listing. This action cannot be undone.",
+            "deleteRoomConfirm": "Delete",
+            "deleteRoomCancel": "Cancel",
             "noImage": "No image",
             "uploading": "Uploading...",
             "uploadPhoto": "Upload Photo",
+            "chooseFromMedia": "Choose from gallery",
+            "selectRoomPhoto": "Select a photo for this space",
+            "selectRoomPhotoDesc": "Pick from the photos uploaded to this listing's Media tab.",
+            "noMediaPhotos": "No photos in the Media tab yet. Add photos there first.",
+            "removePhoto": "Remove photo",
             "pasteUrl": "Or paste URL...",
             "roomName": "Room Name ({lang})",
             "roomType": "Type",
@@ -2007,6 +2016,11 @@
             "bedTypes": {
                 "double": "Double Bed",
                 "single": "Single Bed",
+                "queen": "Queen Bed",
+                "king": "King Bed",
+                "superKing": "Super King Bed",
+                "twin": "Twin Beds",
+                "bunk": "Bunk Bed",
                 "sofa": "Sofa Bed"
             }
         },

@@ -459,17 +459,24 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
 
     // Coordinate validation
     const isValidCoord = (c: number) => typeof c === 'number' && !isNaN(c) && Math.abs(c) < 500;
+    const normalize = (val: any) => {
+        if (typeof val === 'string') return val.replace(',', '.');
+        return val;
+    };
     const safeCoords = (lat: any, lng: any, fallbackLat = 0, fallbackLng = 0): [number, number] => {
-        const normalize = (val: any) => {
-            if (typeof val === 'string') return val.replace(',', '.');
-            return val;
-        };
         const cLat = parseFloat(normalize(lat));
         const cLng = parseFloat(normalize(lng));
         return [
             isValidCoord(cLat) ? cLat : fallbackLat,
             isValidCoord(cLng) ? cLng : fallbackLng
         ];
+    };
+    // Returns valid coordinates or null — never a fake fallback location.
+    // Missing/invalid coordinates must NOT default to Porto (was causing wrong map pins).
+    const safeCoordsOrNull = (lat: any, lng: any): [number, number] | null => {
+        const cLat = parseFloat(normalize(lat));
+        const cLng = parseFloat(normalize(lng));
+        return (isValidCoord(cLat) && isValidCoord(cLng)) ? [cLat, cLng] : null;
     };
 
     // Multilingual helpers
@@ -502,7 +509,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
             region: region,
             country: 'Portugal',
             address: getLocalizedStr(visualData.address || p.address || actualParent?.address || units[0]?.address || ''),
-            coordinates: safeCoords(visualData.lat || p.lat, visualData.lng || p.lng, actualParent?.lat || 41.1579, actualParent?.lng || -8.6291)
+            coordinates: safeCoordsOrNull(visualData.lat || p.lat, visualData.lng || p.lng) || safeCoordsOrNull(actualParent?.lat, actualParent?.lng)
         },
         image: (typeof visualData.images?.[0] === 'string' ? visualData.images[0] : visualData.images?.find((img: any) => img.is_main)?.url) || visualData.property_images?.find((img: any) => img.is_main)?.url || propertyImages[0],
         images: propertyImages,
@@ -534,7 +541,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
                 ...cat,
                 items: cat.items?.map((item: any) => ({
                     ...item,
-                    coordinates: item.coordinates ? safeCoords(item.coordinates[0], item.coordinates[1], 41.1579, -8.6291) : null
+                    coordinates: safeCoordsOrNull(item.coordinates?.[0], item.coordinates?.[1])
                 }))
             }))
             : (legacyProperty?.nearbyPlaces || []),

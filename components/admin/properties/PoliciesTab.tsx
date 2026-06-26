@@ -230,28 +230,16 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                     </div>
 
                     <div className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
-                                {t('policies.policyTitle')} ({activeLang.toUpperCase()})
-                            </label>
-                            <input
-                                key={`cancel-text-${activeLang}`}
-                                {...register(`cancellation.text.${activeLang}` as any)}
-                                dir={dir}
-                                placeholder="e.g. Moderate"
-                                className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
-                                    {t('policies.refundDetails')} ({activeLang.toUpperCase()})
+                                    {t('policies.policyTitle')} ({activeLang.toUpperCase()})
                                 </label>
                                 <input
-                                    key={`cancel-refund-${activeLang}`}
-                                    {...register(`cancellation.refundText.${activeLang}` as any)}
+                                    key={`cancel-text-${activeLang}`}
+                                    {...register(`cancellation.text.${activeLang}` as any)}
                                     dir={dir}
-                                    placeholder="e.g. 50% refund"
+                                    placeholder="e.g. Moderate"
                                     className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                                 />
                             </div>
@@ -267,6 +255,19 @@ export default function PoliciesTab({ activeLang, dir }: PoliciesTabProps) {
                                     className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm focus:border-[#171717] dark:focus:border-white outline-none transition-all ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
                                 />
                             </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-[#a3a3a3] dark:text-admin-dark-text-secondary uppercase tracking-wider">
+                                {t('policies.refundDetails')} ({activeLang.toUpperCase()})
+                            </label>
+                            <textarea
+                                key={`cancel-refund-${activeLang}`}
+                                {...register(`cancellation.refundText.${activeLang}` as any)}
+                                dir={dir}
+                                rows={6}
+                                placeholder="e.g. 50% refund"
+                                className={`w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3 text-[#171717] dark:text-admin-dark-text-primary text-sm leading-relaxed focus:border-[#171717] dark:focus:border-white outline-none transition-all resize-y min-h-[140px] ${dir === 'rtl' ? 'text-right' : 'text-left'}`}
+                            />
                         </div>
                     </div>
                 </div>

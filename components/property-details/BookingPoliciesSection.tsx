@@ -51,19 +51,19 @@ export function BookingPoliciesSection({ policies }: BookingPoliciesSectionProps
     const rules = [
         {
             id: 'childrenAllowed',
-            label: t('rules.children'),
+            label: t(`rules.children.${policies.houseRules.childrenAllowed ? 'yes' : 'no'}`),
             allowed: policies.houseRules.childrenAllowed,
             sublabel: t('ageRanges.children')
         },
         {
             id: 'infantsAllowed',
-            label: t('rules.infants'),
+            label: t(`rules.infants.${policies.houseRules.infantsAllowed ? 'yes' : 'no'}`),
             allowed: policies.houseRules.infantsAllowed,
             sublabel: t('ageRanges.infants')
         },
-        { id: 'petsAllowed', label: t('rules.pets'), allowed: policies.houseRules.petsAllowed, sublabel: undefined },
-        { id: 'partiesAllowed', label: t('rules.parties'), allowed: policies.houseRules.partiesAllowed, sublabel: undefined },
-        { id: 'smokingAllowed', label: t('rules.smoking'), allowed: policies.houseRules.smokingAllowed, sublabel: undefined },
+        { id: 'petsAllowed', label: t(`rules.pets.${policies.houseRules.petsAllowed ? 'yes' : 'no'}`), allowed: policies.houseRules.petsAllowed, sublabel: undefined },
+        { id: 'partiesAllowed', label: t(`rules.parties.${policies.houseRules.partiesAllowed ? 'yes' : 'no'}`), allowed: policies.houseRules.partiesAllowed, sublabel: undefined },
+        { id: 'smokingAllowed', label: t(`rules.smoking.${policies.houseRules.smokingAllowed ? 'yes' : 'no'}`), allowed: policies.houseRules.smokingAllowed, sublabel: undefined },
         ...(policies.houseRules.custom || []).map(customRule => ({
             id: 'custom',
             label: getLocalizedStr(customRule.label, locale),

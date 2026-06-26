@@ -3,10 +3,11 @@
 import { useFormContext, useFieldArray, useWatch, Control } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
-import { Plus, Trash2, Bed, Bath, User, Layout, Image as ImageIcon, Ruler, Upload, Loader2, Baby, Car, Zap } from "lucide-react";
+import { Plus, Trash2, Bed, Bath, User, Layout, Image as ImageIcon, Ruler, Upload, Loader2, Baby, Car, Zap, Check, X } from "lucide-react";
 import { PropertyFormData } from "./PropertyFormSchema";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
+import DeleteConfirmModal from "../ui/DeleteConfirmModal";
 
 interface RoomsTabProps {
     activeLang: string;
@@ -26,6 +27,8 @@ interface RoomItemProps {
 function RoomItem({ index, activeLang, dir, remove, register, control, setValue }: RoomItemProps) {
     const t = useTranslations('PropertyEditor');
     const [isUploading, setIsUploading] = useState(false);
+    const [showPicker, setShowPicker] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const roomType = useWatch({
         control,
@@ -36,6 +39,17 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
         control,
         name: `rooms.${index}.image` as any,
     });
+
+    // Photos uploaded to the listing's Media tab, reusable per room/space.
+    const listingImages = (useWatch({
+        control,
+        name: `images` as any,
+    }) || []) as Array<{ url: string; alt?: Record<string, string>; is_main?: boolean }>;
+
+    const selectFromGallery = (url: string) => {
+        setValue(`rooms.${index}.image` as any, url, { shouldDirty: true });
+        setShowPicker(false);
+    };
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -87,6 +101,14 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                         {isUploading ? t('units.uploading') : t('units.uploadPhoto')}
                         <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={isUploading} />
                     </label>
+                    <button
+                        type="button"
+                        onClick={() => setShowPicker(true)}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#B08D4A] text-white rounded-lg text-xs font-bold hover:bg-[#9A7B3E] transition-all cursor-pointer shadow-xl"
+                    >
+                        <ImageIcon className="size-3" />
+                        {t('units.chooseFromMedia')}
+                    </button>
                     <div className="w-full px-2">
                         <input
                             type="text"
@@ -97,6 +119,92 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                     </div>
                 </div>
             </div>
+
+            {/* Gallery Picker — choose from the listing's Media photos */}
+            {showPicker && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                    onClick={() => setShowPicker(false)}
+                >
+                    <div
+                        className="w-full max-w-3xl max-h-[80vh] flex flex-col bg-white dark:bg-admin-dark-surface rounded-[24px] border border-[#eaeaea] dark:border-admin-dark-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between gap-4 p-6 border-b border-[#eaeaea] dark:border-admin-dark-border">
+                            <div>
+                                <h4 className="text-base font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('units.selectRoomPhoto')}</h4>
+                                <p className="text-xs text-[#a3a3a3] dark:text-admin-dark-text-secondary mt-1">{t('units.selectRoomPhotoDesc')}</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowPicker(false)}
+                                className="p-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary hover:text-[#171717] dark:hover:text-white hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg rounded-lg transition-all shrink-0"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {listingImages.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-[#a3a3a3] dark:text-admin-dark-text-secondary gap-3 text-center">
+                                    <ImageIcon className="size-10 opacity-20" />
+                                    <p className="text-sm font-medium max-w-xs">{t('units.noMediaPhotos')}</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                    {listingImages.filter(img => img?.url).map((img, i) => {
+                                        const isSelected = img.url === roomImage;
+                                        return (
+                                            <button
+                                                key={`${img.url}-${i}`}
+                                                type="button"
+                                                onClick={() => selectFromGallery(img.url)}
+                                                className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all group/pick ${isSelected ? 'border-[#B08D4A] ring-2 ring-[#B08D4A]/30' : 'border-transparent hover:border-[#171717] dark:hover:border-white'}`}
+                                            >
+                                                <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                                {isSelected && (
+                                                    <div className="absolute inset-0 bg-[#B08D4A]/20 flex items-center justify-center">
+                                                        <div className="size-7 rounded-full bg-[#B08D4A] text-white flex items-center justify-center shadow-lg">
+                                                            <Check className="size-4" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {roomImage && (
+                            <div className="p-4 border-t border-[#eaeaea] dark:border-admin-dark-border flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => selectFromGallery('')}
+                                    className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                >
+                                    <Trash2 className="size-3.5" />
+                                    {t('units.removePhoto')}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <DeleteConfirmModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={() => {
+                    remove(index);
+                    setShowDeleteConfirm(false);
+                }}
+                isLoading={false}
+                title={t('units.deleteRoomTitle')}
+                message={t('units.deleteRoomMessage')}
+                confirmLabel={t('units.deleteRoomConfirm')}
+                cancelLabel={t('units.deleteRoomCancel')}
+            />
 
             {/* Room Details */}
             <div className="flex-1 p-6 space-y-6">
@@ -127,7 +235,7 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                     </div>
                     <button
                         type="button"
-                        onClick={() => remove(index)}
+                        onClick={() => setShowDeleteConfirm(true)}
                         className="p-2 text-[#a3a3a3] dark:text-admin-dark-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
                     >
                         <Trash2 className="size-4" />
@@ -157,6 +265,11 @@ function RoomItem({ index, activeLang, dir, remove, register, control, setValue 
                                         >
                                             <option value="double">{t('units.bedTypes.double')}</option>
                                             <option value="single">{t('units.bedTypes.single')}</option>
+                                            <option value="queen">{t('units.bedTypes.queen')}</option>
+                                            <option value="king">{t('units.bedTypes.king')}</option>
+                                            <option value="superKing">{t('units.bedTypes.superKing')}</option>
+                                            <option value="twin">{t('units.bedTypes.twin')}</option>
+                                            <option value="bunk">{t('units.bedTypes.bunk')}</option>
                                             <option value="sofa">{t('units.bedTypes.sofa')}</option>
                                         </select>
                                     </div>

@@ -1177,11 +1177,11 @@
         "checkInCheckOut": "Check-in & Check-out",
         "cancellationPolicy": "Política de cancelamento",
         "rules": {
-            "children": "Crianças bem-vindas",
-            "infants": "Bebés bem-vindos",
-            "pets": "Animais não permitidos",
-            "parties": "Festas não permitidas",
-            "smoking": "Proibido fumar"
+            "children": { "yes": "Crianças bem-vindas", "no": "Crianças não permitidas" },
+            "infants": { "yes": "Bebés bem-vindos", "no": "Bebés não permitidos" },
+            "pets": { "yes": "Animais bem-vindos", "no": "Animais não permitidos" },
+            "parties": { "yes": "Festas e eventos permitidos", "no": "Festas não permitidas" },
+            "smoking": { "yes": "Permitido fumar", "no": "Proibido fumar" }
         },
         "from": "a partir das",
         "before": "antes das",
@@ -1973,9 +1973,18 @@
             "noRooms": "Sem quartos configurados",
             "noRoomsDesc": "Adicione quartos e casas de banho para os mostrar claramente na página da propriedade.",
             "getStarted": "Começar",
+            "deleteRoomTitle": "Eliminar espaço?",
+            "deleteRoomMessage": "Isto irá remover este quarto/espaço do alojamento. Esta ação não pode ser anulada.",
+            "deleteRoomConfirm": "Eliminar",
+            "deleteRoomCancel": "Cancelar",
             "noImage": "Sem imagem",
             "uploading": "A carregar...",
             "uploadPhoto": "Carregar Foto",
+            "chooseFromMedia": "Escolher da galeria",
+            "selectRoomPhoto": "Selecione uma foto para este espaço",
+            "selectRoomPhotoDesc": "Escolha entre as fotos carregadas no separador Media deste alojamento.",
+            "noMediaPhotos": "Ainda não há fotos no separador Media. Adicione fotos lá primeiro.",
+            "removePhoto": "Remover foto",
             "pasteUrl": "Ou cole o URL...",
             "roomName": "Nome do Quarto ({lang})",
             "roomType": "Tipo",
@@ -1998,6 +2007,11 @@
             "bedTypes": {
                 "double": "Cama de Casal",
                 "single": "Cama de Solteiro",
+                "queen": "Cama Queen",
+                "king": "Cama King",
+                "superKing": "Cama Super King",
+                "twin": "Camas Individuais",
+                "bunk": "Beliche",
                 "sofa": "Sofá-Cama"
             }
         },
