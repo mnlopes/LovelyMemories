@@ -8,6 +8,45 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// --- Abuse guards for this PUBLIC, unauthenticated endpoint -------------------------
+// This endpoint creates 15-min availability locks. Without guards an attacker could
+// flood it (a fresh sessionId per call) to lock every available date and make the site
+// unbookable (a booking-DoS). These are lightweight, infra-free mitigations with
+// deliberately generous thresholds so a real guest is never blocked:
+//   1) best-effort in-memory per-IP throttle (no shared store on serverless, but it
+//      meaningfully raises the cost of a scripted flood);
+//   2) a sane max lock date-range (kills the "one giant lock blocks everything" trick);
+//   3) a generous cap on simultaneous active locks per property.
+const LOCK_WINDOW_MS = 60_000;
+const LOCK_MAX_PER_IP_WINDOW = 30;
+const MAX_LOCK_NIGHTS = 180;
+const MAX_ACTIVE_LOCKS_PER_PROPERTY = 50;
+
+const ipHits = new Map<string, { count: number; resetAt: number }>();
+function tooManyRequests(ip: string): boolean {
+  const now = Date.now();
+  // Opportunistic cleanup so the map can't grow unbounded on a long-lived instance.
+  if (ipHits.size > 5000) {
+    for (const [k, v] of ipHits) if (now > v.resetAt) ipHits.delete(k);
+  }
+  const entry = ipHits.get(ip);
+  if (!entry || now > entry.resetAt) {
+    ipHits.set(ip, { count: 1, resetAt: now + LOCK_WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > LOCK_MAX_PER_IP_WINDOW;
+}
+
+async function atPropertyLockCap(supabase: any, propertyId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from('locked_dates')
+    .select('id', { count: 'exact', head: true })
+    .eq('property_id', propertyId)
+    .gt('expires_at', new Date().toISOString());
+  return (count || 0) >= MAX_ACTIVE_LOCKS_PER_PROPERTY;
+}
+
 /**
  * API to handle 15-minute temporary reservation locks.
  */
@@ -18,6 +57,22 @@ export async function POST(req: Request) {
 
     if (!propertyId || !checkIn || !checkOut || !sessionId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Abuse guards (public endpoint): throttle per IP and validate the requested range.
+    const ip =
+      req.headers.get('x-real-ip') ||
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      'unknown';
+    if (tooManyRequests(ip)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    const ci = new Date(checkIn);
+    const co = new Date(checkOut);
+    const nights = Math.round((co.getTime() - ci.getTime()) / 86_400_000);
+    if (isNaN(ci.getTime()) || isNaN(co.getTime()) || nights <= 0 || nights > MAX_LOCK_NIGHTS) {
+      return NextResponse.json({ error: 'Invalid date range' }, { status: 400 });
     }
 
     const supabase = supabaseAdmin;
@@ -66,6 +121,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'errorTemporarilyLocked' }, { status: 409 });
       }
 
+      if (await atPropertyLockCap(supabase, propertyId)) {
+        return NextResponse.json({ error: 'errorTemporarilyLocked' }, { status: 429 });
+      }
+
       const expiresAt = addMinutes(new Date(), 15);
       const { error: insertError } = await supabase
         .from('locked_dates')
@@ -101,7 +160,11 @@ export async function POST(req: Request) {
       // 2. Clear any old locks for this session (cleanup)
       await supabase.from('locked_dates').delete().eq('session_id', sessionId);
 
-      // 3. Create new lock
+      // 3. Cap simultaneous active locks per property (abuse guard), then create the lock
+      if (await atPropertyLockCap(supabase, propertyId)) {
+        return NextResponse.json({ error: 'errorTemporarilyLocked' }, { status: 429 });
+      }
+
       const expiresAt = addMinutes(new Date(), 15);
       const { error: insertError } = await supabase
         .from('locked_dates')
