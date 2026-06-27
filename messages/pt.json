@@ -494,12 +494,17 @@
         "resetDesc": "Introduza o seu email para receber um link de recuperação.",
         "sendResetLink": "Enviar Link de Recuperação",
         "backToLogin": "Voltar ao Login",
-        "linkSent": "Link de redifinição enviado!",
-        "checkInbox": "Por favor verifique a sua caixa de entrada (e pasta de spam) pelo link de redifinição.",
+        "recoverySubtitle": "Enviámos um link de recuperação para o seu email.",
+        "linkSent": "Link de redefinição enviado!",
+        "checkInbox": "Por favor verifique a sua caixa de entrada (e pasta de spam) pelo link de redefinição.",
         "minChars": "Pelo menos 8 caracteres",
         "oneLetter": "Uma letra",
         "oneNumber": "Um número",
-        "passwordDesc": "A palavra-passe deve ter pelo menos 8 caracteres, uma letra e um número"
+        "passwordDesc": "A palavra-passe deve ter pelo menos 8 caracteres, uma letra e um número",
+        "legalAgree": "Ao continuar, concorda com os nossos",
+        "termsOfService": "Termos de Serviço",
+        "legalAnd": "e",
+        "privacyPolicy": "Política de Privacidade"
     },
     "OwnerProfile": {
         "title": "Definições de Conta",

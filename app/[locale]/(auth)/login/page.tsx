@@ -60,11 +60,12 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            const result = await requestPasswordReset(email, locale);
-            if (result.error) throw new Error(result.error);
+            // The server action always reports success (anti-enumeration): it never reveals
+            // whether the email is registered. We always show the "check your inbox" state.
+            await requestPasswordReset(email, locale);
             setResetEmailSent(true);
         } catch (err: any) {
-            setError(err.message || "Failed to send reset link. Please try again.");
+            setError(err.message || t('errorInvalid'));
         } finally {
             setIsLoading(false);
         }
@@ -95,15 +96,15 @@ export default function LoginPage() {
                             style={{ filter: 'brightness(0) saturate(100%) invert(8%) sepia(35%) saturate(1210%) hue-rotate(188deg) brightness(96%) contrast(97%)' }}
                         />
                     </Link>
-                    <h1 className="text-4xl font-playfair font-bold text-[#0A1128] mb-3 tracking-tight">
-                        {isResetMode ? (resetEmailSent ? t('checkEmail') || "Check Email" : "Reset Password") : t('welcomeBack')}
+                    <h1 className={`${isResetMode ? 'text-2xl sm:text-3xl' : 'text-4xl'} font-playfair font-bold text-[#0A1128] mb-3 tracking-tight`}>
+                        {isResetMode ? (resetEmailSent ? t('checkEmail') : t('resetPassword')) : t('welcomeBack')}
                     </h1>
                     <p className="text-[#0A1128]/50 text-base font-light tracking-wide">
-                        {isResetMode 
-                            ? (resetEmailSent 
-                                ? "We've sent a recovery link to your email address." 
-                                : "Enter your email to receive a password reset link.") 
-                            : (t('loginDesc') || "Enter your credentials to access your dashboard")}
+                        {isResetMode
+                            ? (resetEmailSent
+                                ? t('recoverySubtitle')
+                                : t('resetDesc'))
+                            : t('loginDesc')}
                     </p>
                 </div>
 
@@ -124,9 +125,9 @@ export default function LoginPage() {
                                 <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <CheckCircle2 className="w-8 h-8 text-green-500" />
                                 </div>
-                                <h3 className="text-xl font-bold text-[#0A1128] mb-2">Link Sent!</h3>
+                                <h3 className="text-xl font-bold text-[#0A1128] mb-2">{t('linkSent')}</h3>
                                 <p className="text-[#0A1128]/60 text-sm mb-8">
-                                    Please check your inbox (and spam folder) for the reset instructions.
+                                    {t('checkInbox')}
                                 </p>
                                 <button
                                     onClick={() => {
@@ -135,7 +136,7 @@ export default function LoginPage() {
                                     }}
                                     className="text-sm font-bold text-[#C5A059] uppercase tracking-widest hover:underline"
                                 >
-                                    Back to Login
+                                    {t('backToLogin')}
                                 </button>
                             </motion.div>
                         ) : isResetMode ? (
@@ -176,15 +177,15 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full h-14 bg-[#0A1128] text-white rounded-xl font-bold uppercase tracking-[0.15em] hover:bg-[#152040] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group relative overflow-hidden"
+                                    className="w-full h-14 bg-[#0A1128] text-white rounded-xl font-bold uppercase text-sm tracking-wide hover:bg-[#152040] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 group relative overflow-hidden"
                                 >
                                     <span className="relative z-10 flex items-center gap-2">
                                         {isLoading ? (
                                             <Loader2 className="w-5 h-5 animate-spin" />
                                         ) : (
                                             <>
-                                                Send Reset Link
-                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                {t('sendResetLink')}
+                                                <ArrowRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
                                             </>
                                         )}
                                     </span>
@@ -196,7 +197,7 @@ export default function LoginPage() {
                                     className="w-full text-center text-sm font-bold text-[#0A1128]/40 hover:text-[#0A1128] transition-colors flex items-center justify-center gap-2 group"
                                 >
                                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                                    Back to Login
+                                    {t('backToLogin')}
                                 </button>
                             </motion.form>
                         ) : (
@@ -257,23 +258,23 @@ export default function LoginPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-1">
-                                    <label className="flex items-center gap-2 cursor-pointer group">
-                                        <input 
-                                            type="checkbox" 
+                                <div className="flex items-center justify-between gap-3 pt-1">
+                                    <label className="flex items-center gap-2 cursor-pointer group shrink-0">
+                                        <input
+                                            type="checkbox"
                                             checked={rememberMe}
                                             onChange={(e) => setRememberMe(e.target.checked)}
-                                            className="w-4 h-4 rounded border-gray-300 text-[#C5A059] focus:ring-[#C5A059] cursor-pointer" 
+                                            className="w-4 h-4 shrink-0 rounded border-gray-300 text-[#C5A059] focus:ring-[#C5A059] cursor-pointer"
                                         />
-                                        <span className="text-sm text-[#0A1128]/60 group-hover:text-[#0A1128] transition-colors">{t('rememberMe') || "Keep me logged in"}</span>
+                                        <span className="text-xs text-[#0A1128]/60 group-hover:text-[#0A1128] transition-colors whitespace-nowrap">{t('rememberMe')}</span>
                                     </label>
 
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={() => setIsResetMode(true)}
-                                        className="text-sm font-semibold text-[#B09E80] hover:text-[#9E8C6D] transition-colors"
+                                        className="text-xs font-semibold text-[#B09E80] hover:text-[#9E8C6D] transition-colors whitespace-nowrap text-right"
                                     >
-                                        Forgot password?
+                                        {t('forgotPassword')}
                                     </button>
                                 </div>
 
@@ -301,10 +302,10 @@ export default function LoginPage() {
                 {/* Footer Links */}
                 <div className="mt-10 text-center">
                     <p className="text-[#0A1128]/40 text-sm font-light">
-                        By signing in, you agree to our <br />
-                        <Link href="/terms-conditions" className="text-[#0A1128]/70 hover:text-[#C5A059] underline decoration-1 underline-offset-4 transition-colors">Terms of Service</Link>
-                        {" "} and {" "}
-                        <Link href="/privacy-policy" className="text-[#0A1128]/70 hover:text-[#C5A059] underline decoration-1 underline-offset-4 transition-colors">Privacy Policy</Link>
+                        {t('legalAgree')} <br />
+                        <Link href="/terms-conditions" className="text-[#0A1128]/70 hover:text-[#C5A059] underline decoration-1 underline-offset-4 transition-colors">{t('termsOfService')}</Link>
+                        {" "} {t('legalAnd')} {" "}
+                        <Link href="/privacy-policy" className="text-[#0A1128]/70 hover:text-[#C5A059] underline decoration-1 underline-offset-4 transition-colors">{t('privacyPolicy')}</Link>
                     </p>
                 </div>
 

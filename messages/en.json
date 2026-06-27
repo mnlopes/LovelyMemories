@@ -503,12 +503,17 @@
         "resetDesc": "Enter your email to receive a password reset link.",
         "sendResetLink": "Send Reset Link",
         "backToLogin": "Back to Login",
+        "recoverySubtitle": "We've sent a recovery link to your email address.",
         "linkSent": "Reset link sent!",
         "checkInbox": "Please check your inbox (and spam folder) for the reset link.",
         "minChars": "At least 8 characters",
         "oneLetter": "One letter",
         "oneNumber": "One number",
-        "passwordDesc": "Password must have at least 8 characters, one letter and one number"
+        "passwordDesc": "Password must have at least 8 characters, one letter and one number",
+        "legalAgree": "By continuing, you agree to our",
+        "termsOfService": "Terms of Service",
+        "legalAnd": "and",
+        "privacyPolicy": "Privacy Policy"
     },
     "OwnerProfile": {
         "title": "Account Settings",
