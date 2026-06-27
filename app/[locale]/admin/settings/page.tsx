@@ -783,7 +783,7 @@ export default function SettingsPage() {
                                                     <MapPin className="size-4" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{failure.title}</p>
+                                                    <p className="text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary">{typeof failure.title === 'object' && failure.title !== null ? ((failure.title as any).en || (failure.title as any).pt || (failure.title as any).he || 'Untitled') : (failure.title || 'Untitled')}</p>
                                                     <p className="text-[10px] text-rose-600 dark:text-rose-400 font-medium break-all">{failure.error}</p>
                                                 </div>
                                             </div>
