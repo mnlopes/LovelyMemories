@@ -8,8 +8,8 @@
  * Email clients don't execute JS, but this prevents broken markup and HTML-injection
  * tricks (e.g. a crafted full_name closing a tag) from a value that originates in the DB.
  */
-const escapeHtml = (value: string): string =>
-    value
+const escapeHtml = (value: unknown): string =>
+    String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -25,12 +25,12 @@ export const adminLeadEmail = (data: any) => `
         <p>You have received a new evaluation / contact request from the website.</p>
         
         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Name:</strong> ${data.fullName}</p>
-            <p><strong>Email:</strong> ${data.email}</p>
-            <p><strong>Phone:</strong> ${data.phoneNumber}</p>
-            <p><strong>Typology:</strong> ${data.typology}</p>
-            <p><strong>Extra Perks:</strong> ${data.perks}</p>
-            <p><strong>Location:</strong> ${data.location}</p>
+            <p><strong>Name:</strong> ${escapeHtml(data.fullName)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+            <p><strong>Phone:</strong> ${escapeHtml(data.phoneNumber)}</p>
+            <p><strong>Typology:</strong> ${escapeHtml(data.typology)}</p>
+            <p><strong>Extra Perks:</strong> ${escapeHtml(data.perks)}</p>
+            <p><strong>Location:</strong> ${escapeHtml(data.location)}</p>
             ${data.plan ? `<p><strong>Selected Plan:</strong> ${data.plan.toUpperCase()}</p>` : ''}
             ${data.numProperties ? `<p><strong>Number of Properties:</strong> ${data.numProperties}</p>` : ''}
         </div>
@@ -49,11 +49,11 @@ export const adminContactEmail = (data: any) => `
         <p>You have received a new contact request from the website.</p>
         
         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Email:</strong> ${data.email}</p>
-            ${data.fullName ? `<p><strong>Name:</strong> ${data.fullName}</p>` : ''}
-            <p><strong>Location:</strong> ${data.location || 'N/A'}</p>
-            ${data.bedrooms ? `<p><strong>Typology (Bedrooms):</strong> ${data.bedrooms}</p>` : ''}
-            ${data.message ? `<div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;"><strong>Message:</strong><br/>${data.message}</div>` : ''}
+            <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+            ${data.fullName ? `<p><strong>Name:</strong> ${escapeHtml(data.fullName)}</p>` : ''}
+            <p><strong>Location:</strong> ${escapeHtml(data.location || 'N/A')}</p>
+            ${data.bedrooms ? `<p><strong>Typology (Bedrooms):</strong> ${escapeHtml(data.bedrooms)}</p>` : ''}
+            ${data.message ? `<div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;"><strong>Message:</strong><br/>${escapeHtml(data.message)}</div>` : ''}
         </div>
         
         <p style="font-size: 12px; color: #999;">This email was sent via the website contact form.</p>
@@ -68,16 +68,16 @@ export const bookingAdminEmail = (data: any) => `
     </div>
     <div style="padding: 30px; color: #333; line-height: 1.6;">
         <h3 style="color: #0A1128; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 20px;">Detalhes do Cliente</h3>
-        <p style="margin: 5px 0;"><strong>Hóspede:</strong> ${data.guest_name}</p>
-        <p style="margin: 5px 0;"><strong>Email:</strong> ${data.guest_email}</p>
-        <p style="margin: 5px 0;"><strong>Telefone:</strong> ${data.guest_phone}</p>
+        <p style="margin: 5px 0;"><strong>Hóspede:</strong> ${escapeHtml(data.guest_name)}</p>
+        <p style="margin: 5px 0;"><strong>Email:</strong> ${escapeHtml(data.guest_email)}</p>
+        <p style="margin: 5px 0;"><strong>Telefone:</strong> ${escapeHtml(data.guest_phone)}</p>
         
         <h3 style="color: #0A1128; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px;">Detalhes da Reserva</h3>
-        <p style="margin: 5px 0;"><strong>Propriedade:</strong> ${data.property_title}</p>
+        <p style="margin: 5px 0;"><strong>Propriedade:</strong> ${escapeHtml(data.property_title)}</p>
         <p style="margin: 5px 0;"><strong>Datas:</strong> ${data.check_in} a ${data.check_out}</p>
         <p style="margin: 5px 0;"><strong>Hóspedes:</strong> ${data.adults} adultos, ${data.children} crianças, ${data.infants} bebés</p>
-        ${data.extra_guests && data.extra_guests.length > 0 ? `<p style="margin: 5px 0;"><strong>Hóspedes Adicionais:</strong> ${data.extra_guests.join(', ')}</p>` : ''}
-        ${data.arrival_time ? `<p style="margin: 5px 0;"><strong>Hora de Chegada Estimada:</strong> ${data.arrival_time}</p>` : ''}
+        ${data.extra_guests && data.extra_guests.length > 0 ? `<p style="margin: 5px 0;"><strong>Hóspedes Adicionais:</strong> ${escapeHtml(data.extra_guests.join(', '))}</p>` : ''}
+        ${data.arrival_time ? `<p style="margin: 5px 0;"><strong>Hora de Chegada Estimada:</strong> ${escapeHtml(data.arrival_time)}</p>` : ''}
         
         <div style="background: #fdfaf5; border: 1px solid #f0e6d2; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <p style="margin: 0 0 10px 0; font-weight: bold; color: #B08D4A;">Detalhamento de Custos:</p>
@@ -95,18 +95,18 @@ export const bookingAdminEmail = (data: any) => `
         ${data.billing_address ? `
         <h3 style="color: #0A1128; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px;">Dados de Faturação</h3>
         <p style="margin: 5px 0; font-size: 14px;">
-            ${data.guest_name}<br/>
-            ${data.billing_address}<br/>
-            ${data.billing_zip} ${data.billing_city}<br/>
-            ${data.billing_country}
-            ${data.billing_vat ? `<br/><strong>NIF:</strong> ${data.billing_vat}` : ''}
+            ${escapeHtml(data.guest_name)}<br/>
+            ${escapeHtml(data.billing_address)}<br/>
+            ${escapeHtml(data.billing_zip)} ${escapeHtml(data.billing_city)}<br/>
+            ${escapeHtml(data.billing_country)}
+            ${data.billing_vat ? `<br/><strong>NIF:</strong> ${escapeHtml(data.billing_vat)}` : ''}
         </p>
         ` : ''}
 
         ${data.special_requests ? `
         <div style="margin-top: 25px; background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #B08D4A;">
             <p style="margin: 0; font-weight: bold; font-size: 12px; text-transform: uppercase; color: #999;">Observações:</p>
-            <p style="margin: 5px 0 0 0; font-style: italic;">"${data.special_requests}"</p>
+            <p style="margin: 5px 0 0 0; font-style: italic;">"${escapeHtml(data.special_requests)}"</p>
         </div>
         ` : ''}
     </div>
@@ -142,7 +142,7 @@ export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') 
             <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">${content.title}</h2>
         </div>
         <div style="padding: 40px; color: #333; line-height: 1.6;">
-            <p>${content.greeting} <strong>${data.guest_name}</strong>,</p>
+            <p>${content.greeting} <strong>${escapeHtml(data.guest_name)}</strong>,</p>
             <p>${content.reception} <strong style="color: #B08D4A;">${data.property_title}</strong>.</p>
             
             <div style="border: 1px solid #B08D4A; border-radius: 16px; padding: 30px; margin: 30px 0; background-color: #fdfaf5;">
@@ -205,7 +205,7 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
             <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">${content.title}</h2>
         </div>
         <div style="padding: 40px; color: #333; line-height: 1.6;">
-            <p>${content.greeting} <strong>${data.guest_name}</strong>,</p>
+            <p>${content.greeting} <strong>${escapeHtml(data.guest_name)}</strong>,</p>
             <p>${content.confirmation}</p>
             <p>${content.guaranteed}</p>
             

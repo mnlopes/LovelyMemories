@@ -119,36 +119,11 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
             }
         }
 
-        // --- NEXE TRACKER (Background) ---
-        const uaRaw = (request.headers.get("user-agent") || "").toLowerCase();
-        const isBot = uaRaw.includes("bot") || uaRaw.includes("vercel") || uaRaw.includes("screenshot");
-        if (!isBot && !isPrefetch) {
-            const nexePromise = fetch("https://nexe-control-room.vercel.app/api/logs/ingest", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    url: "lovelymemories.pt",
-                    method: request.method,
-                    path: pathname,
-                    status: response.status || 200,
-                    response_time: Date.now() - startTime,
-                    ip, country, city: `${region.toUpperCase()} (${city}, ${country})`,
-                    browser: userAgent,
-                    user_agent: userAgent,
-                    device: deviceType,
-                    user_role: userRole.toUpperCase(),
-                    is_admin_view: isAdminPath,
-                    locale: localeContext
-                })
-            }).catch(() => { });
-
-            if (typeof event?.waitUntil === 'function') {
-                event.waitUntil(Promise.all([logPromise, nexePromise]));
-            }
-        } else {
-            if (typeof event?.waitUntil === 'function') {
-                event.waitUntil(logPromise);
-            }
+        // Persist the visitor log to our OWN database in the background.
+        // (Removed the external nexe-control-room telemetry call: no IP / geolocation /
+        // user role was to be sent to a third-party endpoint — GDPR + trust reasons.)
+        if (typeof event?.waitUntil === 'function') {
+            event.waitUntil(logPromise);
         }
     }
 

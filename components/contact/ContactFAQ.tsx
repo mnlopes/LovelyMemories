@@ -76,7 +76,7 @@ export default function ContactFAQ() {
             {/* Inject JSON-LD into the head of the document */}
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, '\\u003c') }}
             />
             
             <div className="container mx-auto px-4 max-w-4xl">
