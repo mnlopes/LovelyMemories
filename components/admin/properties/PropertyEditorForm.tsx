@@ -2,7 +2,7 @@
 
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { ArrowLeft, Save, Eye, Loader2, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -287,11 +287,16 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         return !tab.hideForUnits;
     });
 
-    const handlePreview = () => {
-        const slug = formMethods.getValues('slug');
-        if (slug) {
-            window.open(`/${activeLang}/properties/${slug}`, '_blank');
-        } else {
+    // Watch the slug so the preview link's href stays in sync with the form.
+    // We render a real <a target="_blank"> (instead of window.open) because
+    // browser popup blockers silently block scripted window.open() on real
+    // domains in production, while leaving genuine link navigations alone.
+    const previewSlug = useWatch({ control: formMethods.control, name: 'slug' });
+    const previewHref = previewSlug ? `/${activeLang}/properties/${previewSlug}` : undefined;
+
+    const handlePreviewClick = (e: MouseEvent<HTMLAnchorElement>) => {
+        if (!previewSlug) {
+            e.preventDefault();
             toast.error(t('system.slugRequired'));
         }
     };
@@ -335,14 +340,16 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handlePreview}
+                        <a
+                            href={previewHref ?? '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={handlePreviewClick}
                             className="px-4 py-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded-lg text-sm font-bold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2 shadow-sm"
                         >
                             <Eye className="size-4" />
                             {t('header.preview')}
-                        </button>
+                        </a>
                         <button
                             type="submit"
                             disabled={isSaving}
