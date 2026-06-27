@@ -238,21 +238,32 @@ export async function syncPropertyICal(propertyId: string) {
             // 4. Cleanup: Delete defunct FUTURE or ONGOING records
             // We delete any record that is no longer in the feed and ends in the future
             // This catches cancelled bookings and shifting UIDs (since we already have the new UID inserted)
-            const currentUids = new Set(uniqueEvents.map(e => e.uid));
-            const uidsToDelete = existingBlocks?.filter(b => {
-                const isStillInFeed = currentUids.has(b.external_id);
-                const endsInFuture = new Date(b.end_date) >= now;
-                
-                // If it's an Airbnb/Booking block, it's not in the current feed, and it's not a historical past block
-                return !isStillInFeed && endsInFuture;
-            }).map(b => b.id) || [];
+            //
+            // SAFETY: only run the destructive cleanup when the feed actually returned events.
+            // A transient empty/garbled-but-HTTP-200 response from Airbnb/Booking would otherwise
+            // wipe ALL future external blocks for this property, opening an overbooking window
+            // until the next successful sync re-adds them. We err on the side of keeping blocks:
+            // worst case a genuinely-cleared calendar leaves stale blocks (a lost booking, removable
+            // in the backoffice) instead of causing a double booking.
+            if (uniqueEvents.length > 0) {
+                const currentUids = new Set(uniqueEvents.map(e => e.uid));
+                const uidsToDelete = existingBlocks?.filter(b => {
+                    const isStillInFeed = currentUids.has(b.external_id);
+                    const endsInFuture = new Date(b.end_date) >= now;
 
-            if (uidsToDelete.length > 0) {
-                console.log(`[iCal Sync] Deleting ${uidsToDelete.length} defunct/overlapping blocks`);
-                await supabase
-                    .from('blocked_dates')
-                    .delete()
-                    .in('id', uidsToDelete);
+                    // If it's an Airbnb/Booking block, it's not in the current feed, and it's not a historical past block
+                    return !isStillInFeed && endsInFuture;
+                }).map(b => b.id) || [];
+
+                if (uidsToDelete.length > 0) {
+                    console.log(`[iCal Sync] Deleting ${uidsToDelete.length} defunct/overlapping blocks`);
+                    await supabase
+                        .from('blocked_dates')
+                        .delete()
+                        .in('id', uidsToDelete);
+                }
+            } else {
+                console.warn(`[iCal Sync] Feed returned 0 events for ${propertyTitle} — skipping cleanup to avoid wiping blocks on a transient empty feed.`);
             }
 
             newEventsCount = uniqueEvents.length;
