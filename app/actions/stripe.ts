@@ -6,6 +6,7 @@ import { calculateReservationPrice, verifyAvailability } from "@/lib/pricing";
 import { getPropertyBySlug } from "@/lib/services";
 import { z } from "zod";
 import type { ReservationData } from "@/app/actions/reservation";
+import { validateCoupon } from "@/app/actions/coupons";
 
 // Re-using validation logic for the intent creation
 const PaymentIntentSchema = z.object({
@@ -67,9 +68,23 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
 
     if ('error' in pricing) throw new Error(pricing.error);
 
-    // Final Total (including extras)
-    const totalAmount = pricing.totalPrice + data.breakfastTotal + data.transferTotal;
-    
+    // Coupon: re-validate against the DB and recompute the discount server-side. We never trust
+    // the client-sent couponDiscount for the charge (it could be tampered to lower the amount).
+    // Mirrors the checkout UI: percentage applies to basePrice, fixed is a flat amount.
+    let couponDiscount = 0;
+    if (data.couponCode) {
+      const couponResult = await validateCoupon(data.couponCode);
+      if (couponResult.success && couponResult.coupon) {
+        const c = couponResult.coupon;
+        couponDiscount = c.discount_type === 'percentage'
+          ? pricing.basePrice * (Number(c.discount_value) / 100)
+          : Number(c.discount_value);
+      }
+    }
+
+    // Final Total (extras included, server-validated coupon applied). Floor at 0 like the UI.
+    const totalAmount = Math.max(0, pricing.totalPrice + data.breakfastTotal + data.transferTotal - couponDiscount);
+
     // Stripe expects amounts in cents for EUR
     const amountInCents = Math.round(totalAmount * 100);
 
@@ -92,7 +107,7 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
         inf: data.infants.toString(),
         at: data.arrivalTime || "",
         cc: data.couponCode || "",
-        cd: data.couponDiscount.toString(),
+        cd: couponDiscount.toString(),
         bt: data.breakfastTotal.toString(),
         tt: data.transferTotal.toString(),
         ty: data.transferType || "",
