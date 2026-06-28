@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Link, usePathname } from "@/i18n/routing";
+import { Link, usePathname, useRouter } from "@/i18n/routing";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 export const Navbar = () => {
     const t = useTranslations('Navbar');
     const pathname = usePathname();
+    const router = useRouter();
+    const locale = useLocale();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -131,6 +133,33 @@ export const Navbar = () => {
                                 </li>
                             ))}
                         </ul>
+
+                        {/* Language switcher (mobile) */}
+                        <div className="mt-12 flex items-center gap-3">
+                            {[
+                                { code: 'pt', label: 'PT', flag: '/legacy/home/images/portuguese-flag.svg' },
+                                { code: 'en', label: 'EN', flag: '/legacy/home/images/english-flag.svg' },
+                            ].map((lang) => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => {
+                                        router.replace(pathname, { locale: lang.code });
+                                        setIsMenuOpen(false);
+                                    }}
+                                    aria-label={lang.label}
+                                    className={`flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold uppercase tracking-widest transition-all ${
+                                        locale === lang.code
+                                            ? 'border-[#b09e80] text-[#b09e80] bg-[#b09e80]/10'
+                                            : 'border-white/20 text-white hover:border-[#b09e80]/60'
+                                    }`}
+                                >
+                                    <span className="relative w-5 h-5 rounded-full overflow-hidden border border-white/10">
+                                        <Image src={lang.flag} alt={lang.label} fill className="object-cover" />
+                                    </span>
+                                    {lang.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
