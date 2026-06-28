@@ -6,7 +6,7 @@ import { Calendar, MapPin, Search, User } from 'lucide-react';
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from 'next/navigation';
 import { DateRange } from 'react-day-picker';
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { pt, enGB } from "date-fns/locale";
 import { HomeCalendarPopover } from "./HomeCalendarPopover";
 import { HomeLocationPopover } from "./HomeLocationPopover";
@@ -194,7 +194,7 @@ export const HomeBookingBar = () => {
                                 }}
                                 placement={placement}
                                 numberOfMonths={1}
-                                disabledDates={selectedRange?.from ? { before: selectedRange.from } : undefined}
+                                disabledDates={selectedRange?.from ? { before: addDays(selectedRange.from, 1) } : undefined}
                             />
                         </div>
 

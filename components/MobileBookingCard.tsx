@@ -5,7 +5,7 @@ import { MapPin, Calendar, Users, Search } from 'lucide-react';
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from 'next/navigation';
 import { DateRange } from 'react-day-picker';
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { pt, enGB } from "date-fns/locale";
 import { HomeLocationPopover } from "./HomeLocationPopover";
 import { HomeCalendarPopover } from "./HomeCalendarPopover";
@@ -248,7 +248,7 @@ export const MobileBookingCard = () => {
                             }
                         }}
                         numberOfMonths={1}
-                        disabledDates={selectedRange?.from ? { before: selectedRange.from } : undefined}
+                        disabledDates={selectedRange?.from ? { before: addDays(selectedRange.from, 1) } : undefined}
                     />
                 </div>
 

@@ -227,6 +227,14 @@ export function HomeCalendarPopover({
                                         const t = startOfToday();
                                         if (d <= t) return true;
 
+                                        // Respect before/after bounds (e.g. departure must be after arrival)
+                                        const isOutOfBounds = (normalizedDisabledDates).some((item: any) => {
+                                            if (item?.before && d < startOfDay(item.before)) return true;
+                                            if (item?.after && d > startOfDay(item.after)) return true;
+                                            return false;
+                                        });
+                                        if (isOutOfBounds) return true;
+
                                         const isMiddleNight = (normalizedDisabledDates).some((item: any) => {
                                             if (item?.from && item?.to) {
                                                 const from = startOfDay(item.from);
