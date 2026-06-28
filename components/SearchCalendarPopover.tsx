@@ -99,7 +99,7 @@ export function SearchCalendarPopover({
                         initial={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
                         animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: placement?.startsWith('top') ? 10 : (placement?.startsWith('bottom') ? -10 : 0), x: placement === 'side' ? 20 : 0 }}
-                        className={`fixed inset-x-4 bottom-24 lg:inset-auto z-[110] bg-white rounded-2xl shadow-xl w-auto ${widthClass} mx-auto lg:mx-0 overflow-hidden border border-gray-100 ${getPositionClasses()}`}
+                        className={`fixed inset-x-4 top-24 bottom-6 overflow-y-auto lg:inset-auto lg:top-auto lg:bottom-auto lg:overflow-hidden z-[110] bg-white rounded-2xl shadow-xl w-auto ${widthClass} mx-auto lg:mx-0 border border-gray-100 ${getPositionClasses()}`}
                     >
                         {/* Header - Only show if not compact */}
                         {!isCompact && (

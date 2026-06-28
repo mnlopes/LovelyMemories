@@ -150,7 +150,8 @@ export const HomeBookingBar = () => {
                                 selectedDate={selectedRange?.from}
                                 onSelect={(date) => {
                                     if (date instanceof Date) {
-                                        setSelectedRange(prev => ({ to: prev?.to, from: date }));
+                                        // Drop the departure if it's no longer after the new arrival (prevents check-out before check-in).
+                                        setSelectedRange(prev => ({ from: date, to: (prev?.to && prev.to > date) ? prev.to : undefined }));
                                         setOpenPopover('departure');
                                     } else if (date === undefined) {
                                         setSelectedRange(prev => ({ to: prev?.to, from: undefined }));
