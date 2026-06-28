@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Property, ConciergeService, PROPERTIES } from './data';
+import { format } from 'date-fns';
 
 // Helper to safely extract string from potential localized object
 const getLocalizedStr = (val: any, lang: string = 'en'): string => {
@@ -271,21 +272,28 @@ export async function searchProperties(params: {
 
     // 5. Check Availability (if dates provided)
     // Instead of filtering out unavailable, we flag them.
+    // We resolve every source (blocked_dates, reservations, locked_dates) in a
+    // single SECURITY DEFINER RPC so the public/anon client can also see paid
+    // website reservations, which RLS hides from a direct anon read.
     if (from && to) {
-        const { verifyAvailability } = await import('./pricing');
+        const fromStr = format(from, 'yyyy-MM-dd');
+        const toStr = format(to, 'yyyy-MM-dd');
 
-        // Run specific availability checks in parallel
-        const checks = candidates.map(async (p) => {
-            const result = await verifyAvailability(p.id, from, to);
-            // If not available, mark as reserved
-            if (!result.available) {
+        const { data: unavailable, error: availError } = await supabase
+            .rpc('get_unavailable_property_ids', { p_check_in: fromStr, p_check_out: toStr });
+
+        if (availError) {
+            console.error('Error checking availability:', availError);
+        }
+
+        const unavailableIds = new Set((unavailable || []).map((r: any) => r.property_id));
+
+        // We keep ALL candidates, but flag the unavailable ones as reserved.
+        candidates.forEach(p => {
+            if (unavailableIds.has(p.id)) {
                 p.isReserved = true;
             }
-            return p;
         });
-
-        await Promise.all(checks);
-        // We keep ALL candidates, but some now have isReserved = true
     }
 
     // 6. Map back to Display Properties (Root Nodes) or return units directly
