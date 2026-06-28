@@ -118,10 +118,13 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
 
             setAvailabilityStatus(prev => ({ ...prev, loading: true }));
             
+            // Format on the client (local TZ) so the chosen calendar day isn't
+            // shifted a day back when the server (UTC) formats a Date. Mirrors the
+            // 'yyyy-MM-dd' strings the checkout flow already uses.
             const result = await validatePropertyAvailability(
                 property.id,
-                selectedRange.from,
-                selectedRange.to,
+                format(selectedRange.from, 'yyyy-MM-dd'),
+                format(selectedRange.to, 'yyyy-MM-dd'),
                 adults + childrenCount
             );
             

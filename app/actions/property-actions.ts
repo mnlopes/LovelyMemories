@@ -23,7 +23,7 @@ export async function getPropertyAvailabilityDates(propertyId: string) {
  * Server action to validate availability for a specific date range and guest count.
  * Automatically handles session-aware date locks.
  */
-export async function validatePropertyAvailability(propertyId: string, from: Date, to: Date, guests: number = 1) {
+export async function validatePropertyAvailability(propertyId: string, from: string, to: string, guests: number = 1) {
     try {
         const cookieStore = await cookies();
         const sessionId = cookieStore.get('booking_session_id')?.value;
@@ -61,8 +61,10 @@ export async function validatePropertyAvailability(propertyId: string, from: Dat
             }
         }
 
-        // 2. Check availability including locks for other sessions
-        const result = await verifyAvailability(propertyId, from, to, sessionId);
+        // 2. Check availability including locks for other sessions.
+        // Parse the 'yyyy-MM-dd' strings as UTC midnight (same as the checkout flow)
+        // so the day isn't shifted when verifyAvailability formats them on the server.
+        const result = await verifyAvailability(propertyId, new Date(from), new Date(to), sessionId);
         return result;
     } catch (error) {
         console.error("[validatePropertyAvailability] Error:", error);

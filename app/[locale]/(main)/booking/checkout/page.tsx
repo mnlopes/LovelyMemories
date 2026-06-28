@@ -161,8 +161,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                     // SECURITY CHECK: Re-verify availability (Session-aware)
                     const availability = await validatePropertyAvailability(
                         propData.id,
-                        new Date(data.checkIn),
-                        new Date(data.checkOut),
+                        data.checkIn,
+                        data.checkOut,
                         data.adults + (data.children || 0)
                     );
 
