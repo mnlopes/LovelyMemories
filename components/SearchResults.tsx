@@ -97,6 +97,25 @@ function SearchResultsContent() {
     const [isLoading, setIsLoading] = React.useState(true);
     const [visibleCount, setVisibleCount] = React.useState(8);
 
+    // On mobile, collapse the filter bar into a slim row once the user scrolls,
+    // so it stops covering the listing. It expands again back at the top.
+    // We watch a sentinel at the very top via IntersectionObserver instead of
+    // reading scrollY. The sentinel sits above the (collapsing) header, so it
+    // doesn't move when the header shrinks — avoiding the scroll-anchoring
+    // flicker that a scrollY threshold suffers when layout height changes.
+    const [isScrolled, setIsScrolled] = React.useState(false);
+    const sentinelRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            ([entry]) => setIsScrolled(!entry.isIntersecting),
+            { rootMargin: '-140px 0px 0px 0px', threshold: 0 }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, []);
+
     React.useEffect(() => {
         const fetchProperties = async () => {
             setIsLoading(true);
@@ -196,9 +215,17 @@ function SearchResultsContent() {
         return 0;
     });
 
+    // When dates are applied, reserved properties are shown greyed-out but should
+    // not be counted as results — the headline count reflects what's bookable.
+    const hasDateFilter = !!(searchParams.get('from') && searchParams.get('to'));
+    const availableCount = filteredProperties.filter((p: any) => !p.isReserved).length;
+
     return (
         <section className="py-20 bg-[#f8f9fa] min-h-screen">
             <div className="container mx-auto px-4">
+
+                {/* Sentinel for the collapsing mobile filter bar (see IntersectionObserver above) */}
+                <div ref={sentinelRef} aria-hidden className="h-px w-full" />
 
                 {/* Header Section */}
                 <Link
@@ -209,20 +236,20 @@ function SearchResultsContent() {
                     {t('backToHome')}
                 </Link>
 
-                <div className="sticky top-28 z-40 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-3xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-gray-100 mb-12">
+                <div className={`sticky top-24 md:top-28 z-40 flex flex-col md:flex-row md:items-center justify-between bg-white rounded-3xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-gray-100 mb-8 md:mb-12 px-5 md:p-8 transition-all duration-300 ease-in-out md:gap-6 md:py-8 ${isScrolled ? 'gap-0 py-3' : 'gap-6 py-5'}`}>
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-sans font-bold text-[#192537] mb-2">
+                        <h1 className={`text-3xl md:text-4xl font-sans font-bold text-[#192537] overflow-hidden transition-all duration-300 ease-in-out md:max-h-none md:opacity-100 md:mb-2 ${isScrolled ? 'max-h-0 opacity-0 mb-0' : 'max-h-[60px] opacity-100 mb-2'}`}>
                             Search Results
                         </h1>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className={`flex items-center gap-2 transition-all duration-300 ease-in-out md:max-h-none md:flex-wrap md:overflow-visible md:pb-0 ${isScrolled ? 'flex-nowrap overflow-x-auto pb-1 max-h-[60px] [&>*]:shrink-0 [&::-webkit-scrollbar]:hidden' : 'flex-wrap max-h-[240px]'}`}>
                             <div className="relative">
                                 <button
                                     onClick={() => setOpenPopover(openPopover === 'location' ? null : 'location')}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:bg-gray-50 active:scale-95 ${location ? 'bg-[#b09e80]/10 border-[#b09e80]/30 text-[#b09e80]' : 'bg-[#f8f9fa] border-gray-100 text-[#192537]'}`}
                                 >
                                     <MapPin className="w-3.5 h-3.5 text-[#b09e80]" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">{location || t('anywhere')}</span>
-                                    <ChevronDown className={`w-3 h-3 transition-transform ${openPopover === 'location' ? 'rotate-180' : ''}`} />
+                                    <span className={`text-xs font-bold uppercase tracking-widest ${isScrolled ? 'hidden md:inline' : ''}`}>{location || t('anywhere')}</span>
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${openPopover === 'location' ? 'rotate-180' : ''} ${isScrolled ? 'hidden md:block' : ''}`} />
                                 </button>
                                 <HomeLocationPopover
                                     isOpen={openPopover === 'location'}
@@ -241,8 +268,8 @@ function SearchResultsContent() {
                                     className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:bg-gray-50 active:scale-95 ${guestsTotal > 0 ? 'bg-[#b09e80]/10 border-[#b09e80]/30 text-[#b09e80]' : 'bg-[#f8f9fa] border-gray-100 text-[#192537]'}`}
                                 >
                                     <Users className="w-3.5 h-3.5 text-[#b09e80]" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">{guestsTotal} {guestsTotal === 1 ? t('person') || 'Person' : t('people') || 'People'}</span>
-                                    <ChevronDown className={`w-3 h-3 transition-transform ${openPopover === 'guests' ? 'rotate-180' : ''}`} />
+                                    <span className={`text-xs font-bold uppercase tracking-widest ${isScrolled ? 'hidden md:inline' : ''}`}>{guestsTotal} {guestsTotal === 1 ? t('person') || 'Person' : t('people') || 'People'}</span>
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${openPopover === 'guests' ? 'rotate-180' : ''} ${isScrolled ? 'hidden md:block' : ''}`} />
                                 </button>
                                 <BookingGuestPopover
                                     isOpen={openPopover === 'guests'}
@@ -264,12 +291,12 @@ function SearchResultsContent() {
                                     className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:bg-gray-50 active:scale-95 ${selectedRange?.from ? 'bg-[#b09e80]/10 border-[#b09e80]/30 text-[#b09e80]' : 'bg-[#f8f9fa] border-gray-100 text-[#192537]'}`}
                                 >
                                     <Calendar className="w-3.5 h-3.5 text-[#b09e80]" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">
+                                    <span className={`text-xs font-bold uppercase tracking-widest ${isScrolled ? 'hidden md:inline' : ''}`}>
                                         {selectedRange?.from && selectedRange?.to
                                             ? `${format(selectedRange.from, 'd MMM')} - ${format(selectedRange.to, 'd MMM')}`
                                             : t('anyDates') || 'Any Dates'}
                                     </span>
-                                    <ChevronDown className={`w-3 h-3 transition-transform ${openPopover === 'dates' ? 'rotate-180' : ''}`} />
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${openPopover === 'dates' ? 'rotate-180' : ''} ${isScrolled ? 'hidden md:block' : ''}`} />
                                 </button>
                                 <SearchCalendarPopover
                                     isOpen={openPopover === 'dates'}
@@ -315,19 +342,19 @@ function SearchResultsContent() {
                                 ) : (
                                     <Search className="w-3.5 h-3.5" />
                                 )}
-                                {tb('search')}
+                                <span className={isScrolled ? 'hidden md:inline' : ''}>{tb('search')}</span>
                             </button>
                         </div>
                     </div>
 
-                    <div className="text-right flex flex-col items-end">
-                        <span className="text-sm text-gray-400 font-medium block mb-1">{t('found')}</span>
-                        <span className="text-2xl font-bold text-[#192537]">
+                    <div className={`flex flex-col items-start text-left md:items-end md:text-right shrink-0 overflow-hidden transition-all duration-300 ease-in-out md:max-h-none md:opacity-100 ${isScrolled ? 'max-h-0 opacity-0' : 'max-h-24 opacity-100'}`}>
+                        <span className="text-sm text-gray-400 font-medium block mb-1 capitalize">{hasDateFilter ? t('available') : t('found')}</span>
+                        <span className="text-2xl font-bold text-[#192537] whitespace-nowrap">
                             {isLoading ? (
                                 <div className="h-8 w-24 bg-gray-100 animate-pulse rounded-lg" />
                             ) : (
                                 <>
-                                    {filteredProperties.length} {searchParams.get('building') ? (filteredProperties.length === 1 ? t('apartment') || 'Apartment' : t('apartments') || 'Apartments') : (filteredProperties.length === 1 ? t('property') || 'Property' : t('properties') || 'Properties')}
+                                    {availableCount} {searchParams.get('building') ? (availableCount === 1 ? t('apartment') || 'Apartment' : t('apartments') || 'Apartments') : (availableCount === 1 ? t('property') || 'Property' : t('properties') || 'Properties')}
                                 </>
                             )}
                         </span>

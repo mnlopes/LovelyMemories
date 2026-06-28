@@ -727,6 +727,7 @@
     "PropertiesGrid": {
         "backToHome": "Back to Home",
         "found": "Found",
+        "available": "available",
         "property": "Property",
         "properties": "Properties",
         "title": "Our Unique Homes",
