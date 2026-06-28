@@ -309,38 +309,12 @@ export async function searchProperties(params: {
         });
     }
 
-    const resultIds = new Set<string>();
-    candidates.forEach(p => {
-        if (p.parent_id) {
-            resultIds.add(p.parent_id);
-        } else {
-            resultIds.add(p.id);
-        }
-    });
-
-    // 7. transform and return results
-    const distinctRoots = allProps.filter(p => resultIds.has(p.id));
-
-    return distinctRoots.map(p => {
+    // 7. Show each bookable unit on its own: standalone houses + the individual
+    // apartments inside buildings. Building containers are NOT shown as cards in
+    // search — only the units they contain appear (each with its own availability).
+    return candidates.map(p => {
         const transformed = transformProperty(p, allProps);
-
-        // Propagate isReserved check to the root/display property
-        if (p.is_multi_unit && !p.parent_id) {
-            // For buildings: It is reserved ONLY IF all matching child units are reserved.
-            const buildingUnits = candidates.filter(c => c.parent_id === p.id);
-
-            if (buildingUnits.length > 0) {
-                const allUnitsReserved = buildingUnits.every(u => u.isReserved);
-                transformed.isReserved = allUnitsReserved;
-            } else {
-                transformed.isReserved = false;
-            }
-        } else {
-            // Standalone or Single Unit
-            const candidate = candidates.find(c => c.id === p.id);
-            transformed.isReserved = candidate?.isReserved || false;
-        }
-
+        transformed.isReserved = p.isReserved || false;
         return transformed;
     }).sort((a, b) => {
         // Sort: Available first, Reserved last

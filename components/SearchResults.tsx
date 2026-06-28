@@ -116,6 +116,20 @@ function SearchResultsContent() {
         return () => obs.disconnect();
     }, []);
 
+    // Mobile only: auto-load the next batch as the user nears the end of the list
+    // (infinite scroll). Desktop keeps the manual "Load More" button.
+    const loadMoreRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        const el = loadMoreRef.current;
+        if (!el) return;
+        if (!window.matchMedia('(max-width: 767px)').matches) return;
+        const obs = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) setVisibleCount(prev => prev + 8);
+        }, { rootMargin: '300px 0px' });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [visibleCount, properties.length]);
+
     React.useEffect(() => {
         const fetchProperties = async () => {
             setIsLoading(true);
@@ -535,17 +549,26 @@ function SearchResultsContent() {
                     </div>
                 )}
 
-                {/* Load More */}
-                {visibleCount < filteredProperties.length && (
-                    <div className="mt-20 flex justify-center">
+                {/* Pagination: desktop uses a manual button; mobile auto-loads on scroll */}
+                {visibleCount < filteredProperties.length ? (
+                    <div className="mt-12 md:mt-20 flex justify-center">
+                        {/* Mobile: sentinel that triggers auto-load + loading spinner */}
+                        <div ref={loadMoreRef} className="md:hidden flex justify-center py-2" aria-hidden>
+                            <div className="w-6 h-6 border-2 border-[#b09e80]/30 border-t-[#b09e80] rounded-full animate-spin" />
+                        </div>
+                        {/* Desktop: manual button */}
                         <button
                             onClick={() => setVisibleCount(prev => prev + 4)}
-                            className="px-10 py-4 border border-gray-200 rounded-full text-sm font-bold uppercase tracking-widest text-[#192537] hover:bg-[#192537] hover:text-white transition-all shadow-sm"
+                            className="hidden md:inline-block px-10 py-4 border border-gray-200 rounded-full text-sm font-bold uppercase tracking-widest text-[#192537] hover:bg-[#192537] hover:text-white transition-all shadow-sm"
                         >
                             Load More
                         </button>
                     </div>
-                )}
+                ) : filteredProperties.length > 8 ? (
+                    <p className="md:hidden mt-12 text-center text-xs font-bold uppercase tracking-widest text-gray-400">
+                        {t('allShown')}
+                    </p>
+                ) : null}
             </div>
         </section >
     );
