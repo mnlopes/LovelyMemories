@@ -644,9 +644,21 @@
         "cookieSettings": "Cookie Settings",
         "termsConditions": "Terms & Conditions"
     },
+    "PageMeta": {
+        "aboutTitle": "About Us",
+        "aboutDesc": "Meet Lovely Memories — curated luxury short-stays and full property management across Porto, Vila Nova de Gaia, the Douro and the Algarve.",
+        "conciergeTitle": "Luxury Concierge Service in Porto & the Algarve",
+        "conciergeDesc": "Private chefs, transfers, Douro boat tours and exclusive bookings — bespoke concierge for luxury stays in Porto, Vila Nova de Gaia and the Algarve.",
+        "propertiesTitle": "Luxury Homes in Porto, Gaia & the Algarve",
+        "propertiesDesc": "Browse curated luxury apartments and homes for short stays in Porto, Vila Nova de Gaia, the Douro and the Algarve. Book direct.",
+        "ownersTitle": "Property Management for Owners",
+        "ownersDesc": "Maximise your rental income with hassle-free property management in Porto, Vila Nova de Gaia, the Douro and the Algarve. Free, no-obligation estimate.",
+        "blogTitle": "Blog — Stories & Local Guides",
+        "blogDesc": "Local guides, tips and stories for luxury stays in Porto, Vila Nova de Gaia, the Douro and the Algarve."
+    },
     "Home": {
         "metadataTitle": "Luxury Stays in Porto, Gaia & Douro",
-        "metadataDesc": "Book curated luxury homes with concierge service in Porto, Vila Nova de Gaia and the Douro — or have us manage your property hassle-free. Direct booking, secure payments.",
+        "metadataDesc": "Book curated luxury homes with concierge service in Porto, Vila Nova de Gaia, the Douro and the Algarve — or have us manage your property hassle-free. Direct booking, secure payments.",
         "heroOverTitle": "Book one of our exquisite, curated homes",
         "heroTitle": "And create your own Lovely,\nlong lasting Memories of <scrambler></scrambler>",
         "aboutTitle": "From Porto to the World",

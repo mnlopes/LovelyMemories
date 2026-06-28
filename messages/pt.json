@@ -635,9 +635,21 @@
         "cookieSettings": "Definições de Cookies",
         "termsConditions": "Termos e Condições"
     },
+    "PageMeta": {
+        "aboutTitle": "Sobre Nós",
+        "aboutDesc": "Conheça a Lovely Memories — alojamento local de luxo e gestão de propriedades no Porto, Vila Nova de Gaia, Douro e Algarve.",
+        "conciergeTitle": "Concierge de Luxo no Porto e Algarve",
+        "conciergeDesc": "Chefs privados, transfers, passeios de barco no Douro e reservas exclusivas — concierge à medida para estadias de luxo no Porto, Vila Nova de Gaia e Algarve.",
+        "propertiesTitle": "Casas de Luxo no Porto, Gaia e Algarve",
+        "propertiesDesc": "Explore apartamentos e casas de luxo para estadias curtas no Porto, Vila Nova de Gaia, Douro e Algarve. Reserve diretamente.",
+        "ownersTitle": "Gestão de Propriedades para Proprietários",
+        "ownersDesc": "Maximize a sua receita com gestão de alojamento local sem complicações no Porto, Vila Nova de Gaia, Douro e Algarve. Estimativa gratuita e sem compromisso.",
+        "blogTitle": "Blog — Histórias e Guias Locais",
+        "blogDesc": "Guias locais, dicas e histórias para estadias de luxo no Porto, Vila Nova de Gaia, Douro e Algarve."
+    },
     "Home": {
         "metadataTitle": "Alojamento de Luxo no Porto, Gaia e Douro",
-        "metadataDesc": "Reserve casas de luxo com serviço de concierge no Porto, Vila Nova de Gaia e Douro — ou deixe-nos gerir a sua propriedade sem complicações. Reserva direta e pagamentos seguros.",
+        "metadataDesc": "Reserve casas de luxo com serviço de concierge no Porto, Vila Nova de Gaia, Douro e Algarve — ou deixe-nos gerir a sua propriedade sem complicações. Reserva direta e pagamentos seguros.",
         "heroOverTitle": "Reserve uma das nossas fantásticas casas cuidadosamente selecionadas",
         "heroTitle": "E crie as suas próprias,\nLovely Memories de <scrambler></scrambler>",
         "aboutTitle": "Do Porto para o Mundo",

@@ -1,12 +1,24 @@
 import { BlogContent } from '@/components/blog/BlogContent';
 import { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { buildPageMetadata } from "@/lib/seo";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export const metadata: Metadata = {
-    title: "Blog - Lovely Memories",
-    description: "Read our latest stories and memories from Porto.",
-};
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "PageMeta" });
+    return buildPageMetadata({
+        locale,
+        path: "blog",
+        title: t("blogTitle"),
+        description: t("blogDesc"),
+    });
+}
 
 export default async function BlogPage({
     params,

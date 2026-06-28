@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { SearchResults } from '@/components/SearchResults';
 
-export const metadata = {
-    title: 'Search Results - Lovely Memories',
+// Internal search results are thin/duplicate — keep them out of the index.
+export const metadata: Metadata = {
+    title: 'Search Results',
+    robots: { index: false, follow: true },
 };
 
 export default function SearchPage() {

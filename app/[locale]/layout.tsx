@@ -27,7 +27,7 @@ const montserrat = Montserrat({
 
 const SITE_NAME = "Lovely Memories";
 const SITE_DESCRIPTION =
-  "Premium short-stay rentals and full property management in Porto, Vila Nova de Gaia and the Douro. Curated luxury homes with concierge service.";
+  "Premium short-stay rentals and full property management in Porto, Vila Nova de Gaia, the Douro and the Algarve. Curated luxury homes with concierge service.";
 
 // Icons (app/icon.png, app/apple-icon.png, app/favicon.ico) and the social card
 // (app/opengraph-image.png, app/twitter-image.png) are auto-detected by Next.js
