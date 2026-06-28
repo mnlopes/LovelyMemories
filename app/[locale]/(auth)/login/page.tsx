@@ -258,7 +258,7 @@ export default function LoginPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between gap-3 pt-1">
+                                <div className="flex flex-col items-start gap-2 pt-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                     <label className="flex items-center gap-2 cursor-pointer group shrink-0">
                                         <input
                                             type="checkbox"
