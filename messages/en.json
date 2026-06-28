@@ -645,6 +645,8 @@
         "termsConditions": "Terms & Conditions"
     },
     "Home": {
+        "metadataTitle": "Luxury Stays in Porto, Gaia & Douro",
+        "metadataDesc": "Book curated luxury homes with concierge service in Porto, Vila Nova de Gaia and the Douro — or have us manage your property hassle-free. Direct booking, secure payments.",
         "heroOverTitle": "Book one of our exquisite, curated homes",
         "heroTitle": "And create your own Lovely,\nlong lasting Memories of <scrambler></scrambler>",
         "aboutTitle": "From Porto to the World",
@@ -1096,7 +1098,7 @@
         "success": "Sent Successfully!",
         "successDesc": "We've received your details and will provide your estimate shortly.",
         "sendAnother": "Send another",
-        "metadataTitle": "Contact - Lovely Memories",
+        "metadataTitle": "Contact",
         "metadataDesc": "Get in touch with Lovely Memories for property management estimates.",
         "faq": {
             "title": "Frequently Asked Questions",

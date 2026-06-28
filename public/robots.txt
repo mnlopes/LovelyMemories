@@ -1,29 +1,37 @@
+# Lovely Memories — robots.txt
+# AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended…) are intentionally
+# allowed so the brand can be cited accurately by LLMs. See /llms.txt for context.
+
 User-agent: *
-# Permitir acesso geral
 Allow: /
 
-# Bloquear rotas de administração e backoffice
-Disallow: /admin/
-Disallow: */admin/
+# Backoffice, auth & account areas (locale-prefixed, e.g. /en/admin, /pt/login)
+Disallow: /*/admin
+Disallow: /*/login
+Disallow: /*/set-password
+Disallow: /*/owner
+Disallow: /*/account
+Disallow: /admin
 Disallow: /login
-Disallow: */login
 
-# Bloquear rotas de API (Webhook do Stripe, Supabase, etc)
+# Transactional flows (checkout / booking / API)
 Disallow: /api/
+Disallow: /*/booking
+Disallow: /*/checkout
 
-# Bloquear rotas financeiras e de reservas (Checkout)
-Disallow: /booking/
-Disallow: */booking/
-Disallow: /checkout/
-Disallow: */checkout/
+# Internal search results (thin / duplicate)
+Disallow: /*/search
 
-# Bloquear rotas de reset de password ou contas de utilizador
-Disallow: /account/
-Disallow: */account/
+# Pre-launch design iterations (not for indexing)
+Disallow: /*/v2
+Disallow: /*/v3
+Disallow: /*/v4
+Disallow: /*/v5
+Disallow: /*/v6
+Disallow: /*/v7
+Disallow: /*/v8
+Disallow: /*/v9
+Disallow: /*/v10
+Disallow: /*/v11
 
-# Bloquear ficheiros de sistema ou logs (caso existam)
-Disallow: /*.json$
-Disallow: /*.xml$
-
-# Definir o Sitemap (mesmo que ainda não exista, é boa prática apontar para o domínio principal)
 Sitemap: https://lovelymemories.pt/sitemap.xml

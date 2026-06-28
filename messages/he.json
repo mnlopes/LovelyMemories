@@ -61,6 +61,8 @@
         "termsConditions": "תנאים והגבלות"
     },
     "Home": {
+        "metadataTitle": "אירוח יוקרתי בפורטו, גאיה והדוארו",
+        "metadataDesc": "הזמינו בתי יוקרה עם שירות קונסיירז' בפורטו, וילה נובה דה גאיה והדוארו — או תנו לנו לנהל את הנכס שלכם ללא טרחה. הזמנה ישירה ותשלומים מאובטחים.",
         "heroOverTitle": "הזמינו אחד מהבתים המעודנים והאוצרים שלנו",
         "heroTitle": "וצרו זכרונות יפים וארוכי טווח משלכם בפורטו",
         "aboutTitle": "מפורטו לעולם",
@@ -368,7 +370,7 @@
         "locationPlaceholder": "הזן מיקום",
         "bedroomsPlaceholder": "מספר חדרי שינה",
         "cta": "קבל הצעת מחיר",
-        "metadataTitle": "ליצור קשר - Lovely Memories",
+        "metadataTitle": "ליצור קשר",
         "metadataDesc": "צרו קשר עם Lovely Memories להערכות ניהול נכסים."
     },
     "PropertyDetail": {

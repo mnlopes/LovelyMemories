@@ -636,6 +636,8 @@
         "termsConditions": "Termos e Condições"
     },
     "Home": {
+        "metadataTitle": "Alojamento de Luxo no Porto, Gaia e Douro",
+        "metadataDesc": "Reserve casas de luxo com serviço de concierge no Porto, Vila Nova de Gaia e Douro — ou deixe-nos gerir a sua propriedade sem complicações. Reserva direta e pagamentos seguros.",
         "heroOverTitle": "Reserve uma das nossas fantásticas casas cuidadosamente selecionadas",
         "heroTitle": "E crie as suas próprias,\nLovely Memories de <scrambler></scrambler>",
         "aboutTitle": "Do Porto para o Mundo",
@@ -1087,7 +1089,7 @@
         "success": "Enviado com sucesso!",
         "successDesc": "Recebemos os seus detalhes e forneceremos a sua estimativa brevemente.",
         "sendAnother": "Enviar outro",
-        "metadataTitle": "Contacto - Lovely Memories",
+        "metadataTitle": "Contacto",
         "metadataDesc": "Entre em contacto com a Lovely Memories para estimativas de gestão de propriedades.",
         "faq": {
             "title": "Perguntas Frequentes",

@@ -16,6 +16,8 @@ import { GuestSelectorWrapper } from "@/components/GuestSelectorWrapper";
 import { DateSelectorWrapper } from "@/components/DateSelectorWrapper";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { CookieConsent } from "@/components/CookieConsent";
+import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
+import type { Metadata } from "next";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -23,9 +25,36 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-export const metadata = {
-  title: "Lovely Memories - Luxury Property Management",
-  description: "Creating unforgettable experiences.",
+const SITE_NAME = "Lovely Memories";
+const SITE_DESCRIPTION =
+  "Premium short-stay rentals and full property management in Porto, Vila Nova de Gaia and the Douro. Curated luxury homes with concierge service.";
+
+// Icons (app/icon.png, app/apple-icon.png, app/favicon.ico) and the social card
+// (app/opengraph-image.png, app/twitter-image.png) are auto-detected by Next.js
+// from the app/ directory, so they don't need to be declared here.
+export const metadata: Metadata = {
+  metadataBase: new URL("https://lovelymemories.pt"),
+  title: {
+    default: `${SITE_NAME} — Luxury Stays & Property Management in Porto & Douro`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Luxury Stays & Property Management`,
+    description: SITE_DESCRIPTION,
+    url: "https://lovelymemories.pt",
+    images: ["/opengraph-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Luxury Stays & Property Management`,
+    description: SITE_DESCRIPTION,
+    images: ["/twitter-image.png"],
+  },
 };
 
 import { PageTransition } from "@/components/PageTransition";
@@ -54,6 +83,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className={`${montserrat.variable} antialiased`} suppressHydrationWarning>
+        <SiteJsonLd />
         <NextIntlClientProvider messages={messages} locale={locale}>
           <Toaster
             position="top-right"

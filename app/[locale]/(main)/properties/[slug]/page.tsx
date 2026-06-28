@@ -11,13 +11,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const property = PROPERTIES.find((p) => p.slug === slug);
 
     if (!property) {
+        // Brand suffix is added by the root layout's title template.
         return {
-            title: "Property Not Found - Lovely Memories",
+            title: "Property Not Found",
         };
     }
 
     return {
-        title: `${property.title} - Lovely Memories`,
+        title: `${property.title} — ${property.subtitle}`,
         description: property.subtitle,
     };
 }
