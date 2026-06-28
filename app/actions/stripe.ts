@@ -137,8 +137,19 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
     };
 
   } catch (error: any) {
+    // Full detail stays in the server logs only.
     console.error("Payment Intent Error:", error);
-    return { success: false, error: error.message };
+
+    // Never surface raw Stripe errors to the client: they can include the (masked) API key,
+    // request ids and other internal detail. Card declines are the one Stripe error whose
+    // message is meant for the buyer, so we let those through.
+    const stripeType = typeof error?.type === "string" ? error.type : "";
+    if (stripeType.startsWith("Stripe") && stripeType !== "StripeCardError") {
+      return { success: false, error: "We couldn't start the payment right now. Please try again in a moment." };
+    }
+
+    // Card declines + our own validation errors (property not found, dates unavailable, pricing) pass through.
+    return { success: false, error: error?.message || "Unexpected error. Please try again." };
   }
 }
 
