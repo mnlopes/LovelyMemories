@@ -965,8 +965,41 @@
             "blog": "Blog Posts",
             "social": "Social Wall",
             "faq": "FAQ",
+            "about": "About Us",
             "terms": "Terms & Conditions",
             "privacy": "Privacy Policy"
+        },
+        "about": {
+            "contentLanguage": "Content language",
+            "save": "Save changes",
+            "saved": "About Us page saved",
+            "loading": "Loading content...",
+            "changeImage": "Change image",
+            "addImage": "Add image",
+            "validation": {
+                "heroTitle": "The hero title is required.",
+                "timelineFields": "Each timeline entry needs a year and a title."
+            },
+            "hero": {
+                "title": "Hero — page top",
+                "heading": "Title",
+                "headingHint": "Use a line break to split the title across two lines.",
+                "image": "Background image"
+            },
+            "intro": {
+                "title": "Intro text",
+                "hint": "Separate paragraphs with a blank line — each block shows as its own paragraph."
+            },
+            "timeline": {
+                "title": "Timeline",
+                "add": "New entry",
+                "empty": "No timeline entries yet. Add the first one.",
+                "drag": "Drag to reorder",
+                "remove": "Remove",
+                "yearPlaceholder": "Year",
+                "titlePlaceholder": "Title",
+                "textPlaceholder": "Description"
+            }
         },
         "cmsPage": {
             "newSection": "New Section",

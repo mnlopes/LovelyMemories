@@ -51,6 +51,10 @@ export interface CmsPageSection {
     display_order: number;
     locale: string;
     list_items: { label: string; desc: string; }[];
+    // About Us page extensions (null for terms/privacy sections)
+    section_type?: string; // 'hero' | 'intro' | 'timeline'
+    subtitle?: string;     // timeline "year" badge
+    image_url?: string;    // hero background / timeline image
     created_at?: string;
     updated_at?: string;
 }

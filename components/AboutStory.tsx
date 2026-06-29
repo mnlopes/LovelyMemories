@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
+import { getPageSections } from "@/app/actions/cms";
 
 const StoryItem = ({ story, index }: { story: any, index: number }) => {
     const isEven = index % 2 === 0;
@@ -69,8 +71,20 @@ const StoryItem = ({ story, index }: { story: any, index: number }) => {
     );
 };
 
+const FALLBACK_YEARS = [
+    { year: "2020", image: "/legacy/about-us/images/about-feature.png" },
+    { year: "2021", image: "/legacy/about-us/images/services-image-2-1.png" },
+    { year: "2022", image: "/legacy/about-us/images/blog-img-3.png" },
+    { year: "2023", image: "/legacy/about-us/images/owner-section-image-2.png" },
+    { year: "2024", image: "/legacy/about-us/images/the-flower-power.png" },
+    { year: "2025", image: "/legacy/about-us/images/services-image-2-1.png" },
+    { year: "2026", image: "/legacy/about-us/images/the-flower-power.png" },
+];
+
 export const AboutStory = () => {
     const t = useTranslations('AboutStory');
+    const params = useParams();
+    const locale = (params?.locale as string) || "en";
     const containerRef = useRef<HTMLElement>(null);
     const { scrollYProgress } = useScroll({
         target: containerRef,
@@ -83,50 +97,37 @@ export const AboutStory = () => {
         restDelta: 0.001
     });
 
-    const stories = [
-        {
-            year: "2020",
-            title: t('stories.2020.title'),
-            text: t('stories.2020.text'),
-            image: "/legacy/about-us/images/about-feature.png"
-        },
-        {
-            year: "2021",
-            title: t('stories.2021.title'),
-            text: t('stories.2021.text'),
-            image: "/legacy/about-us/images/services-image-2-1.png"
-        },
-        {
-            year: "2022",
-            title: t('stories.2022.title'),
-            text: t('stories.2022.text'),
-            image: "/legacy/about-us/images/blog-img-3.png"
-        },
-        {
-            year: "2023",
-            title: t('stories.2023.title'),
-            text: t('stories.2023.text'),
-            image: "/legacy/about-us/images/owner-section-image-2.png"
-        },
-        {
-            year: "2024",
-            title: t('stories.2024.title'),
-            text: t('stories.2024.text'),
-            image: "/legacy/about-us/images/the-flower-power.png"
-        },
-        {
-            year: "2025",
-            title: t('stories.2025.title'),
-            text: t('stories.2025.text'),
-            image: "/legacy/about-us/images/services-image-2-1.png"
-        },
-        {
-            year: "2026",
-            title: t('stories.2026.title'),
-            text: t('stories.2026.text'),
-            image: "/legacy/about-us/images/the-flower-power.png"
-        }
-    ];
+    const fallbackStories = FALLBACK_YEARS.map(({ year, image }) => ({
+        year,
+        title: t(`stories.${year}.title`),
+        text: t(`stories.${year}.text`),
+        image,
+    }));
+
+    const [stories, setStories] = useState(fallbackStories);
+
+    useEffect(() => {
+        let active = true;
+        getPageSections("about-us", locale).then((secs) => {
+            if (!active) return;
+            const timeline = secs
+                .filter((s) => s.section_type === "timeline")
+                .sort((a, b) => a.display_order - b.display_order);
+            if (timeline.length > 0) {
+                setStories(
+                    timeline.map((s) => ({
+                        year: s.subtitle || "",
+                        title: s.title || "",
+                        text: s.content || "",
+                        image: s.image_url || "",
+                    }))
+                );
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, [locale]);
 
     return (
         <section ref={containerRef} className="bg-white py-32 overflow-hidden">

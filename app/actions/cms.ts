@@ -365,9 +365,10 @@ export async function upsertPageSection(data: CmsPageSection) {
         .single();
 
     if (error) return { success: false, error: error.message };
-    
+
     revalidatePath('/[locale]/terms-conditions', 'layout');
     revalidatePath('/[locale]/privacy-policy', 'layout');
+    revalidatePath('/[locale]/about-us', 'layout');
     return { success: true, data: result };
 }
 
@@ -380,15 +381,16 @@ export async function deletePageSection(id: string) {
         .eq('id', id);
 
     if (error) return { success: false, error: error.message };
-    
+
     revalidatePath('/[locale]/terms-conditions', 'layout');
     revalidatePath('/[locale]/privacy-policy', 'layout');
+    revalidatePath('/[locale]/about-us', 'layout');
     return { success: true };
 }
 
 export async function reorderPageSections(sections: CmsPageSection[]) {
     const supabase = await getSupabase();
-    
+
     const payloads = sections.map(section => ({
         id: section.id,
         page_slug: section.page_slug,
@@ -398,6 +400,9 @@ export async function reorderPageSections(sections: CmsPageSection[]) {
         locale: section.locale,
         display_order: section.display_order,
         list_items: section.list_items,
+        section_type: section.section_type,
+        subtitle: section.subtitle,
+        image_url: section.image_url,
         updated_at: new Date().toISOString()
     }));
 
@@ -406,9 +411,10 @@ export async function reorderPageSections(sections: CmsPageSection[]) {
         .upsert(payloads);
 
     if (error) return { success: false, error: error.message };
-    
+
     revalidatePath('/[locale]/terms-conditions', 'layout');
     revalidatePath('/[locale]/privacy-policy', 'layout');
+    revalidatePath('/[locale]/about-us', 'layout');
     return { success: true };
 }
 

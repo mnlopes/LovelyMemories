@@ -956,8 +956,41 @@
             "blog": "Artigos do Blog",
             "social": "Mural Social",
             "faq": "FAQ",
+            "about": "About Us",
             "terms": "Termos & Condições",
             "privacy": "Política de Privacidade"
+        },
+        "about": {
+            "contentLanguage": "Idioma do conteúdo",
+            "save": "Guardar alterações",
+            "saved": "Página About Us guardada",
+            "loading": "A carregar conteúdo...",
+            "changeImage": "Alterar imagem",
+            "addImage": "Adicionar imagem",
+            "validation": {
+                "heroTitle": "O título do hero é obrigatório.",
+                "timelineFields": "Cada entrada da linha do tempo precisa de um ano e um título."
+            },
+            "hero": {
+                "title": "Hero — topo da página",
+                "heading": "Título",
+                "headingHint": "Use uma quebra de linha para partir o título em duas linhas.",
+                "image": "Imagem de fundo"
+            },
+            "intro": {
+                "title": "Texto inicial",
+                "hint": "Separe parágrafos com uma linha em branco — cada bloco aparece como um parágrafo."
+            },
+            "timeline": {
+                "title": "Linha do tempo",
+                "add": "Nova entrada",
+                "empty": "Ainda não há entradas. Adicione a primeira.",
+                "drag": "Arraste para reordenar",
+                "remove": "Remover",
+                "yearPlaceholder": "Ano",
+                "titlePlaceholder": "Título",
+                "textPlaceholder": "Descrição"
+            }
         },
         "cmsPage": {
             "newSection": "Nova Secção",
