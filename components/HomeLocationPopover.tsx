@@ -109,7 +109,7 @@ export const HomeLocationPopover = ({
                                 </div>
                             ) : (
                                 locations.map((loc) => {
-                                    const isAvailable = loc.name_en === 'Porto' || loc.name_en === 'Algarve' || loc.name_en === 'Gaia';
+                                    const isAvailable = loc.name_en === 'Porto' || loc.name_en === 'Algarve' || loc.name_en === 'Gaia' || loc.name_en === 'Mykonos';
                                     return (
                                         <button
                                             type="button"
@@ -131,7 +131,7 @@ export const HomeLocationPopover = ({
                                                         {locale === 'he' ? (loc.name_he || loc.name_en) : locale === 'pt' ? (loc.name_pt || loc.name_en) : loc.name_en}
                                                     </p>
                                                     <p className="text-xs text-navy-900/40 font-medium">
-                                                        Portugal
+                                                        {loc.country || 'Portugal'}
                                                     </p>
                                                 </div>
                                             </div>

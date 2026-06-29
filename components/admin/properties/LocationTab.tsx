@@ -42,6 +42,7 @@ export default function LocationTab({ activeLang }: LocationTabProps) {
                             { label: "Gaia", value: "Gaia" },
                             { label: "Lisboa", value: "Lisboa" },
                             { label: "Algarve", value: "Algarve" },
+                            { label: "Mykonos", value: "Mykonos" },
                         ]}
                     />
                 </div>

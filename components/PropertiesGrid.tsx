@@ -49,7 +49,7 @@ export const PropertiesGrid = () => {
         fetchProperties();
     }, []);
 
-    const regions = ['all', 'porto', 'gaia', 'lisboa', 'algarve'];
+    const regions = ['all', 'porto', 'gaia', 'lisboa', 'algarve', 'mykonos'];
 
     // Count real bookable properties: a building contributes its number of units,
     // a standalone counts as one. Mirrors the "X Apartamentos" label on each card.

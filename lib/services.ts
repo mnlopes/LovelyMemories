@@ -489,7 +489,7 @@ function transformProperty(p: any, allData: any[] = [], parentData?: any) {
         location: {
             city: city,
             region: region,
-            country: 'Portugal',
+            country: visualData.locations?.country || p.locations?.country || actualParent?.locations?.country || 'Portugal',
             address: getLocalizedStr(visualData.address || p.address || actualParent?.address || units[0]?.address || ''),
             coordinates: safeCoordsOrNull(visualData.lat || p.lat, visualData.lng || p.lng) || safeCoordsOrNull(actualParent?.lat, actualParent?.lng)
         },

@@ -724,7 +724,7 @@
         "property": "Propriedade",
         "properties": "Propriedades",
         "title": "As nossas Casas Únicas",
-        "subtitle": "Explore a nossa seleção de propriedades de luxo no Porto, desenhadas para criar memórias encantadoras e duradouras.",
+        "subtitle": "Explore a nossa seleção de propriedades de luxo em Portugal e na Grécia, desenhadas para criar memórias encantadoras e duradouras.",
         "comingSoon": "Em breve",
         "viewBuilding": "Ver Edifício",
         "viewHome": "Ver Casa",
@@ -754,7 +754,8 @@
             "porto": "Porto",
             "gaia": "Gaia",
             "lisboa": "Lisboa",
-            "algarve": "Algarve"
+            "algarve": "Algarve",
+            "mykonos": "Mykonos"
         }
     },
     "OwnerHero": {

@@ -733,7 +733,7 @@
         "property": "Property",
         "properties": "Properties",
         "title": "Our Unique Homes",
-        "subtitle": "Explore our curated selection of luxury properties in Porto, designed to create lovely, long-lasting memories.",
+        "subtitle": "Explore our curated selection of luxury properties in Portugal and Greece, designed to create lovely, long-lasting memories.",
         "comingSoon": "Coming Soon",
         "viewBuilding": "View Building",
         "viewHome": "View Home",
@@ -763,7 +763,8 @@
             "porto": "Porto",
             "gaia": "Gaia",
             "lisboa": "Lisboa",
-            "algarve": "Algarve"
+            "algarve": "Algarve",
+            "mykonos": "Mykonos"
         }
     },
     "OwnerHero": {

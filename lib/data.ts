@@ -19,7 +19,7 @@ export interface Property {
         address: string;
         coordinates?: [number, number]; // [lat, lng]
     };
-    region: 'Porto' | 'Lisboa' | 'Algarve' | 'Gaia' | 'All';
+    region: 'Porto' | 'Lisboa' | 'Algarve' | 'Gaia' | 'Mykonos' | 'All';
     types: PropertyType[];
     isComingSoon?: boolean;
     blockedDates?: string[]; // ISO strings

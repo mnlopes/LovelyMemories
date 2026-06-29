@@ -154,6 +154,14 @@ export const ADDRESS_DATA: Record<string, CountryData> = {
         zipRegex: /^\d{4}$/,
         zipFormat: "0000",
         cities: ["Praia", "Mindelo", "Espargos", "Assomada"]
+    },
+    "GR": {
+        code: "GR",
+        name: "Greece",
+        flag: "🇬🇷",
+        zipRegex: /^\d{3}\s?\d{2}$/,
+        zipFormat: "846 00",
+        cities: ["Athens", "Thessaloniki", "Mykonos", "Santorini", "Heraklion", "Patras", "Rhodes", "Corfu"]
     }
 };
 
@@ -183,4 +191,5 @@ export const COUNTRY_CODES = [
     { code: "+244", country: "Angola", flag: "🇦🇴" },
     { code: "+238", country: "Cape Verde", flag: "🇨🇻" },
     { code: "+258", country: "Mozambique", flag: "🇲🇿" },
+    { code: "+30", country: "Greece", flag: "🇬🇷" },
 ];
