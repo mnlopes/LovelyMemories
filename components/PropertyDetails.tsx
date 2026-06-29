@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { parseDateLocal } from '@/lib/utils';
 import { validatePropertyAvailability } from '@/app/actions/property-actions';
 import { saveBookingSession } from '@/lib/booking-session';
+import { calculateClientTotal } from '@/lib/booking-pricing';
 
 // Helper to safely extract string from potential localized object
 const getLocalizedStr = (val: any, locale: string = 'en'): string => {
@@ -436,8 +437,8 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                         )}
                     </div>
 
-                    {/* Right Column - Booking Card (Sticky) */}
-                    <div id="booking-card-section" className="relative mt-8 lg:mt-0 pb-20 lg:pb-0">
+                    {/* Right Column - Booking Card (Sticky) - desktop only; mobile uses the sticky footer bar + bottom sheet */}
+                    <div id="booking-card-section" className="relative hidden lg:block mt-8 lg:mt-0 pb-20 lg:pb-0">
                         <div className="lg:sticky lg:top-24 2xl:top-32">
                             <BookingCard
                                 propertyId={property.id}
@@ -474,13 +475,38 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                         className="text-left flex-1"
                     >
                         <div className="flex items-baseline gap-2 text-navy-950">
-                            {property.price.originalPrice && (
-                                <span className="text-navy-900/40 line-through text-xs font-medium">
-                                    €{property.price.originalPrice}
-                                </span>
-                            )}
-                            <span className="text-xl font-bold">€{property.price.perNight}</span>
-                            <span className="text-navy-900/40 text-xs font-medium">/{t('perNight')}</span>
+                            {(() => {
+                                const hasDates = Boolean(selectedRange?.from && selectedRange?.to && nights > 0);
+                                if (hasDates) {
+                                    const { total } = calculateClientTotal({
+                                        price: property.price.perNight,
+                                        nights,
+                                        adults,
+                                        children: childrenCount,
+                                        infants,
+                                        pricingRules: property.policies?.pricing,
+                                        selectedExtras,
+                                        extraPrices: property.servicesPrice
+                                    });
+                                    return (
+                                        <>
+                                            <span className="text-xl font-bold">€{total}</span>
+                                            <span className="text-navy-900/40 text-xs font-medium">{t('total') || "total"}</span>
+                                        </>
+                                    );
+                                }
+                                return (
+                                    <>
+                                        {property.price.originalPrice && (
+                                            <span className="text-navy-900/40 line-through text-xs font-medium">
+                                                €{property.price.originalPrice}
+                                            </span>
+                                        )}
+                                        <span className="text-xl font-bold">€{property.price.perNight}</span>
+                                        <span className="text-navy-900/40 text-xs font-medium">/{t('perNight')}</span>
+                                    </>
+                                );
+                            })()}
                         </div>
                         <p className="text-[10px] text-navy-900/40 font-bold uppercase tracking-wide underline decoration-navy-900/20 underline-offset-2 mt-0.5">
                             {(() => {
@@ -490,13 +516,13 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                                     const dateStr = `${format(selectedRange.from, 'd MMM', { locale: dateLocale })} - ${format(selectedRange.to, 'd MMM', { locale: dateLocale })}`;
                                     return `${dateStr} • ${guestCount} ${guestCount === 1 ? (t('guestSelector.person') || 'Guest') : (t('guestSelector.people') || 'Guests')}`;
                                 }
-                                return `${t('selectDates') || "Select dates"} • ${guestCount} ${guestCount === 1 ? (t('guestSelector.person') || 'Guest') : (t('guestSelector.people') || 'Guests')}`;
+                                return `${t('addDate') || "Add dates"} • ${guestCount} ${guestCount === 1 ? (t('guestSelector.person') || 'Guest') : (t('guestSelector.people') || 'Guests')}`;
                             })()}
                         </p>
                     </button>
                     <Button
                         variant="luxury"
-                        className="px-7 py-3 shadow-lg shadow-gold/20 hover:scale-[1.02] transition-transform ml-4"
+                        className="shrink-0 ml-3 px-5 py-3 max-w-[48%] text-sm leading-tight text-center whitespace-normal shadow-lg shadow-gold/20 hover:scale-[1.02] transition-transform"
                         disabled={(!availabilityStatus.available && !availabilityStatus.loading && !!selectedRange?.from) || availabilityStatus.loading}
                         onClick={() => {
                             if (!selectedRange?.from || !selectedRange?.to) {
@@ -527,7 +553,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                         {availabilityStatus.loading
                             ? (t('checkAvailability') || "Checking...")
                             : (!selectedRange?.from || !selectedRange?.to)
-                                ? (t('selectDates') || "Select dates")
+                                ? (t('checkAvailability') || "Check availability")
                                 : (!availabilityStatus.available)
                                     ? (t('notAvailable') || "Not available")
                                     : (t('reserveNow') || "Reserve now")}
