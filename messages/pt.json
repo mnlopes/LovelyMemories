@@ -63,6 +63,8 @@
         },
         "messages": {
             "deleteConfirm": "Tem a certeza que deseja eliminar este cupão?",
+            "deleteTitle": "Eliminar cupão?",
+            "deleteConfirmCta": "Sim, eliminar",
             "deleteSuccess": "Cupão eliminado com sucesso.",
             "statusActive": "ativado",
             "statusInactive": "desativado",

@@ -7,6 +7,7 @@ import { getCoupons, saveCoupon, deleteCoupon, toggleCouponActive } from "@/app/
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import DeleteConfirmModal from "@/components/admin/ui/DeleteConfirmModal";
 
 export const CouponManager = () => {
     const t = useTranslations('AdminCoupons');
@@ -15,6 +16,8 @@ export const CouponManager = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [editingCoupon, setEditingCoupon] = useState<any | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchCoupons = async () => {
         setIsLoading(true);
@@ -31,11 +34,14 @@ export const CouponManager = () => {
         fetchCoupons();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        if (!confirm(t('messages.deleteConfirm'))) return;
-        const result = await deleteCoupon(id);
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+        setIsDeleting(true);
+        const result = await deleteCoupon(deleteTarget);
+        setIsDeleting(false);
         if (result.success) {
             toast.success(t('messages.deleteSuccess'));
+            setDeleteTarget(null);
             fetchCoupons();
         } else {
             toast.error(result.error);
@@ -180,8 +186,8 @@ export const CouponManager = () => {
                                         >
                                             <Search className="size-4" />
                                         </button>
-                                        <button 
-                                            onClick={() => handleDelete(coupon.id)}
+                                        <button
+                                            onClick={() => setDeleteTarget(coupon.id)}
                                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                         >
                                             <Trash2 className="size-4" />
@@ -285,6 +291,17 @@ export const CouponManager = () => {
                     </div>
                 </div>
             )}
+
+            <DeleteConfirmModal
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={confirmDelete}
+                isLoading={isDeleting}
+                title={t('messages.deleteTitle')}
+                message={t('messages.deleteConfirm')}
+                confirmLabel={t('messages.deleteConfirmCta')}
+                cancelLabel={t('modal.cancel')}
+            />
         </div>
     );
 };

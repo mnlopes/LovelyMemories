@@ -67,7 +67,10 @@ export async function validateCoupon(code: string) {
  */
 export async function getCoupons() {
     await assertCouponAdmin();
-    const { data, error } = await supabase
+    // Use the admin client: the anon client only sees active coupons (RLS), which
+    // would make a coupon vanish from the admin list the moment it's deactivated.
+    const adminSupabase = await getSupabaseAdmin();
+    const { data, error } = await adminSupabase
         .from('coupons')
         .select('*')
         .order('created_at', { ascending: false });
