@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/Button';
 import { parseDateLocal } from '@/lib/utils';
 import { validatePropertyAvailability } from '@/app/actions/property-actions';
+import { saveBookingSession } from '@/lib/booking-session';
 
 // Helper to safely extract string from potential localized object
 const getLocalizedStr = (val: any, locale: string = 'en'): string => {
@@ -496,25 +497,40 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                     <Button
                         variant="luxury"
                         className="px-7 py-3 shadow-lg shadow-gold/20 hover:scale-[1.02] transition-transform ml-4"
+                        disabled={(!availabilityStatus.available && !availabilityStatus.loading && !!selectedRange?.from) || availabilityStatus.loading}
                         onClick={() => {
                             if (!selectedRange?.from || !selectedRange?.to) {
                                 setIsMobileBookingOpen(true);
                             } else {
                                 const checkIn = format(selectedRange.from, 'yyyy-MM-dd');
                                 const checkOut = format(selectedRange.to, 'yyyy-MM-dd');
-                                const searchParams = new URLSearchParams({
+
+                                // Persist the booking session and navigate using a code,
+                                // matching the desktop BookingCard flow. The checkout page
+                                // only resolves bookings via ?code=, so raw query params
+                                // would land on "Sessão de reserva não encontrada".
+                                const bookingCode = saveBookingSession({
                                     slug: property.slug,
                                     checkIn,
                                     checkOut,
-                                    adults: adults.toString(),
-                                    children: childrenCount.toString(),
-                                    infants: infants.toString()
+                                    adults,
+                                    children: childrenCount,
+                                    infants,
+                                    selectedExtras,
+                                    extraPrices: property.servicesPrice
                                 });
-                                router.push(`/${locale}/booking/checkout?${searchParams.toString()}`);
+
+                                router.push(`/${locale}/booking/checkout?code=${bookingCode}`);
                             }
                         }}
                     >
-                        {(!selectedRange?.from || !selectedRange?.to) ? "Select Dates" : (t('reserveNow') || "Reserve now")}
+                        {availabilityStatus.loading
+                            ? (t('checkAvailability') || "Checking...")
+                            : (!selectedRange?.from || !selectedRange?.to)
+                                ? (t('selectDates') || "Select dates")
+                                : (!availabilityStatus.available)
+                                    ? (t('notAvailable') || "Not available")
+                                    : (t('reserveNow') || "Reserve now")}
                     </Button>
                 </div>
             </div>
