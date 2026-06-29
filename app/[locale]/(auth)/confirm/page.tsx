@@ -16,15 +16,18 @@ export default async function ConfirmPage({
     searchParams,
 }: {
     params: Promise<{ locale: string }>;
-    searchParams: Promise<{ token_hash?: string; type?: string; next?: string; email?: string }>;
+    searchParams: Promise<{ token_hash?: string; type?: string; next?: string; email?: string; invite?: string }>;
 }) {
     const { locale } = await params;
     const sp = await searchParams;
 
     const tokenHash = sp.token_hash ?? "";
+    const inviteToken = sp.invite ?? "";
     const type = sp.type ?? "invite";
     const email = sp.email ?? "";
     const next = sp.next || `/${locale}/set-password${email ? `?email=${encodeURIComponent(email)}` : ""}`;
+    // Either kind of link counts as "present": our owner-invite token or a Supabase token_hash.
+    const hasToken = !!tokenHash || !!inviteToken;
 
     const isPt = locale === "pt";
     const t = {
@@ -58,7 +61,7 @@ export default async function ConfirmPage({
             </div>
 
             <div className="w-full max-w-md relative z-10">
-                {!tokenHash ? (
+                {!hasToken ? (
                     <div className="bg-white rounded-[32px] p-12 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-[#E1E6EC] text-center">
                         <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-8">
                             <AlertTriangle className="w-10 h-10 text-amber-500" />
@@ -100,7 +103,7 @@ export default async function ConfirmPage({
                                 </div>
                             )}
 
-                            <ConfirmForm tokenHash={tokenHash} type={type} next={next} label={t.button} />
+                            <ConfirmForm tokenHash={tokenHash} inviteToken={inviteToken} type={type} next={next} label={t.button} />
                         </div>
                     </>
                 )}

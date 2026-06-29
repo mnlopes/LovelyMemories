@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation'
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { assertNotImpersonating } from './auth-context'
 import { routing } from '@/i18n/routing'
+import { hashInviteToken } from '@/lib/invite-tokens'
 
 /**
  * Only allow same-origin relative paths as a post-auth redirect target.
@@ -133,6 +134,106 @@ export async function confirmAuthLink(formData: FormData) {
         verified = !error
         if (error) {
             console.error('confirmAuthLink verifyOtp error:', error.message)
+        }
+    }
+
+    // redirect() throws NEXT_REDIRECT, so it must live outside the verify block.
+    redirect(verified ? next : `/${locale}/auth-error`)
+}
+
+/**
+ * Redeem one of OUR long-lived owner-portal invite tokens (see lib/invite-tokens.ts) AFTER the
+ * user explicitly clicks "Continue" on the /confirm interstitial.
+ *
+ * This is what lets an invite stay valid for weeks while Supabase's own OTP/link expiry stays
+ * capped at 24h: the email carries our token, and only here — at the moment of the click — do we
+ * mint a FRESH Supabase recovery token and consume it in the same request to establish the
+ * session. Supabase's short clock therefore never matters; our token's expiry (stored on the row)
+ * is the only thing that gates the link.
+ *
+ * Reliability over strictness: the token stays valid for its full lifetime (30 days) and can
+ * be redeemed repeatedly. Owners therefore get unlimited retries — a double-click, a closed tab,
+ * or a re-click of the email never locks them out. `used_at` is recorded for auditing only; it
+ * does NOT gate redemption. Expiry is the only thing that ends the link.
+ */
+export async function redeemInviteToken(formData: FormData) {
+    const rawToken = formData.get('invite') as string | null
+    // SECURITY: never trust `next` verbatim — it could be an external URL (open redirect).
+    const next = sanitizeNext(formData.get('next') as string | null)
+    const locale = next.split('/').filter(Boolean)[0] || 'en'
+
+    let verified = false
+    if (rawToken) {
+        const { getSupabaseAdmin } = await import('@/lib/supabase')
+        const adminSupabase = await getSupabaseAdmin()
+        const tokenHash = hashInviteToken(rawToken)
+
+        // Look up a live (unexpired) invite by its hash (never by anything user-supplied).
+        // Deliberately NOT filtered on used_at — the link is reusable until it expires so owners
+        // can retry as many times as they need.
+        const { data: invite } = await adminSupabase
+            .from('owner_invites')
+            .select('id, user_id, email')
+            .eq('token_hash', tokenHash)
+            .gt('expires_at', new Date().toISOString())
+            .maybeSingle()
+
+        if (invite?.email) {
+            // The owner proved control of their inbox by holding this single-use token, so it's
+            // safe to confirm the email. This also guarantees the recovery link below works even
+            // for an invited account that never finished sign-up (still email_confirmed_at = null).
+            if (invite.user_id) {
+                await adminSupabase.auth.admin.updateUserById(invite.user_id, { email_confirm: true })
+            }
+
+            // Mint a fresh Supabase recovery token now and consume it immediately — its 24h OTP
+            // clock never gets a chance to expire because we use it in this same request.
+            const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
+                type: 'recovery',
+                email: invite.email,
+            })
+
+            if (linkError || !linkData?.properties?.hashed_token) {
+                console.error('redeemInviteToken generateLink error:', linkError?.message)
+            } else {
+                const cookieStore = await cookies()
+                const supabase = createServerClient(
+                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                    {
+                        cookies: {
+                            getAll() {
+                                return cookieStore.getAll()
+                            },
+                            setAll(cookiesToSet) {
+                                try {
+                                    cookiesToSet.forEach(({ name, value, options }) =>
+                                        cookieStore.set(name, value, options)
+                                    )
+                                } catch {
+                                    // Ignore — set from a context where cookies are read-only.
+                                }
+                            },
+                        },
+                    }
+                )
+
+                const { error } = await supabase.auth.verifyOtp({
+                    type: 'recovery',
+                    token_hash: linkData.properties.hashed_token,
+                })
+                verified = !error
+                if (error) {
+                    // Token NOT burned — a transient failure shouldn't kill a 30-day invite.
+                    console.error('redeemInviteToken verifyOtp error:', error.message)
+                } else {
+                    // Record when it was last redeemed (audit only — does NOT block re-use).
+                    await adminSupabase
+                        .from('owner_invites')
+                        .update({ used_at: new Date().toISOString() })
+                        .eq('id', invite.id)
+                }
+            }
         }
     }
 

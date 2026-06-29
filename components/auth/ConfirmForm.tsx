@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { Loader2, ChevronRight } from "lucide-react";
-import { confirmAuthLink } from "@/app/actions/auth";
+import { confirmAuthLink, redeemInviteToken } from "@/app/actions/auth";
 
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
@@ -26,19 +26,31 @@ function SubmitButton({ label }: { label: string }) {
 
 export function ConfirmForm({
     tokenHash,
+    inviteToken,
     type,
     next,
     label,
 }: {
-    tokenHash: string;
-    type: string;
+    tokenHash?: string;
+    inviteToken?: string;
+    type?: string;
     next: string;
     label: string;
 }) {
+    // Two link kinds share this interstitial: our long-lived owner-invite token (redeemInviteToken)
+    // and Supabase's own token_hash used by password recovery (confirmAuthLink). Both only verify on
+    // this explicit submit, so email prefetchers never consume them.
+    const isInvite = !!inviteToken;
     return (
-        <form action={confirmAuthLink} className="w-full">
-            <input type="hidden" name="token_hash" value={tokenHash} />
-            <input type="hidden" name="type" value={type} />
+        <form action={isInvite ? redeemInviteToken : confirmAuthLink} className="w-full">
+            {isInvite ? (
+                <input type="hidden" name="invite" value={inviteToken} />
+            ) : (
+                <>
+                    <input type="hidden" name="token_hash" value={tokenHash} />
+                    <input type="hidden" name="type" value={type} />
+                </>
+            )}
             <input type="hidden" name="next" value={next} />
             <SubmitButton label={label} />
         </form>

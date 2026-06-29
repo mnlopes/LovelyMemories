@@ -330,7 +330,8 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
             actionLink = linkData.properties.action_link;
         } else if (role === 'owner') {
             // Owners receive a branded Lovely Memories invite (not Supabase's default template).
-            // We generate the invite link and send it ourselves via Resend.
+            // We still create the auth user via generateLink (so the role can be assigned and a
+            // session minted later), but we DON'T email Supabase's token — it expires in <=24h.
             const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
                 type: 'invite',
                 email: email,
@@ -344,11 +345,12 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
 
             user = linkData.user;
             const inviteLocale = options?.locale === 'en' ? 'en' : 'pt';
-            // Scanner-safe link: route through our interstitial /confirm page (verifies only on
-            // an explicit click) instead of Supabase's single-use action_link, which email
-            // prefetchers (Gmail, Outlook Safe Links) would consume before the owner ever clicks.
-            const hashedToken = linkData.properties.hashed_token;
-            const inviteLink = `${baseUrl}/${inviteLocale}/confirm?token_hash=${hashedToken}&type=invite&next=${encodeURIComponent(`/${inviteLocale}/set-password`)}&email=${encodeURIComponent(email)}`;
+            // Long-lived, single-use link: the email carries OUR token (30-day validity we control
+            // — see lib/invite-tokens.ts), redeemed via the scanner-safe /confirm interstitial.
+            // Decouples the link's lifetime from Supabase's 24h OTP cap (see redeemInviteToken).
+            const { createOwnerInvite, buildOwnerInviteLink } = await import('@/lib/invite-tokens');
+            const rawToken = await createOwnerInvite({ email, userId: user?.id });
+            const inviteLink = buildOwnerInviteLink(baseUrl, inviteLocale, rawToken, email);
 
             const { sendEmail } = await import('@/lib/email');
             const { ownerInviteEmail } = await import('@/lib/email-templates');
@@ -462,28 +464,21 @@ export async function resendOwnerInvite(email: string, locale: string = 'pt') {
     };
     const baseUrl = getBaseUrl();
     const inviteLocale = locale === 'en' ? 'en' : 'pt';
-    // redirectTo is only used as a fallback; the email actually points at our scanner-safe
-    // interstitial (built from hashed_token below), never the consumable action_link.
-    const redirectTo = `${baseUrl}/api/auth/confirm?next=/set-password&email=${encodeURIComponent(email)}`;
 
-    const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
-        type: 'recovery',
-        email,
-        options: { redirectTo }
-    });
-    if (linkError) return { success: false, error: linkError.message };
-
-    // Scanner-safe link: route through our /confirm interstitial (single verifyOtp on an
-    // explicit click) with type=recovery — coherent with how confirmAuthLink verifies it.
-    const hashedToken = linkData.properties.hashed_token;
-    const inviteLink = `${baseUrl}/${inviteLocale}/confirm?token_hash=${hashedToken}&type=recovery&next=${encodeURIComponent(`/${inviteLocale}/set-password`)}&email=${encodeURIComponent(email)}`;
-
-    // Best-effort: greet the owner by name.
+    // The owner already exists — look up their id (to mint a session at redemption) and name.
     const { data: profile } = await adminSupabase
         .from('profiles')
-        .select('full_name')
+        .select('id, full_name')
         .eq('email', email)
         .single();
+    if (!profile?.id) return { success: false, error: 'Owner not found' };
+
+    // Long-lived, single-use link: same mechanism as a fresh invite. The email carries OUR token
+    // (30-day validity we control), redeemed via the scanner-safe /confirm interstitial — never
+    // Supabase's <=24h action_link. See lib/invite-tokens.ts + redeemInviteToken.
+    const { createOwnerInvite, buildOwnerInviteLink } = await import('@/lib/invite-tokens');
+    const rawToken = await createOwnerInvite({ email, userId: profile.id });
+    const inviteLink = buildOwnerInviteLink(baseUrl, inviteLocale, rawToken, email);
 
     const { sendEmail } = await import('@/lib/email');
     const { ownerInviteEmail } = await import('@/lib/email-templates');

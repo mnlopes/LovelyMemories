@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/routing";
-import { Lock, Loader2, CheckCircle2, ChevronRight, Eye, EyeOff, Mail, AlertTriangle, LogOut, Check, X } from "lucide-react";
+import { useState, Suspense } from "react";
+import { motion } from "framer-motion";
+import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/routing";
+import { Lock, Loader2, CheckCircle2, ChevronRight, Eye, EyeOff, Mail, Check } from "lucide-react";
 import { updateUserPassword } from "@/app/actions/user";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -22,7 +22,8 @@ const RequirementItem = ({ label, met }: { label: string; met: boolean }) => (
 
 function SetPasswordForm() {
     const t = useTranslations('Auth');
-    const router = useRouter();
+    const locale = useLocale();
+    const isPt = locale === 'pt';
     const searchParams = useSearchParams();
     const urlEmail = searchParams.get('email');
 
@@ -32,103 +33,12 @@ function SetPasswordForm() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [currentUser, setCurrentUser] = useState<any>(null);
-    const [isSessionLoading, setIsSessionLoading] = useState(true);
 
-    // Password Complexity States
+    // Password complexity (mirrors the server-side rule in updateUserPassword).
     const hasMinLength = password.length >= 8;
     const hasNumber = /\d/.test(password);
     const hasLetter = /[a-zA-Z]/.test(password);
     const isComplexityMet = hasMinLength && hasNumber && hasLetter;
-
-    useEffect(() => {
-        let isSubscribed = true;
-
-        // 1. Monitor auth changes in real-time
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (!isSubscribed) return;
-            console.log("Auth Event Detected:", event, session?.user?.email);
-            if (session?.user) {
-                setCurrentUser(session.user);
-                setIsSessionLoading(false);
-            }
-        });
-
-        // 2. Manual Hash Detection Fallback
-        const checkHash = async () => {
-            const hash = window.location.hash.substring(1);
-            if (!hash || !hash.includes('access_token=')) return;
-
-            console.log("Auth hash found, attempting manual session set...");
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
-
-            if (accessToken && refreshToken) {
-                const { data, error } = await supabase.auth.setSession({
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                });
-
-                if (data?.user && isSubscribed) {
-                    console.log("Session set manually via hash:", data.user.email);
-                    setCurrentUser(data.user);
-                    setIsSessionLoading(false);
-                } else if (error) {
-                    console.error("Manual session set error:", error);
-                }
-            }
-        };
-        checkHash();
-
-        // 3. Proactive polling (getSession is better for hash fragments)
-        const pollAuth = async (retries = 15) => {
-            if (!isSubscribed) return;
-
-            try {
-                // getSession is usually the first to pick up the fragment
-                const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-                if (currentSession?.user) {
-                    console.log("Session found via polling:", currentSession.user.email);
-                    setCurrentUser(currentSession.user);
-                    setIsSessionLoading(false);
-                    return;
-                }
-
-                // Fallback to getUser which is slower but verified
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    console.log("User found via polling:", user.email);
-                    setCurrentUser(user);
-                    setIsSessionLoading(false);
-                    return;
-                }
-            } catch (err) {
-                console.warn("Polling attempt failed:", err);
-            }
-
-            if (retries > 0 && isSubscribed) {
-                console.log(`Still waiting for session... (${retries} left)`);
-                setTimeout(() => pollAuth(retries - 1), 1000); // 1s interval
-            } else if (isSubscribed) {
-                console.log("Auth polling finished - no session found");
-                setIsSessionLoading(false);
-            }
-        };
-
-        pollAuth();
-
-        return () => {
-            isSubscribed = false;
-            subscription.unsubscribe();
-        };
-    }, []);
-
-    const handleLogoutAndContinue = async () => {
-        await supabase.auth.signOut();
-        window.location.reload();
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -137,7 +47,6 @@ function SetPasswordForm() {
             setError(t('passwordMismatch'));
             return;
         }
-
         if (!isComplexityMet) {
             setError(t('passwordDesc') || "Password must have at least 8 characters, one letter and one number");
             return;
@@ -147,40 +56,44 @@ function SetPasswordForm() {
         setError(null);
 
         try {
+            // The actual auth happens server-side against the cookie session that the invite /
+            // recovery link already established — no client-side session detection needed.
             await updateUserPassword(password);
             setIsSuccess(true);
             toast.success(t('successPassword'));
 
-            // Determine redirect based on role
-            const { data: { user } } = await supabase.auth.getUser();
-            let redirectPath = '/admin';
-
-            if (user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', user.id)
-                    .single();
-
-                if (profile?.role === 'owner') {
-                    redirectPath = '/owner';
+            // Best-effort role-based redirect; never trap the owner on this screen.
+            let dest = `/${locale}/login`;
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', user.id)
+                        .single();
+                    dest = profile?.role === 'owner' ? `/${locale}/owner` : `/${locale}/admin`;
                 }
+            } catch {
+                // Couldn't resolve the role — login is a safe landing (they have a password now).
             }
-
-            const locale = window.location.pathname.split('/')[1] || 'en';
-            setTimeout(() => {
-                window.location.href = `/${locale}${redirectPath}`;
-            }, 2000);
+            setTimeout(() => { window.location.href = dest; }, 1500);
         } catch (err: any) {
             console.error("Password update error:", err);
-            setError(err.message || "An error occurred while updating your password");
-            toast.error("Failed to update password");
-        } finally {
+            // The only "session" failure that can happen here is the cookie session truly missing
+            // (e.g. the link was opened, abandoned, and revisited much later). Guide, don't block.
+            const sessionMissing = err?.message === 'Auth session missing!';
+            setError(
+                sessionMissing
+                    ? (isPt
+                        ? "A ligação expirou. Volte a abrir o link do email — de preferência no Safari ou Chrome, não dentro da aplicação de email."
+                        : "Your link expired. Please open the email link again — ideally in Safari or Chrome, not inside your email app.")
+                    : (err?.message || (isPt ? "Ocorreu um erro ao guardar a palavra-passe." : "An error occurred while updating your password"))
+            );
+            toast.error(isPt ? "Não foi possível guardar a palavra-passe" : "Failed to update password");
             setIsLoading(false);
         }
     };
-
-    const isConflict = currentUser && urlEmail && currentUser.email?.toLowerCase() !== urlEmail.toLowerCase();
 
     if (isSuccess) {
         return (
@@ -196,7 +109,7 @@ function SetPasswordForm() {
                     {t('successPassword')}
                 </h1>
                 <p className="text-[#192537]/60 mb-8 font-medium">
-                    Your account is now ready. Redirecting you to the dashboard...
+                    {isPt ? "A sua conta está pronta. A redirecioná-lo..." : "Your account is now ready. Redirecting you..."}
                 </p>
                 <div className="flex justify-center">
                     <Loader2 className="w-6 h-6 animate-spin text-[#B09E80]" />
@@ -219,175 +132,111 @@ function SetPasswordForm() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-[32px] p-8 md:p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-[#E1E6EC] overflow-hidden"
+                className="bg-white rounded-[32px] p-8 md:p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-[#E1E6EC]"
             >
-                <AnimatePresence mode="wait">
-                    {isConflict ? (
-                        <motion.div
-                            key="conflict"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-6"
-                        >
-                            <div className="p-6 bg-red-50 border border-red-100 rounded-2xl flex flex-col items-center text-center">
-                                <div className="w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center mb-4 shadow-lg shadow-red-200 animate-pulse">
-                                    <AlertTriangle className="size-6" />
-                                </div>
-                                <h3 className="text-lg font-bold text-red-700 mb-2">Wrong Account Detected!</h3>
-                                <p className="text-sm text-red-600/80 font-medium">
-                                    You are currently logged in as <span className="font-bold underline">{currentUser?.email}</span>.
-                                    But this invitation is for <span className="font-bold underline">{urlEmail}</span>.
+                <div className="space-y-6">
+                    {urlEmail && (
+                        <div className="p-4 bg-blue-50/50 border border-blue-100/50 rounded-2xl flex items-center gap-3">
+                            <div className="size-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-500">
+                                <Mail className="size-5" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500/60 leading-none mb-1">
+                                    {isPt ? "A definir a palavra-passe para" : "Setting password for"}
+                                </p>
+                                <p className="text-sm font-bold text-[#192537] leading-tight">
+                                    {urlEmail}
                                 </p>
                             </div>
-                            <button
-                                onClick={handleLogoutAndContinue}
-                                className="w-full h-14 bg-red-600 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-red-700 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group shadow-lg shadow-red-200"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                Logout & Change Account
-                            </button>
-                        </motion.div>
-                    ) : !currentUser && !isSessionLoading ? (
-                        <motion.div
-                            key="no-session"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="space-y-6"
-                        >
-                            <div className="p-6 bg-amber-50 border border-amber-100 rounded-2xl flex flex-col items-center text-center">
-                                <div className="size-12 bg-amber-500 text-white rounded-full flex items-center justify-center mb-4 shadow-lg shadow-amber-200">
-                                    <AlertTriangle className="size-6" />
-                                </div>
-                                <h3 className="text-lg font-bold text-amber-700 mb-2">Session Not Found</h3>
-                                <p className="text-sm text-amber-600/80 font-medium">
-                                    We couldn't verify your session yet. This can happen if the link was clicked from some email apps.
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="w-full h-14 bg-amber-600 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-amber-700 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group shadow-lg shadow-amber-200"
-                            >
-                                <Loader2 className="w-5 h-5 group-hover:rotate-180 transition-transform" />
-                                Refresh & Try Again
-                            </button>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="form"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="space-y-6"
-                        >
-                            {(urlEmail || currentUser?.email) && (
-                                <div className="p-4 bg-blue-50/50 border border-blue-100/50 rounded-2xl flex items-center gap-3">
-                                    <div className="size-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-500">
-                                        <Mail className="size-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500/60 leading-none mb-1">
-                                            {currentUser ? "Logged in as" : "Setting password for"}
-                                        </p>
-                                        <p className="text-sm font-bold text-[#192537] leading-tight">
-                                            {urlEmail || currentUser?.email}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                {error && (
-                                    <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
-                                        {error === "Auth session missing!" ? (
-                                            <div className="space-y-2">
-                                                <p className="font-bold">Session expired or missing.</p>
-                                                <p className="text-xs">Please refresh the page using the button above.</p>
-                                            </div>
-                                        ) : error}
-                                    </div>
-                                )}
-
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-[#192537] uppercase tracking-wider ml-1">
-                                        {t('password')}
-                                    </label>
-                                    <div className="relative group">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#192537]/30 group-focus-within:text-[#B09E80] transition-colors">
-                                            <Lock className="w-5 h-5" />
-                                        </span>
-                                        <input
-                                            type={showPassword ? "text" : "password"}
-                                            required
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            className="w-full h-14 pl-12 pr-12 bg-[#FCFCFC] border border-[#E1E6EC] rounded-2xl focus:outline-none focus:border-[#B09E80] focus:ring-4 focus:ring-[#B09E80]/5 transition-all outline-none text-[#192537] font-medium"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#192537]/30 hover:text-[#B09E80] transition-colors"
-                                        >
-                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-
-                                    {/* Password Complexity Checklist */}
-                                    <div className="px-1 pt-1 space-y-2">
-                                        <RequirementItem 
-                                            label={t('minChars') || "At least 8 characters"} 
-                                            met={hasMinLength} 
-                                        />
-                                        <div className="flex items-center gap-4">
-                                            <RequirementItem 
-                                                label={t('oneLetter') || "One letter"} 
-                                                met={hasLetter} 
-                                            />
-                                            <RequirementItem 
-                                                label={t('oneNumber') || "One number"} 
-                                                met={hasNumber} 
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-[#192537] uppercase tracking-wider ml-1">
-                                        {t('confirmPassword')}
-                                    </label>
-                                    <div className="relative group">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#192537]/30 group-focus-within:text-[#B09E80] transition-colors">
-                                            <Lock className="w-5 h-5" />
-                                        </span>
-                                        <input
-                                            type={showPassword ? "text" : "password"}
-                                            required
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            className="w-full h-14 pl-12 pr-12 bg-[#FCFCFC] border border-[#E1E6EC] rounded-2xl focus:outline-none focus:border-[#B09E80] focus:ring-4 focus:ring-[#B09E80]/5 transition-all outline-none text-[#192537] font-medium"
-                                        />
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={isLoading || isSessionLoading || !currentUser || password.length === 0 || !isComplexityMet}
-                                    className="w-full h-14 bg-[#192537] text-white rounded-2xl font-bold uppercase tracking-[0.1em] hover:bg-[#253652] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group shadow-lg shadow-[#192537]/20"
-                                >
-                                    {isLoading || isSessionLoading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <>
-                                            {t('savePassword')}
-                                            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                        </>
-                                    )}
-                                </button>
-                            </form>
-                        </motion.div>
+                        </div>
                     )}
-                </AnimatePresence>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {error && (
+                            <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-[#192537] uppercase tracking-wider ml-1">
+                                {t('password')}
+                            </label>
+                            <div className="relative group">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#192537]/30 group-focus-within:text-[#B09E80] transition-colors">
+                                    <Lock className="w-5 h-5" />
+                                </span>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full h-14 pl-12 pr-12 bg-[#FCFCFC] border border-[#E1E6EC] rounded-2xl focus:outline-none focus:border-[#B09E80] focus:ring-4 focus:ring-[#B09E80]/5 transition-all outline-none text-[#192537] font-medium"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#192537]/30 hover:text-[#B09E80] transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+
+                            {/* Password Complexity Checklist */}
+                            <div className="px-1 pt-1 space-y-2">
+                                <RequirementItem
+                                    label={t('minChars') || "At least 8 characters"}
+                                    met={hasMinLength}
+                                />
+                                <div className="flex items-center gap-4">
+                                    <RequirementItem
+                                        label={t('oneLetter') || "One letter"}
+                                        met={hasLetter}
+                                    />
+                                    <RequirementItem
+                                        label={t('oneNumber') || "One number"}
+                                        met={hasNumber}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-[#192537] uppercase tracking-wider ml-1">
+                                {t('confirmPassword')}
+                            </label>
+                            <div className="relative group">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#192537]/30 group-focus-within:text-[#B09E80] transition-colors">
+                                    <Lock className="w-5 h-5" />
+                                </span>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full h-14 pl-12 pr-12 bg-[#FCFCFC] border border-[#E1E6EC] rounded-2xl focus:outline-none focus:border-[#B09E80] focus:ring-4 focus:ring-[#B09E80]/5 transition-all outline-none text-[#192537] font-medium"
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading || password.length === 0 || !isComplexityMet}
+                            className="w-full h-14 bg-[#192537] text-white rounded-2xl font-bold uppercase tracking-[0.1em] hover:bg-[#253652] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group shadow-lg shadow-[#192537]/20"
+                        >
+                            {isLoading ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    {t('savePassword')}
+                                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </div>
             </motion.div>
         </div>
     );
@@ -414,7 +263,7 @@ export default function SetPasswordPage() {
             <Suspense fallback={
                 <div className="w-full max-w-md bg-white rounded-[32px] p-12 shadow-xl border border-[#E1E6EC] text-center relative z-10">
                     <Loader2 className="w-10 h-10 animate-spin text-[#B09E80] mx-auto mb-4" />
-                    <p className="text-[#192537]/60 font-medium">Loading security context...</p>
+                    <p className="text-[#192537]/60 font-medium">Loading...</p>
                 </div>
             }>
                 <SetPasswordForm />
