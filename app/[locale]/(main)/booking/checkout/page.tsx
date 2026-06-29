@@ -968,7 +968,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                     value={formData.phone}
                                                     onChange={handleInputChange}
                                                     type="tel"
-                                                    className={`flex-1 h-14 bg-white border rounded-2xl px-5 focus:border-[#B08D4A] outline-none transition-all ${fieldErrors.phone ? 'border-[#9B1D20] bg-[#9B1D20]/5 shadow-[0_0_10px_rgba(155,29,32,0.05)]' : 'border-gray-100 focus:shadow-lg focus:shadow-gray-200/50'}`}
+                                                    className={`flex-1 min-w-0 h-14 bg-white border rounded-2xl px-5 focus:border-[#B08D4A] outline-none transition-all ${fieldErrors.phone ? 'border-[#9B1D20] bg-[#9B1D20]/5 shadow-[0_0_10px_rgba(155,29,32,0.05)]' : 'border-gray-100 focus:shadow-lg focus:shadow-gray-200/50'}`}
                                                     placeholder={t('step1.phonePlaceholder')}
                                                 />
                                             </div>
@@ -1322,7 +1322,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                     value={formData.couponCode}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
                                                     placeholder={t('step2.couponPlaceholder')}
-                                                    className="flex-1 bg-gray-50 border border-gray-100 rounded-2xl px-5 h-12 text-sm outline-none focus:ring-1 focus:ring-[#8ca38c] transition-all uppercase"
+                                                    className="flex-1 min-w-0 bg-gray-50 border border-gray-100 rounded-2xl px-5 h-12 text-sm outline-none focus:ring-1 focus:ring-[#8ca38c] transition-all uppercase"
                                                     disabled={!!appliedCoupon || isValidatingCoupon}
                                                 />
                                                 {appliedCoupon ? (
@@ -1330,7 +1330,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                         type="button"
                                                         variant="outline"
                                                         onClick={handleRemoveCoupon}
-                                                        className="h-12 px-6 rounded-2xl border-red-100 text-red-600 hover:bg-red-50"
+                                                        className="h-12 px-5 sm:px-6 shrink-0 rounded-2xl border-red-100 text-red-600 hover:bg-red-50"
                                                     >
                                                         {t('header.cancel')}
                                                     </Button>
@@ -1340,7 +1340,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                         variant="luxury"
                                                         onClick={handleApplyCoupon}
                                                         disabled={!formData.couponCode || isValidatingCoupon}
-                                                        className="h-12 px-8 rounded-2xl"
+                                                        className="h-12 px-6 sm:px-8 shrink-0 rounded-2xl"
                                                     >
                                                         {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : t('step2.applyCoupon')}
                                                     </Button>
