@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
+    // Host canonicalization (apex -> www) is handled by Vercel's domain config,
+    // so it is intentionally NOT done here (a www -> apex redirect here would
+    // collide with Vercel's apex -> www 308 and create an infinite loop).
     return [
       {
         source: '/pages/:slug.html',

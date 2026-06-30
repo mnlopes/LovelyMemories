@@ -34,4 +34,4 @@ Disallow: /*/v9
 Disallow: /*/v10
 Disallow: /*/v11
 
-Sitemap: https://lovelymemories.pt/sitemap.xml
+Sitemap: https://www.lovelymemories.pt/sitemap.xml

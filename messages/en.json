@@ -694,6 +694,8 @@
         "clear": "Clear"
     },
     "Concierge": {
+        "prevSlide": "Previous services",
+        "nextSlide": "Next services",
         "subtitle": "Exclusive Services",
         "mainTitle": "Customise your trip with one of our preferred partner services",
         "exclusiveSelection": "Exclusive Selection",

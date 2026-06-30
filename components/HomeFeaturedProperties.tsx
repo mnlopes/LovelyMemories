@@ -66,7 +66,7 @@ export const HomeFeaturedProperties = () => {
                 <div className="container mx-auto px-4">
                     <div className="mb-6">
                         <div className="w-full">
-                            <h5 className="text-2xl font-bold text-[#192537]">{t('featuredTitle')}</h5>
+                            <h2 className="text-2xl font-bold text-[#192537]">{t('featuredTitle')}</h2>
                         </div>
                     </div>
                     {/* Horizontal Scroll Container */}
@@ -105,9 +105,9 @@ export const HomeFeaturedProperties = () => {
                                                 </div>
                                             )}
                                             <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/60 to-transparent z-10">
-                                                <h6 className="text-white font-sans font-bold text-xl mb-1">
+                                                <h3 className="text-white font-sans font-bold text-xl mb-1">
                                                     {getLocalizedStr(property.title, locale)}
-                                                </h6>
+                                                </h3>
                                                 {!isBuilding && (
                                                     <p className="text-white/90 text-sm font-light">
                                                         {safeCount(property.bedrooms)} {t('bedrooms')} • {safeCount(property.max_guests)} {t('guests')}
@@ -130,7 +130,7 @@ export const HomeFeaturedProperties = () => {
                 <div className="container mx-auto px-4">
                     <div className="mb-12">
                         <div className="w-full">
-                            <h5 className="section-title text-center text-3xl font-sans font-bold text-[#192537]">{t('featuredTitle')}</h5>
+                            <h2 className="section-title text-center text-3xl font-sans font-bold text-[#192537]">{t('featuredTitle')}</h2>
                         </div>
                     </div>
                     {/* Centered Flex Structure */}
@@ -173,9 +173,9 @@ export const HomeFeaturedProperties = () => {
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 transition-opacity duration-300"></div>
 
                                             <div className="absolute bottom-0 left-0 w-full p-6 z-10 text-left">
-                                                <h6 className="text-white font-sans font-bold text-xl mb-1 leading-tight">
+                                                <h3 className="text-white font-sans font-bold text-xl mb-1 leading-tight">
                                                     {getLocalizedStr(property.title, locale)}
-                                                </h6>
+                                                </h3>
                                                 {!isBuilding && (
                                                     <p className="text-white/90 text-sm font-light tracking-wide">
                                                         {safeCount(property.bedrooms)} {t('bedrooms')} • {safeCount(property.max_guests)} {t('guests')}

@@ -33,7 +33,7 @@ const SITE_DESCRIPTION =
 // (app/opengraph-image.png, app/twitter-image.png) are auto-detected by Next.js
 // from the app/ directory, so they don't need to be declared here.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://lovelymemories.pt"),
+  metadataBase: new URL("https://www.lovelymemories.pt"),
   title: {
     default: `${SITE_NAME} — Luxury Stays & Property Management in Porto & Douro`,
     template: `%s | ${SITE_NAME}`,
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} — Luxury Stays & Property Management`,
     description: SITE_DESCRIPTION,
-    url: "https://lovelymemories.pt",
+    url: "https://www.lovelymemories.pt",
     images: ["/opengraph-image.png"],
   },
   twitter: {

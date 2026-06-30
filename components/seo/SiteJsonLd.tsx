@@ -3,7 +3,7 @@
  * how LLMs describe the brand. Rendered once in the root layout. Keep facts in
  * sync with /public/llms.txt.
  */
-const SITE_URL = 'https://lovelymemories.pt';
+const SITE_URL = 'https://www.lovelymemories.pt';
 
 export function SiteJsonLd() {
   const graph = {

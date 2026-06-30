@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
 import { PROPERTIES } from '@/lib/data';
 
-const BASE_URL = 'https://lovelymemories.pt';
+const BASE_URL = 'https://www.lovelymemories.pt';
 const { locales, defaultLocale } = routing;
 
 // Public, indexable routes (path relative to /{locale}). Keep in sync with the

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { routing } from '@/i18n/routing';
 
-export const SITE_URL = 'https://lovelymemories.pt';
+export const SITE_URL = 'https://www.lovelymemories.pt';
 
 // Target keywords across our operating + expansion areas (Porto, Vila Nova de
 // Gaia, Douro and the Algarve). Google mostly ignores the keywords meta, but we

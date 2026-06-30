@@ -83,9 +83,9 @@ export const ConciergeServices = () => {
                         className="w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-8"
                     >
                         <div className="flex-1 max-w-none pr-8">
-                            <h6 className="uppercase tracking-[0.2em] text-[#B09E80] text-sm font-bold mb-3">
+                            <p className="uppercase tracking-[0.2em] text-[#9E8C6D] text-sm font-bold mb-3">
                                 {t('subtitle')}
-                            </h6>
+                            </p>
                             <h2 className="text-[32px] lg:text-[42px] font-semibold font-sans text-[#0A1128] leading-[1.15]">
                                 {t('mainTitle')}
                             </h2>
@@ -126,6 +126,8 @@ export const ConciergeServices = () => {
 
                         {/* LEFT ARROW */}
                         <button
+                            type="button"
+                            aria-label={t('prevSlide')}
                             onClick={() => handleButtonClick('left')}
                             className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 !rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -ml-2 lg:-ml-6 cursor-pointer overflow-hidden"
                         >
@@ -134,6 +136,8 @@ export const ConciergeServices = () => {
 
                         {/* RIGHT ARROW */}
                         <button
+                            type="button"
+                            aria-label={t('nextSlide')}
                             onClick={() => handleButtonClick('right')}
                             className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 !rounded-full bg-[#B09E80] text-white flex items-center justify-center shadow-lg hover:bg-[#9E8C6D] transition-all duration-300 scale-100 -mr-2 lg:-mr-6 cursor-pointer overflow-hidden"
                         >
@@ -179,9 +183,9 @@ export const ConciergeServices = () => {
 
                                         {/* Content */}
                                         <div className="absolute bottom-0 left-0 w-full p-6 pb-8 flex justify-center items-end h-full">
-                                            <h4 className="text-white text-[26px] font-bold font-sans leading-tight text-center drop-shadow-md">
+                                            <h3 className="text-white text-[26px] font-bold font-sans leading-tight text-center drop-shadow-md">
                                                 {locale === 'pt' ? service.name_pt : locale === 'he' ? (service.name_he || service.name_en) : service.name_en}
-                                            </h4>
+                                            </h3>
                                         </div>
                                     </motion.div>
                                 ))

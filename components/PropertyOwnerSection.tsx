@@ -72,7 +72,7 @@ export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: bo
                                     br: () => <br />
                                 })}
                             </h2>
-                            <h6 className={`text-base md:text-xl font-light text-gray-300 max-w-lg leading-relaxed ${isRtl ? 'ml-auto' : ''}`}>
+                            <p className={`text-base md:text-xl font-light text-gray-300 max-w-lg leading-relaxed ${isRtl ? 'ml-auto' : ''}`}>
                                 {/* Added ml-auto conditionally? No, text-right handles text, but max-w might need 'ml-auto' in RTL to align right if it's block level? 
                                     Let's check. max-w-lg + block means it takes width. 
                                     If text-right, text is right. But the block adheres to left unless...
@@ -80,7 +80,7 @@ export const PropertyOwnerSection = ({ isConcierge = false }: { isConcierge?: bo
                                 {t.rich('subtitle', {
                                     br: () => <br />
                                 })}
-                            </h6>
+                            </p>
                             <div className="pt-4">
                                 <Link
                                     href="/join"

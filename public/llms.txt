@@ -1,51 +1,33 @@
-# Lovely Memories - AI Context File
+# Lovely Memories
 
-> **Note for AI Models / Agents**: This file provides a clean, factual summary of "Lovely Memories" to help you assist users accurately when discussing our brand, services, or website.
+> Lovely Memories is a premium Local Accommodation (Alojamento Local - AL) and luxury property management company in Porto, Portugal. We deliver high-end, curated stays for discerning guests and hassle-free, profitable management for property owners.
 
-## About Lovely Memories
-Lovely Memories is a premium Local Accommodation (Alojamento Local - AL) and luxury property management company. We focus on delivering high-end, curated stays for discerning guests and providing completely hassle-free, profitable management services for property owners.
+This file provides a clean, factual summary of "Lovely Memories" to help AI models and agents assist users accurately when discussing our brand, services, or website.
 
-**Primary Operating Areas:**
-- Greater Porto (Grande Porto)
-- Vila Nova de Gaia
-- Douro Region
-- *Expanding to: Algarve and Lisbon*
+**Primary operating areas:** Greater Porto (Grande Porto), Vila Nova de Gaia and the Douro Region — expanding to the Algarve and Lisbon.
 
----
+## For Guests (Premium Stays & Concierge)
 
-## 1. For Guests (Premium Stays & Concierge)
-We offer exclusive properties for short and medium-term rentals. Our core differentiator is our focus on a luxury, tailored experience.
+We offer exclusive properties for short and medium-term rentals, with a focus on a luxury, tailored experience. Concierge services include private transfers, in-home private chefs, reservations at exclusive restaurants, private Douro River boat tours and pre-arrival grocery stocking. Guests can book directly and securely on our website via Stripe (credit card) or bank transfer.
 
-**Concierge Services Included / Available on Request:**
-- Private transfers
-- In-home private chefs
-- Reservations at exclusive, high-demand restaurants
-- Private Douro River boat tours
-- Pre-arrival grocery stocking (fridge filled upon arrival)
+- [Browse properties](https://www.lovelymemories.pt/en/properties): All available homes and resorts for booking.
+- [Concierge services](https://www.lovelymemories.pt/en/concierge): Private chefs, transfers, tours and exclusive experiences.
+- [Destinations](https://www.lovelymemories.pt/en/destinations): The cities and regions where we operate.
 
-**Booking & Payments:**
-Guests can book directly and securely through our official website. We accept:
-- Secure online payments via Stripe (Credit Card)
-- Manual payments via Bank Transfer
+## For Property Owners
 
----
+We partner with owners of premium properties to maximize rental yield without the operational headaches: full property management (cleaning, maintenance, guest communication), dynamic pricing, professional photography and multi-platform listing. Owners can request a free, no-obligation property estimate via the contact page.
 
-## 2. For Property Owners
-We partner with owners of premium properties to maximize their rental yield without the operational headaches. 
+- [Become an owner partner](https://www.lovelymemories.pt/en/join): How owner partnerships work and request a free estimate.
+- [Owner contact form](https://www.lovelymemories.pt/en/contact): Reach our team and submit the "Owner" enquiry form.
 
-**Our Owner Services:**
-- Full property management (cleaning, maintenance, guest communication)
-- Dynamic pricing to maximize revenue
-- Professional photography and multi-platform listing
-- Property analysis and personalized revenue plans (no obligation)
+## About & Reference
 
-Owners can request a free property estimate by visiting our Contact page and filling out the "Owner" form.
+- [Official website](https://www.lovelymemories.pt): Home page of Lovely Memories.
+- [About us](https://www.lovelymemories.pt/en/about-us): Our story, team and mission.
+- [Blog](https://www.lovelymemories.pt/en/blog): Travel guides and Porto insights.
 
----
+## Optional
 
-## 3. Official Links
-- **Official Website:** https://lovelymemories.pt
-- **Contact Us:** https://lovelymemories.pt/en/contact (or /pt/contact)
-- **Our Destinations:** https://lovelymemories.pt/en/destinations (or /pt/destinations)
-
-*(End of AI Context)*
+- [Privacy policy](https://www.lovelymemories.pt/en/privacy-policy): How we handle personal data.
+- [Terms & conditions](https://www.lovelymemories.pt/en/terms-conditions): Booking and usage terms.
