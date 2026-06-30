@@ -90,10 +90,20 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
 
     // 4. Create Payment Intent with metadata
     // We store all reservation info in metadata so the webhook can reconstruct it
+    // Human-readable label for the Stripe dashboard "Description" column. title is a
+    // multilingual object ({ en, pt, he }), so pick the locale (matches reservation.ts).
+    const propertyTitle = typeof property.title === 'string'
+      ? property.title
+      : (property.title?.[data.locale as 'en' | 'pt'] || property.title?.pt || property.title?.en || data.propertySlug);
+
     const intent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency: 'eur',
       payment_method_types: ['card', 'link'],
+      // receipt_email populates the dashboard "Customer" column (and enables Stripe receipts);
+      // description fills the "Description" column instead of the raw pi_... id.
+      receipt_email: data.email,
+      description: `${propertyTitle} · ${data.checkIn} → ${data.checkOut} · ${data.fullName}`,
       metadata: {
         // Flattened keys to avoid limits and ensure they fit
         fn: data.fullName,
