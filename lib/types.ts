@@ -56,6 +56,7 @@ export interface CmsPageSection {
     subtitle?: string;     // timeline "year" badge
     image_url?: string;    // hero background / timeline image
     video_url?: string;    // optional hero looping background video
+    media_type?: string;   // hero: 'image' | 'video' (which media to display)
     created_at?: string;
     updated_at?: string;
 }

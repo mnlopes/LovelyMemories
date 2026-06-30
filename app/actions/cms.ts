@@ -404,6 +404,7 @@ export async function reorderPageSections(sections: CmsPageSection[]) {
         subtitle: section.subtitle,
         image_url: section.image_url,
         video_url: section.video_url,
+        media_type: section.media_type,
         updated_at: new Date().toISOString()
     }));
 

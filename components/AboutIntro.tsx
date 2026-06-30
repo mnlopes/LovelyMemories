@@ -4,25 +4,32 @@ import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { getPageSections } from "@/app/actions/cms";
+import { CmsPageSection } from "@/lib/types";
 
-export const AboutIntro = () => {
+const introContent = (sections: CmsPageSection[]): string | null => {
+    const intro = sections.find((s) => s.section_type === "intro");
+    return intro?.content || null;
+};
+
+export const AboutIntro = ({ initialSections }: { initialSections?: CmsPageSection[] }) => {
     const t = useTranslations("AboutIntro");
     const params = useParams();
     const locale = (params?.locale as string) || "en";
 
-    const [content, setContent] = useState<string | null>(null);
+    const [content, setContent] = useState<string | null>(
+        initialSections ? introContent(initialSections) : null
+    );
 
     useEffect(() => {
+        if (initialSections) return;
         let active = true;
         getPageSections("about-us", locale).then((secs) => {
-            if (!active) return;
-            const intro = secs.find((s) => s.section_type === "intro");
-            if (intro && intro.content) setContent(intro.content);
+            if (active) setContent(introContent(secs));
         });
         return () => {
             active = false;
         };
-    }, [locale]);
+    }, [locale, initialSections]);
 
     const paragraphs = content
         ? content.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)

@@ -981,16 +981,21 @@
             "removeVideo": "Remove video",
             "validation": {
                 "heroTitle": "The hero title is required.",
-                "timelineFields": "Each timeline entry needs a year and a title."
+                "timelineFields": "Each timeline entry needs a year and a title.",
+                "videoType": "Unsupported format. Use an MP4 or WebM video.",
+                "videoSize": "Video is too large. Keep it under 15 MB (a short, compressed MP4 works best)."
             },
             "hero": {
                 "title": "Hero — page top",
                 "heading": "Title",
                 "headingHint": "Use a line break to split the title across two lines.",
+                "mediaType": "Background media",
+                "useImage": "Image",
+                "useVideo": "Video",
                 "image": "Background image",
                 "imageHint": "Shown as background, and as the poster while a video loads.",
-                "video": "Looping video (optional)",
-                "videoHint": "If set, the video replaces the image on the site. Use a short, compressed MP4 for best performance."
+                "video": "Looping video",
+                "videoHint": "MP4 or WebM, up to 15 MB. Best: a short 6–10s 1080p clip, no audio. Plays on desktop and mobile."
             },
             "intro": {
                 "title": "Intro text",

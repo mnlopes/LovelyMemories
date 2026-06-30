@@ -972,16 +972,21 @@
             "removeVideo": "Remover vídeo",
             "validation": {
                 "heroTitle": "O título do hero é obrigatório.",
-                "timelineFields": "Cada entrada da linha do tempo precisa de um ano e um título."
+                "timelineFields": "Cada entrada da linha do tempo precisa de um ano e um título.",
+                "videoType": "Formato não suportado. Use um vídeo MP4 ou WebM.",
+                "videoSize": "O vídeo é demasiado grande. Mantenha abaixo de 15 MB (um MP4 curto e comprimido é o ideal)."
             },
             "hero": {
                 "title": "Hero — topo da página",
                 "heading": "Título",
                 "headingHint": "Use uma quebra de linha para partir o título em duas linhas.",
+                "mediaType": "Media de fundo",
+                "useImage": "Imagem",
+                "useVideo": "Vídeo",
                 "image": "Imagem de fundo",
                 "imageHint": "Aparece como fundo e como pré-visualização enquanto o vídeo carrega.",
-                "video": "Vídeo em loop (opcional)",
-                "videoHint": "Se definido, o vídeo substitui a imagem no site. Use um MP4 curto e comprimido para melhor desempenho."
+                "video": "Vídeo em loop",
+                "videoHint": "MP4 ou WebM, até 15 MB. Ideal: um clip curto de 6–10s em 1080p, sem áudio. Toca em desktop e mobile."
             },
             "intro": {
                 "title": "Texto inicial",

@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring } from 'framer-motion';
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { getPageSections } from "@/app/actions/cms";
+import { CmsPageSection } from "@/lib/types";
 
 const StoryItem = ({ story, index }: { story: any, index: number }) => {
     const isEven = index % 2 === 0;
@@ -81,7 +82,18 @@ const FALLBACK_YEARS = [
     { year: "2026", image: "/legacy/about-us/images/the-flower-power.png" },
 ];
 
-export const AboutStory = () => {
+const sectionsToStories = (sections: CmsPageSection[]) =>
+    sections
+        .filter((s) => s.section_type === "timeline")
+        .sort((a, b) => a.display_order - b.display_order)
+        .map((s) => ({
+            year: s.subtitle || "",
+            title: s.title || "",
+            text: s.content || "",
+            image: s.image_url || "",
+        }));
+
+export const AboutStory = ({ initialSections }: { initialSections?: CmsPageSection[] }) => {
     const t = useTranslations('AboutStory');
     const params = useParams();
     const locale = (params?.locale as string) || "en";
@@ -104,30 +116,26 @@ export const AboutStory = () => {
         image,
     }));
 
-    const [stories, setStories] = useState(fallbackStories);
+    const initialStories = (() => {
+        if (!initialSections) return fallbackStories;
+        const mapped = sectionsToStories(initialSections);
+        return mapped.length > 0 ? mapped : fallbackStories;
+    })();
+
+    const [stories, setStories] = useState(initialStories);
 
     useEffect(() => {
+        if (initialSections) return;
         let active = true;
         getPageSections("about-us", locale).then((secs) => {
             if (!active) return;
-            const timeline = secs
-                .filter((s) => s.section_type === "timeline")
-                .sort((a, b) => a.display_order - b.display_order);
-            if (timeline.length > 0) {
-                setStories(
-                    timeline.map((s) => ({
-                        year: s.subtitle || "",
-                        title: s.title || "",
-                        text: s.content || "",
-                        image: s.image_url || "",
-                    }))
-                );
-            }
+            const timeline = sectionsToStories(secs);
+            if (timeline.length > 0) setStories(timeline);
         });
         return () => {
             active = false;
         };
-    }, [locale]);
+    }, [locale, initialSections]);
 
     return (
         <section ref={containerRef} className="bg-white py-32 overflow-hidden">
