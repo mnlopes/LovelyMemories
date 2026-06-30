@@ -14,6 +14,7 @@ import {
     Image as ImgIcon,
     AlignLeft,
     Clock,
+    Film,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getPageSections, upsertPageSection, deletePageSection } from "@/app/actions/cms";
@@ -33,6 +34,7 @@ interface HeroState {
     id?: string;
     title: string;
     image_url: string;
+    video_url: string;
 }
 
 interface IntroState {
@@ -64,7 +66,7 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [hero, setHero] = useState<HeroState>({ title: "", image_url: "" });
+    const [hero, setHero] = useState<HeroState>({ title: "", image_url: "", video_url: "" });
     const [intro, setIntro] = useState<IntroState>({ content: "" });
     const [timeline, setTimeline] = useState<TimelineItem[]>([]);
     const [deletedIds, setDeletedIds] = useState<string[]>([]);
@@ -82,7 +84,12 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
             .filter((s) => s.section_type === "timeline")
             .sort((a, b) => a.display_order - b.display_order);
 
-        setHero({ id: heroRow?.id, title: heroRow?.title || "", image_url: heroRow?.image_url || "" });
+        setHero({
+            id: heroRow?.id,
+            title: heroRow?.title || "",
+            image_url: heroRow?.image_url || "",
+            video_url: heroRow?.video_url || "",
+        });
         setIntro({ id: introRow?.id, content: introRow?.content || "" });
         setTimeline(
             timelineRows.map((r) => ({
@@ -115,6 +122,15 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
             data: { publicUrl },
         } = supabase.storage.from("blog-images").getPublicUrl(filePath);
         return publicUrl;
+    };
+
+    const handleHeroVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadingKey("hero-video");
+        const url = await uploadImage(file);
+        if (url) setHero((prev) => ({ ...prev, video_url: url }));
+        setUploadingKey(null);
     };
 
     const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,6 +228,7 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
                     section_type: "hero",
                     title: hero.title,
                     image_url: hero.image_url,
+                    video_url: hero.video_url,
                     display_order: 0,
                 })
             );
@@ -406,6 +423,69 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
                                         </div>
                                     )}
                                 </div>
+                                <p className="text-[10px] text-[#a3a3a3] italic px-1">{t("hero.imageHint")}</p>
+
+                                {/* Optional looping video */}
+                                <label className="text-[10px] font-black text-[#a3a3a3] uppercase tracking-widest px-1 block pt-3">
+                                    {t("hero.video")}
+                                </label>
+                                <div
+                                    className={`group relative h-[120px] rounded-2xl border-2 border-dashed overflow-hidden flex items-center justify-center transition-all cursor-pointer ${
+                                        hero.video_url
+                                            ? "border-solid border-admin-accent/30"
+                                            : "border-[#f0f0f0] dark:border-white/10 hover:border-admin-accent bg-[#fafafa] dark:bg-admin-dark-bg"
+                                    }`}
+                                >
+                                    {hero.video_url ? (
+                                        <>
+                                            <video
+                                                key={hero.video_url}
+                                                src={hero.video_url}
+                                                className="w-full h-full object-cover"
+                                                autoPlay
+                                                loop
+                                                muted
+                                                playsInline
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2">
+                                                <Upload className="size-5 text-white" />
+                                                <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                                                    {t("changeVideo")}
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2 text-[#a3a3a3]">
+                                            <Film className="size-7 opacity-30" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                                {t("addVideo")}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="video/*"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        onChange={handleHeroVideoUpload}
+                                        disabled={uploadingKey === "hero-video"}
+                                    />
+                                    {uploadingKey === "hero-video" && (
+                                        <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center">
+                                            <Loader2 className="size-6 animate-spin text-admin-accent" />
+                                        </div>
+                                    )}
+                                </div>
+                                {hero.video_url && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setHero((prev) => ({ ...prev, video_url: "" }))}
+                                        className="flex items-center gap-1.5 text-[10px] font-bold text-[#a3a3a3] hover:text-red-500 transition-colors px-1 pt-1"
+                                    >
+                                        <Trash2 className="size-3.5" />
+                                        {t("removeVideo")}
+                                    </button>
+                                )}
+                                <p className="text-[10px] text-[#a3a3a3] italic px-1">{t("hero.videoHint")}</p>
                             </div>
                         </div>
                     </section>

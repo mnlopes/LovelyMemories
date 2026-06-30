@@ -12,14 +12,14 @@ export const AboutHero = () => {
     const params = useParams();
     const locale = (params?.locale as string) || "en";
 
-    const [hero, setHero] = useState<{ title: string; image_url: string } | null>(null);
+    const [hero, setHero] = useState<{ title: string; image_url: string; video_url: string } | null>(null);
 
     useEffect(() => {
         let active = true;
         getPageSections("about-us", locale).then((secs) => {
             if (!active) return;
             const h = secs.find((s) => s.section_type === "hero");
-            if (h) setHero({ title: h.title || "", image_url: h.image_url || "" });
+            if (h) setHero({ title: h.title || "", image_url: h.image_url || "", video_url: h.video_url || "" });
         });
         return () => {
             active = false;
@@ -28,12 +28,26 @@ export const AboutHero = () => {
 
     const title = hero?.title || t("title");
     const image = hero?.image_url || FALLBACK_IMAGE;
+    const video = hero?.video_url || "";
     const lines = title.split("\n");
 
     return (
         <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0">
-                <img src={image} alt="About Us" className="w-full h-full object-cover" />
+                {video ? (
+                    <video
+                        key={video}
+                        className="w-full h-full object-cover"
+                        src={video}
+                        poster={image}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                    />
+                ) : (
+                    <img src={image} alt="About Us" className="w-full h-full object-cover" />
+                )}
                 <div className="absolute inset-0 bg-black/40" />
             </div>
             <div className="relative z-10 text-center px-4">

@@ -967,6 +967,9 @@
             "loading": "A carregar conteúdo...",
             "changeImage": "Alterar imagem",
             "addImage": "Adicionar imagem",
+            "changeVideo": "Alterar vídeo",
+            "addVideo": "Adicionar vídeo",
+            "removeVideo": "Remover vídeo",
             "validation": {
                 "heroTitle": "O título do hero é obrigatório.",
                 "timelineFields": "Cada entrada da linha do tempo precisa de um ano e um título."
@@ -975,7 +978,10 @@
                 "title": "Hero — topo da página",
                 "heading": "Título",
                 "headingHint": "Use uma quebra de linha para partir o título em duas linhas.",
-                "image": "Imagem de fundo"
+                "image": "Imagem de fundo",
+                "imageHint": "Aparece como fundo e como pré-visualização enquanto o vídeo carrega.",
+                "video": "Vídeo em loop (opcional)",
+                "videoHint": "Se definido, o vídeo substitui a imagem no site. Use um MP4 curto e comprimido para melhor desempenho."
             },
             "intro": {
                 "title": "Texto inicial",

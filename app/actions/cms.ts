@@ -403,6 +403,7 @@ export async function reorderPageSections(sections: CmsPageSection[]) {
         section_type: section.section_type,
         subtitle: section.subtitle,
         image_url: section.image_url,
+        video_url: section.video_url,
         updated_at: new Date().toISOString()
     }));
 

@@ -976,6 +976,9 @@
             "loading": "Loading content...",
             "changeImage": "Change image",
             "addImage": "Add image",
+            "changeVideo": "Change video",
+            "addVideo": "Add video",
+            "removeVideo": "Remove video",
             "validation": {
                 "heroTitle": "The hero title is required.",
                 "timelineFields": "Each timeline entry needs a year and a title."
@@ -984,7 +987,10 @@
                 "title": "Hero — page top",
                 "heading": "Title",
                 "headingHint": "Use a line break to split the title across two lines.",
-                "image": "Background image"
+                "image": "Background image",
+                "imageHint": "Shown as background, and as the poster while a video loads.",
+                "video": "Looping video (optional)",
+                "videoHint": "If set, the video replaces the image on the site. Use a short, compressed MP4 for best performance."
             },
             "intro": {
                 "title": "Intro text",
