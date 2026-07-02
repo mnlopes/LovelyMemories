@@ -107,12 +107,15 @@ export async function syncPropertyICal(propertyId: string) {
         const uniqueEventsMap = new Map();
         let totalEventsFound = 0;
         let successfulFetches = 0;
- 
+        // Per-URL problems surfaced to the backoffice (red sync icon + tooltip in the
+        // properties list). Without this, a wrong URL failed silently forever.
+        const urlErrors: string[] = [];
+
         // Process each URL and collect all events
         for (const url of urls) {
             try {
                 console.log(`[iCal Sync] Fetching URL for ${propertyTitle}: ${url.substring(0, 50)}...`);
-                
+
                 const response = await fetch(url, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -120,13 +123,27 @@ export async function syncPropertyICal(propertyId: string) {
                     },
                     cache: 'no-store'
                 });
- 
+
                 if (!response.ok) {
                     console.error(`[iCal Sync] Fetch failed for ${url.substring(0, 30)}: ${response.status}`);
+                    urlErrors.push(`HTTP ${response.status} fetching ${url.substring(0, 60)}`);
                     continue;
                 }
-                
+
                 const icsContent = await response.text();
+
+                // INTEGRITY: a wrong URL (e.g. the Airbnb LISTING page pasted instead of its
+                // iCal export) returns HTTP 200 with HTML. Parsing HTML yields 0 events, which
+                // used to count as a *successful* sync — the admin saw "success" while nothing
+                // was ever imported (real overbooking risk). Reject non-iCal content loudly.
+                if (!icsContent.toUpperCase().includes('BEGIN:VCALENDAR')) {
+                    const hint = /airbnb\.[a-z.]+\/rooms\//i.test(url)
+                        ? 'This is the Airbnb listing PAGE, not its calendar. In Airbnb: Calendar → Availability → Connect to another website → copy the .ics link.'
+                        : 'URL did not return an iCal (.ics) feed.';
+                    urlErrors.push(`Not an iCal feed: ${url.substring(0, 60)}… ${hint}`);
+                    continue;
+                }
+
                 const vevents = parseIcalManual(icsContent);
  
                 // Determine source for this URL
@@ -145,8 +162,9 @@ export async function syncPropertyICal(propertyId: string) {
                 successfulFetches++;
                 
                 console.log(`[iCal Sync] Parsed ${vevents.length} events from ${url.substring(0, 30)} (${source})`);
-            } catch (urlError) {
+            } catch (urlError: any) {
                 console.error(`[iCal Sync] Error processing URL:`, urlError);
+                urlErrors.push(`Error fetching ${url.substring(0, 60)}: ${urlError?.message || 'unknown error'}`);
             }
         }
  
@@ -268,17 +286,32 @@ export async function syncPropertyICal(propertyId: string) {
 
             newEventsCount = uniqueEvents.length;
         } else if (urls.length > 0) {
-            console.warn(`[iCal Sync] Sync skipped for ${propertyTitle} as no URLs could be fetched.`);
-            return { success: false, error: 'Could not fetch any iCal URLs', propertyId };
+            // No URL produced a usable feed. Mark the property as failed so the existing
+            // backoffice alert (red sync icon + "CRITICAL ERROR" tooltip + failed counter)
+            // fires, instead of returning silently and leaving a stale "success".
+            console.warn(`[iCal Sync] Sync failed for ${propertyTitle}: no URL returned an iCal feed.`);
+            const errorMsg = (urlErrors.join(' | ') || 'Could not fetch any iCal URLs').slice(0, 500);
+            await supabase
+                .from('properties')
+                .update({
+                    last_sync_at: new Date().toISOString(),
+                    sync_status: 'failed',
+                    last_sync_error: errorMsg
+                })
+                .eq('id', propertyId);
+            revalidatePath('/', 'layout');
+            return { success: false, error: errorMsg, propertyId };
         }
 
-        // 5. Update Property Sync Status (Success)
+        // 5. Update Property Sync Status. A partial failure (one of several URLs bad) is
+        // still reported as 'failed' so the admin alert fires — the good URLs were imported.
+        const hasUrlErrors = urlErrors.length > 0;
         await supabase
             .from('properties')
             .update({
                 last_sync_at: new Date().toISOString(),
-                sync_status: 'success',
-                last_sync_error: null
+                sync_status: hasUrlErrors ? 'failed' : 'success',
+                last_sync_error: hasUrlErrors ? urlErrors.join(' | ').slice(0, 500) : null
             })
             .eq('id', propertyId);
 

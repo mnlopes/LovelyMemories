@@ -8,7 +8,7 @@ interface SyncTabProps {
 }
 
 export default function SyncTab({ propertyId }: SyncTabProps) {
-    const { register, control, watch } = useFormContext();
+    const { register, control, watch, formState: { errors } } = useFormContext();
     const t = useTranslations('PropertyEditor');
     const [copied, setCopied] = useState(false);
 
@@ -90,6 +90,11 @@ export default function SyncTab({ propertyId }: SyncTabProps) {
                                         placeholder="https://www.airbnb.pt/calendar/ical/... ou https://ical.booking.com/v1/export/..."
                                         className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border p-3 rounded-xl text-sm text-[#171717] dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-mono"
                                     />
+                                    {(errors as any)?.ical_import_urls?.[index] && (
+                                        <p className="mt-2 text-xs text-red-500 font-medium">
+                                            {(errors as any).ical_import_urls[index]?.message}
+                                        </p>
+                                    )}
                                 </div>
                                 <button
                                     type="button"

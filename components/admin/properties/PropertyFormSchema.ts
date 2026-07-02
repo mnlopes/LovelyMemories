@@ -129,7 +129,17 @@ export const propertySchema = z.object({
     beds: z.coerce.number().min(0).default(0),
     bathrooms: z.coerce.number().min(0).default(0),
     area: z.coerce.number().optional().nullable(),
-    ical_import_urls: z.array(z.string().url("Must be a valid URL").or(z.literal(''))).default([]).catch([]),
+    // Reject Airbnb LISTING page URLs (airbnb.com/rooms/...): they are webpages, not iCal
+    // feeds — the sync would silently import nothing. The real feed is the .ics link from
+    // Airbnb: Calendar → Availability → Connect to another website.
+    ical_import_urls: z.array(
+        z.string().url("Must be a valid URL")
+            .refine(
+                (u) => !/airbnb\.[a-z.]+\/rooms\//i.test(u),
+                "This is the Airbnb listing page, not its iCal feed. In Airbnb: Calendar → Availability → Connect to another website → copy the .ics link."
+            )
+            .or(z.literal(''))
+    ).default([]).catch([]),
     airbnb_listing_name: z.string().optional().nullable(),
 
     // Pricing Rules (Relational table pricing_rules)
