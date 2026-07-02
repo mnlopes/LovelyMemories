@@ -4,6 +4,48 @@ import { notFound } from "next/navigation";
 import parse from "html-react-parser";
 import { Calendar, ArrowLeft, User } from "lucide-react";
 import Link from "next/link";
+import { supabase as anonSupabase } from "@/lib/supabase";
+import { SITE_URL } from "@/lib/seo";
+import type { Metadata } from "next";
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+    const { locale, slug } = await params;
+    const { data: post } = await anonSupabase
+        .from('blog_posts')
+        .select('title, excerpt, image_url')
+        .eq('slug', slug)
+        .eq('locale', locale)
+        .eq('is_published', true)
+        .single();
+
+    if (!post) {
+        return { title: 'Post Not Found', robots: { index: false, follow: false } };
+    }
+
+    const url = `${SITE_URL}/${locale}/blog/${slug}`;
+    const description = post.excerpt || undefined;
+
+    // Posts are per-locale rows: no hreflang alternates here (a translation may not
+    // exist), just the canonical for this locale. The sitemap adds alternates only
+    // for slugs that actually exist in more than one language.
+    return {
+        title: post.title,
+        description,
+        alternates: { canonical: url },
+        openGraph: {
+            type: 'article',
+            siteName: 'Lovely Memories',
+            title: `Lovely Memories — ${post.title}`,
+            description,
+            url,
+            images: [post.image_url || '/opengraph-image.png'],
+        },
+    };
+}
 
 export default async function BlogPostPage({
     params,
