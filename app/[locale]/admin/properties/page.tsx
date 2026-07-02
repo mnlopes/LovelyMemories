@@ -24,7 +24,10 @@ export default function AdminProperties() {
     const [showBuildingsOnly, setShowBuildingsOnly] = useState(false);
     
     // Sync UI State
-    const [isSyncing, setIsSyncing] = useState<string | null>(null);
+    // Ids of properties with a sync in flight (single Force Sync or Retry All),
+    // so each row shows its own spinner.
+    const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
+    const [isRetryingAll, setIsRetryingAll] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [calendarPropertyId, setCalendarPropertyId] = useState<string | null>(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -183,39 +186,83 @@ export default function AdminProperties() {
         }
     };
 
-    const handleForceSync = async (e: React.MouseEvent, propertyId: string, propertyName: string) => {
-        e.stopPropagation();
-        setIsSyncing(propertyId);
-        
+    // Runs one property's sync with a per-row spinner and refreshes its status in place.
+    // Returns whether the sync succeeded. `quiet` suppresses per-property toasts (Retry All
+    // shows one summary toast instead of 32).
+    const runSync = async (propertyId: string, propertyName: string, quiet = false): Promise<boolean> => {
+        setSyncingIds(prev => new Set(prev).add(propertyId));
         try {
             const res = await syncPropertyICal(propertyId);
-            
+
             // Re-fetch property to get updated sync status
             const { data: updatedProp } = await supabase
                 .from('properties')
                 .select('last_sync_at, sync_status, last_sync_error')
                 .eq('id', propertyId)
                 .single();
-            
+
             if (updatedProp) {
                 setProperties(prev => prev.map(p => p.id === propertyId ? { ...p, ...updatedProp } : p));
             }
 
-            if (res.success) {
-                if (res.newEvents && res.newEvents > 0) {
-                    toast.success(`Synched! ${res.newEvents} new block(s) imported for ${propertyName}.`);
-                } else if (res.totalFound === 0) {
-                    toast.warning(`No dates found in the Airbnb file for ${propertyName}.`);
+            if (!quiet) {
+                if (res.success) {
+                    if (res.newEvents && res.newEvents > 0) {
+                        toast.success(`Synched! ${res.newEvents} new block(s) imported for ${propertyName}.`);
+                    } else if (res.totalFound === 0) {
+                        toast.warning(`No dates found in the Airbnb file for ${propertyName}.`);
+                    } else {
+                        toast.success(`Synched! Found ${res.totalFound} events, but all are already imported for ${propertyName}.`);
+                    }
                 } else {
-                    toast.success(`Synched! Found ${res.totalFound} events, but all are already imported for ${propertyName}.`);
+                    toast.error(`Sync failed: ${res.error}`);
                 }
-            } else {
-                toast.error(`Sync failed: ${res.error}`);
             }
+            return !!res.success;
         } catch (error) {
-            toast.error("An unexpected error occurred during sync.");
+            if (!quiet) toast.error("An unexpected error occurred during sync.");
+            return false;
         } finally {
-            setIsSyncing(null);
+            setSyncingIds(prev => {
+                const next = new Set(prev);
+                next.delete(propertyId);
+                return next;
+            });
+        }
+    };
+
+    const handleForceSync = async (e: React.MouseEvent, propertyId: string, propertyName: string) => {
+        e.stopPropagation();
+        await runSync(propertyId, propertyName);
+    };
+
+    // Retry All: re-sync every failed property in place (no page reload), with each row
+    // spinning while its sync runs. Small concurrency to avoid hammering Airbnb/Booking.
+    const handleRetryAll = async () => {
+        // Same filter as failedSyncCount so the button retries exactly what the banner counts.
+        const failed = properties.filter(p => p.sync_status === 'failed' && p.is_active);
+        if (failed.length === 0 || isRetryingAll) return;
+
+        setIsRetryingAll(true);
+        let recovered = 0;
+        let stillFailing = 0;
+
+        const queue = [...failed];
+        const CONCURRENCY = 5;
+        const worker = async () => {
+            for (let prop = queue.shift(); prop; prop = queue.shift()) {
+                const title = prop.title?.[locale] || prop.title?.en || 'Untitled';
+                const ok = await runSync(prop.id, title, true);
+                if (ok) recovered++; else stillFailing++;
+            }
+        };
+        await Promise.all(Array.from({ length: Math.min(CONCURRENCY, failed.length) }, worker));
+
+        setIsRetryingAll(false);
+        if (stillFailing === 0) {
+            toast.success(`All ${recovered} propert${recovered === 1 ? 'y' : 'ies'} synced successfully.`);
+        } else {
+            toast.error(`${stillFailing} of ${failed.length} still failing — hover each red sync icon to see the reason.`);
         }
     };
 
@@ -264,11 +311,13 @@ export default function AdminProperties() {
                             </p>
                         </div>
                     </div>
-                    <button 
-                        onClick={() => window.location.reload()}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-red-600/20"
+                    <button
+                        onClick={handleRetryAll}
+                        disabled={isRetryingAll}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-red-600/20 flex items-center gap-2"
                     >
-                        Retry All
+                        {isRetryingAll && <RefreshCw className="size-3.5 animate-spin" />}
+                        {isRetryingAll ? 'Retrying…' : 'Retry All'}
                     </button>
                 </div>
             )}
@@ -415,7 +464,7 @@ export default function AdminProperties() {
                                                     <button
                                                         type="button"
                                                         onClick={(e) => handleForceSync(e, property.id, title)}
-                                                        disabled={isSyncing === property.id}
+                                                        disabled={syncingIds.has(property.id)}
                                                         className={`transition-all p-2 rounded-xl disabled:opacity-50 relative
                                                             ${property.sync_status === 'failed' 
                                                                 ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30' 
@@ -423,7 +472,7 @@ export default function AdminProperties() {
                                                         `}
                                                         title={property.sync_status === 'failed' ? `CRITICAL ERROR: ${property.last_sync_error || 'Check iCal URL'}` : "Force Sync iCal"}
                                                     >
-                                                        <RefreshCw className={`size-5 ${isSyncing === property.id ? 'animate-spin text-emerald-500' : property.sync_status === 'failed' ? 'text-rose-600' : ''}`} />
+                                                        <RefreshCw className={`size-5 ${syncingIds.has(property.id) ? 'animate-spin text-emerald-500' : property.sync_status === 'failed' ? 'text-rose-600' : ''}`} />
                                                         {property.sync_status === 'failed' && (
                                                             <span className="absolute -top-0.5 -right-0.5 size-3 bg-rose-600 rounded-full border-2 border-white dark:border-admin-dark-bg animate-pulse shadow-sm"></span>
                                                         )}
