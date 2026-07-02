@@ -112,6 +112,47 @@ export async function calculateReservationPrice({
     };
 }
 
+export interface ExtrasSelection {
+    breakfastSelected: boolean;
+    breakfastDays?: number | null;
+    transferSelected: boolean;
+    transferType?: 'one_way' | 'round_trip' | null;
+}
+
+/**
+ * SECURITY: Recalcula os extras (pequeno-almoço / transfer) no servidor a partir dos
+ * preços configurados na propriedade. Do cliente aceitamos apenas a SELEÇÃO (o quê),
+ * nunca o valor (quanto) — os totais enviados pelo browser são apenas para exibição.
+ * Espelha a fórmula do checkout/BookingCard: breakfast = preço × hóspedes × dias
+ * (dias limitados a [1, noites]); transfer duplica em round_trip.
+ */
+export function calculateExtrasTotals(
+    servicesPrice: { breakfast?: number; transfer?: number } | undefined,
+    selection: ExtrasSelection,
+    guests: { adults: number; children: number; infants: number },
+    nights: number
+): { breakfastTotal: number; transferTotal: number } {
+    // Mesmos defaults usados em services.ts / BookingCard quando a propriedade não define preço.
+    const breakfastPrice = Number(servicesPrice?.breakfast) || 15;
+    const transferPrice = Number(servicesPrice?.transfer) || 55;
+
+    let breakfastTotal = 0;
+    if (selection.breakfastSelected) {
+        const guestCount = guests.adults + guests.children + guests.infants;
+        const maxDays = Math.max(1, nights);
+        const rawDays = selection.breakfastDays ?? maxDays; // UI auto-seleciona a estadia completa
+        const days = Math.min(Math.max(1, Math.round(rawDays)), maxDays);
+        breakfastTotal = breakfastPrice * guestCount * days;
+    }
+
+    let transferTotal = 0;
+    if (selection.transferSelected) {
+        transferTotal = transferPrice * (selection.transferType === 'round_trip' ? 2 : 1);
+    }
+
+    return { breakfastTotal, transferTotal };
+}
+
 /**
  * Verifica se as datas selecionadas estão disponíveis (reservas + bloqueios + regra da meia-noite + locks ativos).
  */

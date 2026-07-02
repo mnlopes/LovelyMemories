@@ -12,7 +12,6 @@ export async function POST(req: Request) {
   const sig = req.headers.get('stripe-signature');
 
   let event: Stripe.Event;
-  const isDev = process.env.NODE_ENV === 'development';
 
   try {
     if (!sig || !endpointSecret) {
@@ -90,7 +89,10 @@ export async function POST(req: Request) {
         propertyId: property.id,
         referenceId,
         status: 'confirmed', // Paid via Stripe
-        finalTotal: resData.totalPrice + resData.breakfastTotal + resData.transferTotal,
+        // metadata.tp is the amount actually charged and ALREADY includes extras and the
+        // coupon discount (see createPaymentIntent). Adding bt/tt again double-counted the
+        // extras in the stored total_price.
+        finalTotal: resData.totalPrice,
         pricingReport: {
           basePrice: resData.basePrice,
           cleaningFee: resData.cleaningFee,

@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { supabase, getSupabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { getPropertyBySlug } from "@/lib/services";
 
 // Schema for reservation validation
@@ -35,8 +35,14 @@ const ReservationSchema = z.object({
     basePrice: z.number().min(0),
     cleaningFee: z.number().min(0),
     discountAmount: z.number().min(0).optional(),
+    // NOTE: breakfastTotal/transferTotal from the client are display-only. processReservation
+    // recomputes them server-side (calculateExtrasTotals) before saving; they are only stored
+    // as-is when this type is reconstructed from server-authored Stripe metadata.
     breakfastTotal: z.number().min(0),
     transferTotal: z.number().min(0),
+    breakfastSelected: z.boolean().optional(),
+    breakfastDays: z.number().int().min(0).nullish(),
+    transferSelected: z.boolean().optional(),
     transferType: z.enum(['one_way', 'round_trip']).nullish(),
     cityTaxTotal: z.number().min(0).optional(),
     paymentMethod: z.string().min(1, "Método de pagamento obrigatório"),
@@ -121,8 +127,12 @@ export async function processReservation(data: ReservationData) {
 
     // 4. Extra Security: Integrated Availability & Pricing Engine
     // Verificação de Disponibilidade (Bloqueios, Reservas e Meia-Noite)
-    const { verifyAvailability, calculateReservationPrice } = await import("@/lib/pricing");
-    const availability = await verifyAvailability(property.id, dateIn, dateOut, data.sessionId);
+    // SECURITY: usar o cliente service-role. O cliente anon não consegue ler `reservations`
+    // (RLS só permite admins/owners), pelo que a verificação via anon via zero reservas
+    // existentes e permitia duplicar reservas em datas já ocupadas.
+    const { verifyAvailability, calculateReservationPrice, calculateExtrasTotals } = await import("@/lib/pricing");
+    const adminSupabase = await getSupabaseAdmin();
+    const availability = await verifyAvailability(property.id, dateIn, dateOut, data.sessionId, adminSupabase);
 
     if (!availability.available) {
         return { success: false, error: availability.error || "Datas indisponíveis.", warning: undefined, ref: undefined };
@@ -141,6 +151,53 @@ export async function processReservation(data: ReservationData) {
         return { success: false, error: pricing.error, warning: undefined, ref: undefined };
     }
 
+    // 4.5 SECURITY: Recalcular extras no servidor a partir dos preços da propriedade.
+    // Do cliente usamos apenas a SELEÇÃO; os totais enviados nunca entram no valor final.
+    // Sessões antigas podem não enviar as flags *Selected — nesse caso inferimos a seleção
+    // (não o valor) a partir dos campos legacy.
+    const breakfastSelected = data.breakfastSelected ?? (data.breakfastTotal > 0);
+    const transferSelected = data.transferSelected ?? (!!data.transferType || data.transferTotal > 0);
+    const extras = calculateExtrasTotals(
+        property.servicesPrice,
+        {
+            breakfastSelected,
+            breakfastDays: data.breakfastDays,
+            transferSelected,
+            transferType: data.transferType ?? null,
+        },
+        { adults: data.adults, children: data.children, infants: data.infants },
+        pricing.nights
+    );
+
+    // 4.6 SECURITY/CONSISTÊNCIA: revalidar o cupão e recalcular o desconto no servidor
+    // (espelha createPaymentIntent — percentage sobre basePrice, fixed é valor fixo).
+    // Antes, este fluxo gravava o couponDiscount enviado pelo cliente mas NÃO o aplicava
+    // ao total — o hóspede via um desconto no checkout que não existia no valor pedido.
+    // Só o código validado é persistido: o trigger tr_track_coupon_usage incrementa
+    // coupons.used_count a partir do coupon_code gravado na reserva.
+    let couponDiscount = 0;
+    let couponCode: string | null = null;
+    if (data.couponCode) {
+        const { validateCoupon } = await import("./coupons");
+        const couponResult = await validateCoupon(data.couponCode);
+        if (couponResult.success && couponResult.coupon) {
+            const c = couponResult.coupon;
+            couponCode = c.code;
+            couponDiscount = c.discount_type === 'percentage'
+                ? pricing.basePrice * (Number(c.discount_value) / 100)
+                : Number(c.discount_value);
+        }
+    }
+
+    const safeData: ReservationData = {
+        ...data,
+        breakfastTotal: extras.breakfastTotal,
+        transferTotal: extras.transferTotal,
+        transferType: transferSelected ? (data.transferType || 'one_way') : null,
+        couponCode,
+        couponDiscount,
+    };
+
     // 5. Generate Reference ID
     const referenceId = data.bookingCode
         ? `LM-${data.bookingCode.toUpperCase()}`
@@ -149,12 +206,13 @@ export async function processReservation(data: ReservationData) {
     // Determine initial status based on payment method
     const status = data.paymentMethod === 'wire' ? 'pending' : 'confirmed';
 
-    // Cálculo Seguro de Preços Final (Estadia + Limpeza + Extras)
-    // pricing.totalPrice já inclui (base - desconto + limpeza + city_tax)
-    const FINAL_TOTAL = pricing.totalPrice + data.breakfastTotal + data.transferTotal;
+    // Cálculo Seguro de Preços Final (Estadia + Limpeza + Extras - Cupão)
+    // pricing.totalPrice já inclui (base - desconto + limpeza + city_tax).
+    // Floor a 0 como na UI do checkout.
+    const FINAL_TOTAL = Math.max(0, pricing.totalPrice + extras.breakfastTotal + extras.transferTotal - couponDiscount);
 
     return await finalizeBooking({
-        data,
+        data: safeData,
         propertyId: property.id,
         referenceId,
         status,

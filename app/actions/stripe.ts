@@ -17,14 +17,14 @@ const PaymentIntentSchema = z.object({
   children: z.number().int().min(0),
   infants: z.number().int().min(0),
   
-  // Extra extras
-  // SECURITY: these client-supplied amounts are added to the Stripe charge, so they must
-  // never be negative (a negative value would reduce the amount charged). They are still
-  // trusted values — ideally they should be recomputed server-side from the property's
-  // breakfast/transfer configuration. min(0) blocks the price-reduction attack.
-  breakfastTotal: z.number().min(0).default(0),
-  transferTotal: z.number().min(0).default(0),
-  transferType: z.string().nullish(),
+  // Extras
+  // SECURITY: the client sends only the SELECTION (what was chosen); the amounts charged
+  // are recomputed server-side from the property's configured prices (calculateExtrasTotals).
+  // Client-sent totals are never part of the charge.
+  breakfastSelected: z.boolean().default(false),
+  breakfastDays: z.number().int().min(0).nullish(),
+  transferSelected: z.boolean().default(false),
+  transferType: z.enum(['one_way', 'round_trip']).nullish(),
   couponCode: z.string().nullish(),
   couponDiscount: z.number().min(0).default(0),
 
@@ -45,16 +45,31 @@ const PaymentIntentSchema = z.object({
   locale: z.string().optional().default('pt'),
 });
 
-export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSchema>) {
+export async function createPaymentIntent(rawData: z.infer<typeof PaymentIntentSchema>) {
   try {
+    // 0. SECURITY: actually run the schema. Previously it was only used as a TypeScript
+    // type — none of the runtime constraints (min/int/enum) ever executed, so a crafted
+    // request could send values the type system "promised" were impossible.
+    const parsed = PaymentIntentSchema.safeParse(rawData);
+    if (!parsed.success) {
+      return { success: false, error: "Invalid payment data." };
+    }
+    const data = parsed.data;
+
     // 1. Validate property
     const property = await getPropertyBySlug(data.propertySlug);
     if (!property) throw new Error("Property not found");
 
     // 2. Validate availability (including own lock via sessionId)
+    // SECURITY: use the service-role client. The default anon client cannot SELECT from
+    // `reservations` (RLS only allows admins/owners), so with it this check silently saw
+    // zero existing reservations and only caught blocks/locks — allowing a direct call to
+    // this action to pay for already-booked dates (double booking).
+    const { getSupabaseAdmin } = await import("@/lib/supabase");
+    const adminSupabase = await getSupabaseAdmin();
     const dateIn = new Date(data.checkIn);
     const dateOut = new Date(data.checkOut);
-    const availability = await verifyAvailability(property.id, dateIn, dateOut, data.sessionId);
+    const availability = await verifyAvailability(property.id, dateIn, dateOut, data.sessionId, adminSupabase);
     if (!availability.available) throw new Error(availability.error || "Dates unavailable");
 
     // 3. Recalculate price server-side (Tamper proof)
@@ -68,22 +83,43 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
 
     if ('error' in pricing) throw new Error(pricing.error);
 
+    // 3.1 Extras: recomputed server-side from the property's configured prices.
+    const { calculateExtrasTotals } = await import("@/lib/pricing");
+    const { breakfastTotal, transferTotal } = calculateExtrasTotals(
+      property.servicesPrice,
+      {
+        breakfastSelected: data.breakfastSelected,
+        breakfastDays: data.breakfastDays,
+        transferSelected: data.transferSelected,
+        transferType: data.transferType ?? null,
+      },
+      { adults: data.adults, children: data.children, infants: data.infants },
+      pricing.nights
+    );
+    // Only persist a transfer type when a transfer was actually selected (and thus charged).
+    const transferType = data.transferSelected ? (data.transferType || 'one_way') : "";
+
     // Coupon: re-validate against the DB and recompute the discount server-side. We never trust
     // the client-sent couponDiscount for the charge (it could be tampered to lower the amount).
     // Mirrors the checkout UI: percentage applies to basePrice, fixed is a flat amount.
+    // Only the VALIDATED code is persisted (metadata/DB): the reservations INSERT trigger
+    // tr_track_coupon_usage increments coupons.used_count from the stored coupon_code, so
+    // storing a non-applied code would corrupt usage tracking.
     let couponDiscount = 0;
+    let couponCode = "";
     if (data.couponCode) {
       const couponResult = await validateCoupon(data.couponCode);
       if (couponResult.success && couponResult.coupon) {
         const c = couponResult.coupon;
+        couponCode = c.code;
         couponDiscount = c.discount_type === 'percentage'
           ? pricing.basePrice * (Number(c.discount_value) / 100)
           : Number(c.discount_value);
       }
     }
 
-    // Final Total (extras included, server-validated coupon applied). Floor at 0 like the UI.
-    const totalAmount = Math.max(0, pricing.totalPrice + data.breakfastTotal + data.transferTotal - couponDiscount);
+    // Final Total (server-computed extras included, server-validated coupon applied). Floor at 0 like the UI.
+    const totalAmount = Math.max(0, pricing.totalPrice + breakfastTotal + transferTotal - couponDiscount);
 
     // Stripe expects amounts in cents for EUR
     const amountInCents = Math.round(totalAmount * 100);
@@ -116,11 +152,11 @@ export async function createPaymentIntent(data: z.infer<typeof PaymentIntentSche
         ch: data.children.toString(),
         inf: data.infants.toString(),
         at: data.arrivalTime || "",
-        cc: data.couponCode || "",
+        cc: couponCode,
         cd: couponDiscount.toString(),
-        bt: data.breakfastTotal.toString(),
-        tt: data.transferTotal.toString(),
-        ty: data.transferType || "",
+        bt: breakfastTotal.toString(),
+        tt: transferTotal.toString(),
+        ty: transferType,
         // Billing
         ba: data.address || "",
         bc: data.city || "",
@@ -257,7 +293,10 @@ export async function confirmStripePaymentIntent(paymentIntentId: string) {
       propertyId: property.id,
       referenceId,
       status: 'confirmed',
-      finalTotal: resData.totalPrice + resData.breakfastTotal + resData.transferTotal,
+      // metadata.tp is the amount actually charged and ALREADY includes extras and the
+      // coupon discount (see createPaymentIntent). Adding bt/tt again double-counted the
+      // extras in the stored total_price.
+      finalTotal: resData.totalPrice,
       pricingReport: {
         basePrice: resData.basePrice,
         cleaningFee: resData.cleaningFee,
