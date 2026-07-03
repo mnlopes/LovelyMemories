@@ -1381,6 +1381,7 @@
             "billingTitle": "Dados de Faturação",
             "vat": "NIF / ID Fiscal",
             "selectCountry": "Selecione o seu país",
+            "searchCountry": "Pesquisar país...",
             "international": "Internacional",
             "phonePlaceholder": "Ex: 912 345 678",
             "billingSubtitle": "Estes dados serão utilizados para a emissão da sua fatura.",

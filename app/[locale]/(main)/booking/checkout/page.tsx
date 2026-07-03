@@ -24,14 +24,15 @@ import {
     Euro,
     Users,
     Clock,
-    Ticket
+    Ticket,
+    Search
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { BookingInvoice } from "@/components/booking/BookingInvoice";
 import { BookingSuccessInvoice } from "@/components/booking/BookingSuccessInvoice";
 import { Button } from "@/components/ui/Button";
-import { ADDRESS_DATA, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
+import { ADDRESS_DATA, OTHER_COUNTRY, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
 import { processReservation } from "@/app/actions/reservation";
 import { getBookingSession, BookingSessionData } from "@/lib/booking-session";
 import { getPropertyBySlug } from "@/lib/services";
@@ -244,6 +245,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
     const [isPhoneCodeOpen, setIsPhoneCodeOpen] = useState(false);
     const [isCountryOpen, setIsCountryOpen] = useState(false);
+    const [countrySearch, setCountrySearch] = useState("");
     const [isCityOpen, setIsCityOpen] = useState(false);
     const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
     const [showBilling, setShowBilling] = useState(false);
@@ -1079,29 +1081,81 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                         >
                                                             <label className={`text-[10px] uppercase font-bold tracking-widest transition-colors ${fieldErrors.country ? 'text-[#9B1D20]' : 'text-[#B08D4A]'}`}>{t('step1.country')}</label>
                                                             <div className="relative">
-                                                                <input
-                                                                    name="country"
-                                                                    value={formData.country}
-                                                                    onChange={(e) => {
-                                                                        handleInputChange(e);
-                                                                        setFieldErrors(prev => ({ ...prev, country: '' }));
-                                                                        // Reset zip error when country changes manually
-                                                                        setZipError("");
+                                                                <div
+                                                                    onClick={() => {
+                                                                        setCountrySearch("");
+                                                                        setIsCountryOpen(!isCountryOpen);
                                                                     }}
-                                                                    type="text"
-                                                                    className={`w-full h-14 bg-white border rounded-2xl px-5 focus:border-[#B08D4A] outline-none transition-all focus:shadow-lg focus:shadow-gray-200/50 ${fieldErrors.country ? 'border-[#9B1D20] bg-[#9B1D20]/5 shadow-[0_0_10px_rgba(155,29,32,0.05)]' : 'border-gray-100'}`}
-                                                                    placeholder={t('step1.countryPlaceholder')}
-                                                                    autoComplete="new-password"
-                                                                    data-lpignore="true"
-                                                                    spellCheck={false}
-                                                                />
+                                                                    className={`w-full h-14 bg-white border rounded-2xl px-5 flex items-center justify-between cursor-pointer transition-all ${fieldErrors.country ? 'border-[#9B1D20] bg-[#9B1D20]/5 shadow-[0_0_10px_rgba(155,29,32,0.05)]' : 'border-gray-100 hover:border-gray-200'}`}
+                                                                >
+                                                                    {formData.country ? (
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className="text-xl leading-none">{[...Object.values(ADDRESS_DATA), OTHER_COUNTRY].find(c => c.name.toLowerCase() === formData.country.toLowerCase())?.flag}</span>
+                                                                            <span className="text-navy-950">{formData.country}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-navy-900/40">{t('step1.countryPlaceholder')}</span>
+                                                                    )}
+                                                                    <ChevronDown size={14} className={`transition-transform duration-300 ${isCountryOpen ? 'rotate-180' : ''}`} />
+                                                                </div>
 
-                                                                {/* Flag indicator if known country */}
-                                                                {formData.country && Object.values(ADDRESS_DATA).find(c => c.name.toLowerCase() === formData.country.toLowerCase()) && (
-                                                                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
-                                                                        {Object.values(ADDRESS_DATA).find(c => c.name.toLowerCase() === formData.country.toLowerCase())?.flag}
-                                                                    </span>
-                                                                )}
+                                                                <AnimatePresence>
+                                                                    {isCountryOpen && (
+                                                                        <>
+                                                                            <motion.div
+                                                                                initial={{ opacity: 0 }}
+                                                                                animate={{ opacity: 1 }}
+                                                                                exit={{ opacity: 0 }}
+                                                                                onClick={() => setIsCountryOpen(false)}
+                                                                                className="fixed inset-0 z-[60]"
+                                                                            />
+                                                                            <motion.div
+                                                                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                                                className="absolute top-16 left-0 w-full max-h-80 bg-white rounded-[32px] shadow-2xl border border-gray-100 z-[70] flex flex-col overflow-hidden"
+                                                                            >
+                                                                                <div className="px-6 py-4 border-b border-gray-50 bg-white/80 backdrop-blur-md sticky top-0 z-10 space-y-3">
+                                                                                    <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#B08D4A]">{t('step1.selectCountry')}</p>
+                                                                                    <div className="relative">
+                                                                                        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-navy-900/30 pointer-events-none" />
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            value={countrySearch}
+                                                                                            onChange={(e) => setCountrySearch(e.target.value)}
+                                                                                            placeholder={t('step1.searchCountry')}
+                                                                                            autoFocus
+                                                                                            className="w-full h-10 bg-gray-50 border border-gray-100 rounded-xl pl-10 pr-4 text-sm focus:border-[#B08D4A] outline-none transition-all"
+                                                                                            spellCheck={false}
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex-1 overflow-y-auto luxury-scrollbar py-2">
+                                                                                    {[...Object.values(ADDRESS_DATA).sort((a, b) => a.name.localeCompare(b.name)), OTHER_COUNTRY].filter(item => item.name.toLowerCase().includes(countrySearch.trim().toLowerCase())).map((item) => (
+                                                                                        <div
+                                                                                            key={item.code}
+                                                                                            onClick={() => {
+                                                                                                setFormData(prev => ({ ...prev, country: item.name }));
+                                                                                                setFieldErrors(prev => ({ ...prev, country: '' }));
+                                                                                                setZipError("");
+                                                                                                setIsCountryOpen(false);
+                                                                                            }}
+                                                                                            className={`px-6 py-3.5 hover:bg-[#B08D4A]/5 transition-all cursor-pointer flex items-center justify-between group ${formData.country === item.name ? 'bg-[#B08D4A]/5' : ''}`}
+                                                                                        >
+                                                                                            <div className="flex items-center gap-4">
+                                                                                                <span className="text-xl filter drop-shadow-sm">{item.flag}</span>
+                                                                                                <p className={`text-xs font-bold transition-colors ${formData.country === item.name ? 'text-[#B08D4A]' : 'text-navy-950'}`}>{item.name}</p>
+                                                                                            </div>
+                                                                                            {formData.country === item.name && (
+                                                                                                <div className="w-1.5 h-1.5 rounded-full bg-[#B08D4A]" />
+                                                                                            )}
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </motion.div>
+                                                                        </>
+                                                                    )}
+                                                                </AnimatePresence>
 
                                                                 <AnimatePresence>
                                                                     {fieldErrors.country && (

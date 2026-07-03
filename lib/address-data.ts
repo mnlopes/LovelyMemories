@@ -162,6 +162,198 @@ export const ADDRESS_DATA: Record<string, CountryData> = {
         zipRegex: /^\d{3}\s?\d{2}$/,
         zipFormat: "846 00",
         cities: ["Athens", "Thessaloniki", "Mykonos", "Santorini", "Heraklion", "Patras", "Rhodes", "Corfu"]
+    },
+    "IL": {
+        code: "IL",
+        name: "Israel",
+        flag: "🇮🇱",
+        zipRegex: /^\d{5}(\d{2})?$/,
+        zipFormat: "0000000",
+        cities: ["Tel Aviv", "Jerusalem", "Haifa", "Rishon LeZion", "Netanya"]
+    },
+    "AT": {
+        code: "AT",
+        name: "Austria",
+        flag: "🇦🇹",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
+    },
+    "PL": {
+        code: "PL",
+        name: "Poland",
+        flag: "🇵🇱",
+        zipRegex: /^\d{2}-\d{3}$/,
+        zipFormat: "00-000",
+        cities: []
+    },
+    "SE": {
+        code: "SE",
+        name: "Sweden",
+        flag: "🇸🇪",
+        zipRegex: /^\d{3}\s?\d{2}$/,
+        zipFormat: "000 00",
+        cities: []
+    },
+    "DK": {
+        code: "DK",
+        name: "Denmark",
+        flag: "🇩🇰",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
+    },
+    "NO": {
+        code: "NO",
+        name: "Norway",
+        flag: "🇳🇴",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
+    },
+    "FI": {
+        code: "FI",
+        name: "Finland",
+        flag: "🇫🇮",
+        zipRegex: /^\d{5}$/,
+        zipFormat: "00000",
+        cities: []
+    },
+    "LU": {
+        code: "LU",
+        name: "Luxembourg",
+        flag: "🇱🇺",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
+    },
+    "CZ": {
+        code: "CZ",
+        name: "Czech Republic",
+        flag: "🇨🇿",
+        zipRegex: /^\d{3}\s?\d{2}$/,
+        zipFormat: "000 00",
+        cities: []
+    },
+    "HU": {
+        code: "HU",
+        name: "Hungary",
+        flag: "🇭🇺",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
+    },
+    "RO": {
+        code: "RO",
+        name: "Romania",
+        flag: "🇷🇴",
+        zipRegex: /^\d{6}$/,
+        zipFormat: "000000",
+        cities: []
+    },
+    "HR": {
+        code: "HR",
+        name: "Croatia",
+        flag: "🇭🇷",
+        zipRegex: /^\d{5}$/,
+        zipFormat: "00000",
+        cities: []
+    },
+    "CA": {
+        code: "CA",
+        name: "Canada",
+        flag: "🇨🇦",
+        zipRegex: /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/,
+        zipFormat: "A1A 1A1",
+        cities: []
+    },
+    "AU": {
+        code: "AU",
+        name: "Australia",
+        flag: "🇦🇺",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
+    },
+    "NZ": {
+        code: "NZ",
+        name: "New Zealand",
+        flag: "🇳🇿",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
+    },
+    "JP": {
+        code: "JP",
+        name: "Japan",
+        flag: "🇯🇵",
+        zipRegex: /^\d{3}-?\d{4}$/,
+        zipFormat: "000-0000",
+        cities: []
+    },
+    "KR": {
+        code: "KR",
+        name: "South Korea",
+        flag: "🇰🇷",
+        zipRegex: /^\d{5}$/,
+        zipFormat: "00000",
+        cities: []
+    },
+    "CN": {
+        code: "CN",
+        name: "China",
+        flag: "🇨🇳",
+        zipRegex: /^\d{6}$/,
+        zipFormat: "000000",
+        cities: []
+    },
+    "IN": {
+        code: "IN",
+        name: "India",
+        flag: "🇮🇳",
+        zipRegex: /^\d{6}$/,
+        zipFormat: "000000",
+        cities: []
+    },
+    "AE": {
+        code: "AE",
+        name: "United Arab Emirates",
+        flag: "🇦🇪",
+        zipRegex: /.*/,
+        zipFormat: "N/A",
+        cities: []
+    },
+    "TR": {
+        code: "TR",
+        name: "Turkey",
+        flag: "🇹🇷",
+        zipRegex: /^\d{5}$/,
+        zipFormat: "00000",
+        cities: []
+    },
+    "MX": {
+        code: "MX",
+        name: "Mexico",
+        flag: "🇲🇽",
+        zipRegex: /^\d{5}$/,
+        zipFormat: "00000",
+        cities: []
+    },
+    "AR": {
+        code: "AR",
+        name: "Argentina",
+        flag: "🇦🇷",
+        zipRegex: /^[A-Za-z]?\d{4}[A-Za-z]{0,3}$/,
+        zipFormat: "C1425",
+        cities: []
+    },
+    "ZA": {
+        code: "ZA",
+        name: "South Africa",
+        flag: "🇿🇦",
+        zipRegex: /^\d{4}$/,
+        zipFormat: "0000",
+        cities: []
     }
 };
 
@@ -192,4 +384,27 @@ export const COUNTRY_CODES = [
     { code: "+238", country: "Cape Verde", flag: "🇨🇻" },
     { code: "+258", country: "Mozambique", flag: "🇲🇿" },
     { code: "+30", country: "Greece", flag: "🇬🇷" },
+    { code: "+972", country: "Israel", flag: "🇮🇱" },
+    { code: "+43", country: "Austria", flag: "🇦🇹" },
+    { code: "+48", country: "Poland", flag: "🇵🇱" },
+    { code: "+46", country: "Sweden", flag: "🇸🇪" },
+    { code: "+45", country: "Denmark", flag: "🇩🇰" },
+    { code: "+47", country: "Norway", flag: "🇳🇴" },
+    { code: "+358", country: "Finland", flag: "🇫🇮" },
+    { code: "+352", country: "Luxembourg", flag: "🇱🇺" },
+    { code: "+420", country: "Czech Republic", flag: "🇨🇿" },
+    { code: "+36", country: "Hungary", flag: "🇭🇺" },
+    { code: "+40", country: "Romania", flag: "🇷🇴" },
+    { code: "+385", country: "Croatia", flag: "🇭🇷" },
+    { code: "+61", country: "Australia", flag: "🇦🇺" },
+    { code: "+64", country: "New Zealand", flag: "🇳🇿" },
+    { code: "+81", country: "Japan", flag: "🇯🇵" },
+    { code: "+82", country: "South Korea", flag: "🇰🇷" },
+    { code: "+86", country: "China", flag: "🇨🇳" },
+    { code: "+91", country: "India", flag: "🇮🇳" },
+    { code: "+971", country: "UAE", flag: "🇦🇪" },
+    { code: "+90", country: "Turkey", flag: "🇹🇷" },
+    { code: "+52", country: "Mexico", flag: "🇲🇽" },
+    { code: "+54", country: "Argentina", flag: "🇦🇷" },
+    { code: "+27", country: "South Africa", flag: "🇿🇦" },
 ];

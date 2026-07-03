@@ -577,6 +577,7 @@
             "email": "כתובת אימייל",
             "phone": "מספר טלפון",
             "selectCountry": "בחר קוד מדינה",
+            "searchCountry": "חפש מדינה...",
             "international": "בינלאומי",
             "billingTitle": "כתובת לחיוב",
             "billingSubtitle": "הוסף פרטי חיוב לחשבונית",
