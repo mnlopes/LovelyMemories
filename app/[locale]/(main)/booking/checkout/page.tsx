@@ -32,7 +32,7 @@ import jsPDF from "jspdf";
 import { BookingInvoice } from "@/components/booking/BookingInvoice";
 import { BookingSuccessInvoice } from "@/components/booking/BookingSuccessInvoice";
 import { Button } from "@/components/ui/Button";
-import { ADDRESS_DATA, OTHER_COUNTRY, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
+import { ADDRESS_DATA, OTHER_COUNTRY, flagImageUrl, COUNTRY_CODES as PHONE_CODES } from "@/lib/address-data";
 import { processReservation } from "@/app/actions/reservation";
 import { getBookingSession, BookingSessionData } from "@/lib/booking-session";
 import { getPropertyBySlug } from "@/lib/services";
@@ -914,7 +914,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                         className={`w-28 h-14 bg-white border rounded-2xl px-4 flex items-center justify-between cursor-pointer transition-all ${fieldErrors.phone ? 'border-[#9B1D20] bg-[#9B1D20]/5' : 'border-gray-100 hover:border-gray-200'}`}
                                                     >
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-lg leading-none">{COUNTRY_CODES.find(c => c.code === formData.phoneCode)?.flag}</span>
+                                                            {(() => {
+                                                                const entry = COUNTRY_CODES.find(c => c.code === formData.phoneCode);
+                                                                const url = entry ? flagImageUrl(entry.iso) : null;
+                                                                return url
+                                                                    ? <img src={url} alt="" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm shrink-0" />
+                                                                    : <span className="text-lg leading-none">{entry?.flag}</span>;
+                                                            })()}
                                                             <span className="text-sm font-bold text-navy-950">{formData.phoneCode}</span>
                                                         </div>
                                                         <ChevronDown size={14} className={`transition-transform duration-300 ${isPhoneCodeOpen ? 'rotate-180' : ''}`} />
@@ -940,7 +946,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                                         <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#B08D4A]">{t('step1.selectCountry')}</p>
                                                                     </div>
                                                                     <div className="flex-1 overflow-y-auto luxury-scrollbar py-2">
-                                                                        {PHONE_CODES.map((item: { code: string; country: string; flag: string }) => (
+                                                                        {PHONE_CODES.map((item: { code: string; country: string; flag: string; iso: string }) => (
                                                                             <div
                                                                                 key={item.code}
                                                                                 onClick={() => {
@@ -950,7 +956,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                                                 className={`px-6 py-3.5 hover:bg-[#B08D4A]/5 transition-all cursor-pointer flex items-center justify-between group ${formData.phoneCode === item.code ? 'bg-[#B08D4A]/5' : ''}`}
                                                                             >
                                                                                 <div className="flex items-center gap-4">
-                                                                                    <span className="text-xl filter drop-shadow-sm">{item.flag}</span>
+                                                                                    {flagImageUrl(item.iso)
+                                                                                        ? <img src={flagImageUrl(item.iso)!} alt="" loading="lazy" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm shrink-0" />
+                                                                                        : <span className="text-xl filter drop-shadow-sm">{item.flag}</span>}
                                                                                     <div>
                                                                                         <p className={`text-xs font-bold transition-colors ${formData.phoneCode === item.code ? 'text-[#B08D4A]' : 'text-navy-950'}`}>{item.country}</p>
                                                                                         <p className="text-[9px] text-navy-900/30 uppercase tracking-widest font-bold">{t('step1.international')}</p>
@@ -1090,7 +1098,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                                 >
                                                                     {formData.country ? (
                                                                         <div className="flex items-center gap-3">
-                                                                            <span className="text-xl leading-none">{[...Object.values(ADDRESS_DATA), OTHER_COUNTRY].find(c => c.name.toLowerCase() === formData.country.toLowerCase())?.flag}</span>
+                                                                            {(() => {
+                                                                                const entry = [...Object.values(ADDRESS_DATA), OTHER_COUNTRY].find(c => c.name.toLowerCase() === formData.country.toLowerCase());
+                                                                                if (!entry) return null;
+                                                                                const url = flagImageUrl(entry.code);
+                                                                                return url
+                                                                                    ? <img src={url} alt="" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm shrink-0" />
+                                                                                    : <span className="text-xl leading-none">{entry.flag}</span>;
+                                                                            })()}
                                                                             <span className="text-navy-950">{formData.country}</span>
                                                                         </div>
                                                                     ) : (
@@ -1143,7 +1158,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                                                             className={`px-6 py-3.5 hover:bg-[#B08D4A]/5 transition-all cursor-pointer flex items-center justify-between group ${formData.country === item.name ? 'bg-[#B08D4A]/5' : ''}`}
                                                                                         >
                                                                                             <div className="flex items-center gap-4">
-                                                                                                <span className="text-xl filter drop-shadow-sm">{item.flag}</span>
+                                                                                                {flagImageUrl(item.code)
+                                                                                                    ? <img src={flagImageUrl(item.code)!} alt="" loading="lazy" className="w-6 h-[18px] rounded-[3px] object-cover shadow-sm shrink-0" />
+                                                                                                    : <span className="text-xl filter drop-shadow-sm">{item.flag}</span>}
                                                                                                 <p className={`text-xs font-bold transition-colors ${formData.country === item.name ? 'text-[#B08D4A]' : 'text-navy-950'}`}>{item.name}</p>
                                                                                             </div>
                                                                                             {formData.country === item.name && (

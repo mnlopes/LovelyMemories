@@ -426,6 +426,31 @@ html,
     }
 }
 
+/* Luxury Scrollbar (gold accent, used in premium dropdowns) */
+.luxury-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(176, 141, 74, 0.35) transparent;
+}
+
+.luxury-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+.luxury-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 12px 0;
+}
+
+.luxury-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(176, 141, 74, 0.35);
+    border-radius: 20px;
+}
+
+.luxury-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(176, 141, 74, 0.6);
+}
+
 /* Map Pulsing Animation */
 @keyframes pulse-ring {
     0% {

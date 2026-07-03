@@ -357,6 +357,16 @@ export const ADDRESS_DATA: Record<string, CountryData> = {
     }
 };
 
+/**
+ * Real flag image URL (Windows/Chrome renders flag emojis as letter pairs).
+ * Returns null for non-ISO entries like OTHER — fall back to the emoji.
+ */
+export function flagImageUrl(code: string): string | null {
+    if (code === "OTHER") return null;
+    const iso = code === "UK" ? "gb" : code.toLowerCase();
+    return `https://flagcdn.com/w40/${iso}.png`;
+}
+
 export const OTHER_COUNTRY: CountryData = {
     code: "OTHER",
     name: "Other",
@@ -368,43 +378,43 @@ export const OTHER_COUNTRY: CountryData = {
 
 // Basic Phone Codes for the dropdown
 export const COUNTRY_CODES = [
-    { code: "+351", country: "Portugal", flag: "🇵🇹" },
-    { code: "+1", country: "USA/Canada", flag: "🇺🇸" },
-    { code: "+44", country: "UK", flag: "🇬🇧" },
-    { code: "+33", country: "France", flag: "🇫🇷" },
-    { code: "+49", country: "Germany", flag: "🇩🇪" },
-    { code: "+34", country: "Spain", flag: "🇪🇸" },
-    { code: "+39", country: "Italy", flag: "🇮🇹" },
-    { code: "+55", country: "Brazil", flag: "🇧🇷" },
-    { code: "+41", country: "Switzerland", flag: "🇨🇭" },
-    { code: "+32", country: "Belgium", flag: "🇧🇪" },
-    { code: "+31", country: "Netherlands", flag: "🇳🇱" },
-    { code: "+353", country: "Ireland", flag: "🇮🇪" },
-    { code: "+244", country: "Angola", flag: "🇦🇴" },
-    { code: "+238", country: "Cape Verde", flag: "🇨🇻" },
-    { code: "+258", country: "Mozambique", flag: "🇲🇿" },
-    { code: "+30", country: "Greece", flag: "🇬🇷" },
-    { code: "+972", country: "Israel", flag: "🇮🇱" },
-    { code: "+43", country: "Austria", flag: "🇦🇹" },
-    { code: "+48", country: "Poland", flag: "🇵🇱" },
-    { code: "+46", country: "Sweden", flag: "🇸🇪" },
-    { code: "+45", country: "Denmark", flag: "🇩🇰" },
-    { code: "+47", country: "Norway", flag: "🇳🇴" },
-    { code: "+358", country: "Finland", flag: "🇫🇮" },
-    { code: "+352", country: "Luxembourg", flag: "🇱🇺" },
-    { code: "+420", country: "Czech Republic", flag: "🇨🇿" },
-    { code: "+36", country: "Hungary", flag: "🇭🇺" },
-    { code: "+40", country: "Romania", flag: "🇷🇴" },
-    { code: "+385", country: "Croatia", flag: "🇭🇷" },
-    { code: "+61", country: "Australia", flag: "🇦🇺" },
-    { code: "+64", country: "New Zealand", flag: "🇳🇿" },
-    { code: "+81", country: "Japan", flag: "🇯🇵" },
-    { code: "+82", country: "South Korea", flag: "🇰🇷" },
-    { code: "+86", country: "China", flag: "🇨🇳" },
-    { code: "+91", country: "India", flag: "🇮🇳" },
-    { code: "+971", country: "UAE", flag: "🇦🇪" },
-    { code: "+90", country: "Turkey", flag: "🇹🇷" },
-    { code: "+52", country: "Mexico", flag: "🇲🇽" },
-    { code: "+54", country: "Argentina", flag: "🇦🇷" },
-    { code: "+27", country: "South Africa", flag: "🇿🇦" },
+    { code: "+351", country: "Portugal", flag: "🇵🇹", iso: "PT" },
+    { code: "+1", country: "USA/Canada", flag: "🇺🇸", iso: "US" },
+    { code: "+44", country: "UK", flag: "🇬🇧", iso: "UK" },
+    { code: "+33", country: "France", flag: "🇫🇷", iso: "FR" },
+    { code: "+49", country: "Germany", flag: "🇩🇪", iso: "DE" },
+    { code: "+34", country: "Spain", flag: "🇪🇸", iso: "ES" },
+    { code: "+39", country: "Italy", flag: "🇮🇹", iso: "IT" },
+    { code: "+55", country: "Brazil", flag: "🇧🇷", iso: "BR" },
+    { code: "+41", country: "Switzerland", flag: "🇨🇭", iso: "CH" },
+    { code: "+32", country: "Belgium", flag: "🇧🇪", iso: "BE" },
+    { code: "+31", country: "Netherlands", flag: "🇳🇱", iso: "NL" },
+    { code: "+353", country: "Ireland", flag: "🇮🇪", iso: "IE" },
+    { code: "+244", country: "Angola", flag: "🇦🇴", iso: "AO" },
+    { code: "+238", country: "Cape Verde", flag: "🇨🇻", iso: "CV" },
+    { code: "+258", country: "Mozambique", flag: "🇲🇿", iso: "MZ" },
+    { code: "+30", country: "Greece", flag: "🇬🇷", iso: "GR" },
+    { code: "+972", country: "Israel", flag: "🇮🇱", iso: "IL" },
+    { code: "+43", country: "Austria", flag: "🇦🇹", iso: "AT" },
+    { code: "+48", country: "Poland", flag: "🇵🇱", iso: "PL" },
+    { code: "+46", country: "Sweden", flag: "🇸🇪", iso: "SE" },
+    { code: "+45", country: "Denmark", flag: "🇩🇰", iso: "DK" },
+    { code: "+47", country: "Norway", flag: "🇳🇴", iso: "NO" },
+    { code: "+358", country: "Finland", flag: "🇫🇮", iso: "FI" },
+    { code: "+352", country: "Luxembourg", flag: "🇱🇺", iso: "LU" },
+    { code: "+420", country: "Czech Republic", flag: "🇨🇿", iso: "CZ" },
+    { code: "+36", country: "Hungary", flag: "🇭🇺", iso: "HU" },
+    { code: "+40", country: "Romania", flag: "🇷🇴", iso: "RO" },
+    { code: "+385", country: "Croatia", flag: "🇭🇷", iso: "HR" },
+    { code: "+61", country: "Australia", flag: "🇦🇺", iso: "AU" },
+    { code: "+64", country: "New Zealand", flag: "🇳🇿", iso: "NZ" },
+    { code: "+81", country: "Japan", flag: "🇯🇵", iso: "JP" },
+    { code: "+82", country: "South Korea", flag: "🇰🇷", iso: "KR" },
+    { code: "+86", country: "China", flag: "🇨🇳", iso: "CN" },
+    { code: "+91", country: "India", flag: "🇮🇳", iso: "IN" },
+    { code: "+971", country: "UAE", flag: "🇦🇪", iso: "AE" },
+    { code: "+90", country: "Turkey", flag: "🇹🇷", iso: "TR" },
+    { code: "+52", country: "Mexico", flag: "🇲🇽", iso: "MX" },
+    { code: "+54", country: "Argentina", flag: "🇦🇷", iso: "AR" },
+    { code: "+27", country: "South Africa", flag: "🇿🇦", iso: "ZA" },
 ];
