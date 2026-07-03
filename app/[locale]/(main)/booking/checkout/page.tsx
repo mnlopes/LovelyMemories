@@ -1074,11 +1074,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                         <AnimatePresence>
                                             {showBilling && (
                                                 <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
+                                                    initial={{ height: 0, opacity: 0, overflow: "hidden" }}
+                                                    animate={{ height: "auto", opacity: 1, transitionEnd: { overflow: "visible" } }}
+                                                    exit={{ height: 0, opacity: 0, overflow: "hidden" }}
                                                     transition={{ duration: 0.3, ease: "easeInOut" }}
-                                                    className="overflow-hidden"
                                                 >
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-2 px-1">
                                                         {/* Country Select - Premium Free Input with Autocomplete */}
