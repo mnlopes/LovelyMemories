@@ -711,7 +711,11 @@
         "supportTitle": "Suporte 24/7",
         "supportDesc": "Assistência dedicada a qualquer hora, em qualquer lugar.",
         "expertiseTitle": "Experiência Local",
-        "expertiseDesc": "Experiências curadas e acesso local exclusivo."
+        "expertiseDesc": "Experiências curadas e acesso local exclusivo.",
+        "ctaOverTitle": "Fale com o nosso concierge",
+        "ctaTitle": "Diga-nos o que precisa",
+        "ctaDescription": "De chefs privados a transfers sem complicações — diga-nos o que tem em mente e a nossa equipa trata do resto.",
+        "ctaButton": "Contacte-nos"
     },
     "OwnerSection": {
         "question": "É proprietário de um imóvel?",

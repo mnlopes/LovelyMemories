@@ -1,6 +1,7 @@
 import { ConciergeHero } from "@/components/ConciergeHero";
 import { ConciergeIntro } from "@/components/ConciergeIntro";
 import { ConciergeServices } from "@/components/ConciergeServices";
+import { ConciergeCta } from "@/components/ConciergeCta";
 import { PropertyOwnerSection } from "@/components/PropertyOwnerSection";
 
 import { Metadata } from "next";
@@ -38,6 +39,7 @@ export default async function ConciergePage({
             <ConciergeHero initialSections={sections} />
             <ConciergeIntro initialSections={sections} />
             <ConciergeServices initialSections={sections} />
+            <ConciergeCta initialSections={sections} />
             <PropertyOwnerSection />
         </main>
     );

@@ -720,7 +720,11 @@
         "supportTitle": "24/7 Support",
         "supportDesc": "Dedicated assistance at any time, anywhere.",
         "expertiseTitle": "Local Expertise",
-        "expertiseDesc": "Curated experiences and hidden local access."
+        "expertiseDesc": "Curated experiences and hidden local access.",
+        "ctaOverTitle": "Contact our concierge",
+        "ctaTitle": "Tell us what you need",
+        "ctaDescription": "From private chefs to seamless transfers — tell us what you have in mind and our team takes care of the rest.",
+        "ctaButton": "Get in touch"
     },
     "OwnerSection": {
         "question": "Are you a Property Owner?",
