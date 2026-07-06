@@ -1,17 +1,19 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, Sparkles, Settings, Activity, KeyRound, Ticket, FileUp } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, Sparkles, Settings, Activity, KeyRound, Ticket, FileUp, X } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { useAdminNav } from "./AdminNavProvider";
 
 export const AdminSidebar = () => {
     const pathname = usePathname();
     const t = useTranslations('AdminSidebar');
+    const { mobileOpen, setMobileOpen } = useAdminNav();
     const [role, setRole] = useState<string | null>(null);
     const [permissions, setPermissions] = useState<{ module_name: string; can_view: boolean }[]>([]);
 
@@ -105,9 +107,33 @@ export const AdminSidebar = () => {
     };
 
     return (
-        <aside
-            className={`bg-admin-surface border-r border-admin-border flex flex-col shrink-0 h-screen sticky top-0 z-50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-72'}`}
-        >
+        <>
+            {/* Mobile backdrop */}
+            <div
+                className={cn(
+                    "fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300",
+                    mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                )}
+                onClick={() => setMobileOpen(false)}
+            />
+            <aside
+                className={cn(
+                    "bg-admin-surface border-r border-admin-border flex flex-col shrink-0 h-screen z-50 transition-transform duration-300",
+                    "fixed inset-y-0 left-0 md:sticky md:top-0",
+                    mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+                    "w-72",
+                    isCollapsed ? "md:w-20" : "md:w-72"
+                )}
+            >
+            {/* Mobile close button */}
+            <button
+                onClick={() => setMobileOpen(false)}
+                className="md:hidden absolute top-4 right-4 p-2 text-admin-text-secondary hover:text-admin-text-primary rounded-xl z-10"
+                aria-label="Close menu"
+            >
+                <X className="size-5" />
+            </button>
+
             {/* Logo Area */}
             <Link 
                 href="/"
@@ -148,6 +174,7 @@ export const AdminSidebar = () => {
                                     <Link
                                         key={item.path}
                                         href={item.path}
+                                        onClick={() => setMobileOpen(false)}
                                         className={cn(
                                             "flex items-center transition-all group relative",
                                             isCollapsed ? "justify-center p-3 rounded-xl" : "gap-3 px-3 py-2.5 rounded-xl",
@@ -184,7 +211,7 @@ export const AdminSidebar = () => {
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className={`w-full flex items-center transition-colors text-admin-text-secondary hover:text-admin-text-primary ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2 text-xs font-medium'}`}
+                    className={`hidden md:flex w-full items-center transition-colors text-admin-text-secondary hover:text-admin-text-primary ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2 text-xs font-medium'}`}
                     title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                 >
                     <LayoutGrid className="size-4" />
@@ -201,6 +228,7 @@ export const AdminSidebar = () => {
                     {!isCollapsed && <span>{t('signOut')}</span>}
                 </button>
             </div>
-        </aside>
+            </aside>
+        </>
     );
 };

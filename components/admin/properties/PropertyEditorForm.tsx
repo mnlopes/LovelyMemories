@@ -308,7 +308,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
         <FormProvider {...formMethods}>
             <form onSubmit={formMethods.handleSubmit(onSubmit as any, onInvalid)} className="space-y-8 pb-20">
                 {/* Header */}
-                <div className="flex items-center justify-between sticky top-[96px] bg-white/80 dark:bg-admin-dark-surface/80 backdrop-blur-xl transition-all px-10 py-6 z-20 border border-[#f5f5f5] dark:border-white/10 rounded-[32px] shadow-2xl shadow-black/5 dark:shadow-none">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between sticky top-16 md:top-[96px] bg-white/80 dark:bg-admin-dark-surface/80 backdrop-blur-xl transition-all px-4 md:px-10 py-4 md:py-6 z-20 border border-[#f5f5f5] dark:border-white/10 rounded-3xl md:rounded-[32px] shadow-2xl shadow-black/5 dark:shadow-none">
                     <div className="flex items-center gap-4">
                         <button
                             type="button"
@@ -319,7 +319,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         </button>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h1 className="text-2xl font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">
+                                <h1 className="text-xl md:text-2xl font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">
                                     {isEditing
                                         ? t('header.editTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
                                         : t('header.createTitle', { type: t(`types.${effectiveMode === 'building' ? 'building' : 'property'}`) })
@@ -339,13 +339,13 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
                         <a
                             href={previewHref ?? '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={handlePreviewClick}
-                            className="px-4 py-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded-lg text-sm font-bold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2 shadow-sm"
+                            className="flex-1 md:flex-none justify-center px-4 py-2.5 md:py-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded-lg text-sm font-bold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2 shadow-sm"
                         >
                             <Eye className="size-4" />
                             {t('header.preview')}
@@ -353,7 +353,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                         <button
                             type="submit"
                             disabled={isSaving}
-                            className="px-6 py-2 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2 disabled:opacity-50 min-w-[160px] justify-center shadow-lg shadow-black/5"
+                            className="flex-1 md:flex-none px-6 py-2.5 md:py-2 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2 disabled:opacity-50 md:min-w-[160px] justify-center shadow-lg shadow-black/5"
                         >
                             {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                             {isSaving
@@ -365,7 +365,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 </div>
 
                 {/* Language Switcher & Tabs */}
-                <div className="border-b border-[#eaeaea] dark:border-admin-dark-border transition-colors px-10">
+                <div className="border-b border-[#eaeaea] dark:border-admin-dark-border transition-colors px-4 md:px-10">
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
                             {tabs.map((tab) => {
@@ -430,7 +430,7 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
                 </div>
 
                 {/* Content Area */}
-                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border p-8 min-h-[500px] shadow-sm transition-colors duration-300">
+                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#eaeaea] dark:border-admin-dark-border p-4 md:p-8 min-h-[500px] shadow-sm transition-colors duration-300">
                     <div>
                         {activeTab === 'basic' && (
                             <BasicInfoTab

@@ -1,6 +1,7 @@
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminThemeProvider } from "@/components/admin/AdminThemeProvider";
+import { AdminNavProvider } from "@/components/admin/AdminNavProvider";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
@@ -71,22 +72,24 @@ export default async function AdminLayout({
     return (
         <NextIntlClientProvider messages={messages} locale={locale}>
             <AdminThemeProvider>
-                <div className={`${plusJakartaSans.variable} font-sans antialiased text-admin-text-primary`}>
-                    <div className="flex h-screen overflow-hidden bg-admin-surface">
-                        {/* Fixed Sidebar */}
-                        <AdminSidebar />
+                <AdminNavProvider>
+                    <div className={`${plusJakartaSans.variable} font-sans antialiased text-admin-text-primary`}>
+                        <div className="flex h-screen overflow-hidden bg-admin-surface">
+                            {/* Sidebar (fixed on desktop, off-canvas drawer on mobile) */}
+                            <AdminSidebar />
 
-                        {/* Main Content Area */}
-                        <main className="flex-1 overflow-y-auto bg-admin-bg flex flex-col">
-                            <AdminHeader user={user} profile={profile} />
-                            <div className="p-10 w-full space-y-16">
-                                <div className="w-full">
-                                    {children}
+                            {/* Main Content Area */}
+                            <main className="flex-1 overflow-y-auto bg-admin-bg flex flex-col">
+                                <AdminHeader user={user} profile={profile} />
+                                <div className="p-4 sm:p-6 lg:p-10 w-full space-y-8 lg:space-y-16">
+                                    <div className="w-full">
+                                        {children}
+                                    </div>
                                 </div>
-                            </div>
-                        </main>
+                            </main>
+                        </div>
                     </div>
-                </div>
+                </AdminNavProvider>
             </AdminThemeProvider>
         </NextIntlClientProvider>
     );

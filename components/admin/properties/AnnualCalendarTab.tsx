@@ -150,19 +150,19 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
 
     // ─── View Toggle ─────────────────────────────────────
     const ViewToggle = () => (
-        <div className="flex items-center gap-0.5 bg-[#f3f3f3] dark:bg-white/10 p-1 rounded-xl">
+        <div className="flex items-center gap-0.5 bg-[#f3f3f3] dark:bg-white/10 p-1 rounded-xl shrink-0">
             {([["annual", "Year", LayoutGrid], ["monthly", "Month", CalendarDays]] as const).map(([v, label, Icon]) => (
                 <button
                     key={v}
                     onClick={() => setView(v)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-200 
+                    className={`flex items-center gap-1.5 px-2.5 md:px-3.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-200
                         ${view === v
                             ? "bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-white shadow-sm"
                             : "text-[#999] hover:text-[#171717] dark:hover:text-white"
                         }`}
                 >
                     <Icon className="size-3.5" />
-                    {label}
+                    <span className="hidden sm:inline">{label}</span>
                 </button>
             ))}
         </div>
@@ -325,28 +325,28 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en" }: Ann
         return (
             <div className="flex flex-col h-full relative">
                 {/* Header */}
-                <div className="sticky top-0 z-20 bg-white dark:bg-admin-dark-surface border-b border-[#eeeeee] dark:border-admin-dark-border px-6 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                <div className="sticky top-0 z-20 bg-white dark:bg-admin-dark-surface border-b border-[#eeeeee] dark:border-admin-dark-border px-3 md:px-6 py-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 md:gap-2 min-w-0">
                         <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                            className="p-1.5 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-white/10 text-[#bbb] hover:text-[#171717] dark:hover:text-white transition-colors">
+                            className="p-1.5 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-white/10 text-[#bbb] hover:text-[#171717] dark:hover:text-white transition-colors shrink-0">
                             <ChevronLeft className="size-4" />
                         </button>
-                        <span className="text-sm font-bold text-[#171717] dark:text-white min-w-[130px] text-center capitalize">
+                        <span className="text-xs md:text-sm font-bold text-[#171717] dark:text-white min-w-0 md:min-w-[130px] text-center capitalize whitespace-nowrap">
                             {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
                         </span>
                         <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                            className="p-1.5 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-white/10 text-[#bbb] hover:text-[#171717] dark:hover:text-white transition-colors">
+                            className="p-1.5 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-white/10 text-[#bbb] hover:text-[#171717] dark:hover:text-white transition-colors shrink-0">
                             <ChevronRight className="size-4" />
                         </button>
                         <button onClick={() => {
                             if (view === "monthly") setCurrentMonth(new Date());
                             else scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
                         }}
-                            className="ml-2 px-3 py-1 text-[11px] font-bold border border-[#e5e5e5] dark:border-white/20 rounded-lg text-[#444] dark:text-white hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors">
+                            className="ml-1 md:ml-2 px-2.5 md:px-3 py-1 text-[11px] font-bold border border-[#e5e5e5] dark:border-white/20 rounded-lg text-[#444] dark:text-white hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors shrink-0">
                             Today
                         </button>
                         {(pricePerNight || pricePerNight === 0) && (
-                            <span className="ml-2 text-[10px] font-bold text-[#a3a3a3] bg-[#f5f5f5] dark:bg-white/10 px-2 py-1 rounded-lg">
+                            <span className="hidden sm:inline-block ml-2 text-[10px] font-bold text-[#a3a3a3] bg-[#f5f5f5] dark:bg-white/10 px-2 py-1 rounded-lg">
                                 {pricePerNight > 0 ? `€${pricePerNight}` : '-'}<span className="font-normal">/night</span>
                             </span>
                         )}

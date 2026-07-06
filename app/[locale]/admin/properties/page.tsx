@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, MoreHorizontal, Search, Filter, Building2, Home, Trash2, Eye, EyeOff, CalendarDays, X, RefreshCw, AlertCircle, Globe } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Building2, Home, Trash2, Eye, EyeOff, CalendarDays, X, RefreshCw, AlertCircle, Globe } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
@@ -10,6 +10,7 @@ import AnnualCalendarTab from "@/components/admin/properties/AnnualCalendarTab";
 import { syncPropertyICal } from "@/app/actions/ical";
 import { toast } from "sonner";
 import ImportAirbnbModal from "@/components/admin/properties/ImportAirbnbModal";
+import { PropertyListCard } from "@/components/admin/properties/PropertyListCard";
 
 export default function AdminProperties() {
     const params = useParams();
@@ -323,12 +324,12 @@ export default function AdminProperties() {
             )}
 
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-end">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium">{t('subtitle', { count: properties.length })}</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    <p className="text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle', { count: properties.length })}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2 md:gap-3 flex-wrap">
                     <button
                         onClick={() => setIsImportModalOpen(true)}
                         className="px-5 py-2.5 bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary rounded text-sm font-semibold hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-all flex items-center gap-2"
@@ -377,15 +378,11 @@ export default function AdminProperties() {
                         <Building2 className="size-4" />
                         {t('buildingsOnly')}
                     </button>
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 rounded-xl text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-white/10 transition-all shadow-sm">
-                        <Filter className="size-4" />
-                        {t('filters')}
-                    </button>
                 </div>
             </div>
 
-            {/* Properties Table */}
-            <div className="bg-white dark:bg-white/5 rounded-2xl border border-[#f5f5f5] dark:border-white/10 overflow-visible shadow-sm dark:shadow-2xl dark:shadow-black/50 min-h-[400px] transition-all duration-500 premium-glow-dark">
+            {/* Properties Table (desktop) */}
+            <div className="hidden md:block bg-white dark:bg-white/5 rounded-2xl border border-[#f5f5f5] dark:border-white/10 overflow-visible shadow-sm dark:shadow-2xl dark:shadow-black/50 min-h-[400px] transition-all duration-500 premium-glow-dark">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="border-b border-[#f5f5f5] dark:border-admin-dark-border">
@@ -569,6 +566,67 @@ export default function AdminProperties() {
                 </table>
             </div>
 
+            {/* Properties list (mobile cards) */}
+            <div className="md:hidden space-y-3 min-h-[300px]">
+                {isLoading ? (
+                    <p className="py-10 text-center text-[#a3a3a3] text-sm italic">{t('table.loading')}</p>
+                ) : filteredProperties.length === 0 ? (
+                    <p className="py-10 text-center text-[#a3a3a3] text-sm">{t('table.empty')}</p>
+                ) : filteredProperties.map((property) => {
+                    const title = property.title?.[locale] || property.title?.en || 'Untitled';
+                    return (
+                        <PropertyListCard
+                            key={property.id}
+                            property={property}
+                            locale={locale}
+                            t={t}
+                            formatRelativeTime={formatRelativeTime}
+                            syncing={syncingIds.has(property.id)}
+                            onForceSync={(e) => handleForceSync(e, property.id, title)}
+                            onOpenCalendar={() => setCalendarPropertyId(property.id)}
+                            onOpenMenu={() => setOpenMenuId(openMenuId === property.id ? null : property.id)}
+                        />
+                    );
+                })}
+            </div>
+
+            {/* Mobile actions bottom sheet */}
+            {openMenuId && (() => {
+                const property = properties.find(p => p.id === openMenuId);
+                if (!property) return null;
+                const title = property.title?.[locale] || property.title?.en || 'Untitled';
+                const status = property.status || (property.is_active ? 'active' : 'hidden');
+                return (
+                    <div className="md:hidden fixed inset-0 z-[120] flex items-end animate-in fade-in duration-200">
+                        <div className="absolute inset-0 bg-black/50" onClick={() => setOpenMenuId(null)} />
+                        <div className="relative w-full bg-white dark:bg-admin-dark-surface rounded-t-3xl border-t border-[#f5f5f5] dark:border-admin-dark-border p-2 pb-6 animate-in slide-in-from-bottom duration-300">
+                            <div className="mx-auto mt-2 mb-3 h-1.5 w-10 rounded-full bg-gray-200 dark:bg-white/10" />
+                            <p className="px-4 pb-2 text-xs font-bold text-[#a3a3a3] uppercase tracking-widest truncate">{title}</p>
+                            {status !== 'active' && (
+                                <button onClick={() => updateStatus(property.id, 'active')} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl flex items-center gap-3">
+                                    <Eye className="size-5 text-emerald-500" />{t('actions.setActive')}
+                                </button>
+                            )}
+                            {status !== 'coming_soon' && (
+                                <button onClick={() => updateStatus(property.id, 'coming_soon')} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-xl flex items-center gap-3">
+                                    <Eye className="size-5 text-amber-500" />{t('actions.setComingSoon')}
+                                </button>
+                            )}
+                            {status !== 'hidden' && (
+                                <button onClick={() => updateStatus(property.id, 'hidden')} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg rounded-xl flex items-center gap-3">
+                                    <EyeOff className="size-5 text-gray-400" />{t('actions.hide')}
+                                </button>
+                            )}
+                            {(role === 'admin' || role === 'super_admin') && (
+                                <button onClick={() => confirmDelete(property.id)} className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3">
+                                    <Trash2 className="size-5" />{t('actions.delete')}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
+
             <StatusModal
                 isOpen={modalConfig.isOpen}
                 onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
@@ -604,7 +662,7 @@ export default function AdminProperties() {
                                 <X className="size-5" />
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto w-full custom-scrollbar relative bg-[#fafafa] dark:bg-admin-dark-bg">
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar relative bg-[#fafafa] dark:bg-admin-dark-bg">
                             <AnnualCalendarTab propertyId={calendarPropertyId} activeLang={locale} />
                         </div>
                     </div>

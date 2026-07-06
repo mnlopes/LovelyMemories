@@ -1,23 +1,33 @@
 "use client";
 
-import { Search, Bell, User, Sun, Moon, Sparkles, CloudMoon } from "lucide-react";
+import { Search, Bell, User, Sun, Moon, Sparkles, CloudMoon, Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAdminTheme } from "./AdminThemeProvider";
+import { useAdminNav } from "./AdminNavProvider";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { cn } from "@/lib/utils";
 
 export const AdminHeader = ({ user, profile }: any) => {
     const t = useTranslations('AdminHeader');
     const { theme, setTheme } = useAdminTheme();
+    const { setMobileOpen } = useAdminNav();
 
     return (
-        <header className="h-20 bg-admin-surface border-b border-admin-border flex items-center justify-between px-10 sticky top-0 z-20">
-            <div />
+        <header className="h-16 md:h-20 bg-admin-surface border-b border-admin-border flex items-center justify-between px-4 md:px-10 sticky top-0 z-20">
+            {/* Mobile hamburger */}
+            <button
+                onClick={() => setMobileOpen(true)}
+                className="md:hidden p-2 -ml-2 text-admin-text-secondary hover:text-admin-text-primary rounded-xl"
+                aria-label="Open menu"
+            >
+                <Menu className="size-6" />
+            </button>
+            <div className="hidden md:block" />
 
             {/* Actions */}
-            <div className="flex items-center gap-8">
-                {/* Theme Selector */}
-                <div className="flex items-center gap-1.5 p-1.5 bg-admin-bg rounded-2xl border border-admin-border shadow-sm">
+            <div className="flex items-center gap-3 md:gap-8">
+                {/* Theme Selector (desktop only; mobile lives in the drawer) */}
+                <div className="hidden md:flex items-center gap-1.5 p-1.5 bg-admin-bg rounded-2xl border border-admin-border shadow-sm">
                     {[
                         { id: 'light', icon: Sun, label: 'Light', color: 'text-orange-500' },
                         { id: 'creme', icon: Sparkles, label: 'Creme', color: 'text-[#8c734b]' },
