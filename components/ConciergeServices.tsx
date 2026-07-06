@@ -33,7 +33,7 @@ export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPa
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
-    const dragStartXRef = useRef<number | null>(null);
+    const wasDraggedRef = useRef(false);
 
     React.useEffect(() => {
         const fetchServices = async () => {
@@ -63,7 +63,7 @@ export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPa
         setIsMouseDown(true);
         setStartX(e.pageX - scrollRef.current.offsetLeft);
         setScrollLeft(scrollRef.current.scrollLeft);
-        dragStartXRef.current = e.pageX;
+        wasDraggedRef.current = false;
     };
 
     const handleMouseUp = () => {
@@ -74,14 +74,16 @@ export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPa
         if (!isMouseDown || !scrollRef.current) return;
         e.preventDefault();
         const x = e.pageX - scrollRef.current.offsetLeft;
+        if (Math.abs(x - startX) > 5) wasDraggedRef.current = true;
         const walk = (x - startX) * 2;
         scrollRef.current.scrollLeft = scrollLeft - walk;
     };
 
     const handleCardClick = (e: React.MouseEvent) => {
-        // Suppress the click when the pointer was dragged (slider drag-to-scroll),
-        // otherwise releasing a drag over a linked card would open the partner site.
-        if (dragStartXRef.current !== null && Math.abs(e.pageX - dragStartXRef.current) > 5) {
+        // Suppress only genuine mouse clicks that ended a drag (drag-to-scroll).
+        // Keyboard activation (Enter/Space) has e.detail === 0 and is never suppressed.
+        // Touch scrolling never fires a click on the anchor, so no touch guard is needed.
+        if (e.detail > 0 && wasDraggedRef.current) {
             e.preventDefault();
         }
     };
