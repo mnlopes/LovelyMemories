@@ -194,13 +194,12 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
             </div>
 
             {/* Content */}
-            <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm overflow-hidden">
-                {loading ? (
-                    <div className="py-20 flex justify-center">
-                        <Loader2 className="size-8 animate-spin text-[#a3a3a3]" />
-                    </div>
-                ) : filteredOwners.length === 0 ? (
-                    <div className="py-20 flex flex-col items-center justify-center text-center px-4">
+            {loading ? (
+                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm overflow-hidden py-20 flex justify-center">
+                    <Loader2 className="size-8 animate-spin text-[#a3a3a3]" />
+                </div>
+            ) : filteredOwners.length === 0 ? (
+                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm overflow-hidden py-20 flex flex-col items-center justify-center text-center px-4">
                         <div className="size-16 bg-[#fafafa] dark:bg-admin-dark-bg rounded-full flex items-center justify-center mb-4">
                             <User className="size-8 text-[#a3a3a3]" />
                         </div>
@@ -221,6 +220,8 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                         )}
                     </div>
                 ) : (
+                <>
+                <div className="hidden md:block bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-[#fafafa] dark:bg-admin-dark-bg border-b border-[#f5f5f5] dark:border-admin-dark-border">
@@ -363,8 +364,68 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                             </tbody>
                         </table>
                     </div>
-                )}
-            </div>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden space-y-3">
+                    {filteredOwners.map((owner) => (
+                        <div key={owner.id} className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm overflow-hidden">
+                            <div className="flex items-start gap-3 p-4">
+                                <div className="size-10 rounded-full bg-[#171717] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                    {(owner.full_name || owner.email || '?').charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-[#171717] dark:text-admin-dark-text-primary text-sm truncate">{owner.full_name || t('unnamed')}</p>
+                                    <p className="text-xs text-[#a3a3a3]">{owner.created_at && !isNaN(new Date(owner.created_at).getTime()) ? new Date(owner.created_at).toLocaleDateString() : 'N/A'}</p>
+                                    <div className="flex items-center gap-2 text-xs text-[#a3a3a3] mt-1.5"><Mail className="size-3 shrink-0" /><span className="truncate">{owner.email}</span></div>
+                                    {owner.phone && <div className="flex items-center gap-2 text-xs text-[#a3a3a3] mt-0.5"><Phone className="size-3 shrink-0" />{owner.phone}</div>}
+                                </div>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 ${owner.units_count > 0 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20' : 'bg-gray-50 dark:bg-admin-dark-bg text-gray-400 dark:text-gray-500 border border-gray-100 dark:border-admin-dark-border'}`}>
+                                    <Home className="size-3" />{owner.units_count}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#f5f5f5] dark:border-admin-dark-border">
+                                <Link href={`/${locale}/admin/owners/${owner.id}`} className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:underline">{t('actions.manage')}</Link>
+                                <button type="button" onClick={() => setOpenMenuId(owner.id)} className="p-2 rounded-xl text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all" aria-label={locale === 'en' ? 'More actions' : 'Mais ações'}>
+                                    <MoreVertical className="size-5" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                </>
+            )}
+
+            {/* Mobile actions bottom sheet */}
+            {openMenuId && (() => {
+                const owner = filteredOwners.find(o => o.id === openMenuId);
+                if (!owner) return null;
+                return (
+                    <div className="md:hidden fixed inset-0 z-[120] flex items-end animate-in fade-in duration-200">
+                        <div className="absolute inset-0 bg-black/50" onClick={() => setOpenMenuId(null)} />
+                        <div className="relative w-full bg-white dark:bg-admin-dark-surface rounded-t-3xl border-t border-[#f5f5f5] dark:border-admin-dark-border p-2 pb-6 animate-in slide-in-from-bottom duration-300">
+                            <div className="mx-auto mt-2 mb-3 h-1.5 w-10 rounded-full bg-gray-200 dark:bg-white/10" />
+                            <p className="px-4 pb-2 text-xs font-bold text-[#a3a3a3] uppercase tracking-widest truncate">{owner.full_name || owner.email}</p>
+                            {currentUserRole === 'super_admin' && (
+                                <button onClick={() => { setOpenMenuId(null); handleViewAs(owner); }} disabled={viewingAsId === owner.id} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg rounded-xl flex items-center gap-3 disabled:opacity-50">
+                                    {viewingAsId === owner.id ? <Loader2 className="size-5 animate-spin text-gray-400" /> : <Eye className="size-5 text-gray-400" />}
+                                    {locale === 'en' ? 'View as owner (read-only)' : 'Ver como owner (só leitura)'}
+                                </button>
+                            )}
+                            <button onClick={() => { setOpenMenuId(null); handleResend(owner); }} disabled={!owner.email} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg rounded-xl flex items-center gap-3 disabled:opacity-50">
+                                <Send className="size-5 text-gray-400" />{locale === 'en' ? 'Resend invite' : 'Reenviar convite'}
+                            </button>
+                            <button onClick={() => { setOpenMenuId(null); openPasswordModal(owner); }} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-gray-50 dark:hover:bg-admin-dark-bg rounded-xl flex items-center gap-3">
+                                <KeyRound className="size-5 text-gray-400" />{locale === 'en' ? 'Reset password' : 'Repor password'}
+                            </button>
+                            <button onClick={() => { setOpenMenuId(null); setDeleteTarget(owner); }} disabled={owner.units_count > 0} className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed">
+                                <Trash2 className="size-5" />{locale === 'en' ? 'Delete owner' : 'Eliminar proprietário'}
+                            </button>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* Modal */}
             <InviteUserModal
                 isOpen={isInviteModalOpen}

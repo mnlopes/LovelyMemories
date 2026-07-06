@@ -81,7 +81,7 @@ export function HistoryFilters({ properties, locale }: HistoryFiltersProps) {
     const hasFilters = currentMonth || currentYear || currentProperty;
 
     return (
-        <div className={`flex items-center gap-6 flex-nowrap py-1 w-full transition-opacity duration-300 ${isPending ? 'opacity-60' : 'opacity-100'}`}>
+        <div className={`flex items-center flex-wrap md:flex-nowrap gap-3 md:gap-6 py-1 w-full transition-opacity duration-300 ${isPending ? 'opacity-60' : 'opacity-100'}`}>
             <div className="flex items-center gap-2 text-[#a3a3a3] shrink-0">
                 {isPending ? (
                     <Loader2 className="size-4 animate-spin text-admin-accent" />

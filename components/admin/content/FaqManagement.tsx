@@ -259,8 +259,8 @@ export default function FaqManagement({ locale }: FaqManagementProps) {
                 </button>
             </div>
 
-            {/* Table */}
-            <div className="bg-white dark:bg-white/5 rounded-3xl border border-[#f5f5f5] dark:border-white/10 overflow-hidden shadow-sm">
+            {/* Table (desktop) */}
+            <div className="hidden md:block bg-white dark:bg-white/5 rounded-3xl border border-[#f5f5f5] dark:border-white/10 overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-[#fafafa] dark:bg-admin-dark-bg/50">
@@ -357,7 +357,40 @@ export default function FaqManagement({ locale }: FaqManagementProps) {
                 </table>
             </div>
 
-            <StatusModal 
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+                {isLoading ? (
+                    <div className="flex flex-col items-center gap-3 py-16 text-[#a3a3a3]">
+                        <Loader2 className="size-8 animate-spin text-admin-accent" />
+                        <span className="text-sm font-bold uppercase tracking-widest">{t('table.loading')}</span>
+                    </div>
+                ) : filteredFaqs.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3 py-16 text-[#a3a3a3] italic">
+                        <AlertCircle className="size-8 opacity-20" />
+                        <span>{t('table.empty')}</span>
+                    </div>
+                ) : filteredFaqs.map((item) => (
+                    <div key={item.id} className="bg-white dark:bg-white/5 rounded-2xl border border-[#f5f5f5] dark:border-white/10 shadow-sm overflow-hidden">
+                        <div className="flex gap-3 p-4">
+                            <div className="size-10 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center flex-shrink-0 text-gray-400"><HelpCircle className="size-5" /></div>
+                            <div className="min-w-0 flex-1">
+                                <div className="font-bold text-[#171717] dark:text-admin-dark-text-primary line-clamp-2">{item.question}</div>
+                                <div className="text-[11px] text-[#a3a3a3] font-medium line-clamp-2 mt-0.5">{item.answer}</div>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 rounded text-[10px] font-black uppercase tracking-widest">{item.locale}</span>
+                                    <span className="text-[10px] text-[#a3a3a3] font-bold">#{item.display_order}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-1 px-3 py-2 border-t border-[#f5f5f5] dark:border-white/10">
+                            <button onClick={() => { setEditingFaq(item); setIsEditorOpen(true); }} className="p-2 text-[#a3a3a3] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 className="size-4" /></button>
+                            <button onClick={() => item.id && handleDelete(item.id)} className="p-2 text-[#a3a3a3] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 className="size-4" /></button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <StatusModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 type="warning"

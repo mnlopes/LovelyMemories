@@ -234,9 +234,9 @@ export default function BlogEditor({ post, locale, onClose, onSave }: BlogEditor
             </AnimatePresence>
 
             {/* Header */}
-            <div className="px-8 py-5 border-b border-[#f5f5f5] dark:border-white/10 flex items-center justify-between bg-[#fafafa] dark:bg-admin-dark-bg/50">
-                <div>
-                    <h3 className="text-xl font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{post ? t('edit') : t('create')}</h3>
+            <div className="px-4 md:px-8 py-4 md:py-5 border-b border-[#f5f5f5] dark:border-white/10 flex items-center justify-between gap-3 bg-[#fafafa] dark:bg-admin-dark-bg/50">
+                <div className="min-w-0">
+                    <h3 className="text-lg md:text-xl font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{post ? t('edit') : t('create')}</h3>
                     <p className="text-[10px] text-[#a3a3a3] font-bold uppercase tracking-widest mt-1">{t('language')}: {formData.locale.toUpperCase()}</p>
                 </div>
                 <div className="flex items-center gap-3">

@@ -191,37 +191,35 @@ export function OwnerDetailsClient({ id, locale, currentUserRole }: OwnerDetails
                     <p className="text-[#a3a3a3] mt-1">{owner.email} • {owner.phone || "No phone"}</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
                     <button
                         onClick={() => setIsEditModalOpen(true)}
-                        className="bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-admin-dark-text-primary border border-[#f5f5f5] dark:border-admin-dark-border px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors shadow-sm"
+                        className="flex-1 md:flex-none justify-center bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-admin-dark-text-primary border border-[#f5f5f5] dark:border-admin-dark-border px-4 md:px-6 py-2.5 md:py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors shadow-sm whitespace-nowrap"
                     >
                         <Pencil className="size-4" />
                         Edit details
                     </button>
-                    <div className="flex items-center gap-3">
-                        {currentUserRole === 'super_admin' && (
-                            <button
-                                onClick={handleImpersonate}
-                                disabled={isImpersonating}
-                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-[#171717] border border-[#171717] dark:border-white hover:opacity-90 transition-all font-bold shadow-sm disabled:opacity-50"
-                            >
-                                {isImpersonating ? (
-                                    <Loader2 className="size-4 animate-spin" />
-                                ) : (
-                                    <Eye className="size-4" />
-                                )}
-                                View as Owner
-                            </button>
-                        )}
+                    {currentUserRole === 'super_admin' && (
                         <button
-                            onClick={() => setIsAssignModalOpen(true)}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-white border border-[#eeeeee] dark:border-white/10 hover:bg-[#fafafa] dark:hover:bg-white/5 transition-all font-bold shadow-sm"
+                            onClick={handleImpersonate}
+                            disabled={isImpersonating}
+                            className="flex-1 md:flex-none justify-center flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-[#171717] border border-[#171717] dark:border-white hover:opacity-90 transition-all font-bold shadow-sm disabled:opacity-50 whitespace-nowrap"
                         >
-                            <Plus className="size-4" />
-                            Assign Property
+                            {isImpersonating ? (
+                                <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                                <Eye className="size-4" />
+                            )}
+                            View as Owner
                         </button>
-                    </div>
+                    )}
+                    <button
+                        onClick={() => setIsAssignModalOpen(true)}
+                        className="flex-1 md:flex-none justify-center flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl bg-white dark:bg-admin-dark-bg text-[#171717] dark:text-white border border-[#eeeeee] dark:border-white/10 hover:bg-[#fafafa] dark:hover:bg-white/5 transition-all font-bold shadow-sm whitespace-nowrap"
+                    >
+                        <Plus className="size-4" />
+                        Assign Property
+                    </button>
                 </div>
             </div>
 
@@ -249,8 +247,8 @@ export function OwnerDetailsClient({ id, locale, currentUserRole }: OwnerDetails
                                     }[status as 'active' | 'coming_soon' | 'hidden'] || { bg: 'bg-gray-50', text: 'text-gray-400', dot: 'bg-gray-400', label: 'Unknown' };
 
                                     return (
-                                        <div key={property.id} className="p-4 flex items-center justify-between group hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors">
-                                            <div className="flex items-center gap-4">
+                                        <div key={property.id} className="p-4 flex items-center justify-between gap-3 group hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors">
+                                            <div className="flex items-center gap-4 min-w-0">
                                                 {/* Image or Icon */}
                                                 <div
                                                     className="size-16 rounded-xl bg-[#f5f5f5] dark:bg-admin-dark-bg flex items-center justify-center text-[#a3a3a3] bg-cover bg-center border border-[#eeeeee] dark:border-white/5 overflow-hidden shrink-0"
@@ -284,11 +282,11 @@ export function OwnerDetailsClient({ id, locale, currentUserRole }: OwnerDetails
                                             </div>
                                             <button
                                                 onClick={() => confirmRemove(property.id)}
-                                                className="text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2 text-xs font-bold"
+                                                className="text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all p-2 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg flex items-center gap-2 text-xs font-bold shrink-0"
                                                 title="Remove from owner"
                                             >
                                                 <Trash2 className="size-4" />
-                                                Remove
+                                                <span className="hidden sm:inline">Remove</span>
                                             </button>
                                         </div>
                                     );

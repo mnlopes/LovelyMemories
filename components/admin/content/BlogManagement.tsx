@@ -193,8 +193,8 @@ export default function BlogManagement({ locale }: BlogManagementProps) {
                 </button>
             </div>
 
-            {/* Table */}
-            <div className="bg-white dark:bg-white/5 rounded-3xl border border-[#f5f5f5] dark:border-white/10 overflow-hidden shadow-sm">
+            {/* Table (desktop) */}
+            <div className="hidden md:block bg-white dark:bg-white/5 rounded-3xl border border-[#f5f5f5] dark:border-white/10 overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-[#fafafa] dark:bg-admin-dark-bg/50">
@@ -294,7 +294,60 @@ export default function BlogManagement({ locale }: BlogManagementProps) {
                 </table>
             </div>
 
-            <StatusModal 
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+                {isLoading ? (
+                    <div className="flex flex-col items-center gap-3 py-16 text-[#a3a3a3]">
+                        <Loader2 className="size-8 animate-spin text-admin-accent" />
+                        <span className="text-sm font-bold uppercase tracking-widest">{t('table.loading')}</span>
+                    </div>
+                ) : filteredPosts.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3 py-16 text-[#a3a3a3] italic">
+                        <AlertCircle className="size-8 opacity-20" />
+                        <span>{t('table.empty')}</span>
+                    </div>
+                ) : filteredPosts.map((post) => (
+                    <div key={post.id} className="bg-white dark:bg-white/5 rounded-2xl border border-[#f5f5f5] dark:border-white/10 shadow-sm overflow-hidden">
+                        <div className="flex gap-3 p-4">
+                            <div className="size-14 rounded-xl bg-gray-100 overflow-hidden shrink-0">
+                                {post.image_url ? (
+                                    <img src={post.image_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400"><Globe className="size-5" /></div>
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="font-bold text-[#171717] dark:text-admin-dark-text-primary line-clamp-1">{post.title}</div>
+                                <div className="text-[10px] text-[#a3a3a3] font-bold uppercase tracking-tight truncate">/{post.slug}</div>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                    <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 rounded text-[10px] font-black uppercase tracking-widest">{post.locale}</span>
+                                    <span className="text-[10px] text-[#a3a3a3] font-medium">{new Date(post.created_at).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#f5f5f5] dark:border-white/10">
+                            <button
+                                onClick={() => handleToggleStatus(post.id, post.is_published)}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                                    post.is_published
+                                        ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
+                                        : "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400"
+                                )}
+                            >
+                                {post.is_published ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
+                                {post.is_published ? t('status.published') : t('status.draft')}
+                            </button>
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => { setEditingPost(post); setIsEditorOpen(true); }} className="p-2 text-[#a3a3a3] hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all"><Edit2 className="size-4" /></button>
+                                <button onClick={() => handleDelete(post.id)} className="p-2 text-[#a3a3a3] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"><Trash2 className="size-4" /></button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <StatusModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 type="warning"

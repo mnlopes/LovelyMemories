@@ -89,8 +89,8 @@ export const CouponManager = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div className="relative w-72">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                <div className="relative w-full sm:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
                     <input 
                         type="text" 
@@ -109,7 +109,7 @@ export const CouponManager = () => {
                 </button>
             </div>
 
-            <div className="bg-white dark:bg-admin-dark-surface border border-gray-200 dark:border-admin-dark-border rounded-xl overflow-hidden shadow-sm">
+            <div className="hidden md:block bg-white dark:bg-admin-dark-surface border border-gray-200 dark:border-admin-dark-border rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-gray-50 dark:bg-admin-dark-bg/50 border-b border-gray-200 dark:border-admin-dark-border">
@@ -198,6 +198,54 @@ export const CouponManager = () => {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+                {isLoading ? (
+                    <p className="py-10 text-center text-gray-500 text-sm italic">{t('table.loading')}</p>
+                ) : filteredCoupons.length === 0 ? (
+                    <p className="py-10 text-center text-gray-500 text-sm">{t('table.empty')}</p>
+                ) : filteredCoupons.map((coupon) => (
+                    <div key={coupon.id} className="bg-white dark:bg-admin-dark-surface border border-gray-200 dark:border-admin-dark-border rounded-xl shadow-sm overflow-hidden">
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="size-8 rounded-lg bg-admin-accent/10 flex items-center justify-center text-admin-accent shrink-0"><Ticket className="size-4" /></div>
+                                <span className="font-bold text-gray-900 dark:text-white uppercase tracking-wider truncate">{coupon.code}</span>
+                            </div>
+                            <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0", coupon.active ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-gray-100 text-gray-600 border border-gray-200")}>
+                                {coupon.active ? t('table.active') : t('table.inactive')}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 px-4 pb-3">
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('table.discount')}</p>
+                                <p className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mt-0.5">
+                                    {coupon.discount_type === 'percentage' ? <><Percent className="size-3 text-emerald-500" />{coupon.discount_value}%</> : <><Euro className="size-3 text-blue-500" />{coupon.discount_value}€</>}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('table.uses')}</p>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{coupon.used_count} / {coupon.max_uses || '∞'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('table.expiration')}</p>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{coupon.expires_at ? format(new Date(coupon.expires_at), 'dd/MM/yyyy') : t('table.noExpiration')}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-1 px-3 py-2 border-t border-gray-100 dark:border-admin-dark-border">
+                            <button onClick={() => handleToggleActive(coupon.id, coupon.active)} className={cn("p-2 rounded-lg transition-colors", coupon.active ? "text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50")} title={coupon.active ? t('modal.cancel') : t('table.active')}>
+                                {coupon.active ? <PowerOff className="size-4" /> : <Power className="size-4" />}
+                            </button>
+                            <button onClick={() => { setEditingCoupon(coupon); setIsModalOpen(true); }} className="p-2 text-gray-400 hover:text-admin-accent hover:bg-admin-bg rounded-lg transition-colors">
+                                <Search className="size-4" />
+                            </button>
+                            <button onClick={() => setDeleteTarget(coupon.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                <Trash2 className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Modal */}

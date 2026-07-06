@@ -399,7 +399,7 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-4 mb-8">
                 <div className="size-12 rounded-2xl bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border flex items-center justify-center shadow-sm transition-colors duration-300">
                     <SettingsIcon className="size-6 text-[#171717] dark:text-admin-dark-text-primary" />
@@ -411,11 +411,11 @@ export default function SettingsPage() {
             </div>
 
             {/* Sub-Tabs Navigation */}
-            <div className="flex items-center gap-8 border-b border-[#eaeaea] dark:border-admin-dark-border mb-8 transition-colors duration-300">
+            <div className="flex items-center gap-6 md:gap-8 border-b border-[#eaeaea] dark:border-admin-dark-border mb-8 transition-colors duration-300 overflow-x-auto no-scrollbar">
                 <button
                     type="button"
                     onClick={() => setActiveTab('general')}
-                    className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'general' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                    className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap shrink-0 ${activeTab === 'general' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
                 >
                     General
                     {activeTab === 'general' && (
@@ -425,7 +425,7 @@ export default function SettingsPage() {
                 <button
                     type="button"
                     onClick={() => setActiveTab('translations')}
-                    className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'translations' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                    className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap shrink-0 ${activeTab === 'translations' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
                 >
                     Translations
                     {activeTab === 'translations' && (
@@ -435,7 +435,7 @@ export default function SettingsPage() {
                 <button
                     type="button"
                     onClick={() => setActiveTab('analytics')}
-                    className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'analytics' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                    className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap shrink-0 ${activeTab === 'analytics' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
                 >
                     Analytics
                     {activeTab === 'analytics' && (
@@ -445,7 +445,7 @@ export default function SettingsPage() {
                 <button
                     type="button"
                     onClick={() => setActiveTab('ical')}
-                    className={`pb-4 text-sm font-semibold transition-all relative ${activeTab === 'ical' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                    className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap shrink-0 ${activeTab === 'ical' ? 'text-[#171717] dark:text-admin-dark-text-primary' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
                 >
                     iCal Robot
                     {activeTab === 'ical' && (
@@ -594,7 +594,7 @@ export default function SettingsPage() {
                 <div className="space-y-8 max-w-4xl">
                     {/* Maintenance Mode Section */}
                     <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div className="space-y-1">
                                 <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
                                     <div className={cn("size-2 rounded-full", maintenanceMode ? "bg-rose-500 animate-pulse" : "bg-emerald-500")} />
@@ -808,7 +808,7 @@ export default function SettingsPage() {
 
                     {/* Site Performance & Cache */}
                     <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div className="space-y-1">
                                 <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
                                     <Sparkles className="size-5 text-amber-500" />
@@ -831,7 +831,7 @@ export default function SettingsPage() {
 
                     {/* Database Maintenance Section */}
                     <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div className="space-y-1">
                                 <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary flex items-center gap-2">
                                     <Trash2 className="size-5 text-red-500" />

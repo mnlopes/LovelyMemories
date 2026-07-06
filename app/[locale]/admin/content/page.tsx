@@ -39,11 +39,11 @@ export default function AdminContentPage() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 rounded-2xl w-fit shadow-sm">
+            <div className="flex items-center gap-1 p-1 bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 rounded-2xl w-full md:w-fit shadow-sm overflow-x-auto no-scrollbar">
                 <button
                     onClick={() => setActiveTab("blog")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
                         activeTab === "blog"
                             ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
                             : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
@@ -55,7 +55,7 @@ export default function AdminContentPage() {
                 <button
                     onClick={() => setActiveTab("social")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
                         activeTab === "social"
                             ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
                             : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
@@ -67,7 +67,7 @@ export default function AdminContentPage() {
                 <button
                     onClick={() => setActiveTab("faq")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
                         activeTab === "faq"
                             ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
                             : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
@@ -79,7 +79,7 @@ export default function AdminContentPage() {
                 <button
                     onClick={() => setActiveTab("about")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
                         activeTab === "about"
                             ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
                             : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
@@ -91,7 +91,7 @@ export default function AdminContentPage() {
                 <button
                     onClick={() => setActiveTab("terms")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
                         activeTab === "terms"
                             ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
                             : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
@@ -103,7 +103,7 @@ export default function AdminContentPage() {
                 <button
                     onClick={() => setActiveTab("privacy")}
                     className={cn(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
                         activeTab === "privacy"
                             ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
                             : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"

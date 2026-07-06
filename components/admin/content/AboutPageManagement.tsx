@@ -650,14 +650,14 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
                                                 setDraggedIndex(null);
                                                 setDragOverIndex(null);
                                             }}
-                                            className="flex items-center text-[#cfcabd] cursor-grab active:cursor-grabbing px-1"
+                                            className="hidden sm:flex items-center text-[#cfcabd] cursor-grab active:cursor-grabbing px-1"
                                             title={t("timeline.drag")}
                                         >
                                             <GripVertical className="size-5" />
                                         </div>
 
                                         {/* Image */}
-                                        <div className="relative w-[88px] h-[88px] rounded-xl overflow-hidden shrink-0 group bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 flex items-center justify-center">
+                                        <div className="relative w-16 h-16 sm:w-[88px] sm:h-[88px] rounded-xl overflow-hidden shrink-0 group bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f0f0f0] dark:border-white/5 flex items-center justify-center">
                                             {item.image_url ? (
                                                 <img
                                                     src={item.image_url}
@@ -686,7 +686,7 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
 
                                         {/* Fields */}
                                         <div className="flex-1 min-w-0 space-y-2">
-                                            <div className="flex gap-2">
+                                            <div className="flex flex-col sm:flex-row gap-2">
                                                 <input
                                                     type="text"
                                                     value={item.subtitle}
@@ -694,7 +694,7 @@ export default function AboutPageManagement({ locale }: AboutPageManagementProps
                                                         updateTimelineItem(item.key, "subtitle", e.target.value)
                                                     }
                                                     placeholder={t("timeline.yearPlaceholder")}
-                                                    className="w-20 bg-[#a39076]/10 border border-[#a39076]/20 text-[#a39076] py-2 px-3 rounded-lg text-xs font-bold text-center outline-none focus:ring-1 focus:ring-admin-accent"
+                                                    className="w-full sm:w-20 bg-[#a39076]/10 border border-[#a39076]/20 text-[#a39076] py-2 px-3 rounded-lg text-xs font-bold text-center outline-none focus:ring-1 focus:ring-admin-accent"
                                                 />
                                                 <input
                                                     type="text"

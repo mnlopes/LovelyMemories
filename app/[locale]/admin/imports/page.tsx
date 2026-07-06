@@ -7,6 +7,7 @@ import ImportUploadZone from "./components/ImportUploadZone";
 import UndoImportButton from "./components/UndoImportButton";
 import { HistoryFilters } from "./components/HistoryFilters";
 import HistoryTableRow from "./components/HistoryTableRow";
+import HistoryCard from "./components/HistoryCard";
 
 export default async function AdminImportsPage(props: { 
     params: Promise<{ locale: string }>;
@@ -92,17 +93,19 @@ export default async function AdminImportsPage(props: {
 
             {/* History Table */}
             <section className="space-y-6">
-                <div className="flex flex-row items-center gap-8 relative z-30">
-                    <h3 className="text-xl font-bold tracking-tight dark:text-admin-dark-text-primary w-[30%] shrink-0 truncate">
+                <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 relative z-30">
+                    <h3 className="text-xl font-bold tracking-tight dark:text-admin-dark-text-primary md:w-[30%] shrink-0">
                         Import History
                     </h3>
-                    <div className="w-[70%]">
+                    <div className="w-full md:w-[70%]">
                         <HistoryFilters properties={(properties as any) || []} locale={locale} />
                     </div>
                 </div>
-                
-                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-hidden shadow-sm">
-                    {imports && imports.length > 0 ? (
+
+                {imports && imports.length > 0 ? (
+                    <>
+                    {/* Desktop table */}
+                    <div className="hidden md:block bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
@@ -126,13 +129,21 @@ export default async function AdminImportsPage(props: {
                                 </tbody>
                             </table>
                         </div>
-                    ) : (
-                        <div className="p-12 text-center flex flex-col items-center justify-center gap-4">
-                            <Clock className="size-10 text-[#a3a3a3]/50" />
-                            <p className="text-[#a3a3a3] font-medium">No imports found for the selected criteria.</p>
-                        </div>
-                    )}
-                </div>
+                    </div>
+
+                    {/* Mobile cards */}
+                    <div className="md:hidden space-y-3">
+                        {imports.map((item) => (
+                            <HistoryCard key={item.id} item={item} locale={locale} />
+                        ))}
+                    </div>
+                    </>
+                ) : (
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-hidden shadow-sm p-12 text-center flex flex-col items-center justify-center gap-4">
+                        <Clock className="size-10 text-[#a3a3a3]/50" />
+                        <p className="text-[#a3a3a3] font-medium">No imports found for the selected criteria.</p>
+                    </div>
+                )}
             </section>
         </div>
     );

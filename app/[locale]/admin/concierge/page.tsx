@@ -98,16 +98,16 @@ export default function AdminConciergePage() {
     );
 
     return (
-        <div className="p-8 max-w-[1600px] mx-auto">
+        <div className="max-w-[1600px] mx-auto">
             {/* Header Section */}
-            <section className="flex justify-between items-end mb-10">
+            <section className="flex flex-col gap-4 md:flex-row md:justify-between md:items-end mb-8 md:mb-10">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium">{t('description')}</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    <p className="text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('description')}</p>
                 </div>
                 <button
                     onClick={handleAddNew}
-                    className="px-5 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded text-sm font-semibold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center gap-2"
+                    className="px-5 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded text-sm font-semibold hover:bg-black dark:hover:bg-gray-200 transition-all flex items-center justify-center gap-2 shrink-0"
                 >
                     <Plus className="size-4" />
                     {t('addService')}
@@ -134,7 +134,7 @@ export default function AdminConciergePage() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#171717] dark:border-white"></div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     {filteredServices.map((service) => (
                         <div key={service.id} className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-hidden group shadow-sm hover:shadow-md transition-all duration-300">
                             <div className="h-56 bg-cover bg-center relative" style={{ backgroundImage: `url(${service.image || 'https://images.unsplash.com/photo-1544161515-4af6b1d4640b?q=80&w=2070&auto=format&fit=crop'})` }}>

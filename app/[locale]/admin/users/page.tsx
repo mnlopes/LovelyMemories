@@ -153,19 +153,20 @@ export default function AdminUsersPage() {
                 </div>
             </div>
 
-            {/* Users Table */}
-            <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
-                {loading ? (
-                    <div className="py-20 flex flex-col items-center justify-center gap-4 text-[#a3a3a3]">
-                        <Loader2 className="size-8 animate-spin" />
-                        <p className="text-sm font-medium">{t('loadingMembers')}</p>
-                    </div>
-                ) : filteredProfiles.length === 0 ? (
-                    <div className="py-20 flex flex-col items-center justify-center gap-4 text-[#a3a3a3]">
-                        <Users className="size-12 opacity-20" />
-                        <p className="text-sm font-medium">{t('noMembersFound')}</p>
-                    </div>
-                ) : (
+            {/* Users list */}
+            {loading ? (
+                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm py-20 flex flex-col items-center justify-center gap-4 text-[#a3a3a3]">
+                    <Loader2 className="size-8 animate-spin" />
+                    <p className="text-sm font-medium">{t('loadingMembers')}</p>
+                </div>
+            ) : filteredProfiles.length === 0 ? (
+                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm py-20 flex flex-col items-center justify-center gap-4 text-[#a3a3a3]">
+                    <Users className="size-12 opacity-20" />
+                    <p className="text-sm font-medium">{t('noMembersFound')}</p>
+                </div>
+            ) : (
+                <>
+                <div className="hidden md:block bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-[#f5f5f5] dark:border-admin-dark-border bg-[#fafafa]/50 dark:bg-admin-dark-bg/50">
@@ -282,8 +283,75 @@ export default function AdminUsersPage() {
                             ))}
                         </tbody>
                     </table>
-                )}
-            </div>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden space-y-3">
+                    {filteredProfiles.map((profile) => (
+                        <div key={profile.id} className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-3 p-4">
+                                <div className="size-11 rounded-full bg-[#f5f5f5] dark:bg-admin-dark-bg flex items-center justify-center text-[#171717] dark:text-admin-dark-text-primary font-bold text-sm border border-transparent dark:border-admin-dark-border overflow-hidden shrink-0">
+                                    {profile.avatar_url ? (
+                                        <img src={profile.avatar_url} alt="" className="size-full object-cover" />
+                                    ) : (
+                                        (profile.full_name || profile.email || "?").charAt(0).toUpperCase()
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-[#171717] dark:text-admin-dark-text-primary leading-tight truncate">{profile.full_name || t('newUser')}</p>
+                                    <p className="text-xs text-[#a3a3a3] mt-0.5 truncate">{profile.email}</p>
+                                    {profile.phone && (
+                                        <p className="flex items-center gap-1 text-xs text-[#a3a3a3] mt-1"><Phone className="size-3" />{profile.phone}</p>
+                                    )}
+                                </div>
+                                {canManageTarget(profile) && (
+                                    <button onClick={() => setActiveMenuId(activeMenuId === profile.id ? null : profile.id)} className="p-2 rounded-xl text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all shrink-0" aria-label="More actions">
+                                        <MoreHorizontal className="size-5" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#f5f5f5] dark:border-admin-dark-border">
+                                <span className="text-[10px] font-bold text-[#a3a3a3] uppercase tracking-widest">{t('table.accessRole')}</span>
+                                <select
+                                    value={profile.role}
+                                    disabled={!canManageTarget(profile)}
+                                    onChange={(e) => handleRoleChange(profile.id, e.target.value)}
+                                    className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border outline-none transition-all ${!canManageTarget(profile) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${getRoleBadge(profile.role)}`}
+                                >
+                                    {getAvailableRolesForCurrent().map(r => (
+                                        <option key={r} value={r}>{t(`inviteModal.roles.${r}` as any)}</option>
+                                    ))}
+                                    {!getAvailableRolesForCurrent().includes(profile.role) && (
+                                        <option value={profile.role}>{t(`inviteModal.roles.${profile.role}` as any)}</option>
+                                    )}
+                                </select>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                </>
+            )}
+
+            {/* Mobile actions bottom sheet */}
+            {activeMenuId && (() => {
+                const profile = filteredProfiles.find(p => p.id === activeMenuId);
+                if (!profile || !canManageTarget(profile)) return null;
+                return (
+                    <div className="md:hidden fixed inset-0 z-[120] flex items-end animate-in fade-in duration-200">
+                        <div className="absolute inset-0 bg-black/50" onClick={() => setActiveMenuId(null)} />
+                        <div className="relative w-full bg-white dark:bg-admin-dark-surface rounded-t-3xl border-t border-[#f5f5f5] dark:border-admin-dark-border p-2 pb-6 animate-in slide-in-from-bottom duration-300">
+                            <div className="mx-auto mt-2 mb-3 h-1.5 w-10 rounded-full bg-gray-200 dark:bg-white/10" />
+                            <p className="px-4 pb-2 text-xs font-bold text-[#a3a3a3] uppercase tracking-widest truncate">{profile.full_name || profile.email}</p>
+                            <button onClick={() => { setUserForAction(profile); setIsEditModalOpen(true); setActiveMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg rounded-xl flex items-center gap-3">
+                                <Pencil className="size-5" />{t('editMember')}
+                            </button>
+                            <button onClick={() => { setUserForAction(profile); setIsDeleteModalOpen(true); setActiveMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3">
+                                <Trash2 className="size-5" />{t('deleteMember')}
+                            </button>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Invitation Modal */}
             <InviteUserModal
