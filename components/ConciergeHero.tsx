@@ -19,7 +19,7 @@ export const ConciergeHero = () => {
     const textY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
     return (
-        <section ref={ref} className="relative h-screen min-h-[700px] overflow-hidden bg-navy-950 flex items-center justify-center">
+        <section ref={ref} className="relative h-[calc(100vh-5rem)] min-h-[700px] overflow-hidden bg-navy-950 flex items-center justify-center">
 
             {/* 1. Background with Ken Burns Effect & Parallax */}
             <motion.div
@@ -57,7 +57,7 @@ export const ConciergeHero = () => {
                         transition={{ duration: 0.8, delay: 0.2 }}
                         className="mb-8"
                     >
-                        <span className="inline-block text-navy-950 uppercase tracking-[0.5em] text-xs md:text-sm font-bold font-montserrat backdrop-blur-sm py-3 px-8 rounded-full border border-white/20 bg-white/10 shadow-lg">
+                        <span className="inline-block text-white uppercase tracking-[0.5em] text-xs md:text-sm font-bold font-montserrat backdrop-blur-sm py-3 px-8 rounded-full border border-white/20 bg-white/10 shadow-lg">
                             {t('heroOverTitle')}
                         </span>
                     </motion.div>

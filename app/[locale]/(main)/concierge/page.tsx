@@ -24,7 +24,7 @@ export async function generateMetadata({
 
 export default function ConciergePage() {
     return (
-        <main className="relative pt-20 overflow-x-hidden">
+        <main className="relative pt-20 overflow-x-clip">
             <ConciergeHero />
             <ConciergeIntro />
             <ConciergeServices />

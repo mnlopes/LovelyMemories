@@ -66,6 +66,10 @@ export const ConciergeServices = () => {
         { icon: "/legacy/home/images/chat-icon.svg", textKey: "support24h" }
     ];
 
+    if (!isLoading && services.length === 0) {
+        return null;
+    }
+
     return (
         <section className="py-20 lg:py-40 bg-[#FCFCFC] relative">
             {/* Decorative Background Elements */}
@@ -80,9 +84,9 @@ export const ConciergeServices = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
-                        className="w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-8"
+                        className="w-full flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8"
                     >
-                        <div className="flex-1 max-w-none pr-8">
+                        <div className="flex-1 max-w-none lg:pr-8">
                             <p className="uppercase tracking-[0.2em] text-[#9E8C6D] text-sm font-bold mb-3">
                                 {t('subtitle')}
                             </p>
@@ -159,8 +163,6 @@ export const ConciergeServices = () => {
                                 <div className="w-full flex items-center justify-center py-20">
                                     <div className="w-10 h-10 border-4 border-[#b09e80] border-t-transparent rounded-full animate-spin" />
                                 </div>
-                            ) : services.length === 0 ? (
-                                <div className="w-full text-center py-20 text-gray-400">No concierge services found.</div>
                             ) : (
                                 services.map((service, i) => (
                                     <motion.div
