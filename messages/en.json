@@ -972,6 +972,7 @@
             "social": "Social Wall",
             "faq": "FAQ",
             "about": "About Us",
+            "conciergePage": "Concierge Page",
             "terms": "Terms & Conditions",
             "privacy": "Privacy Policy"
         },
@@ -1017,6 +1018,19 @@
                 "titlePlaceholder": "Title",
                 "textPlaceholder": "Description"
             }
+        },
+        "conciergePage": {
+            "contentLanguage": "Content language",
+            "save": "Save changes",
+            "saved": "Concierge page saved",
+            "loading": "Loading content...",
+            "changeImage": "Change image",
+            "addImage": "Add image",
+            "validation": { "heroTitle": "The hero title is required." },
+            "hero": { "title": "Hero — page top", "overline": "Overline (small phrase above the title)", "heading": "Title", "image": "Background image" },
+            "intro": { "title": "Intro section", "overline": "Overline", "heading": "Title", "text": "Description", "image": "Side image", "highlight": "Highlight {n}", "highlightTitle": "Title", "highlightDesc": "Short description" },
+            "servicesHeader": { "title": "Services section header", "overline": "Overline", "heading": "Title" },
+            "cta": { "title": "Contact CTA — bottom of the page", "overline": "Overline", "heading": "Title", "text": "Description" }
         },
         "cmsPage": {
             "newSection": "New Section",

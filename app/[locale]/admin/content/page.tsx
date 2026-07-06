@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { FileText, Instagram, LayoutGrid, HelpCircle, Shield, Scale, Landmark } from "lucide-react";
+import { FileText, Instagram, LayoutGrid, HelpCircle, Shield, Scale, Landmark, ConciergeBell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BlogManagement from "@/components/admin/content/BlogManagement";
 import SocialWallManagement from "@/components/admin/content/SocialWallManagement";
 import FaqManagement from "@/components/admin/content/FaqManagement";
 import CmsPageManagement from "@/components/admin/content/CmsPageManagement";
 import AboutPageManagement from "@/components/admin/content/AboutPageManagement";
+import ConciergePageManagement from "@/components/admin/content/ConciergePageManagement";
 
-type TabType = "blog" | "social" | "faq" | "about" | "terms" | "privacy";
+type TabType = "blog" | "social" | "faq" | "about" | "conciergePage" | "terms" | "privacy";
 
 export default function AdminContentPage() {
     const params = useParams();
@@ -89,6 +90,18 @@ export default function AdminContentPage() {
                     {t('tabs.about')}
                 </button>
                 <button
+                    onClick={() => setActiveTab("conciergePage")}
+                    className={cn(
+                        "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
+                        activeTab === "conciergePage"
+                            ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
+                            : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white"
+                    )}
+                >
+                    <ConciergeBell className="size-4" />
+                    {t('tabs.conciergePage')}
+                </button>
+                <button
                     onClick={() => setActiveTab("terms")}
                     className={cn(
                         "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
@@ -124,6 +137,8 @@ export default function AdminContentPage() {
                     <FaqManagement locale={locale} />
                 ) : activeTab === "about" ? (
                     <AboutPageManagement locale={locale} />
+                ) : activeTab === "conciergePage" ? (
+                    <ConciergePageManagement locale={locale} />
                 ) : activeTab === "terms" ? (
                     <CmsPageManagement pageSlug="terms-conditions" locale={locale} />
                 ) : (
