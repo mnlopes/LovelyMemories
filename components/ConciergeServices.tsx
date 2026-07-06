@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -8,19 +8,32 @@ import { useTranslations, useLocale } from "next-intl";
 import { getConciergeServices } from "@/lib/services";
 import { CmsPageSection } from "@/lib/types";
 
+interface ConciergeService {
+    id: string;
+    name_en: string;
+    name_pt: string;
+    name_he?: string;
+    description_en?: string;
+    description_pt?: string;
+    description_he?: string;
+    image?: string;
+    link_url?: string | null;
+}
+
 export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPageSection[] }) => {
     const t = useTranslations('Concierge');
     const header = initialSections?.find((s) => s.section_type === 'services-header');
     const headerOverline = header?.subtitle || t('subtitle');
     const headerTitle = header?.title || t('mainTitle');
     const locale = useLocale();
-    const [services, setServices] = useState<any[]>([]);
+    const [services, setServices] = useState<ConciergeService[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [startX, setStartX] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
+    const dragStartXRef = useRef<number | null>(null);
 
     React.useEffect(() => {
         const fetchServices = async () => {
@@ -50,6 +63,7 @@ export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPa
         setIsMouseDown(true);
         setStartX(e.pageX - scrollRef.current.offsetLeft);
         setScrollLeft(scrollRef.current.scrollLeft);
+        dragStartXRef.current = e.pageX;
     };
 
     const handleMouseUp = () => {
@@ -62,6 +76,14 @@ export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPa
         const x = e.pageX - scrollRef.current.offsetLeft;
         const walk = (x - startX) * 2;
         scrollRef.current.scrollLeft = scrollLeft - walk;
+    };
+
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Suppress the click when the pointer was dragged (slider drag-to-scroll),
+        // otherwise releasing a drag over a linked card would open the partner site.
+        if (dragStartXRef.current !== null && Math.abs(e.pageX - dragStartXRef.current) > 5) {
+            e.preventDefault();
+        }
     };
 
     const features = [
@@ -168,33 +190,59 @@ export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPa
                                     <div className="w-10 h-10 border-4 border-[#b09e80] border-t-transparent rounded-full animate-spin" />
                                 </div>
                             ) : (
-                                services.map((service, i) => (
-                                    <motion.div
-                                        key={service.id || i}
-                                        className="flex-none relative w-[300px] h-[450px] rounded-[24px] overflow-hidden shadow-xl"
-                                        whileHover={{ y: -5 }}
-                                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                    >
-                                        <Image
-                                            src={service.image || "/legacy/home/images/services-image-1.png"}
-                                            alt={locale === 'pt' ? service.name_pt : service.name_en}
-                                            fill
-                                            sizes="300px"
-                                            className="object-cover transition-transform duration-700 ease-out hover:scale-110"
+                                services.map((service, i) => {
+                                    const name = locale === 'pt' ? service.name_pt : locale === 'he' ? (service.name_he || service.name_en) : service.name_en;
+                                    const description = locale === 'pt' ? service.description_pt : locale === 'he' ? (service.description_he || service.description_en) : service.description_en;
+                                    const card = (
+                                        <motion.div
+                                            className="group/card relative w-[300px] h-[450px] rounded-[24px] overflow-hidden shadow-xl"
+                                            whileHover={{ y: -5 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                        >
+                                            <Image
+                                                src={service.image || "/legacy/home/images/services-image-1.png"}
+                                                alt={name}
+                                                fill
+                                                sizes="300px"
+                                                className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
+                                                draggable={false}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
+                                            {service.link_url && (
+                                                <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center opacity-80 lg:opacity-0 lg:group-hover/card:opacity-100 transition-opacity duration-300">
+                                                    <ArrowUpRight className="w-4 h-4 text-white" />
+                                                </div>
+                                            )}
+                                            <div className="absolute bottom-0 left-0 w-full p-6 pb-8 flex flex-col justify-end items-center gap-3 h-full text-center">
+                                                <h3 className="text-white text-[26px] font-bold font-sans leading-tight drop-shadow-md">
+                                                    {name}
+                                                </h3>
+                                                {description && (
+                                                    <p className="text-white/80 text-sm leading-relaxed line-clamp-3 lg:opacity-0 lg:translate-y-2 lg:group-hover/card:opacity-100 lg:group-hover/card:translate-y-0 transition-all duration-300">
+                                                        {description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    );
+                                    return service.link_url ? (
+                                        <a
+                                            key={service.id || i}
+                                            href={service.link_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer nofollow"
+                                            onClick={handleCardClick}
                                             draggable={false}
-                                        />
-
-                                        {/* Gradient Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
-
-                                        {/* Content */}
-                                        <div className="absolute bottom-0 left-0 w-full p-6 pb-8 flex justify-center items-end h-full">
-                                            <h3 className="text-white text-[26px] font-bold font-sans leading-tight text-center drop-shadow-md">
-                                                {locale === 'pt' ? service.name_pt : locale === 'he' ? (service.name_he || service.name_en) : service.name_en}
-                                            </h3>
+                                            className="flex-none"
+                                        >
+                                            {card}
+                                        </a>
+                                    ) : (
+                                        <div key={service.id || i} className="flex-none">
+                                            {card}
                                         </div>
-                                    </motion.div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>

@@ -17,6 +17,7 @@ interface Service {
     description_he: string;
     image: string;
     is_active: boolean;
+    link_url?: string;
 }
 
 interface ServiceModalProps {
@@ -39,12 +40,13 @@ export default function ServiceModal({ isOpen, onClose, service, onSave }: Servi
         description_pt: '',
         description_he: '',
         image: '',
-        is_active: true
+        is_active: true,
+        link_url: ''
     });
 
     useEffect(() => {
         if (service) {
-            setFormData(service);
+            setFormData({ ...service, link_url: service.link_url ?? '' });
         } else {
             setFormData({
                 name_en: '',
@@ -54,7 +56,8 @@ export default function ServiceModal({ isOpen, onClose, service, onSave }: Servi
                 description_pt: '',
                 description_he: '',
                 image: '',
-                is_active: true
+                is_active: true,
+                link_url: ''
             });
         }
     }, [service, isOpen]);
@@ -88,20 +91,27 @@ export default function ServiceModal({ isOpen, onClose, service, onSave }: Servi
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const link = formData.link_url?.trim() || '';
+        if (link && !/^https?:\/\//i.test(link)) {
+            toast.error(t('serviceModal.linkInvalid'));
+            return;
+        }
+
         setIsLoading(true);
 
         try {
             if (service?.id) {
                 const { error } = await supabase
                     .from('concierge_services')
-                    .update(formData)
+                    .update({ ...formData, link_url: link || null })
                     .eq('id', service.id);
                 if (error) throw error;
                 toast.success(t('notifications.updateSuccess'));
             } else {
                 const { error } = await supabase
                     .from('concierge_services')
-                    .insert([formData]);
+                    .insert([{ ...formData, link_url: link || null }]);
                 if (error) throw error;
                 toast.success(t('notifications.createSuccess'));
             }
@@ -337,6 +347,19 @@ export default function ServiceModal({ isOpen, onClose, service, onSave }: Servi
                                     </div>
                                 </>
                             )}
+                        </div>
+
+                        {/* Partner link */}
+                        <div>
+                            <label className="block text-xs font-bold text-[#a3a3a3] uppercase tracking-wider mb-1">{t('serviceModal.linkLabel')}</label>
+                            <input
+                                type="url"
+                                value={formData.link_url || ''}
+                                onChange={e => setFormData({ ...formData, link_url: e.target.value })}
+                                className="w-full border border-[#f5f5f5] dark:border-admin-dark-border dark:bg-admin-dark-bg rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#171717] dark:focus:ring-white outline-none dark:text-admin-dark-text-primary transition-all"
+                                placeholder="https://partner-company.com"
+                            />
+                            <p className="text-[10px] text-[#a3a3a3] mt-1 font-medium">{t('serviceModal.linkHint')}</p>
                         </div>
 
                         {/* Active Toggle */}

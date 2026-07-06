@@ -19,6 +19,7 @@ interface Service {
     image: string;
     is_active: boolean;
     created_at: string;
+    link_url?: string;
 }
 
 export default function AdminConciergePage() {

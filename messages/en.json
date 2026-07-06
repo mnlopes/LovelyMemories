@@ -433,7 +433,10 @@
             "inactiveLabel": "Inactive",
             "cancel": "Cancel",
             "saveChanges": "Save Changes",
-            "createService": "Create Service"
+            "createService": "Create Service",
+            "linkLabel": "Partner website (URL)",
+            "linkHint": "Optional. The card links to this external company in a new tab.",
+            "linkInvalid": "The partner link must start with http:// or https://"
         },
         "deleteModal": {
             "title": "Delete Service",

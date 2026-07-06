@@ -424,7 +424,10 @@
             "inactiveLabel": "Inativo",
             "cancel": "Cancelar",
             "saveChanges": "Guardar Alterações",
-            "createService": "Criar Serviço"
+            "createService": "Criar Serviço",
+            "linkLabel": "Site do parceiro (URL)",
+            "linkHint": "Opcional. O card abre o site desta empresa externa numa nova aba.",
+            "linkInvalid": "O link do parceiro tem de começar por http:// ou https://"
         },
         "deleteModal": {
             "title": "Eliminar Serviço",
