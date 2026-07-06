@@ -4,9 +4,22 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 import { useTranslations } from 'next-intl';
+import { CmsPageSection } from '@/lib/types';
 
-export const ConciergeIntro = () => {
+export const ConciergeIntro = ({ initialSections }: { initialSections?: CmsPageSection[] }) => {
     const t = useTranslations('Concierge');
+    const intro = initialSections?.find((s) => s.section_type === 'intro');
+    const overline = intro?.subtitle || t('introOverTitle');
+    const title = intro?.title || t('introTitle');
+    const description = intro?.content || t('introDescription');
+    const image = intro?.image_url || '/legacy/concierge/images/concierge-image.png';
+    const highlights =
+        intro?.list_items && intro.list_items.length >= 2
+            ? intro.list_items.slice(0, 2)
+            : [
+                  { label: t('supportTitle'), desc: t('supportDesc') },
+                  { label: t('expertiseTitle'), desc: t('expertiseDesc') },
+              ];
     const containerRef = useRef(null);
 
     return (
@@ -23,10 +36,10 @@ export const ConciergeIntro = () => {
                             transition={{ duration: 0.8 }}
                         >
                             <span className="text-gold-400 uppercase tracking-[0.3em] text-xs font-bold mb-6 block">
-                                {t('introOverTitle')}
+                                {overline}
                             </span>
                             <h2 className="text-4xl md:text-5xl xl:text-6xl font-playfair font-bold text-navy-950 leading-[1.1] tracking-tight">
-                                {t('introTitle')}
+                                {title}
                             </h2>
                         </motion.div>
 
@@ -38,19 +51,17 @@ export const ConciergeIntro = () => {
                             className="space-y-8"
                         >
                             <p className="text-[#696969] text-lg font-light leading-relaxed max-w-xl">
-                                {t('introDescription')}
+                                {description}
                             </p>
 
                             {/* Service Highlights */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 pt-4">
-                                <div className="space-y-3 border-l-[3px] border-gold-400 pl-6">
-                                    <h4 className="font-bold text-navy-950 text-xl">{t('supportTitle')}</h4>
-                                    <p className="text-sm text-[#696969] leading-relaxed">{t('supportDesc')}</p>
-                                </div>
-                                <div className="space-y-3 border-l-[3px] border-gold-400 pl-6">
-                                    <h4 className="font-bold text-navy-950 text-xl">{t('expertiseTitle')}</h4>
-                                    <p className="text-sm text-[#696969] leading-relaxed">{t('expertiseDesc')}</p>
-                                </div>
+                                {highlights.map((h, i) => (
+                                    <div key={i} className="space-y-3 border-l-[3px] border-gold-400 pl-6">
+                                        <h4 className="font-bold text-navy-950 text-xl">{h.label}</h4>
+                                        <p className="text-sm text-[#696969] leading-relaxed">{h.desc}</p>
+                                    </div>
+                                ))}
                             </div>
                         </motion.div>
                     </div>
@@ -66,7 +77,7 @@ export const ConciergeIntro = () => {
                         >
                             <img
                                 className="w-full h-auto object-cover min-h-[350px] md:min-h-[500px]"
-                                src="/legacy/concierge/images/concierge-image.png"
+                                src={image}
                                 alt="Concierge Experience"
                             />
                             {/* Overlay Gradient for depth */}

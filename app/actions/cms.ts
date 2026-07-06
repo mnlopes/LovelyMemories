@@ -369,6 +369,7 @@ export async function upsertPageSection(data: CmsPageSection) {
     revalidatePath('/[locale]/terms-conditions', 'layout');
     revalidatePath('/[locale]/privacy-policy', 'layout');
     revalidatePath('/[locale]/about-us', 'layout');
+    revalidatePath('/[locale]/concierge', 'layout');
     return { success: true, data: result };
 }
 
@@ -385,6 +386,7 @@ export async function deletePageSection(id: string) {
     revalidatePath('/[locale]/terms-conditions', 'layout');
     revalidatePath('/[locale]/privacy-policy', 'layout');
     revalidatePath('/[locale]/about-us', 'layout');
+    revalidatePath('/[locale]/concierge', 'layout');
     return { success: true };
 }
 
@@ -417,6 +419,7 @@ export async function reorderPageSections(sections: CmsPageSection[]) {
     revalidatePath('/[locale]/terms-conditions', 'layout');
     revalidatePath('/[locale]/privacy-policy', 'layout');
     revalidatePath('/[locale]/about-us', 'layout');
+    revalidatePath('/[locale]/concierge', 'layout');
     return { success: true };
 }
 

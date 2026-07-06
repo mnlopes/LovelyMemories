@@ -4,9 +4,14 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 import { useTranslations } from 'next-intl';
+import { CmsPageSection } from '@/lib/types';
 
-export const ConciergeHero = () => {
+export const ConciergeHero = ({ initialSections }: { initialSections?: CmsPageSection[] }) => {
     const t = useTranslations('Concierge');
+    const hero = initialSections?.find((s) => s.section_type === 'hero');
+    const overline = hero?.subtitle || t('heroOverTitle');
+    const title = hero?.title || t('heroTitle');
+    const image = hero?.image_url || '/images/concierge-hero-no-person.png';
     const ref = useRef(null);
     const { scrollYProgress } = useScroll({
         target: ref,
@@ -34,7 +39,7 @@ export const ConciergeHero = () => {
                 >
                     <img
                         className="w-full h-full object-cover"
-                        src="/images/concierge-hero-no-person.png"
+                        src={image}
                         alt="Concierge Feature"
                     />
                 </motion.div>
@@ -58,7 +63,7 @@ export const ConciergeHero = () => {
                         className="mb-8"
                     >
                         <span className="inline-block text-white uppercase tracking-[0.5em] text-xs md:text-sm font-bold font-montserrat backdrop-blur-sm py-3 px-8 rounded-full border border-white/20 bg-white/10 shadow-lg">
-                            {t('heroOverTitle')}
+                            {overline}
                         </span>
                     </motion.div>
 
@@ -70,7 +75,7 @@ export const ConciergeHero = () => {
                         className="text-7xl md:text-8xl lg:text-[130px] font-playfair font-bold text-white tracking-tighter mb-8 leading-none drop-shadow-2xl"
                     >
                         <span className="bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/70">
-                            {t('heroTitle')}
+                            {title}
                         </span>
                     </motion.h1>
 

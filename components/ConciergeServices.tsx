@@ -6,9 +6,13 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
 import { getConciergeServices } from "@/lib/services";
+import { CmsPageSection } from "@/lib/types";
 
-export const ConciergeServices = () => {
+export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPageSection[] }) => {
     const t = useTranslations('Concierge');
+    const header = initialSections?.find((s) => s.section_type === 'services-header');
+    const headerOverline = header?.subtitle || t('subtitle');
+    const headerTitle = header?.title || t('mainTitle');
     const locale = useLocale();
     const [services, setServices] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -88,10 +92,10 @@ export const ConciergeServices = () => {
                     >
                         <div className="flex-1 max-w-none lg:pr-8">
                             <p className="uppercase tracking-[0.2em] text-[#9E8C6D] text-sm font-bold mb-3">
-                                {t('subtitle')}
+                                {headerOverline}
                             </p>
                             <h2 className="text-[32px] lg:text-[42px] font-semibold font-sans text-[#0A1128] leading-[1.15]">
-                                {t('mainTitle')}
+                                {headerTitle}
                             </h2>
                         </div>
 
