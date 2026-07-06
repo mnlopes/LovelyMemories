@@ -16,6 +16,7 @@ interface HomeCalendarPopoverProps {
     selectedDate?: Date; // For single mode
     selectedRange?: DateRange; // For range mode
     selectionMode?: 'single' | 'range';
+    defaultMonth?: Date; // Month to open on when nothing is selected yet (e.g. departure opens on the arrival month)
     placement?: 'side' | 'bottom-start' | 'bottom-end' | 'bottom-center' | 'top-start' | 'top-end' | 'top-center';
     numberOfMonths?: number;
     disabledDates?: any;
@@ -31,6 +32,7 @@ export function HomeCalendarPopover({
     selectedDate,
     selectedRange,
     selectionMode = 'range',
+    defaultMonth,
     placement: initialPlacement = 'bottom-start',
     numberOfMonths = 1,
     disabledDates,
@@ -112,9 +114,11 @@ export function HomeCalendarPopover({
                 setMonth(selectedRange.from);
             } else if (selectionMode === 'single' && selectedDate) {
                 setMonth(selectedDate);
+            } else {
+                setMonth(defaultMonth ?? new Date());
             }
         }
-    }, [isOpen, selectedRange, selectedDate, selectionMode]);
+    }, [isOpen, selectedRange, selectedDate, selectionMode, defaultMonth]);
 
     // Click outside listener
     useEffect(() => {

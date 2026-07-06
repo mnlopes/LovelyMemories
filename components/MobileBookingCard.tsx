@@ -248,6 +248,7 @@ export const MobileBookingCard = () => {
                             }
                         }}
                         numberOfMonths={1}
+                        defaultMonth={selectedRange?.from}
                         disabledDates={selectedRange?.from ? { before: addDays(selectedRange.from, 1) } : undefined}
                     />
                 </div>

@@ -18,12 +18,13 @@ function randomChar() {
 
 // ── Hook ──────────────────────────────────────────────────
 function useScramble(target: string) {
-    const maxLen = MAX_LEN;
-    const padded = target.padEnd(maxLen, " ");
+    // Scramble at the target's own length so the block width stays equal to the
+    // final word (no phantom padding slots that make short cities render too wide).
+    const len = target.length;
 
     // Each char: null = still scrambling, string = locked value
     const [chars, setChars] = useState<(string | null)[]>(
-        () => padded.split("").map((c) => c)
+        () => target.split("").map((c) => c)
     );
 
     const rafRef = useRef<number | null>(null);
@@ -36,7 +37,7 @@ function useScramble(target: string) {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
         // Reset — everything back to scrambling (null)
-        setChars(padded.split("").map(() => null));
+        setChars(target.split("").map(() => null));
 
         // Start scramble loop
         let running = true;
@@ -50,7 +51,7 @@ function useScramble(target: string) {
         requestAnimationFrame(loop);
 
         // Lock characters one by one, left to right
-        padded.split("").forEach((char, i) => {
+        target.split("").forEach((char, i) => {
             const t = setTimeout(() => {
                 setChars((prev) => {
                     const next = [...prev];
@@ -59,14 +60,14 @@ function useScramble(target: string) {
                 });
 
                 // If last char locked — stop scramble loop
-                if (i === maxLen - 1) {
+                if (i === len - 1) {
                     running = false;
                     if (rafRef.current) cancelAnimationFrame(rafRef.current);
                 }
             }, LOCK_STEP * (i + 1));
             timersRef.current.push(t);
         });
-    }, [padded, maxLen]);
+    }, [target, len]);
 
     useEffect(() => {
         scramble();
@@ -82,37 +83,55 @@ function useScramble(target: string) {
 // ── Single char display ───────────────────────────────────
 function ScrambleChar({
     value,
+    finalChar,
     locked,
     mainVariant = false,
 }: {
     value: string;
+    finalChar: string;
     locked: boolean;
     mainVariant?: boolean;
 }) {
-    const isSpace = value === " " || value === "";
-
     return (
         <span
             style={{
+                // Each slot reserves the width of its FINAL letter (an invisible copy
+                // below), and the scrambling glyph is overlaid on top — so the block
+                // width is constant across every frame and the word never jumps lines.
+                position: "relative",
                 display: "inline-block",
-                color: locked
-                    ? (mainVariant ? "#b09e80" : "transparent")
-                    : (mainVariant ? "rgba(176,158,128,0.55)" : "rgba(201,169,110,0.55)"), // dim gold while scrambling
-                backgroundImage: locked && !mainVariant
-                    ? "linear-gradient(135deg, #f5e6c8 0%, #c9a96e 45%, #e8d5a0 70%, #a07840 100%)"
-                    : "none",
-                WebkitBackgroundClip: locked && !mainVariant ? "text" : "unset",
-                backgroundClip: locked && !mainVariant ? "text" : "unset",
-                textShadow: locked && !mainVariant
-                    ? "0 0 24px rgba(201,169,110,0.6), 0 0 60px rgba(201,169,110,0.2)"
-                    : "none",
+                letterSpacing: "0.02em",
                 fontVariantNumeric: "tabular-nums",
-                letterSpacing: isSpace ? "0" : "0.02em",
-                transition: locked && !mainVariant ? "color 120ms ease, text-shadow 200ms ease" : (locked && mainVariant ? "color 120ms ease" : "none"),
-                minWidth: isSpace ? "0.35em" : undefined,
             }}
         >
-            {isSpace ? "\u00A0" : value}
+            {/* Width placeholder — the final letter, invisible */}
+            <span style={{ visibility: "hidden" }}>{finalChar}</span>
+
+            {/* Overlaid animated glyph, centered on the reserved slot */}
+            <span
+                style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    textAlign: "center",
+                    color: locked
+                        ? (mainVariant ? "#b09e80" : "transparent")
+                        : (mainVariant ? "rgba(176,158,128,0.55)" : "rgba(201,169,110,0.55)"), // dim gold while scrambling
+                    backgroundImage: locked && !mainVariant
+                        ? "linear-gradient(135deg, #f5e6c8 0%, #c9a96e 45%, #e8d5a0 70%, #a07840 100%)"
+                        : "none",
+                    WebkitBackgroundClip: locked && !mainVariant ? "text" : "unset",
+                    backgroundClip: locked && !mainVariant ? "text" : "unset",
+                    textShadow: locked && !mainVariant
+                        ? "0 0 24px rgba(201,169,110,0.6), 0 0 60px rgba(201,169,110,0.2)"
+                        : "none",
+                    fontVariantNumeric: "tabular-nums",
+                    transition: locked && !mainVariant ? "color 120ms ease, text-shadow 200ms ease" : (locked && mainVariant ? "color 120ms ease" : "none"),
+                }}
+            >
+                {value}
+            </span>
         </span>
     );
 }
@@ -120,7 +139,8 @@ function ScrambleChar({
 // ── Main export ───────────────────────────────────────────
 export default function CityScrambler({ mainVariant = false }: { mainVariant?: boolean }) {
     const [cityIdx, setCityIdx] = useState(0);
-    const chars = useScramble(CITIES[cityIdx]);
+    const city = CITIES[cityIdx];
+    const chars = useScramble(city);
 
     useEffect(() => {
         const t = setInterval(() => {
@@ -132,18 +152,22 @@ export default function CityScrambler({ mainVariant = false }: { mainVariant?: b
     return (
         <span
             style={{
-                display: "inline",
+                // inline-block + nowrap so the city wraps as a whole word instead of
+                // breaking mid-word between the per-letter spans (e.g. "MYKON / OS")
+                display: "inline-block",
+                whiteSpace: "nowrap",
                 fontFamily: "inherit",
                 fontWeight: "inherit",
                 fontSize: "inherit",
                 lineHeight: "inherit",
             }}
-            aria-label={CITIES[cityIdx]}
+            aria-label={city}
         >
             {chars.map((ch, i) => (
                 <ScrambleChar
                     key={i}
                     value={ch ?? randomChar()}
+                    finalChar={city[i]}
                     locked={ch !== null}
                     mainVariant={mainVariant}
                 />
