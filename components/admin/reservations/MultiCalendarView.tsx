@@ -182,16 +182,23 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+    // Collapse the property sidebar on mobile so more day columns fit on screen.
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+            setIsSidebarOpen(false);
+        }
+    }, []);
+
     return (
         <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-admin-border dark:border-admin-dark-border shadow-sm flex flex-col h-auto min-h-[600px] transition-all duration-300">
             {/* Header / Controls */}
-            <div className="px-6 py-4 border-b border-admin-border dark:border-admin-dark-border flex items-center justify-between bg-white/50 dark:bg-admin-dark-surface/50 backdrop-blur-sm z-50 relative">
+            <div className="px-3 md:px-6 py-3 md:py-4 border-b border-admin-border dark:border-admin-dark-border flex items-center justify-between bg-white/50 dark:bg-admin-dark-surface/50 backdrop-blur-sm z-50 relative">
 
                 <div className="flex items-center gap-4 w-1/3">
                     <div className="relative" ref={datePickerRef}>
                         <button
                             onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                            className="flex items-center gap-2 text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary capitalize hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg px-2 py-1 rounded-lg transition-colors"
+                            className="flex items-center gap-2 text-base md:text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary capitalize hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg px-2 py-1 rounded-lg transition-colors"
                         >
                             {format(currentDate, "MMMM yyyy", { locale: dateLocale })}
                             <ChevronDown className="size-4 text-[#a3a3a3]" />

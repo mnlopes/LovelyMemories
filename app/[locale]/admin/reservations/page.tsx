@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
 import { MultiCalendarView } from "@/components/admin/reservations/MultiCalendarView";
+import { ReservationListCard } from "@/components/admin/reservations/ReservationListCard";
 import { History } from "lucide-react";
 
 export default function AdminReservationsPage() {
@@ -418,10 +419,10 @@ export default function AdminReservationsPage() {
     return (
         <div className="space-y-10 pb-20">
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-end">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium">{t('subtitle')}</p>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    <p className="text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle')}</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 flex transition-colors duration-300">
@@ -696,7 +697,8 @@ export default function AdminReservationsPage() {
                 />
             ) : (
                 /* List View */
-                <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-visible shadow-sm min-h-[400px] transition-colors duration-300">
+                <>
+                <div className="hidden md:block bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border overflow-visible shadow-sm min-h-[400px] transition-colors duration-300">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-[#f5f5f5] dark:border-admin-dark-border">
@@ -952,7 +954,66 @@ export default function AdminReservationsPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Mobile card list */}
+                <div className="md:hidden space-y-3 min-h-[300px]">
+                    {isLoading ? (
+                        <p className="py-10 text-center text-[#a3a3a3] text-sm italic">{t('table.loading')}</p>
+                    ) : filteredReservations.length === 0 ? (
+                        <p className="py-10 text-center text-[#a3a3a3] text-sm">{t('table.empty', { query: searchQuery })}</p>
+                    ) : filteredReservations.map((reservation) => (
+                        <ReservationListCard
+                            key={reservation.id}
+                            reservation={reservation}
+                            t={t}
+                            formatDate={formatDate}
+                            isNew={isNew}
+                            onOpenDetail={() => setDetailSheetReservation(reservation)}
+                            onOpenMenu={() => setOpenMenuId(openMenuId === reservation.id ? null : reservation.id)}
+                        />
+                    ))}
+                </div>
+                </>
             )}
+
+            {/* Mobile actions bottom sheet */}
+            {openMenuId && (role === 'admin' || role === 'super_admin') && (() => {
+                const reservation = filteredReservations.find(r => r.id === openMenuId);
+                if (!reservation) return null;
+                const canFinish = (activeTab === 'upcoming' || activeTab === 'all') && new Date(reservation.check_in).getTime() <= startOfDay(new Date()).getTime();
+                return (
+                    <div className="md:hidden fixed inset-0 z-[120] flex items-end animate-in fade-in duration-200">
+                        <div className="absolute inset-0 bg-black/50" onClick={() => setOpenMenuId(null)} />
+                        <div className="relative w-full bg-white dark:bg-admin-dark-surface rounded-t-3xl border-t border-[#f5f5f5] dark:border-admin-dark-border p-2 pb-6 animate-in slide-in-from-bottom duration-300">
+                            <div className="mx-auto mt-2 mb-3 h-1.5 w-10 rounded-full bg-gray-200 dark:bg-white/10" />
+                            <p className="px-4 pb-2 text-xs font-bold text-[#a3a3a3] uppercase tracking-widest truncate">{reservation.guest_name || 'Guest'}</p>
+                            {!reservation.is_manual_block && (
+                                <button onClick={() => { setOpenMenuId(null); setSelectedReservationId(reservation.id); setHistoryModalOpen(true); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl flex items-center gap-3">
+                                    <History className="size-5" />{t('actions.viewHistory')}
+                                </button>
+                            )}
+                            {reservation.status === 'pending' && !reservation.is_manual_block && (
+                                <>
+                                    <button onClick={() => handleStatusUpdate(reservation.id, 'confirmed')} className="w-full text-left px-4 py-3 text-sm font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl flex items-center gap-3">
+                                        <Check className="size-5" />{t('actions.approve')}
+                                    </button>
+                                    <button onClick={() => handleStatusUpdate(reservation.id, 'cancelled')} className="w-full text-left px-4 py-3 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl flex items-center gap-3">
+                                        <Ban className="size-5" />{t('actions.reject')}
+                                    </button>
+                                </>
+                            )}
+                            {canFinish && (
+                                <button onClick={() => confirmFinishEarly(reservation.id, reservation.is_manual_block)} className="w-full text-left px-4 py-3 text-sm font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl flex items-center gap-3">
+                                    <Check className="size-5" />{t('actions.finishBooking')}
+                                </button>
+                            )}
+                            <button onClick={() => confirmDelete(reservation.id, reservation.is_manual_block)} className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3">
+                                <Trash2 className="size-5" />{t('actions.delete')}
+                            </button>
+                        </div>
+                    </div>
+                );
+            })()}
 
             <StatusModal
                 isOpen={modalConfig.isOpen}
