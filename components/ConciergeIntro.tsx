@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 
 import { useTranslations } from 'next-intl';
 import { CmsPageSection } from '@/lib/types';
+import { ConciergeDeck } from '@/components/ConciergeDeck';
 
 export const ConciergeIntro = ({ initialSections }: { initialSections?: CmsPageSection[] }) => {
     const t = useTranslations('Concierge');
@@ -13,6 +14,10 @@ export const ConciergeIntro = ({ initialSections }: { initialSections?: CmsPageS
     const title = intro?.title || t('introTitle');
     const description = intro?.content || t('introDescription');
     const image = intro?.image_url || '/legacy/concierge/images/concierge-image.png';
+    const deckRows = (initialSections || [])
+        .filter((s) => s.section_type === 'intro-image' && s.image_url)
+        .sort((a, b) => a.display_order - b.display_order);
+    const deckImages = deckRows.length > 0 ? deckRows.map((r) => r.image_url as string) : [image];
     const highlights =
         intro?.list_items && intro.list_items.length > 0
             ? intro.list_items
@@ -73,15 +78,9 @@ export const ConciergeIntro = ({ initialSections }: { initialSections?: CmsPageS
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 1, ease: "easeOut" }}
-                            className="relative z-10 rounded-[30px] md:rounded-[40px] overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] isolate"
+                            className="relative z-10"
                         >
-                            <img
-                                className="w-full h-auto object-cover min-h-[350px] md:min-h-[500px]"
-                                src={image}
-                                alt="Concierge Experience"
-                            />
-                            {/* Overlay Gradient for depth */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                            <ConciergeDeck images={deckImages} alt="Concierge Experience" />
                         </motion.div>
 
                         {/* Decorative background elements */}

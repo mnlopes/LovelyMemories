@@ -12,7 +12,7 @@
             "addImage": "Add image",
             "validation": { "heroTitle": "The hero title is required." },
             "hero": { "title": "Hero — page top", "overline": "Overline (small phrase above the title)", "heading": "Title", "image": "Background image" },
-            "intro": { "title": "Intro section", "overline": "Overline", "heading": "Title", "text": "Description", "image": "Side image", "highlight": "Highlight {n}", "highlightTitle": "Title", "highlightDesc": "Short description", "addHighlight": "Add highlight", "removeHighlight": "Remove highlight" },
+            "intro": { "title": "Intro section", "overline": "Overline", "heading": "Title", "text": "Description", "image": "Side image", "highlight": "Highlight {n}", "highlightTitle": "Title", "highlightDesc": "Short description", "addHighlight": "Add highlight", "removeHighlight": "Remove highlight", "gallery": "Photo deck", "galleryFront": "Front", "galleryHint": "With 2+ photos the side image becomes an interactive card deck (auto-rotates, draggable). The first photo is the front card. English photos apply to every language unless a language uploads its own.", "removeImage": "Remove photo" },
             "servicesHeader": { "title": "Services section header", "overline": "Overline", "heading": "Title" }
         }
     },

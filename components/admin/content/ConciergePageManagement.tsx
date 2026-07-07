@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronDown, Image as ImageIcon, Loader2, PanelTop, Plus, Save, TextQuote, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { getPageSections, upsertPageSection } from "@/app/actions/cms";
+import { getPageSections, upsertPageSection, deletePageSection } from "@/app/actions/cms";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { CmsPageSection } from "@/lib/types";
@@ -28,6 +28,15 @@ interface Highlight {
     label: string;
     desc: string;
 }
+
+interface DeckImage {
+    id?: string;
+    key: string;
+    image_url: string;
+}
+
+let tempCounter = 0;
+const newKey = () => `tmp-${Date.now()}-${tempCounter++}`;
 
 const emptySection = (): SectionState => ({ subtitle: "", title: "", content: "", image_url: "" });
 
@@ -55,6 +64,8 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
         { label: "", desc: "" },
     ]);
     const [servicesHeader, setServicesHeader] = useState<SectionState>(emptySection());
+    const [deckImages, setDeckImages] = useState<DeckImage[]>([]);
+    const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
 
     const load = useCallback(async () => {
         setIsLoading(true);
@@ -72,6 +83,13 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                   ]
         );
         setServicesHeader(toState(data.find((s) => s.section_type === "services-header")));
+        setDeckImages(
+            data
+                .filter((s) => s.section_type === "intro-image" && s.image_url)
+                .sort((a, b) => a.display_order - b.display_order)
+                .map((s) => ({ id: s.id, key: s.id || newKey(), image_url: s.image_url as string }))
+        );
+        setDeletedImageIds([]);
         setIsLoading(false);
     }, [filterLocale]);
 
@@ -102,6 +120,24 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
             setUploadingKey(null);
         };
 
+    const handleDeckUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadingKey("deck");
+        const url = await uploadImage(file);
+        if (url) setDeckImages((prev) => [...prev, { key: newKey(), image_url: url }]);
+        setUploadingKey(null);
+        e.target.value = "";
+    };
+
+    const removeDeckImage = (key: string) => {
+        setDeckImages((prev) => {
+            const item = prev.find((i) => i.key === key);
+            if (item?.id) setDeletedImageIds((d) => [...d, item.id as string]);
+            return prev.filter((i) => i.key !== key);
+        });
+    };
+
     const handleSave = async () => {
         if (!hero.title.trim()) {
             toast.error(t("validation.heroTitle"));
@@ -115,9 +151,17 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                 { ...base, id: intro.id, section_type: "intro", subtitle: intro.subtitle, title: intro.title, content: intro.content, image_url: intro.image_url, display_order: 1, list_items: highlights.filter((h) => h.label.trim() || h.desc.trim()) },
                 { ...base, id: servicesHeader.id, section_type: "services-header", subtitle: servicesHeader.subtitle, title: servicesHeader.title, content: "", display_order: 2 },
             ];
+            // Deck images: one row per image, display_order 20+ keeps them after the fixed sections.
+            for (let i = 0; i < deckImages.length; i++) {
+                const img = deckImages[i];
+                payloads.push({ ...base, id: img.id, section_type: "intro-image", subtitle: "", title: "", content: "", image_url: img.image_url, display_order: 20 + i });
+            }
             for (const payload of payloads) {
                 const res = await upsertPageSection(payload);
                 if (!res.success) throw new Error(res.error);
+            }
+            for (const id of deletedImageIds) {
+                await deletePageSection(id);
             }
             toast.success(t("saved"));
             await load();
@@ -270,6 +314,41 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                                 <div className="space-y-2">
                                     <label className={labelCls}>{t("intro.image")}</label>
                                     <ImageTile value={intro.image_url} uploadKey="intro" onUpload={handleImageUpload("intro", setIntro)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className={labelCls}>{t("intro.gallery")}</label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {deckImages.map((img, i) => (
+                                            <div key={img.key} className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-[#f0f0f0] dark:border-white/10">
+                                                <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                                                {i === 0 && (
+                                                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 text-white text-[9px] font-black uppercase tracking-widest">
+                                                        {t("intro.galleryFront")}
+                                                    </span>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeDeckImage(img.key)}
+                                                    aria-label={t("intro.removeImage")}
+                                                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 transition-all"
+                                                >
+                                                    <Trash2 className="size-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <label className="relative aspect-[4/5] rounded-xl border-2 border-dashed border-[#f0f0f0] dark:border-white/10 hover:border-admin-accent flex flex-col items-center justify-center gap-1.5 text-[#a3a3a3] hover:text-admin-accent cursor-pointer transition-all">
+                                            {uploadingKey === "deck" ? (
+                                                <Loader2 className="size-5 animate-spin text-admin-accent" />
+                                            ) : (
+                                                <>
+                                                    <Plus className="size-5" />
+                                                    <span className="text-[9px] font-black uppercase tracking-widest">{t("addImage")}</span>
+                                                </>
+                                            )}
+                                            <input type="file" accept="image/*" className="hidden" onChange={handleDeckUpload} disabled={uploadingKey === "deck"} />
+                                        </label>
+                                    </div>
+                                    <p className="text-[10px] text-[#a3a3a3] italic px-1">{t("intro.galleryHint")}</p>
                                 </div>
                                 {highlights.map((h, i) => (
                                     <div key={i} className="space-y-2 p-4 rounded-2xl border border-[#f0f0f0] dark:border-white/10">

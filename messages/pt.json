@@ -1018,7 +1018,7 @@
             "addImage": "Adicionar imagem",
             "validation": { "heroTitle": "O título do hero é obrigatório." },
             "hero": { "title": "Hero — topo da página", "overline": "Frase pequena (acima do título)", "heading": "Título", "image": "Imagem de fundo" },
-            "intro": { "title": "Secção de introdução", "overline": "Frase pequena", "heading": "Título", "text": "Descrição", "image": "Imagem lateral", "highlight": "Destaque {n}", "highlightTitle": "Título", "highlightDesc": "Descrição curta", "addHighlight": "Adicionar destaque", "removeHighlight": "Remover destaque" },
+            "intro": { "title": "Secção de introdução", "overline": "Frase pequena", "heading": "Título", "text": "Descrição", "image": "Imagem lateral", "highlight": "Destaque {n}", "highlightTitle": "Título", "highlightDesc": "Descrição curta", "addHighlight": "Adicionar destaque", "removeHighlight": "Remover destaque", "gallery": "Baralho de fotos", "galleryFront": "Frente", "galleryHint": "Com 2+ fotos, a imagem lateral torna-se um baralho de cartas interativo (roda sozinho, arrastável). A primeira foto é a carta da frente. As fotos do inglês aplicam-se a todos os idiomas, salvo se um idioma carregar as suas próprias.", "removeImage": "Remover foto" },
             "servicesHeader": { "title": "Cabeçalho da secção de serviços", "overline": "Frase pequena", "heading": "Título" }
         },
         "cmsPage": {

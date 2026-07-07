@@ -31,7 +31,12 @@ export default async function ConciergePage({
     const { locale } = await params;
     // EN/PT are edited in the backoffice; any other locale (he) falls back to EN.
     const cmsLocale = locale === "pt" ? "pt" : "en";
-    const sections = await getPageSections("concierge", cmsLocale);
+    let sections = await getPageSections("concierge", cmsLocale);
+    // Deck images are language-neutral: locales without their own rows reuse EN's.
+    if (cmsLocale !== "en" && !sections.some((s) => s.section_type === "intro-image")) {
+        const enSections = await getPageSections("concierge", "en");
+        sections = [...sections, ...enSections.filter((s) => s.section_type === "intro-image")];
+    }
 
     return (
         <main className="relative pt-20 overflow-x-clip">
