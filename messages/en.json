@@ -963,6 +963,21 @@
             }
         }
     },
+    "AdminOwnerActivity": {
+        "tabs": { "log": "Activity Log", "owners": "Owner Activity" },
+        "title": "Owner Activity",
+        "subtitle": "See which property owners are actually using the portal — who is online, when they last visited, and who never signed in.",
+        "loading": "Loading owner activity...",
+        "loadError": "Could not load owner activity.",
+        "stats": { "total": "Owners", "online": "Online now", "active7d": "Active last 7 days", "never": "Never signed in" },
+        "searchPlaceholder": "Search by name or email...",
+        "refresh": "Refresh",
+        "updated": "Updated {time}",
+        "empty": "No owners found.",
+        "cols": { "owner": "Owner", "status": "Status", "lastSeen": "Last seen on portal", "lastSignIn": "Last sign-in" },
+        "status": { "online": "Online", "offline": "Offline" },
+        "badges": { "never": "Never signed in", "invitePending": "Invite pending", "emailUnconfirmed": "Email not confirmed" }
+    },
     "AdminContent": {
         "title": "Content Management",
         "subtitle": "Manage your website's dynamic content, including blog articles and the Instagram social wall.",

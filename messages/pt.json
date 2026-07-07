@@ -954,6 +954,21 @@
             }
         }
     },
+    "AdminOwnerActivity": {
+        "tabs": { "log": "Registo de Atividade", "owners": "Atividade dos Owners" },
+        "title": "Atividade dos Owners",
+        "subtitle": "Veja que proprietários estão realmente a usar o portal — quem está online, quando visitaram pela última vez e quem nunca entrou.",
+        "loading": "A carregar atividade dos owners...",
+        "loadError": "Não foi possível carregar a atividade dos owners.",
+        "stats": { "total": "Owners", "online": "Online agora", "active7d": "Ativos últimos 7 dias", "never": "Nunca entraram" },
+        "searchPlaceholder": "Pesquisar por nome ou email...",
+        "refresh": "Atualizar",
+        "updated": "Atualizado {time}",
+        "empty": "Nenhum owner encontrado.",
+        "cols": { "owner": "Owner", "status": "Estado", "lastSeen": "Visto no portal", "lastSignIn": "Último login" },
+        "status": { "online": "Online", "offline": "Offline" },
+        "badges": { "never": "Nunca entrou", "invitePending": "Convite pendente", "emailUnconfirmed": "Email não confirmado" }
+    },
     "AdminContent": {
         "title": "Gestão de Conteúdo",
         "subtitle": "Gira o conteúdo dinâmico do seu site, incluindo artigos do blog e o mural social do Instagram.",
