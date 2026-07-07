@@ -83,8 +83,10 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                   ]
         );
         setServicesHeader(toState(data.find((s) => s.section_type === "services-header")));
+        // The photo deck is shared across all languages — always stored under EN.
+        const deckData = filterLocale === "en" ? data : await getPageSections(PAGE_SLUG, "en");
         setDeckImages(
-            data
+            deckData
                 .filter((s) => s.section_type === "intro-image" && s.image_url)
                 .sort((a, b) => a.display_order - b.display_order)
                 .map((s) => ({ id: s.id, key: s.id || newKey(), image_url: s.image_url as string }))
@@ -151,10 +153,11 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                 { ...base, id: intro.id, section_type: "intro", subtitle: intro.subtitle, title: intro.title, content: intro.content, image_url: intro.image_url, display_order: 1, list_items: highlights.filter((h) => h.label.trim() || h.desc.trim()) },
                 { ...base, id: servicesHeader.id, section_type: "services-header", subtitle: servicesHeader.subtitle, title: servicesHeader.title, content: "", display_order: 2 },
             ];
-            // Deck images: one row per image, display_order 20+ keeps them after the fixed sections.
+            // Deck images: shared across languages, always stored under EN; one row per
+            // image, display_order 20+ keeps them after the fixed sections.
             for (let i = 0; i < deckImages.length; i++) {
                 const img = deckImages[i];
-                payloads.push({ ...base, id: img.id, section_type: "intro-image", subtitle: "", title: "", content: "", image_url: img.image_url, display_order: 20 + i });
+                payloads.push({ ...base, locale: "en", id: img.id, section_type: "intro-image", subtitle: "", title: "", content: "", image_url: img.image_url, display_order: 20 + i });
             }
             for (const payload of payloads) {
                 const res = await upsertPageSection(payload);
