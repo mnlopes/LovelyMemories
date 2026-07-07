@@ -13,8 +13,7 @@
             "validation": { "heroTitle": "The hero title is required." },
             "hero": { "title": "Hero — page top", "overline": "Overline (small phrase above the title)", "heading": "Title", "image": "Background image" },
             "intro": { "title": "Intro section", "overline": "Overline", "heading": "Title", "text": "Description", "image": "Side image", "highlight": "Highlight {n}", "highlightTitle": "Title", "highlightDesc": "Short description" },
-            "servicesHeader": { "title": "Services section header", "overline": "Overline", "heading": "Title" },
-            "cta": { "title": "Contact CTA — bottom of the page", "overline": "Overline", "heading": "Title", "text": "Description" }
+            "servicesHeader": { "title": "Services section header", "overline": "Overline", "heading": "Title" }
         }
     },
     "AdminConcierge": {
@@ -159,11 +158,7 @@
         "supportTitle": "תמיכה 24/7",
         "supportDesc": "סיוע מסור בכל עת ובכל מקום.",
         "expertiseTitle": "מומחיות מקומית",
-        "expertiseDesc": "חוויות אוצרות וגישה למקומות נסתרים.",
-        "ctaOverTitle": "דברו עם הקונסיירז' שלנו",
-        "ctaTitle": "ספרו לנו מה אתם צריכים",
-        "ctaDescription": "משפים פרטיים ועד העברות חלקות — ספרו לנו מה יש לכם בראש והצוות שלנו ידאג לכל השאר.",
-        "ctaButton": "צרו קשר"
+        "expertiseDesc": "חוויות אוצרות וגישה למקומות נסתרים."
     },
     "OwnerSection": {
         "question": "האם אתה בעל נכס?",

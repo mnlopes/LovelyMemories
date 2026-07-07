@@ -723,11 +723,7 @@
         "supportTitle": "24/7 Support",
         "supportDesc": "Dedicated assistance at any time, anywhere.",
         "expertiseTitle": "Local Expertise",
-        "expertiseDesc": "Curated experiences and hidden local access.",
-        "ctaOverTitle": "Contact our concierge",
-        "ctaTitle": "Tell us what you need",
-        "ctaDescription": "From private chefs to seamless transfers — tell us what you have in mind and our team takes care of the rest.",
-        "ctaButton": "Get in touch"
+        "expertiseDesc": "Curated experiences and hidden local access."
     },
     "OwnerSection": {
         "question": "Are you a Property Owner?",
@@ -1032,8 +1028,7 @@
             "validation": { "heroTitle": "The hero title is required." },
             "hero": { "title": "Hero — page top", "overline": "Overline (small phrase above the title)", "heading": "Title", "image": "Background image" },
             "intro": { "title": "Intro section", "overline": "Overline", "heading": "Title", "text": "Description", "image": "Side image", "highlight": "Highlight {n}", "highlightTitle": "Title", "highlightDesc": "Short description" },
-            "servicesHeader": { "title": "Services section header", "overline": "Overline", "heading": "Title" },
-            "cta": { "title": "Contact CTA — bottom of the page", "overline": "Overline", "heading": "Title", "text": "Description" }
+            "servicesHeader": { "title": "Services section header", "overline": "Overline", "heading": "Title" }
         },
         "cmsPage": {
             "newSection": "New Section",

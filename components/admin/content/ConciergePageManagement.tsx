@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, ChevronDown, Image as ImageIcon, Loader2, MousePointerClick, PanelTop, Save, TextQuote, Upload } from "lucide-react";
+import { Check, ChevronDown, Image as ImageIcon, Loader2, PanelTop, Save, TextQuote, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getPageSections, upsertPageSection } from "@/app/actions/cms";
 import { toast } from "sonner";
@@ -55,7 +55,6 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
         { label: "", desc: "" },
     ]);
     const [servicesHeader, setServicesHeader] = useState<SectionState>(emptySection());
-    const [cta, setCta] = useState<SectionState>(emptySection());
 
     const load = useCallback(async () => {
         setIsLoading(true);
@@ -69,7 +68,6 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
             { label: items[1]?.label || "", desc: items[1]?.desc || "" },
         ]);
         setServicesHeader(toState(data.find((s) => s.section_type === "services-header")));
-        setCta(toState(data.find((s) => s.section_type === "cta")));
         setIsLoading(false);
     }, [filterLocale]);
 
@@ -112,7 +110,6 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                 { ...base, id: hero.id, section_type: "hero", subtitle: hero.subtitle, title: hero.title, content: "", image_url: hero.image_url, display_order: 0 },
                 { ...base, id: intro.id, section_type: "intro", subtitle: intro.subtitle, title: intro.title, content: intro.content, image_url: intro.image_url, display_order: 1, list_items: highlights },
                 { ...base, id: servicesHeader.id, section_type: "services-header", subtitle: servicesHeader.subtitle, title: servicesHeader.title, content: "", display_order: 2 },
-                { ...base, id: cta.id, section_type: "cta", subtitle: cta.subtitle, title: cta.title, content: cta.content, display_order: 3 },
             ];
             for (const payload of payloads) {
                 const res = await upsertPageSection(payload);
@@ -307,30 +304,6 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                             <div className="space-y-2">
                                 <label className={labelCls}>{t("servicesHeader.heading")}</label>
                                 <input type="text" value={servicesHeader.title} onChange={(e) => setServicesHeader((p) => ({ ...p, title: e.target.value }))} className={inputCls} />
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* CTA */}
-                    <section className="bg-white dark:bg-white/5 p-6 md:p-8 rounded-3xl border border-[#f5f5f5] dark:border-white/10 shadow-sm space-y-6">
-                        <div className="flex items-center gap-2">
-                            <MousePointerClick className="size-5 text-[#a39076]" />
-                            <h3 className="text-sm font-black text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-tight">{t("cta.title")}</h3>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className={labelCls}>{t("cta.overline")}</label>
-                                    <input type="text" value={cta.subtitle} onChange={(e) => setCta((p) => ({ ...p, subtitle: e.target.value }))} className={inputCls} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className={labelCls}>{t("cta.heading")}</label>
-                                    <input type="text" value={cta.title} onChange={(e) => setCta((p) => ({ ...p, title: e.target.value }))} className={inputCls} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className={labelCls}>{t("cta.text")}</label>
-                                <textarea value={cta.content} onChange={(e) => setCta((p) => ({ ...p, content: e.target.value }))} rows={5} className={`${inputCls} resize-none`} />
                             </div>
                         </div>
                     </section>

@@ -714,11 +714,7 @@
         "supportTitle": "Suporte 24/7",
         "supportDesc": "Assistência dedicada a qualquer hora, em qualquer lugar.",
         "expertiseTitle": "Experiência Local",
-        "expertiseDesc": "Experiências curadas e acesso local exclusivo.",
-        "ctaOverTitle": "Fale com o nosso concierge",
-        "ctaTitle": "Diga-nos o que precisa",
-        "ctaDescription": "De chefs privados a transfers sem complicações — diga-nos o que tem em mente e a nossa equipa trata do resto.",
-        "ctaButton": "Contacte-nos"
+        "expertiseDesc": "Experiências curadas e acesso local exclusivo."
     },
     "OwnerSection": {
         "question": "É proprietário de um imóvel?",
@@ -1023,8 +1019,7 @@
             "validation": { "heroTitle": "O título do hero é obrigatório." },
             "hero": { "title": "Hero — topo da página", "overline": "Frase pequena (acima do título)", "heading": "Título", "image": "Imagem de fundo" },
             "intro": { "title": "Secção de introdução", "overline": "Frase pequena", "heading": "Título", "text": "Descrição", "image": "Imagem lateral", "highlight": "Destaque {n}", "highlightTitle": "Título", "highlightDesc": "Descrição curta" },
-            "servicesHeader": { "title": "Cabeçalho da secção de serviços", "overline": "Frase pequena", "heading": "Título" },
-            "cta": { "title": "CTA de contacto — fundo da página", "overline": "Frase pequena", "heading": "Título", "text": "Descrição" }
+            "servicesHeader": { "title": "Cabeçalho da secção de serviços", "overline": "Frase pequena", "heading": "Título" }
         },
         "cmsPage": {
             "newSection": "Nova Secção",
