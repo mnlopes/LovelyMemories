@@ -37,7 +37,7 @@ export const ConciergeDeck = ({ images, alt }: ConciergeDeckProps) => {
 
     return (
         <div
-            className="relative w-full max-w-[360px] sm:max-w-[450px] mx-auto select-none"
+            className="relative w-full max-w-[360px] sm:max-w-[500px] mx-auto select-none"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
