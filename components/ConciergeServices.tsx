@@ -211,7 +211,7 @@ export const ConciergeServices = ({ initialSections }: { initialSections?: CmsPa
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80"></div>
                                             {service.link_url && (
-                                                <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center opacity-80 lg:opacity-0 lg:group-hover/card:opacity-100 transition-opacity duration-300">
+                                                <div className="absolute top-4 right-4 w-9 h-9 rounded-full bg-[#B09E80]/90 backdrop-blur-sm border border-white/20 shadow-lg flex items-center justify-center opacity-90 lg:opacity-0 lg:group-hover/card:opacity-100 transition-opacity duration-300">
                                                     <ArrowUpRight className="w-4 h-4 text-white" />
                                                 </div>
                                             )}
