@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, ChevronDown, Image as ImageIcon, Loader2, PanelTop, Save, TextQuote, Upload } from "lucide-react";
+import { Check, ChevronDown, Image as ImageIcon, Loader2, PanelTop, Plus, Save, TextQuote, Trash2, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getPageSections, upsertPageSection } from "@/app/actions/cms";
 import { toast } from "sonner";
@@ -63,10 +63,14 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
         const introRow = data.find((s) => s.section_type === "intro");
         setIntro(toState(introRow));
         const items = (introRow?.list_items || []) as Highlight[];
-        setHighlights([
-            { label: items[0]?.label || "", desc: items[0]?.desc || "" },
-            { label: items[1]?.label || "", desc: items[1]?.desc || "" },
-        ]);
+        setHighlights(
+            items.length > 0
+                ? items.map((i) => ({ label: i.label || "", desc: i.desc || "" }))
+                : [
+                      { label: "", desc: "" },
+                      { label: "", desc: "" },
+                  ]
+        );
         setServicesHeader(toState(data.find((s) => s.section_type === "services-header")));
         setIsLoading(false);
     }, [filterLocale]);
@@ -108,7 +112,7 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
             const base = { page_slug: PAGE_SLUG, icon: "", locale: filterLocale, list_items: [] as { label: string; desc: string }[] };
             const payloads: CmsPageSection[] = [
                 { ...base, id: hero.id, section_type: "hero", subtitle: hero.subtitle, title: hero.title, content: "", image_url: hero.image_url, display_order: 0 },
-                { ...base, id: intro.id, section_type: "intro", subtitle: intro.subtitle, title: intro.title, content: intro.content, image_url: intro.image_url, display_order: 1, list_items: highlights },
+                { ...base, id: intro.id, section_type: "intro", subtitle: intro.subtitle, title: intro.title, content: intro.content, image_url: intro.image_url, display_order: 1, list_items: highlights.filter((h) => h.label.trim() || h.desc.trim()) },
                 { ...base, id: servicesHeader.id, section_type: "services-header", subtitle: servicesHeader.subtitle, title: servicesHeader.title, content: "", display_order: 2 },
             ];
             for (const payload of payloads) {
@@ -269,7 +273,17 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                                 </div>
                                 {highlights.map((h, i) => (
                                     <div key={i} className="space-y-2 p-4 rounded-2xl border border-[#f0f0f0] dark:border-white/10">
-                                        <span className={labelCls}>{t("intro.highlight", { n: i + 1 })}</span>
+                                        <div className="flex items-center justify-between">
+                                            <span className={labelCls}>{t("intro.highlight", { n: i + 1 })}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setHighlights((prev) => prev.filter((_, j) => j !== i))}
+                                                className="p-1.5 text-[#a3a3a3] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                                aria-label={t("intro.removeHighlight")}
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </button>
+                                        </div>
                                         <input
                                             type="text"
                                             placeholder={t("intro.highlightTitle")}
@@ -286,6 +300,14 @@ export default function ConciergePageManagement({ locale }: { locale: string }) 
                                         />
                                     </div>
                                 ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setHighlights((prev) => [...prev, { label: "", desc: "" }])}
+                                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-[#f0f0f0] dark:border-white/10 text-[10px] font-black uppercase tracking-widest text-[#a3a3a3] hover:border-admin-accent hover:text-admin-accent transition-all"
+                                >
+                                    <Plus className="size-3.5" />
+                                    {t("intro.addHighlight")}
+                                </button>
                             </div>
                         </div>
                     </section>

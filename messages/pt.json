@@ -1018,7 +1018,7 @@
             "addImage": "Adicionar imagem",
             "validation": { "heroTitle": "O título do hero é obrigatório." },
             "hero": { "title": "Hero — topo da página", "overline": "Frase pequena (acima do título)", "heading": "Título", "image": "Imagem de fundo" },
-            "intro": { "title": "Secção de introdução", "overline": "Frase pequena", "heading": "Título", "text": "Descrição", "image": "Imagem lateral", "highlight": "Destaque {n}", "highlightTitle": "Título", "highlightDesc": "Descrição curta" },
+            "intro": { "title": "Secção de introdução", "overline": "Frase pequena", "heading": "Título", "text": "Descrição", "image": "Imagem lateral", "highlight": "Destaque {n}", "highlightTitle": "Título", "highlightDesc": "Descrição curta", "addHighlight": "Adicionar destaque", "removeHighlight": "Remover destaque" },
             "servicesHeader": { "title": "Cabeçalho da secção de serviços", "overline": "Frase pequena", "heading": "Título" }
         },
         "cmsPage": {

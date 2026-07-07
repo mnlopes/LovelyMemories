@@ -14,8 +14,8 @@ export const ConciergeIntro = ({ initialSections }: { initialSections?: CmsPageS
     const description = intro?.content || t('introDescription');
     const image = intro?.image_url || '/legacy/concierge/images/concierge-image.png';
     const highlights =
-        intro?.list_items && intro.list_items.length >= 2
-            ? intro.list_items.slice(0, 2)
+        intro?.list_items && intro.list_items.length > 0
+            ? intro.list_items
             : [
                   { label: t('supportTitle'), desc: t('supportDesc') },
                   { label: t('expertiseTitle'), desc: t('expertiseDesc') },
