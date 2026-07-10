@@ -182,9 +182,13 @@
             "approve": "Confirmar",
             "reject": "Rejeitar",
             "delete": "Eliminar",
-            "finishBooking": "Terminar"
+            "finishBooking": "Terminar",
+            "cancelReservation": "Cancelar Reserva"
         },
         "modals": {
+            "cancelTitle": "Cancelar Reserva?",
+            "cancelMessage": "Isto vai cancelar a reserva e libertar as datas no calendário. O reembolso do pagamento tem de ser feito manualmente no painel do Stripe.",
+            "confirmCancel": "Sim, Cancelar",
             "deleteTitle": "Eliminar Reserva?",
             "deleteMessage": "Tem a certeza que deseja eliminar esta reserva? Esta ação não pode ser desfeita.",
             "deleteConfirm": "Sim, Eliminar",

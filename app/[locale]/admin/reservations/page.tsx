@@ -355,6 +355,31 @@ export default function AdminReservationsPage() {
         });
     };
 
+    // Cancel a CONFIRMED reservation (distinct from rejecting a pending request): frees the
+    // dates and moves it to the "Canceled" tab. The payment refund is done manually in Stripe
+    // (we don't store the full payment_intent id), so the modal reminds the operator of that.
+    const confirmCancelReservation = (id: string) => {
+        setOpenMenuId(null);
+        setModalConfig({
+            isOpen: true,
+            type: 'warning',
+            title: t('modals.cancelTitle'),
+            message: t('modals.cancelMessage'),
+            actionLabel: t('modals.confirmCancel'),
+            onAction: async () => {
+                const toastId = toast.loading(t('modals.updating'));
+                try {
+                    await updateReservationStatus(id, 'cancelled');
+                    toast.success(t('modals.successReject'), { id: toastId });
+                    setModalConfig(prev => ({ ...prev, isOpen: false }));
+                    fetchData();
+                } catch (error: any) {
+                    toast.error(`${t('modals.unexpectedError')}: ${error.message}`, { id: toastId });
+                }
+            }
+        });
+    };
+
     const formatDate = (dateString: string) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString();
@@ -936,6 +961,19 @@ export default function AdminReservationsPage() {
                                                         </>
                                                     )}
 
+                                                    {reservation.status === 'confirmed' && !reservation.is_manual_block && !reservation.is_airbnb && new Date(reservation.check_in).getTime() > startOfDay(new Date()).getTime() && (
+                                                        <>
+                                                            <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); confirmCancelReservation(reservation.id); }}
+                                                                className="w-full text-left px-3 py-2.5 text-xs font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <Ban className="size-4" />
+                                                                {t('actions.cancelReservation')}
+                                                            </button>
+                                                        </>
+                                                    )}
+
                                                     <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
 
                                                     <button
@@ -1005,6 +1043,11 @@ export default function AdminReservationsPage() {
                             {canFinish && (
                                 <button onClick={() => confirmFinishEarly(reservation.id, reservation.is_manual_block)} className="w-full text-left px-4 py-3 text-sm font-medium text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl flex items-center gap-3">
                                     <Check className="size-5" />{t('actions.finishBooking')}
+                                </button>
+                            )}
+                            {reservation.status === 'confirmed' && !reservation.is_manual_block && !reservation.is_airbnb && new Date(reservation.check_in).getTime() > startOfDay(new Date()).getTime() && (
+                                <button onClick={() => confirmCancelReservation(reservation.id)} className="w-full text-left px-4 py-3 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl flex items-center gap-3">
+                                    <Ban className="size-5" />{t('actions.cancelReservation')}
                                 </button>
                             )}
                             <button onClick={() => confirmDelete(reservation.id, reservation.is_manual_block)} className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3">

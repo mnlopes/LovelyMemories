@@ -191,9 +191,13 @@
             "approve": "Confirm",
             "reject": "Reject",
             "delete": "Delete",
-            "finishBooking": "Finish Booking"
+            "finishBooking": "Finish Booking",
+            "cancelReservation": "Cancel Reservation"
         },
         "modals": {
+            "cancelTitle": "Cancel Reservation?",
+            "cancelMessage": "This will cancel the reservation and free up the dates on the calendar. The payment refund must be issued manually in the Stripe dashboard.",
+            "confirmCancel": "Yes, Cancel",
             "deleteTitle": "Delete Reservation?",
             "deleteMessage": "Are you sure you want to delete this reservation? This action cannot be undone.",
             "deleteConfirm": "Yes, Delete",
