@@ -79,6 +79,8 @@
         "signUp": "הרשמה",
         "email": "כתובת אימייל",
         "password": "סיסמה",
+        "showPassword": "הצג סיסמה",
+        "hidePassword": "הסתר סיסמה",
         "signInButton": "התחבר",
         "signUpButton": "צור חשבון",
         "noAccount": "אין לך חשבון?",

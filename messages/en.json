@@ -276,6 +276,9 @@
             "additionalGuests": "Additional Guests",
             "successApprove": "Reservation confirmed successfully!",
             "successReject": "Reservation rejected successfully!",
+            "resendCancellation": "Resend cancellation email",
+            "resendCancellationSending": "Sending...",
+            "resendCancellationSuccess": "Cancellation email sent to the guest.",
             "unexpectedError": "An unexpected error occurred."
         },
         "datePicker": {
@@ -507,6 +510,8 @@
         "successPassword": "Password set successfully!",
         "rememberMe": "Keep me logged in",
         "forgotPassword": "Forgot password?",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
         "checkEmail": "Check Email",
         "resetPassword": "Reset Password",
         "resetDesc": "Enter your email to receive a password reset link.",

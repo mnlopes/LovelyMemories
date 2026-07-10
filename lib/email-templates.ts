@@ -339,3 +339,86 @@ export const ownerInviteEmail = (data: { fullName?: string; link: string; email?
     </div>
     `;
 };
+
+export const bookingGuestCancellationEmail = (data: any, locale: string = 'pt') => {
+    const isEn = locale === 'en';
+
+    // Match the backoffice display (e.g. €1,246.00). Falsy/NaN totals hide the refund block.
+    const totalNum = Number(data.total_price);
+    const hasTotal = Number.isFinite(totalNum) && totalNum > 0;
+    const formattedTotal = hasTotal
+        ? totalNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '';
+
+    const content = {
+        title: isEn ? "Reservation Cancelled" : "Reserva Cancelada",
+        greeting: isEn ? "Hello" : "Olá",
+        intro: isEn
+            ? `We're writing to let you know that your reservation for the property`
+            : `Informamos que a sua reserva para a propriedade`,
+        cancelled: isEn ? "Reservation cancelled" : "Reserva cancelada",
+        reference: isEn ? "Reference" : "Referência",
+        refundTitle: isEn ? "Refund" : "Reembolso",
+        refundDesc: isEn
+            ? `The amount of <strong>€${formattedTotal}</strong> will be refunded to your original payment method within <strong>5–10 business days</strong>.`
+            : `O valor de <strong>€${formattedTotal}</strong> será reembolsado no método de pagamento original em até <strong>5–10 dias úteis</strong>.`,
+        stayDetails: isEn ? "Cancelled reservation details" : "Detalhes da reserva cancelada",
+        property: isEn ? "Property" : "Imóvel",
+        guests: isEn ? "Guests" : "Hóspedes",
+        adults: isEn ? "adults" : "adultos",
+        children: isEn ? "children" : "crianças",
+        infants: isEn ? "infants" : "bebés",
+        help: isEn
+            ? `If you have any questions or would like to reschedule your stay, simply reply to this email or contact us at`
+            : `Se tiver alguma dúvida ou quiser reagendar a sua estada, responda a este email ou contacte-nos em`,
+        footer: isEn ? "Kind regards," : "Com os melhores cumprimentos,",
+        team: isEn ? "Lovely Memories Team" : "Equipa Lovely Memories"
+    };
+
+    // Only list guest segments that are actually present (e.g. "2 adults, 2 children").
+    const guestParts: string[] = [];
+    if (Number(data.adults) > 0) guestParts.push(`${data.adults} ${content.adults}`);
+    if (Number(data.children) > 0) guestParts.push(`${data.children} ${content.children}`);
+    if (Number(data.infants) > 0) guestParts.push(`${data.infants} ${content.infants}`);
+    const guestLine = guestParts.join(', ');
+
+    return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #0A1128; padding: 40px; text-align: center;">
+            <h1 style="color: #B08D4A; margin: 0; font-size: 28px; letter-spacing: 2px;">LOVELY MEMORIES</h1>
+            <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">${content.title}</h2>
+        </div>
+        <div style="padding: 40px; color: #333; line-height: 1.6;">
+            <p>${content.greeting} <strong>${escapeHtml(data.guest_name)}</strong>,</p>
+            <p>${content.intro} <strong style="color: #B08D4A;">${escapeHtml(data.property_title)}</strong> ${isEn ? 'has been cancelled.' : 'foi cancelada.'}</p>
+
+            <div style="border: 1px solid #b0464a; border-radius: 16px; padding: 22px; margin: 28px 0; background-color: #fbf1f1; text-align: center;">
+                <p style="margin: 0; color: #8a2f33; font-weight: bold; font-size: 16px;">${content.cancelled}</p>
+                <p style="margin: 6px 0 0; color: #8a2f33; font-size: 14px;">${content.reference}: ${escapeHtml(data.reference_id)}</p>
+            </div>
+
+            ${hasTotal ? `
+            <div style="border: 1px solid #B08D4A; border-radius: 16px; padding: 20px 24px; margin: 28px 0; background-color: #fdfaf5;">
+                <h3 style="margin: 0 0 6px; color: #0A1128; font-size: 16px;">${content.refundTitle}</h3>
+                <p style="margin: 0; font-size: 14px;">${content.refundDesc}</p>
+            </div>` : ''}
+
+            <h3 style="color: #0A1128; margin-bottom: 15px;">${content.stayDetails}</h3>
+            <table style="width: 100%; font-size: 14px;">
+                <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${escapeHtml(data.property_title)}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
+                ${guestLine ? `<tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${guestLine}</td></tr>` : ''}
+            </table>
+
+            <p style="margin-top: 30px; font-size: 14px;">${content.help} <a href="mailto:joao@lovelymemories.pt" style="color: #B08D4A; text-decoration: none; font-weight: bold;">joao@lovelymemories.pt</a>.</p>
+
+            <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
+                ${content.footer}<br/>
+                <strong>${content.team}</strong><br/>
+                <span style="font-style: italic;">Creating moments that last.</span>
+            </p>
+        </div>
+    </div>
+    `;
+};

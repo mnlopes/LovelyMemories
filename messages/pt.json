@@ -267,6 +267,9 @@
             "additionalGuests": "Hóspedes Adicionais",
             "successApprove": "Reserva confirmada com sucesso!",
             "successReject": "Reserva rejeitada com sucesso!",
+            "resendCancellation": "Reenviar email de cancelamento",
+            "resendCancellationSending": "A enviar...",
+            "resendCancellationSuccess": "Email de cancelamento enviado ao hóspede.",
             "unexpectedError": "Ocorreu um erro inesperado."
         },
         "datePicker": {
@@ -498,6 +501,8 @@
         "successPassword": "Password definida com sucesso!",
         "rememberMe": "Manter sessão iniciada",
         "forgotPassword": "Esqueceu-se da palavra-passe?",
+        "showPassword": "Mostrar palavra-passe",
+        "hidePassword": "Ocultar palavra-passe",
         "checkEmail": "Verifique o seu Email",
         "resetPassword": "Recuperar Palavra-passe",
         "resetDesc": "Introduza o seu email para receber um link de recuperação.",

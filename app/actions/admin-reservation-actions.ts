@@ -5,6 +5,48 @@ import { logActivity } from "./audit";
 import { revalidatePath } from "next/cache";
 
 /**
+ * Build and send the guest-facing "Reservation Cancelled" email for a reservation row.
+ * `current` must include the reservation fields plus `properties(title)` (as fetched below).
+ * No authorization / eligibility checks here — callers gate when to invoke it.
+ */
+async function sendGuestCancellationEmail(current: any) {
+    const { sendEmail } = await import('@/lib/email');
+    const { bookingGuestCancellationEmail } = await import('@/lib/email-templates');
+
+    const titleObj = current.properties?.title;
+    const propertyTitle = typeof titleObj === 'object'
+        ? (titleObj?.en || titleObj?.pt || 'The property')
+        : (titleObj || 'The property');
+
+    const fmtDate = (d?: string) => {
+        if (!d) return '';
+        const [y, m, day] = d.split('-');
+        return day && m && y ? `${day}/${m}/${y}` : d;
+    };
+
+    const locale = current.locale || 'pt';
+    const isEn = locale === 'en';
+
+    return sendEmail({
+        to: current.guest_email,
+        subject: isEn
+            ? `Lovely Memories | Reservation Cancelled [Ref: ${current.reference_id}]`
+            : `Lovely Memories | Reserva Cancelada [Ref: ${current.reference_id}]`,
+        html: bookingGuestCancellationEmail({
+            guest_name: current.guest_name,
+            property_title: propertyTitle,
+            reference_id: current.reference_id,
+            check_in: fmtDate(current.check_in),
+            check_out: fmtDate(current.check_out),
+            adults: current.adults,
+            children: current.children,
+            infants: current.infants,
+            total_price: current.total_price,
+        }, locale),
+    });
+}
+
+/**
  * Update the status of a reservation (Approve/Confirm or Reject/Cancel)
  * Restricted to Super Admins and Admins.
  */
@@ -86,6 +128,24 @@ export async function updateReservationStatus(
         );
     } catch (logErr) {
         console.error("Failed to log status update activity:", logErr);
+    }
+
+    // 4b. Notify the guest when a CONFIRMED (paid) reservation is cancelled.
+    // Deliberately NOT sent when rejecting a still-pending request (no payment was taken) or
+    // for owner blocks / Airbnb imports (no real guest inbox). Non-blocking: an email failure
+    // must never roll back the cancellation.
+    if (
+        newStatus === 'cancelled' &&
+        current.status === 'confirmed' &&
+        !current.is_manual_block &&
+        !current.is_airbnb &&
+        current.guest_email
+    ) {
+        try {
+            await sendGuestCancellationEmail(current);
+        } catch (emailErr) {
+            console.error('Failed to send cancellation email to guest:', emailErr);
+        }
     }
 
     // 5. Invalidate cache to reflect changes in UI
@@ -181,6 +241,82 @@ export async function finishReservationEarly(
 
     revalidatePath('/[locale]/admin/reservations', 'page');
     revalidatePath('/[locale]/admin/reservations/[id]', 'page');
+
+    return { success: true };
+}
+
+/**
+ * Manually (re)send the "Reservation Cancelled" email to the guest for an already-cancelled
+ * reservation. Used by the detail-sheet button — e.g. when the automatic send failed or the
+ * reservation was cancelled before this feature existed. Restricted to Super Admins and Admins.
+ */
+export async function resendCancellationEmail(id: string) {
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: profile } = await serverSupabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile || (profile.role !== 'super_admin' && profile.role !== 'admin')) {
+        throw new Error('Not authorized');
+    }
+
+    const adminSupabase = await getSupabaseAdmin();
+    const { data: current, error: fetchError } = await adminSupabase
+        .from('reservations')
+        .select('*, properties(title)')
+        .eq('id', id)
+        .single();
+
+    if (fetchError || !current) {
+        throw new Error('Reserva não encontrada.');
+    }
+
+    if (current.is_manual_block || current.is_airbnb) {
+        throw new Error('Esta entrada não é uma reserva de hóspede.');
+    }
+    if (!current.guest_email) {
+        throw new Error('Esta reserva não tem email de hóspede.');
+    }
+
+    const result = await sendGuestCancellationEmail(current);
+    if (!result?.success) {
+        throw new Error('Falha ao enviar o email. Verifique a configuração de email.');
+    }
+
+    try {
+        await logActivity(
+            user.id,
+            'UPDATE',
+            'RESERVATION',
+            id,
+            { action: 'resend_cancellation_email', to: current.guest_email, ref: current.reference_id }
+        );
+    } catch (logErr) {
+        console.error('Failed to log resend activity:', logErr);
+    }
 
     return { success: true };
 }

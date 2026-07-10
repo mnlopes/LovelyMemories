@@ -7,7 +7,7 @@ import { format, startOfDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useParams } from "next/navigation";
-import { updateReservationStatus } from "@/app/actions/admin-reservation-actions";
+import { updateReservationStatus, resendCancellationEmail } from "@/app/actions/admin-reservation-actions";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { ActivityTimeline } from "./ActivityTimeline";
@@ -26,6 +26,7 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
     const [isUpdating, setIsUpdating] = useState(false);
     const [confirmingStatus, setConfirmingStatus] = useState<'confirmed' | 'cancelled' | null>(null);
     const [showHistory, setShowHistory] = useState(false);
+    const [isResending, setIsResending] = useState(false);
     const [ownerInfo, setOwnerInfo] = useState<{ full_name: string; email: string; phone?: string } | null>(null);
 
     useEffect(() => {
@@ -77,6 +78,18 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
         } finally {
             setIsUpdating(false);
             setConfirmingStatus(null);
+        }
+    };
+
+    const handleResendCancellation = async () => {
+        setIsResending(true);
+        try {
+            await resendCancellationEmail(reservation.id);
+            toast.success(t('resendCancellationSuccess'));
+        } catch (error: any) {
+            toast.error(error?.message || t('unexpectedError'));
+        } finally {
+            setIsResending(false);
         }
     };
 
@@ -493,6 +506,21 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                                 </button>
                             </div>
                         </div>
+                    )}
+
+                    {reservation.status === 'cancelled' && reservation.guest_email && !reservation.is_manual_block && !reservation.is_airbnb && (
+                        <button
+                            onClick={handleResendCancellation}
+                            disabled={isResending || isUpdating}
+                            className="w-full flex items-center justify-center gap-2 py-3.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 rounded-2xl font-bold text-sm hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all active:scale-95 disabled:opacity-70"
+                        >
+                            {isResending ? (
+                                <div className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            ) : (
+                                <Mail className="size-4" />
+                            )}
+                            {isResending ? t('resendCancellationSending') : t('resendCancellation')}
+                        </button>
                     )}
 
                     {reservation.status !== 'owner_block' && (
