@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/routing";
-import { Mail, Lock, Loader2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, Loader2, ArrowRight, ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useParams } from "next/navigation";
 import { loginWithEmail, requestPasswordReset } from "@/app/actions/auth";
 
@@ -21,6 +21,7 @@ export default function LoginPage() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(true);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -229,6 +230,8 @@ export default function LoginPage() {
                                             </span>
                                             <input
                                                 type="email"
+                                                name="email"
+                                                autoComplete="username"
                                                 required
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
@@ -247,13 +250,25 @@ export default function LoginPage() {
                                                 <Lock className="w-5 h-5" strokeWidth={1.5} />
                                             </span>
                                             <input
-                                                type="password"
+                                                type={showPassword ? "text" : "password"}
+                                                name="password"
+                                                autoComplete="current-password"
                                                 required
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 placeholder="••••••••"
-                                                className="w-full h-14 pl-12 pr-4 bg-[#FAFAFA] border border-[#EBEBEB] rounded-xl focus:outline-none focus:border-[#C5A059] focus:bg-white focus:ring-4 focus:ring-[#C5A059]/5 transition-all outline-none text-[#0A1128] placeholder:text-gray-400 font-medium font-sans"
+                                                className="w-full h-14 pl-12 pr-12 bg-[#FAFAFA] border border-[#EBEBEB] rounded-xl focus:outline-none focus:border-[#C5A059] focus:bg-white focus:ring-4 focus:ring-[#C5A059]/5 transition-all outline-none text-[#0A1128] placeholder:text-gray-400 font-medium font-sans"
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword((v) => !v)}
+                                                aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                                                title={showPassword ? t('hidePassword') : t('showPassword')}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-[#0A1128]/30 hover:text-[#C5A059] transition-colors duration-300 rounded-lg focus:outline-none focus:text-[#C5A059]"
+                                                tabIndex={-1}
+                                            >
+                                                {showPassword ? <EyeOff className="w-5 h-5" strokeWidth={1.5} /> : <Eye className="w-5 h-5" strokeWidth={1.5} />}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
