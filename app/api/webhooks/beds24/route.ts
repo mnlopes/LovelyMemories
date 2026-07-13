@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
     }
 
     const secret = process.env.BEDS24_WEBHOOK_SECRET;
-    if (!secret || request.headers.get('x-beds24-secret') !== secret) {
+    // Trim so an accidental leading/trailing space in the Beds24 custom-header
+    // config never causes a spurious 401.
+    const provided = request.headers.get('x-beds24-secret')?.trim();
+    if (!secret || provided !== secret.trim()) {
         return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
 
