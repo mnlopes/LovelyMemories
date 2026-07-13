@@ -5,6 +5,7 @@ export default async function Beds24Layout(props: {
     params: Promise<{ locale: string }>;
 }) {
     const { locale } = await props.params;
-    await guardRoles(["admin", "super_admin"], locale);
+    // Fase 1 em produção: EXCLUSIVO super_admin (decisão Marcelo 2026-07-13)
+    await guardRoles(["super_admin"], locale);
     return <>{props.children}</>;
 }

@@ -13,7 +13,7 @@ const AIRBNB_USER_ID = '391837499'; // Lovely master account (Achilleas)
 
 async function guard() {
     const role = await getCurrentUserRole();
-    if (!role || !['admin', 'super_admin'].includes(role)) {
+    if (role !== 'super_admin') {
         throw new Error('Não autorizado');
     }
     if (!isBeds24Enabled()) {
