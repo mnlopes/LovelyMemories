@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Lovely Memories (lovely-memories.pt) — vacation-rental booking platform for properties in Póvoa de Varzim, Portugal. Public booking site + admin backoffice + owner portal. Deployed on Vercel; database/auth on hosted Supabase; payments via Stripe; transactional email via Resend. The `package.json` name is `temp-app` for historical reasons — the real project name is Lovely Memories.
+Lovely Memories (www.lovelymemories.pt — no hyphen; the hyphenated domain does not exist) — vacation-rental booking platform for properties in Póvoa de Varzim, Portugal. Public booking site + admin backoffice + owner portal. Deployed on Vercel; database/auth on hosted Supabase; payments via Stripe; transactional email via Resend. The `package.json` name is `temp-app` for historical reasons — the real project name is Lovely Memories.
 
 ## Commands
 

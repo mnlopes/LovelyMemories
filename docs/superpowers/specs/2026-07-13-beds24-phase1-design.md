@@ -22,7 +22,7 @@ Sincronização **bidirecional quase em tempo real** nos 6 anúncios Primary Own
 
 ## ⚠ ALTERAÇÃO AO MODELO DE DEPLOY (2026-07-13, decisão Marcelo)
 
-Preview do Vercel exigia duplicar env vars (build falhou: STRIPE_SECRET_KEY só existe em Production). Decisão: **deploy em PRODUÇÃO com acesso exclusivo super_admin** em vez de preview. Justificação: zero ficheiros partilhados tocados (só rotas/lib/tabelas novas), e o webhook ganha URL estável (www.lovely-memories.pt/api/webhooks/beds24). Alterações: guardRoles(["super_admin"]) no layout + role==='super_admin' nas actions; sem entrada na sidebar (URL direto). Env vars BEDS24_* adicionam-se ao scope Production. Build de produção completo verificado localmente (commit d44b109). As camadas 3-5 da Secção 1 mantêm-se; as camadas 1-2 são substituídas pelo guard super_admin + ausência de UI descobrível.
+Preview do Vercel exigia duplicar env vars (build falhou: STRIPE_SECRET_KEY só existe em Production). Decisão: **deploy em PRODUÇÃO com acesso exclusivo super_admin** em vez de preview. Justificação: zero ficheiros partilhados tocados (só rotas/lib/tabelas novas), e o webhook ganha URL estável (www.lovelymemories.pt/api/webhooks/beds24). Alterações: guardRoles(["super_admin"]) no layout + role==='super_admin' nas actions; sem entrada na sidebar (URL direto). Env vars BEDS24_* adicionam-se ao scope Production. Build de produção completo verificado localmente (commit d44b109). As camadas 3-5 da Secção 1 mantêm-se; as camadas 1-2 são substituídas pelo guard super_admin + ausência de UI descobrível.
 
 ## Secção 1 — Isolamento da produção (modelo original preview — ver alteração acima)
 
