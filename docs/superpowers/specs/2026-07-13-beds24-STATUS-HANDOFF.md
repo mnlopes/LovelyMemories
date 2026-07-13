@@ -65,5 +65,13 @@ Hoje: dashboard do owner lê SÓ `reservations` (owner-analytics.ts); Airbnb ent
 3. `payout_date` — Beds24 não sabe quando o Airbnb paga. Regra Airbnb (verificada 2026-07-13, help 425): estadias ≤27 noites → payout libertado até ao fim do dia útil seguinte ao check-in; 28+ noites → 1º payout igual + parcelas mensais durante a estadia; chegada ao banco +1–5 dias úteis conforme método. Logo é DERIVÁVEL: payout_date ≈ check_in + 1 dia útil; CSV fica só para reconciliação financeira mensal, se necessário.
 Histórico antigo fica dos CSVs já importados; `importBookings` traz as existentes/futuras.
 
-## Dúvida crítica ainda em aberto
-**O booking webhook do Beds24 dispara quando chega uma mensagem nova de hóspede (sem alteração de reserva)?** Passo 8 responde. Decide se o bot de IA usa webhook ou polling.
+## ✅ DÚVIDA CRÍTICA RESPONDIDA (2026-07-13 ~23:00) — WEBHOOK COBRE MENSAGENS
+Teste com conta Airbnb secundária ("Carolina", inquiry 10–14 nov 2026 no Virtudes One → booking Beds24 89794243):
+- **Pré-requisito descoberto:** Beds24 → Settings→Channel Manager→Airbnb→Mapping→[propriedade]→Property Settings → **"Inquiry and Requests" estava "Ignore"** (default!) → mudado para **"Import all"**. Com "Ignore", inquiries/mensagens NUNCA chegam (nem UI Beds24 as mostra). Configurar isto em TODAS as propriedades ao ligar.
+- **Webhook dispara com mensagens novas** (sem alteração de reserva): eventos standalone chegaram a cada mensagem. Latências: guest ~4s, host ~6-7s ponta-a-ponta.
+- **Inquiry pré-reserva vira booking** (status inquiry) + payload traz messages[].
+- **🔑 DETEÇÃO DE RESPOSTA HUMANA RESOLVIDA:** respostas do host enviadas NA UI DO AIRBNB chegam via webhook com `source: "host"` em segundos — o que era impossível no Hospitable (source uniforme "platform"). O bot pode auto-desligar quando um humano entra na conversa.
+- **Outbound provado:** resposta enviada do nosso painel (POST /bookings/messages) apareceu na conta do hóspede no Airbnb em segundos.
+- **DECISÃO DE ARQUITETURA: bot de IA usa WEBHOOK (sem polling).** Polling fica só como reconciliação de segurança de baixa frequência.
+- Sync Type do mapping: só existem 3 níveis (Prices and Availability / Limited / Everything) — NÃO há "availability only" para Airbnb. Preços passam SEMPRE a ser geridos no Beds24/nosso PMS após ligação. Conversar com o João (ele queria gerir preços no Airbnb — não é possível com channel manager; a gestão passa para o nosso backoffice).
+- Limpeza extra pendente: cancelar/apagar inquiry de teste 89794243 (Carolina) + cosmético painel: caixa de resposta repete-se por cada mensagem do mesmo booking (replyFor é por booking).
