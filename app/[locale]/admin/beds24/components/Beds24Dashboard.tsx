@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "@/i18n/routing";
 import {
     runBeds24PollNow, importOwnedListings, connectCobaia, importExistingBookings,
     sendBeds24Message, createTestBooking, cancelTestBooking, getCalendarPreview,
@@ -50,12 +51,20 @@ export default function Beds24Dashboard(props: {
     messages: AnyRow[];
 }) {
     const { status, properties, bookings, messages } = props;
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<string | null>(null);
     const [replyFor, setReplyFor] = useState<number | null>(null);
     const [replyText, setReplyText] = useState("");
     const [preview, setPreview] = useState<{ name: string; calendar: AnyRow[] } | null>(null);
     const [testBookingId, setTestBookingId] = useState<number | null>(null);
+
+    // Live view: re-fetch server data every 30s so webhook-ingested rows show up
+    // without manual reload. Reads our own DB only — zero Beds24 API credits.
+    useEffect(() => {
+        const id = setInterval(() => router.refresh(), 30_000);
+        return () => clearInterval(id);
+    }, [router]);
 
     const run = (label: string, fn: () => Promise<unknown>) => {
         setFeedback(null);
@@ -77,7 +86,7 @@ export default function Beds24Dashboard(props: {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Beds24 PMS Lab</h1>
-                    <p className="text-[#a3a3a3] mt-1 font-medium text-sm">Fase 1 — medição webhook vs polling · 6 anúncios Primary Owner · produção (só super_admin)</p>
+                    <p className="text-[#a3a3a3] mt-1 font-medium text-sm">Fase 1 — medição webhook vs polling · 6 anúncios Primary Owner · produção (só super_admin) · atualização automática 30s</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {credits !== null && credits !== undefined && (
