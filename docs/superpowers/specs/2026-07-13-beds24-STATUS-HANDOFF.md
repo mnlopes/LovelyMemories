@@ -1,6 +1,24 @@
 # Beds24 PMS — PONTO DE SITUAÇÃO / HANDOFF
 
-**Última atualização:** 2026-07-13 fim do dia. **Começar por aqui** ao retomar (mesmo noutra conta).
+**Última atualização:** 2026-07-14. **Começar por aqui** ao retomar (mesmo noutra conta).
+
+## 🤖 BOT/INBOX MIGRADO PARA BEDS24 (2026-07-14, branch worktree-ai-inbox-beds24)
+
+Plano `docs/superpowers/plans/2026-07-13-beds24-bot-migration.md` — **Tasks 1-9 completas + verificações automáticas da Task 10** (build prod ✅, test:security ✅, test-ai-decision ✅, test-bot-bridge ✅, simulação webhook local ✅ → decisão needs_human correta com draft PT).
+
+**O que existe agora:**
+- `lib/ai-messaging.ts` (Gemini, transport-neutral), `lib/ai-decision.ts` (regras duras + decisionMode JSON com citação), `lib/beds24/bot-bridge.ts` (webhook→conversa/fila; host auto-off exceto mensagens nossas; claim idempotente por external_message_id), webhook chama o bridge após ingestão.
+- `app/actions/ai-inbox.ts` (inbox/thread/envio via POST /bookings/messages/toggles/tom/knowledge/links via beds24_properties.internal_property_id).
+- UI premium em `admin/activity` (tab default "Guest inbox"; tabs Activity Log/Owners preservadas): InboxShell 3 painéis + mobile stack + refresh 30s; ConversationList (fila âmbar no topo, pills bot/humano); ThreadView (bolhas com latência webhook, cartão emerald de auto-send com citação do knowledge, drafts tracejados Enviar/Editar/Ignorar/Regenerar, resposta manual); ContextPanel (reserva, toggle bot com nota auto-off, checklist knowledge ✓/⚠); BotSettings (kill-switch global, off/drafts/auto por propriedade, editor de tom). i18n `AiInbox` 45 chaves en/pt/he em paridade.
+- Migrações aplicadas no Supabase (Marcelo): consolidada 20260714090000 + 20260714120000 (kill-switch em ai_messaging_settings) + 20260714130000 (upgrade hospitable→external + decision/knowledge_citation/auto_sent_at). Nota: BD tinha o schema antigo do Hospitable; o upgrade alinhou-o.
+
+**E2E REAL PENDENTE (após merge→main→deploy; precisa do Marcelo):**
+1. BotSettings (engrenagem no inbox) → Virtudes One = `drafts`
+2. Mensagem da conta Carolina (inquiry 89794243) → draft aparece no inbox com decisão correta
+3. Preencher wifi no knowledge (exige ligar Virtudes One a uma propriedade do site via internal_property_id — usar getPropertyLinkSuggestions/savePropertyLinks ou SQL) → nova pergunta wifi → draft coberto
+4. Modo `auto` → pergunta wifi → resposta automática chega ao Airbnb com citação → voltar a `drafts` (rollout do spec)
+5. Responder pelo Airbnb (conta João) → conversa mostra "humano ativo" (bot off automático)
+Regras: auto-send NUNCA sem citação; regras duras (preço/datas/reclamações/cancelamento/early-checkin/bagagem) escalam SEMPRE.
 Documentos irmãos: `2026-07-13-beds24-pms-analysis.md` (análise+testes+veredito co-host), `2026-07-13-beds24-phase1-design.md` (design aprovado).
 
 ## Estado em uma frase
