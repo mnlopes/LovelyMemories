@@ -77,7 +77,7 @@ export default function Beds24Dashboard(props: {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Beds24 PMS Lab</h1>
-                    <p className="text-[#a3a3a3] mt-1 font-medium text-sm">Fase 1 — medição webhook vs polling · 6 anúncios Primary Owner · preview only</p>
+                    <p className="text-[#a3a3a3] mt-1 font-medium text-sm">Fase 1 — medição webhook vs polling · 6 anúncios Primary Owner · produção (só super_admin)</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {credits !== null && credits !== undefined && (
