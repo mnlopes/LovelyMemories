@@ -14,19 +14,18 @@
 -- these tables server-side with the service-role key.
 -- ============================================================
 
--- ── properties: link to the external (Beds24) listing id ────────────────────
--- Text id of the corresponding Beds24 property/room, used to join AI
--- knowledge and conversations back to the booking-site property row.
-alter table public.properties add column if not exists external_property_id text;
-create unique index if not exists properties_external_property_id_key
-    on public.properties (external_property_id) where external_property_id is not null;
+-- NOTE: public.properties is NOT touched by this migration (public-site
+-- isolation constraint — no ALTERs outside beds24_properties). The internal
+-- ↔ external (Beds24) property mapping already lives in
+-- beds24_properties.internal_property_id (phase 1, plain uuid, no FK); the
+-- app resolves external→internal through that table.
 
 -- ── property_ai_extras: AI-only extras/secrets, keyed off properties ────────
 -- Base listing data (name, description, etc.) is read from `properties`;
 -- this table holds only the extras the bot needs that `properties` doesn't.
 create table if not exists public.property_ai_extras (
     id uuid primary key default gen_random_uuid(),
-    property_id uuid not null unique references public.properties(id) on delete cascade,
+    property_id uuid not null unique,          -- properties.id — plain value, NO foreign key (isolation)
     wifi_name text,
     wifi_password text,
     door_code text,
@@ -117,7 +116,7 @@ create table if not exists public.ai_conversation (
     reservation_id text not null unique,      -- external (Beds24) booking id, as text (join key)
     conversation_id text,                     -- external conversation/thread id
     platform text,                            -- airbnb | booking | direct
-    external_property_id text,                -- links to properties.external_property_id
+    external_property_id text,                -- Beds24 property id (text); internal mapping via beds24_properties
     property_name text,
     property_picture_url text,
     guest_name text,
