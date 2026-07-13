@@ -20,7 +20,11 @@ Sincronização **bidirecional quase em tempo real** nos 6 anúncios Primary Own
 5. **Âmbito Fase 1:** sync bidirecional + push de reserva de teste manual (datas 2027, reverter). FORA: ligar checkout do site (só pós-cutover), bot IA (Fase 2), onboarding owners (Fase 2).
 6. **Estratégia de sync: Abordagem C** — instrumentação dupla (webhook + polling em paralelo), medir uns dias na cobaia, desligar o redundante com dados.
 
-## Secção 1 — Isolamento da produção (APROVADA)
+## ⚠ ALTERAÇÃO AO MODELO DE DEPLOY (2026-07-13, decisão Marcelo)
+
+Preview do Vercel exigia duplicar env vars (build falhou: STRIPE_SECRET_KEY só existe em Production). Decisão: **deploy em PRODUÇÃO com acesso exclusivo super_admin** em vez de preview. Justificação: zero ficheiros partilhados tocados (só rotas/lib/tabelas novas), e o webhook ganha URL estável (www.lovely-memories.pt/api/webhooks/beds24). Alterações: guardRoles(["super_admin"]) no layout + role==='super_admin' nas actions; sem entrada na sidebar (URL direto). Env vars BEDS24_* adicionam-se ao scope Production. Build de produção completo verificado localmente (commit d44b109). As camadas 3-5 da Secção 1 mantêm-se; as camadas 1-2 são substituídas pelo guard super_admin + ausência de UI descobrível.
+
+## Secção 1 — Isolamento da produção (modelo original preview — ver alteração acima)
 
 1. Branch `feat/beds24-pms`; nada entra em `main` até ao cutover.
 2. `BEDS24_REFRESH_TOKEN` (+ `BEDS24_WEBHOOK_SECRET`) em env vars Vercel **scope Preview only** — produção sem credenciais.
@@ -63,6 +67,8 @@ Padrões do repo: actions para lógica; API route só para o webhook; guard como
 4. **Comparação preços/disponibilidade** Beds24 vs Airbnb por propriedade antes de ligar cada uma (rede de segurança do mapping).
 5. Ações: importar as 6 (connect none), ligar cobaia (limited), sync manual, reserva de teste 2027 + reverter.
 UI: funcional/limpa nesta fase (a UI premium awwwards é objetivo do PMS final, não do painel de medição).
+
+**Referência de design para o calendário do PMS final (Marcelo, 2026-07-13):** timeline multi-propriedade ao estilo Hospitable — barras de reserva com **corte diagonal** nas células de check-in (começa a meio/da tarde) e check-out (acaba a meio/de manhã), permitindo ver back-to-back bookings no mesmo dia; nome do hóspede + valor na barra; preços por dia nas células vazias. Aplicar quando construirmos a UI premium (não no painel de medição da Fase 1, embora o mini-calendário possa já ensaiar o formato).
 
 ## Secção 5 — Fluxos críticos
 
