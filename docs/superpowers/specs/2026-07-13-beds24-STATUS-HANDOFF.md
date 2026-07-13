@@ -4,7 +4,7 @@
 Documentos irmãos: `2026-07-13-beds24-pms-analysis.md` (análise+testes+veredito co-host), `2026-07-13-beds24-phase1-design.md` (design aprovado).
 
 ## Estado em uma frase
-Fase 1 do PMS Beds24 **em PRODUÇÃO** (acesso só super_admin, sem entrada na sidebar), com o troço webhook **Beds24→nós provado a ~1s**. Falta ligar a cobaia (Virtudes One) ao Airbnb para testar os restantes troços e a dúvida crítica das mensagens.
+Fase 1 do PMS Beds24 **em PRODUÇÃO** (só super_admin). Cobaia (Virtudes One) **LIGADA ao Airbnb** (connect:limited) e ciclo completo **provado 2026-07-13 à noite**: criar reserva → bloqueia Airbnb (~1min) + webhook nosso (916ms); cancelar → reabre Airbnb + webhook (537–835ms). Falta o **teste crítico das mensagens** (decide arquitetura do bot).
 
 ## O que já está feito ✅
 - Análise completa da API v2, testes de escrita/leitura, veredito co-host (só 6 Primary Owner ligáveis; ~39 co-hosted exigem onboarding por owner — Airbnb Teams é beco sem saída).
@@ -29,21 +29,26 @@ Fase 1 do PMS Beds24 **em PRODUÇÃO** (acesso só super_admin, sem entrada na s
 - Casa Serena Gaia 341088 / 704838 (1639382334426921258)
 (propriedade sintética inicial: 341047 — ignorar/apagar)
 
+## FEITO 2026-07-13 à noite (sessão de testes com a cobaia ligada) ✅
+- `git push origin main` OK (passou; origin sincronizado). Copy "preview only" → "produção (só super_admin)" (commit 98cd9ba).
+- Calendário da cobaia verificado (€110/€100/€150 min2, 30 dias) e batia com o Airbnb.
+- **Cobaia LIGADA**: connectCobaia → `{"success":true,"airbnb":{"enabled":true,"listingId":"1652161621003086510"}}` (201, mapping validado). Estado=connected. No Airbnb, Disponível/Bloqueado ficaram cinzentos (Beds24 controla a disponibilidade — bloqueio manual no Airbnb já não é possível).
+- **TESTE nós→Airbnb PROVADO**: booking 89784420 (TESTE2, 10–14 mar 2027, criado na UI Beds24) → 10–13 mar bloqueados no multicalendário Airbnb (~1 min); webhook nosso 916ms com dados completos (€440, canal direct).
+- **Reversão PROVADA**: cancelar 89784420 e 89782482 → webhooks 835ms/537ms → março 2027 reaberto no Airbnb (€143).
+- Airbnb janela de reservas = 12 meses (datas além ~jul 2027 aparecem riscadas — não é bloqueio nosso).
+- 🔍 **Observação (confirmar)**: booking 89784763 criado+cancelado PELA NOSSA API (botão do painel) NÃO gerou webhooks — possível echo suppression (Beds24 não notifica alterações feitas pelo próprio API client). Até nos convém (site não recebe eco de si próprio), mas confirmar em próximos testes.
+- Nota privada do Airbnb: NÃO acessível por API (spec verificada — /inventory/rooms/calendar não tem campo de nota; comment do booking fica só no Beds24). O "porquê" dos bloqueios vive no nosso painel, não no Airbnb.
+
 ## PRÓXIMOS PASSOS (por ordem)
-1. **[Marcelo] `git push origin main`** no terminal — há 1 commit local por enviar (`50ae07b` fix trim do secret; os meus pushes foram bloqueados pelo classificador). Não urgente (produção já funciona com header com espaço).
-2. **Verificar calendário da cobaia:** painel → linha Virtudes One → "calendário" → confirmar que preços/disponibilidade batem com o Airbnb.
-3. **Confirmar com o João:** Virtudes One pode ficar em **instant book** (política Airbnb ao ligar por API).
-4. **Ligar a cobaia:** painel → Virtudes One → "ligar (cobaia)" (connect: limited = Prices & Availability). Deve aceitar (é Primary Owner). Estado → connected.
-5. **Importar reservas existentes** da cobaia (botão que aparece após ligar).
-6. **TESTE troço Airbnb→nós:** fazer um bloqueio/alteração no multicalendário do Airbnb do Virtudes One → ver se chega ao painel e em quanto tempo.
-7. **TESTE troço nós→Airbnb:** painel → "reserva teste 2027" na cobaia → cronometrar aparecimento no Airbnb → cancelar.
-8. **TESTE CRÍTICO mensagens:** de uma conta Airbnb secundária, enviar mensagem como hóspede à reserva → **ver se o webhook dispara** (responde à dúvida que decide a arquitetura do bot). Se não disparar → medir polling (botão "Sync agora"). Testar outbound (responder pelo painel → ver no Airbnb).
-9. **Medir uns dias** (abordagem C: webhook vs polling) → decidir qual manter.
-10. Depois: repetir ligação nos outros 5; planear Fase 2 (onboarding owners via botão connect).
+1. **TESTE CRÍTICO mensagens:** de uma conta Airbnb secundária, enviar mensagem como hóspede ao Virtudes One (via pergunta pré-reserva "Contactar anfitrião", sem reservar) → **ver se o webhook dispara** (responde à dúvida que decide a arquitetura do bot). Se não disparar → medir polling (botão "Sync agora"). Testar outbound (responder pelo painel → ver no Airbnb).
+2. **Importar reservas existentes** da cobaia (botão "importar reservas" no painel) — trazer as reservas reais futuras do Virtudes One.
+3. **Medir uns dias** (abordagem C: webhook vs polling) com tráfego real na cobaia → decidir qual manter. Até agora: webhook ganha sempre (537ms–1.1s).
+4. Depois: repetir ligação nos outros 5 (calendário-check → ligar → webhook config na UI Beds24 por propriedade); planear Fase 2 (onboarding owners via botão connect).
+5. Cancelar 89764651 (Joao Teste, propriedade sintética 341047 — inofensivo, sem Airbnb).
 
 ## Pendências/limpeza
-- Apagar reservas de teste no Beds24: 89782482 (Virtudes One 2027) e 89764651 (sintética).
-- Cosmético: subtítulo do painel ainda diz "preview only" → mudar para produção/super_admin.
+- ~~89782482 e 89784420~~ cancelados ✅. Falta cancelar 89764651 (sintética, sem urgência).
+- ~~Cosmético "preview only"~~ feito ✅ (98cd9ba).
 - Apagar o invite code já usado no Beds24 (Marketplace→API).
 
 ## ⚠ Emails de erro do Beds24 (17:44, 2026-07-13) — NÃO É BUG NOSSO
