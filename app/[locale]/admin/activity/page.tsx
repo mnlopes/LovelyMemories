@@ -1,22 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { MessagesSquare, ScrollText, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 import { OwnerActivityPanel } from "@/components/admin/OwnerActivityPanel";
 import { InboxShell } from "@/components/admin/inbox/InboxShell";
+import { getCurrentUserRole } from "@/app/actions/user";
 
 type TabType = "inbox" | "log" | "owners";
 
 export default function ActivityLogPage() {
     const t = useTranslations("AdminOwnerActivity");
     const ti = useTranslations("AiInbox");
-    const [activeTab, setActiveTab] = useState<TabType>("inbox");
+    const [activeTab, setActiveTab] = useState<TabType>("log");
+    // Rollout: a tab do inbox só aparece a super_admin até o E2E estar validado
+    // (as actions ai-inbox também recusam outros roles — defesa em profundidade).
+    const [showInbox, setShowInbox] = useState(false);
+
+    useEffect(() => {
+        void getCurrentUserRole().then((role) => {
+            if (role === "super_admin") {
+                setShowInbox(true);
+                setActiveTab("inbox");
+            }
+        }).catch(() => {});
+    }, []);
 
     const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
-        { key: "inbox", label: ti("title"), icon: <MessagesSquare className="size-4" /> },
+        ...(showInbox ? [{ key: "inbox" as TabType, label: ti("title"), icon: <MessagesSquare className="size-4" /> }] : []),
         { key: "log", label: t("tabs.log"), icon: <ScrollText className="size-4" /> },
         { key: "owners", label: t("tabs.owners"), icon: <UsersRound className="size-4" /> },
     ];

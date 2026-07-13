@@ -35,11 +35,15 @@ async function assertAdmin() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
+    // Rollout: super_admin apenas até o E2E estar validado pelo Marcelo;
+    // depois alargar a 'admin' (uma linha).
+    if (!profile || !INBOX_ROLES.includes(profile.role)) {
         throw new Error('Not authorized');
     }
     return user;
 }
+
+const INBOX_ROLES = ['super_admin'];
 
 // ── Estado do motor ───────────────────────────────────────────────────────────
 
