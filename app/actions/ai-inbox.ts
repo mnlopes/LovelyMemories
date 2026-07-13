@@ -637,6 +637,13 @@ export async function removeAccessPhoto(propertyId: string, url: string): Promis
     }
 }
 
+/** Knowledge efetivo de uma propriedade Beds24 (para o painel de contexto: coberto ✓ / em falta ⚠). */
+export async function getKnowledgeForProperty(externalPropertyId: string): Promise<PropertyKnowledge | null> {
+    await assertAdmin();
+    const { loadPropertyKnowledge } = await import('@/lib/ai-messaging');
+    return loadPropertyKnowledge(externalPropertyId);
+}
+
 // ── Modos por propriedade (lista para settings) ──────────────────────────────
 
 export interface PropertyBotRow {
