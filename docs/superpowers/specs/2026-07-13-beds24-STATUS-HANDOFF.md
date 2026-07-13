@@ -55,5 +55,12 @@ Fase 1 do PMS Beds24 **em PRODUÇÃO** (só super_admin). Cobaia (Virtudes One) 
 Recebidos 6 emails "Airbnb returned an error message for [listing]... The listing is not connected to the requesting client application... migration still in progress — please retry in a while."
 Diagnóstico (verificado por API, scripts/diag-beds24.ts): estado de sync LIMPO (todos os 6 sync=none, channels/settings airbnb vazio) — não estamos a empurrar nada. Causa = **migração de app Hospitable→Beds24(Channelsync) no Airbnb ainda a propagar** (removemos Hospitable + ligámos Beds24 hoje). Transitório; deve auto-resolver em minutos–horas (até ~24h). Anúncios OK, hóspedes reservam normal, reserva de teste não foi empurrada. AÇÃO: esperar; NÃO desligar o Beds24. Se persistir >24h → reautorizar no Airbnb ou ticket Beds24. Ferramenta: `npx tsx scripts/diag-beds24.ts`.
 
+## Portal dos owners — análise de cobertura (2026-07-13, só leitura)
+Hoje: dashboard do owner lê SÓ `reservations` (owner-analytics.ts); Airbnb entra por **CSV manual** (airbnb-import.ts: Amount/Service fee/Cleaning fee → upsert por confirmation code); iCal alimenta só `blocked_dates` (sem valores; nem conta para ocupação). Beds24 cobre tudo e melhor: guest_name/price/commission/channel em ~1s via webhook; numAdult/numChild (o CSV nem traz — hóspedes=0 nos imports!); email/telefone. **Validar no cutover (ponte beds24_bookings→reservations):**
+1. `cleaning_fee` — confirmar que vem nos `invoiceItems` do webhook (raw JSONB já guardado; 1ª reserva real do Virtudes One responde).
+2. `commission` (Beds24) vs "Service fee" (CSV Airbnb) — conferir números na 1ª reserva real contra o extrato Airbnb.
+3. `payout_date` — Beds24 não sabe quando o Airbnb paga. Regra Airbnb (verificada 2026-07-13, help 425): estadias ≤27 noites → payout libertado até ao fim do dia útil seguinte ao check-in; 28+ noites → 1º payout igual + parcelas mensais durante a estadia; chegada ao banco +1–5 dias úteis conforme método. Logo é DERIVÁVEL: payout_date ≈ check_in + 1 dia útil; CSV fica só para reconciliação financeira mensal, se necessário.
+Histórico antigo fica dos CSVs já importados; `importBookings` traz as existentes/futuras.
+
 ## Dúvida crítica ainda em aberto
 **O booking webhook do Beds24 dispara quando chega uma mensagem nova de hóspede (sem alteração de reserva)?** Passo 8 responde. Decide se o bot de IA usa webhook ou polling.
