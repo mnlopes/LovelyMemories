@@ -46,5 +46,9 @@ Fase 1 do PMS Beds24 **em PRODUÇÃO** (acesso só super_admin, sem entrada na s
 - Cosmético: subtítulo do painel ainda diz "preview only" → mudar para produção/super_admin.
 - Apagar o invite code já usado no Beds24 (Marketplace→API).
 
+## ⚠ Emails de erro do Beds24 (17:44, 2026-07-13) — NÃO É BUG NOSSO
+Recebidos 6 emails "Airbnb returned an error message for [listing]... The listing is not connected to the requesting client application... migration still in progress — please retry in a while."
+Diagnóstico (verificado por API, scripts/diag-beds24.ts): estado de sync LIMPO (todos os 6 sync=none, channels/settings airbnb vazio) — não estamos a empurrar nada. Causa = **migração de app Hospitable→Beds24(Channelsync) no Airbnb ainda a propagar** (removemos Hospitable + ligámos Beds24 hoje). Transitório; deve auto-resolver em minutos–horas (até ~24h). Anúncios OK, hóspedes reservam normal, reserva de teste não foi empurrada. AÇÃO: esperar; NÃO desligar o Beds24. Se persistir >24h → reautorizar no Airbnb ou ticket Beds24. Ferramenta: `npx tsx scripts/diag-beds24.ts`.
+
 ## Dúvida crítica ainda em aberto
 **O booking webhook do Beds24 dispara quando chega uma mensagem nova de hóspede (sem alteração de reserva)?** Passo 8 responde. Decide se o bot de IA usa webhook ou polling.
