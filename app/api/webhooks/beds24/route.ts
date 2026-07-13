@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { isBeds24Enabled } from '@/lib/beds24/client';
 import { ingestBookings, ingestMessages } from '@/lib/beds24/sync';
+import { processBotMessages } from '@/lib/beds24/bot-bridge';
 import type { Beds24WebhookPayload } from '@/lib/beds24/types';
 
 /**
@@ -62,6 +63,9 @@ export async function POST(request: NextRequest) {
         }
         if (payload?.messages?.length) {
             await ingestMessages(payload.messages, 'webhook');
+            // Bot bridge: corre depois da ingestão e nunca lança — o webhook
+            // responde 200 e a medição de latência não muda.
+            await processBotMessages(payload?.booking ?? null, payload.messages);
         }
     } catch (e) {
         processingError = e instanceof Error ? e.message : String(e);
