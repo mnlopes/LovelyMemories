@@ -39,6 +39,9 @@ Fase 1 do PMS Beds24 **em PRODUÇÃO** (só super_admin). Cobaia (Virtudes One) 
 - 🔍 **Observação (confirmar)**: booking 89784763 criado+cancelado PELA NOSSA API (botão do painel) NÃO gerou webhooks — possível echo suppression (Beds24 não notifica alterações feitas pelo próprio API client). Até nos convém (site não recebe eco de si próprio), mas confirmar em próximos testes.
 - Nota privada do Airbnb: NÃO acessível por API (spec verificada — /inventory/rooms/calendar não tem campo de nota; comment do booking fica só no Beds24). O "porquê" dos bloqueios vive no nosso painel, não no Airbnb.
 
+## Airbnb→nós PROVADO COM RESERVAS REAIS (2026-07-13 ~19:20) ✅
+Após a ligação, o Airbnb empurrou as reservas reais existentes do Virtudes One para o Beds24 → webhooks chegaram todos (eventos id 6–11, latências 618ms–1.2s) → ingeridas na BD com nome, datas e valores completos dos hóspedes (7 reservas, ids 89786490–89786496; detalhes na BD/painel — não listados aqui por serem dados pessoais). O botão "importar reservas" ficou desnecessário para a cobaia (vieram sozinhas). Beds24 também disparou emails "New Booking Notification" por cada uma → Marcelo vai desligar (Settings→Properties→Booking Notifications; redundantes, o nosso painel/PMS é que notifica).
+
 ## PRÓXIMOS PASSOS (por ordem)
 1. **TESTE CRÍTICO mensagens:** de uma conta Airbnb secundária, enviar mensagem como hóspede ao Virtudes One (via pergunta pré-reserva "Contactar anfitrião", sem reservar) → **ver se o webhook dispara** (responde à dúvida que decide a arquitetura do bot). Se não disparar → medir polling (botão "Sync agora"). Testar outbound (responder pelo painel → ver no Airbnb).
 2. **Importar reservas existentes** da cobaia (botão "importar reservas" no painel) — trazer as reservas reais futuras do Virtudes One.
