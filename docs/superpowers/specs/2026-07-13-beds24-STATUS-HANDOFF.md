@@ -19,6 +19,7 @@
 - ⚠ **Mensagens agendadas do Airbnb** (respostas rápidas do Achilleas, ex. códigos check-in às 15h): chegam como host messages que não enviámos → auto-off do bot dispara nessas conversas. Aceite para já; Fase 2: migrar agendadas para o nosso sistema OU refinar auto-off.
 - Histórico pré-ligação NÃO é importável (provado: Alice Nolan, mensagens 04/07 → GET devolve 0). Regra da transição: inbox para responder, Airbnb para histórico antigo; cohort esgota-se com os checkouts.
 - E2E pendente: Marcelo ia testar Carolina (mensagem→draft→enviar→auto-off) e knowledge/modo auto. OpenAI 429 → fallback Gemini funciona.
+- **FUTURO — NÃO FAZER AGORA (decisão Marcelo 2026-07-14):** notificações de escalação para humano (Telegram/WhatsApp/email quando entra um draft needs_human na fila) ficam para DEPOIS de o sistema estar afinado. O ponto de ligação será o fluxo de escalação do bot-bridge (conceito escalateToHuman do design antigo). Esclarecido ao Marcelo: o bot corre 100% server-side (webhook→decisão→auto-send/fila no Vercel) — não precisa de nenhum separador aberto; o inbox é só visualização.
 
 ## ✅✅ DÚVIDA CRÍTICA RESPONDIDA: o webhook DISPARA com mensagens novas (2026-07-14)
 Teste real com a conta Carolina (inquiry 89794243, Virtudes One): cada mensagem gerou um booking webhook (eventos #12-16), latência 349ms–1.3s, mensagens ingeridas em beds24_messages via webhook. **Conclusão: o bot corre por webhook, SEM polling.** Abordagem C decidida a favor do webhook. (Nota: era inquiry/consulta, não reserva confirmada — mesmo assim dispara.)
