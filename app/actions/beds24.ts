@@ -248,3 +248,74 @@ export async function fetchMessagesFromApi(beds24BookingId: number) {
     }) as Beds24ApiEnvelope<Beds24Message>;
     return res.data ?? [];
 }
+
+// ---------- Preview do calendário admin (switch iCal ↔ Beds24) ----------
+
+export interface Beds24CalendarBooking {
+    id: string;                 // `b24-${beds24_booking_id}` — nunca colide com uuids
+    property_id: string;        // internal_property_id (propriedade do site)
+    guest_name: string;
+    check_in: string;           // arrival (YYYY-MM-DD)
+    check_out: string;          // departure
+    total_price: number | null;
+    channel: string | null;
+    status: string;             // 'confirmed' | 'new'
+    is_airbnb: boolean;
+    is_beds24: true;
+}
+
+export type Beds24CalendarPreviewResult =
+    | { ok: true; internalPropertyIds: string[]; bookings: Beds24CalendarBooking[] }
+    | { ok: false; error: string };
+
+/**
+ * Reservas Beds24 das propriedades LIGADAS (internal_property_id preenchido), já no
+ * shape que o MultiCalendarView consome. Alimenta o switch de preview do calendário
+ * admin — leitura via service-role (RLS das beds24_* fica intocada). Nunca lança:
+ * o cliente decide mostrar toast e voltar a iCal.
+ */
+export async function getBeds24CalendarPreview(): Promise<Beds24CalendarPreviewResult> {
+    try {
+        await guard();
+        const supabase = await getSupabaseAdmin();
+        const { data: props, error: propsError } = await supabase
+            .from('beds24_properties')
+            .select('beds24_property_id, internal_property_id')
+            .not('internal_property_id', 'is', null);
+        if (propsError) throw propsError;
+        const linkMap = new Map<number, string>(
+            (props ?? []).map((p) => [p.beds24_property_id as number, p.internal_property_id as string]),
+        );
+        if (!linkMap.size) return { ok: true, internalPropertyIds: [], bookings: [] };
+
+        // 60 dias de histórico chegam para o calendário; evita puxar a tabela inteira.
+        const since = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+        const { data: rows, error } = await supabase
+            .from('beds24_bookings')
+            .select('beds24_booking_id, beds24_property_id, status, arrival, departure, guest_first_name, guest_last_name, price, channel')
+            .in('beds24_property_id', [...linkMap.keys()])
+            .in('status', ['confirmed', 'new'])
+            .gte('departure', since)
+            .order('arrival', { ascending: true })
+            .limit(500);
+        if (error) throw error;
+
+        const bookings: Beds24CalendarBooking[] = (rows ?? [])
+            .filter((r) => r.arrival && r.departure)
+            .map((r) => ({
+                id: `b24-${r.beds24_booking_id}`,
+                property_id: linkMap.get(r.beds24_property_id as number)!,
+                guest_name: [r.guest_first_name, r.guest_last_name].filter(Boolean).join(' ') || 'Airbnb guest',
+                check_in: r.arrival as string,
+                check_out: r.departure as string,
+                total_price: typeof r.price === 'number' ? r.price : (r.price ? Number(r.price) : null),
+                channel: (r.channel as string) ?? null,
+                status: r.status as string,
+                is_airbnb: ((r.channel as string) ?? '').toLowerCase().includes('airbnb'),
+                is_beds24: true,
+            }));
+        return { ok: true, internalPropertyIds: [...new Set(linkMap.values())], bookings };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Preview failed' };
+    }
+}
