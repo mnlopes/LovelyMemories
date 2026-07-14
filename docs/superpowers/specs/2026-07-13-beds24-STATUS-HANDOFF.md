@@ -86,6 +86,26 @@ Sessão E2E com a conta Carolina (inquiry 89794243, Virtudes One em `drafts`) fe
      de reservas — não tocada). PENDENTE: **E2E visual como super_admin** (auth-gated, como os outros itens
      deste admin — arranca e a rota resolve sem erro, mas o click-through precisa de login); depois merge→main
      local + push (com o preview do calendário, ainda por push).
+   - ✅ **FEITO — branch `feat/calendar-ranges-prices` (2026-07-15), NÃO mergeado, NÃO pushed:** vistas
+     7d/14d/31d + preços por noite no multi-calendário admin (`/admin/reservations`, vista Calendar).
+     Seletor 7/14/31d no header: a 31d preserva EXATAMENTE o comportamento atual (mês de calendário,
+     células 48px, navegação por mês); 7d/14d passam a janela deslizante (estilo Guesty/Hostaway) com
+     células largas (110px/76px) e navegação a saltar 7/14 dias; header mostra "d MMM – d MMM". Refactor
+     do `MultiCalendarView` de grelha mensal para janela genérica (`rangeStart/rangeEnd/days/cellWidth`,
+     `getBarStyle` por índice de dia — funciona através de fronteiras de mês). Toggle "€ Preços"
+     (super_admin, prop `canShowPrices`; desativado na 31d; só propriedades ligadas): mostra o preço da
+     noite (`price1` via nova action `getBeds24DailyPrices`, agrega `getRoomCalendar`, service-role,
+     best-effort, nunca lança) nas células LIVRES; o preço nunca aparece sob uma barra (reserva/bloqueio)
+     nem nas propriedades iCal; cache por janela + toast em erro. i18n `range7/14/31,prices,
+     pricesDisabledHint,pricesError` en/pt (he=inglês) — e o bloco `multiCalendar` do he trazido a
+     paridade completa (estava esparso, gap pré-existente corrigido). Specs/plano:
+     docs/superpowers/{specs,plans}/2026-07-15-calendar-ranges-prices*.md. Executed-plans, 4 tasks (Task 1
+     já vinha commitada). tsc+build+test:security limpos (falhas do test:security são as pré-existentes
+     conhecidas, Test 1/3/4/5). PENDENTE: **E2E visual como super_admin** (auth-gated como os outros itens
+     deste admin — arranca e a rota resolve sem erro, mas o click-through precisa de login): confirmar
+     31d idêntica ao atual, 7/14d com células largas + janela a cruzar fim de mês, toggle € (preços nas
+     livres, somem sob barras, ausentes nas iCal — ex. Virtudes One vs painel Beds24), dark mode; depois
+     merge→main local + push (junto com o preview do calendário e a ficha de detalhe, ainda por push).
 4. Experiência 17/07 ~10:01: payload do "Farewell Porto" agendado → marcador de scheduled para
    isentar do auto-off.
 
