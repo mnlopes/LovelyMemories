@@ -59,6 +59,15 @@ Sessão E2E com a conta Carolina (inquiry 89794243, Virtudes One em `drafts`) fe
      BotSettings com badge do efetivo + aviso ⚠ se falta a chave no servidor. Actions getAiProvider/
      setAiProvider. tsc+build limpos. ⚠ MIGRAÇÃO POR APLICAR no Supabase: `20260715120000_ai_provider_setting`.
      PENDENTE: E2E live (fixar Gemini no BotSettings → confirmar que a próxima decisão usa Gemini).
+   - ✅ **FEITO (2026-07-14, branch feat/beds24-calendar-preview, NÃO mergeada):** preview Beds24 no
+     calendário admin (`/admin/reservations`, vista Calendar). Switch "Fonte: iCal ↔ Beds24" (super_admin,
+     lente local que não persiste): ligado, nas 6 owned ligadas troca as barras iCal anónimas pelas
+     `beds24_bookings` ricas (nome+preço+selo "Beds24", read-only). Todas as barras do calendário passaram
+     a paralelogramo diagonal estilo Hospitable (`clip-path`). Action `getBeds24CalendarPreview` (service-role,
+     sem migração/policy). Specs/plano: docs/superpowers/{specs,plans}/2026-07-14-beds24-calendar-preview*.
+     SDD 4 tasks + final review (fix: dropar também blocos iCal `booking_com` nas ligadas para não duplicar).
+     tsc+build limpos. PENDENTE: E2E visual live como super_admin (barras diagonais + swap no Virtudes One);
+     hebraico do namespace AdminReservations continua por traduzir (gap pré-existente).
 4. Experiência 17/07 ~10:01: payload do "Farewell Porto" agendado → marcador de scheduled para
    isentar do auto-off.
 

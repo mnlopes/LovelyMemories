@@ -1393,5 +1393,14 @@
             "area": "אזור",
             "general": "כללי"
         }
+    },
+    "AdminReservations": {
+        "dataSource": "מקור",
+        "beds24PreviewError": "לא ניתן לטעון נתוני Beds24 — מציג iCal.",
+        "multiCalendar": {
+            "legend": {
+                "beds24": "Beds24"
+            }
+        }
     }
 }

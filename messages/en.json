@@ -143,6 +143,8 @@
         "clearFilters": "Clear Filters",
         "calendar": "Calendar",
         "list": "List",
+        "dataSource": "Source",
+        "beds24PreviewError": "Couldn't load Beds24 data — showing iCal.",
         "searchPlaceholder": "Search by guest, email or property...",
         "table": {
             "guestProperty": "Guest & Property",
@@ -238,7 +240,8 @@
                 "confirmed": "Confirmed",
                 "checkedIn": "Checked In",
                 "pending": "Pending",
-                "blocked": "Blocked"
+                "blocked": "Blocked",
+                "beds24": "Beds24"
             }
         },
         "detail": {
