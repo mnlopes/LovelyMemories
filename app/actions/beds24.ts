@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from 'next/cache';
+import { getLocale } from 'next-intl/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getCurrentUserRole } from '@/app/actions/user';
 import { beds24Request, isBeds24Enabled } from '@/lib/beds24/client';
@@ -385,7 +386,20 @@ export async function getBeds24BookingDetail(beds24BookingId: number): Promise<B
                 .select('title')
                 .eq('id', link.internal_property_id)
                 .single();
-            propertyTitle = (prop?.title as string) ?? (link?.name as string) ?? null;
+            // properties.title é um campo JSONB localizado ({en,pt,he}) — resolver p/ string
+            // (senão o React tenta renderizar o objeto e rebenta). Mesmo fallback do resto do admin.
+            const locale = await getLocale();
+            const localize = (field: unknown): string | null => {
+                if (!field) return null;
+                if (typeof field === 'string') return field;
+                if (typeof field === 'object') {
+                    const rec = field as Record<string, unknown>;
+                    const v = rec[locale] ?? rec.en ?? Object.values(rec)[0];
+                    return typeof v === 'string' ? v : null;
+                }
+                return null;
+            };
+            propertyTitle = localize(prop?.title) ?? (link?.name as string) ?? null;
         } else {
             propertyTitle = (link?.name as string) ?? null;
         }
