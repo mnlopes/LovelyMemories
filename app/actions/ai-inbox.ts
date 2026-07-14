@@ -295,6 +295,18 @@ export async function sendReply(reservationId: string, text: string, draftRowId?
             return { ok: false, error: msg };
         }
 
+        // Learning loop: par pergunta↔resposta ANTES de marcar o draft como sent
+        // (a query de emparelhamento do captureLearning só vê escalações em 'draft').
+        let escalatedQuestion: string | null = null;
+        if (draftRowId) {
+            const { data: draftRow } = await admin.from('ai_message_log')
+                .select('incoming_message, decision, status')
+                .eq('id', draftRowId).maybeSingle();
+            if (draftRow?.status === 'draft' && ['needs_human', 'hard_rule'].includes(draftRow.decision ?? '')) {
+                escalatedQuestion = draftRow.incoming_message ?? null;
+            }
+        }
+
         if (draftRowId) {
             await admin.from('ai_message_log').update({
                 status: 'sent', sent_message: body, sent_at: new Date().toISOString(),
@@ -310,6 +322,22 @@ export async function sendReply(reservationId: string, text: string, draftRowId?
                 sent_at: new Date().toISOString(),
             });
         }
+
+        // Learning loop: resposta humana enviada pelo backoffice ensina o bot (fail-soft)
+        try {
+            const { data: conv } = await admin
+                .from('ai_conversation')
+                .select('external_property_id')
+                .eq('reservation_id', reservationId)
+                .maybeSingle();
+            const { captureLearning } = await import('@/lib/ai-learning');
+            await captureLearning({
+                reservationId,
+                externalPropertyId: conv?.external_property_id ?? null,
+                humanAnswer: body,
+                ...(escalatedQuestion ? { question: escalatedQuestion } : {}),
+            });
+        } catch { /* learning nunca bloqueia o envio */ }
         return { ok: true };
     } catch (err) {
         return { ok: false, error: err instanceof Error ? err.message : 'Send failed' };

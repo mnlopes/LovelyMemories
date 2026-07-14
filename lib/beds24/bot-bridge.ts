@@ -82,6 +82,14 @@ export async function processBotMessages(booking: Beds24Booking | null, messages
                         bot_off_by: "bot",
                         updated_at: new Date().toISOString(),
                     }).eq("reservation_id", String(bookingId)).eq("bot_enabled", true);
+
+                    // Learning loop: a resposta humana no Airbnb pode ensinar o bot
+                    const { captureLearning } = await import("@/lib/ai-learning");
+                    await captureLearning({
+                        reservationId: String(bookingId),
+                        externalPropertyId: propertyId ? String(propertyId) : null,
+                        humanAnswer: msg.message,
+                    });
                 }
                 continue;
             }
