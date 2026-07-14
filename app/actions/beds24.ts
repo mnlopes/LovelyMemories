@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { getCurrentUserRole } from '@/app/actions/user';
 import { beds24Request, isBeds24Enabled } from '@/lib/beds24/client';
 import { ingestBookings, pollOnce } from '@/lib/beds24/sync';
+import { getRoomCalendar } from '@/lib/beds24/calendar';
 import type { Beds24ApiEnvelope, Beds24Booking, Beds24CalendarDay, Beds24Message } from '@/lib/beds24/types';
 
 /** Phase 1 panel actions. Admin/super_admin only; everything no-ops when Beds24 is disabled. */
@@ -457,5 +458,45 @@ export async function getBeds24BookingDetail(beds24BookingId: number): Promise<B
         };
     } catch (err) {
         return { ok: false, error: err instanceof Error ? err.message : 'Detail failed' };
+    }
+}
+
+// ---------- Preços por noite (toggle € do multi-calendário admin) ----------
+
+export type Beds24DailyPricesResult =
+    | { ok: true; prices: Record<string, Record<string, number>> }
+    | { ok: false; error: string };
+
+/**
+ * Preço da noite (price1) das propriedades LIGADAS, para o toggle "€" do calendário.
+ * `endDate` é EXCLUSIVO (semântica do getRoomCalendar) — o cliente passa rangeEnd+1.
+ * Best-effort por quarto: um quarto que falhe sai do mapa sem derrubar o resto. Nunca lança.
+ */
+export async function getBeds24DailyPrices(startDate: string, endDate: string): Promise<Beds24DailyPricesResult> {
+    try {
+        await guard();
+        const supabase = await getSupabaseAdmin();
+        const { data: props, error } = await supabase
+            .from('beds24_properties')
+            .select('internal_property_id, beds24_room_id')
+            .not('internal_property_id', 'is', null)
+            .not('beds24_room_id', 'is', null);
+        if (error) throw error;
+        const prices: Record<string, Record<string, number>> = {};
+        await Promise.all((props ?? []).map(async (p) => {
+            try {
+                const days = await getRoomCalendar(Number(p.beds24_room_id), startDate, endDate);
+                const map: Record<string, number> = {};
+                for (const d of days) {
+                    if (typeof d.price === 'number') map[d.date] = d.price;
+                }
+                if (Object.keys(map).length > 0) prices[p.internal_property_id as string] = map;
+            } catch {
+                // best-effort: quarto com erro fica de fora
+            }
+        }));
+        return { ok: true, prices };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Prices failed' };
     }
 }
