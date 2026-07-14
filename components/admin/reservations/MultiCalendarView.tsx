@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check,
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
+import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
 import { useTranslations } from "next-intl";
 
 interface MultiCalendarViewProps {
@@ -22,6 +23,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     const t = useTranslations('AdminReservations.multiCalendar');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedReservation, setSelectedReservation] = useState<any | null>(null);
+    const [selectedBeds24Id, setSelectedBeds24Id] = useState<number | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Filters State
@@ -366,12 +368,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                             return (
                                                 <div
                                                     key={res.id}
-                                                    onClick={() => { if (!isBeds24) setSelectedReservation(res); }}
+                                                    onClick={() => { if (isBeds24) setSelectedBeds24Id(res.beds24_booking_id); else setSelectedReservation(res); }}
                                                     title={`${res.guest_name || t('guest')} · ${format(new Date(res.check_in), 'd MMM', { locale: dateLocale })} → ${format(new Date(res.check_out), 'd MMM', { locale: dateLocale })}`}
                                                     className={cn(
                                                         "absolute top-1/2 -translate-y-1/2 h-8 flex items-center px-3 z-10 transition-all",
                                                         isBeds24
-                                                            ? "bg-rose-500 text-white cursor-default hover:brightness-105 animate-in fade-in duration-300"
+                                                            ? "bg-rose-500 text-white cursor-pointer hover:brightness-105 animate-in fade-in duration-300"
                                                             : cn("cursor-pointer hover:brightness-110", getStatusColor(effectiveStatus)),
                                                     )}
                                                     style={{ left: `${style.left}px`, width: `${style.width}px`, clipPath: getBarClipPath(startsBefore, endsAfter) }}
@@ -444,6 +446,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
 
             {/* Sheets and Overlays */}
             <ReservationDetailSheet reservation={selectedReservation} onClose={() => setSelectedReservation(null)} onRefresh={onRefresh} />
+            <Beds24BookingDetailSheet beds24BookingId={selectedBeds24Id} onClose={() => setSelectedBeds24Id(null)} />
 
             {/* Premium Property Tooltip */}
             {hoveredPropertyId && (
