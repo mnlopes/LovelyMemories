@@ -30,6 +30,7 @@ export function Beds24BookingDetailSheet({ beds24BookingId, onClose }: Beds24Boo
     useEffect(() => {
         if (beds24BookingId === null) { setBooking(null); return; }
         let cancelled = false;
+        setBooking(null);
         setLoading(true);
         getBeds24BookingDetail(beds24BookingId)
             .then((r) => {
