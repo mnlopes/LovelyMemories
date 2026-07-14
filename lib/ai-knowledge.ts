@@ -87,3 +87,42 @@ export function formatKnowledgeWithCitations(
         citations,
     };
 }
+
+/** Campos do checklist do painel do inbox (mesma ordem). */
+export type KnowledgeField =
+    | "wifiName" | "wifiPassword" | "checkIn" | "checkOut" | "buildingAccess"
+    | "apartmentAccess" | "parking" | "emergencyContact" | "houseRules" | "tips";
+
+export const CHECKLIST_FIELDS: KnowledgeField[] = [
+    "wifiName", "wifiPassword", "checkIn", "checkOut", "buildingAccess",
+    "apartmentAccess", "parking", "emergencyContact", "houseRules", "tips",
+];
+
+/** Que campos do checklist um facto de cada topic cobre. */
+const TOPIC_COVERS: Record<string, KnowledgeField[]> = {
+    access: ["buildingAccess", "apartmentAccess"],
+    parking: ["parking"],
+    house_rules: ["houseRules"],
+    // amenities/area/general não mapeiam um campo fixo do checklist.
+};
+
+/**
+ * Para cada campo do checklist, true se o campo estruturado estiver preenchido
+ * OU um facto ACTIVE cobrir o seu topic. Corrige o painel que antes ignorava
+ * a camada 3 (factos) e mostrava "missing" o que o bot já sabia.
+ */
+export function computeCoverage(
+    k: PropertyKnowledge | null,
+    facts: { topic: string; status: string }[],
+): Record<KnowledgeField, boolean> {
+    const covered = {} as Record<KnowledgeField, boolean>;
+    for (const f of CHECKLIST_FIELDS) {
+        const v = k ? k[f as keyof PropertyKnowledge] : null;
+        covered[f] = !!(v && String(v).trim());
+    }
+    for (const fact of facts) {
+        if (fact.status !== "active") continue;
+        for (const field of TOPIC_COVERS[fact.topic] ?? []) covered[field] = true;
+    }
+    return covered;
+}

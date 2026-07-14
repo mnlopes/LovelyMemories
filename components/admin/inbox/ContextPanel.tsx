@@ -2,18 +2,15 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { CalendarDays, Check, CircleAlert, Users } from "lucide-react";
+import { CalendarDays, Check, CircleAlert, Users, Brain } from "lucide-react";
+import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import {
-    getKnowledgeForProperty, setConversationBot,
+    getKnowledgeForProperty, getPanelExtras, setConversationBot,
     type InboxConversation, type ThreadData,
 } from "@/app/actions/ai-inbox";
+import { computeCoverage, CHECKLIST_FIELDS } from "@/lib/ai-knowledge";
 import type { PropertyKnowledge } from "@/lib/ai-messaging";
-
-const KNOWLEDGE_FIELDS: (keyof PropertyKnowledge)[] = [
-    "wifiName", "wifiPassword", "checkIn", "checkOut", "buildingAccess",
-    "apartmentAccess", "parking", "emergencyContact", "houseRules", "tips",
-];
 
 export function ContextPanel(props: {
     conversation: InboxConversation;
@@ -23,6 +20,7 @@ export function ContextPanel(props: {
     const t = useTranslations("AiInbox");
     const [isPending, startTransition] = useTransition();
     const [knowledge, setKnowledge] = useState<PropertyKnowledge | null | undefined>(undefined);
+    const [facts, setFacts] = useState<{ topic: string; status: string }[]>([]);
 
     useEffect(() => {
         let alive = true;
@@ -31,8 +29,12 @@ export function ContextPanel(props: {
             void getKnowledgeForProperty(props.conversation.externalPropertyId)
                 .then((k) => { if (alive) setKnowledge(k); })
                 .catch(() => { if (alive) setKnowledge(null); });
+            void getPanelExtras(props.conversation.externalPropertyId)
+                .then((x) => { if (alive) setFacts(x.facts); })
+                .catch(() => { if (alive) setFacts([]); });
         } else {
             setKnowledge(null);
+            setFacts([]);
         }
         return () => { alive = false; };
     }, [props.conversation.externalPropertyId]);
@@ -123,26 +125,35 @@ export function ContextPanel(props: {
                         </div>
                     ) : knowledge === null ? (
                         <p className="text-xs text-[#a3a3a3]">{t("notLinked")}</p>
-                    ) : (
-                        <ul className="space-y-1">
-                            {KNOWLEDGE_FIELDS.map((f) => {
-                                const filled = !!(knowledge[f] && String(knowledge[f]).trim());
-                                return (
-                                    <li key={String(f)} className="flex items-center gap-2 text-xs">
-                                        {filled ? (
-                                            <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                        ) : (
-                                            <CircleAlert className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                                        )}
-                                        <span className={cn(
-                                            filled ? "text-[#525252] dark:text-white/70" : "text-[#a3a3a3]",
-                                        )}>
-                                            {String(f)}{!filled && ` — ${t("knowledgeMissing")}`}
-                                        </span>
-                                    </li>
-                                );
-                            })}
-                        </ul>
+                    ) : (() => {
+                        const coverage = computeCoverage(knowledge, facts);
+                        return (
+                            <ul className="space-y-1">
+                                {CHECKLIST_FIELDS.map((f) => {
+                                    const filled = coverage[f];
+                                    return (
+                                        <li key={f} className="flex items-center gap-2 text-xs">
+                                            {filled ? (
+                                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                            ) : (
+                                                <CircleAlert className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                                            )}
+                                            <span className={cn(filled ? "text-[#525252] dark:text-white/70" : "text-[#a3a3a3]")}>
+                                                {f}{!filled && ` — ${t("knowledgeMissing")}`}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        );
+                    })()}
+                    {props.conversation.externalPropertyId && (
+                        <Link
+                            href={`/admin/activity/memory?property=${props.conversation.externalPropertyId}`}
+                            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-[#e5e5e5] py-1.5 text-xs font-medium text-[#525252] transition-colors hover:bg-[#fafafa] dark:border-admin-dark-border dark:text-white/70 dark:hover:bg-white/5"
+                        >
+                            <Brain className="h-3.5 w-3.5" /> {t("manageMemory")}
+                        </Link>
                     )}
                 </div>
             </section>

@@ -7,6 +7,7 @@ import { beds24Request } from '@/lib/beds24/client';
 import {
     describeProvider, buildContext, DEFAULT_BRAND_TONE_TEXT,
     mapPropertyBase, mapExtrasRow, EXTRAS_COLUMNS, PROPERTY_BASE_COLUMNS,
+    loadPropertyKnowledge,
     type ProviderStatus, type PropertyKnowledge, type ThreadMessage,
 } from '@/lib/ai-messaging';
 import { decide } from '@/lib/ai-decision';
@@ -543,6 +544,108 @@ export async function reviewFact(
     }
 }
 
+// ── CRUD de factos por propriedade (gestão de memória) ────────────────────────
+
+export interface PropertyFactRow {
+    id: string;
+    topic: string;
+    fact: string;
+    source: string;
+    status: string;
+    learnedFrom: string | null;
+    createdAt: string;
+}
+
+export const FACT_TOPICS = ['amenities', 'access', 'parking', 'house_rules', 'area', 'general'];
+
+/** Factos active + pending de uma propriedade (para o ecrã de gestão). */
+export async function listFactsForProperty(externalPropertyId: string): Promise<PropertyFactRow[]> {
+    await assertAdmin();
+    try {
+        const admin = await getSupabaseAdmin();
+        const { data } = await admin
+            .from('ai_property_fact')
+            .select('id, topic, fact, source, status, learned_from, created_at')
+            .eq('external_property_id', externalPropertyId)
+            .in('status', ['active', 'pending'])
+            .order('created_at', { ascending: false })
+            .limit(200);
+        return ((data ?? []) as Record<string, unknown>[]).map((f) => ({
+            id: f.id as string,
+            topic: f.topic as string,
+            fact: f.fact as string,
+            source: f.source as string,
+            status: f.status as string,
+            learnedFrom: (f.learned_from as string) ?? null,
+            createdAt: f.created_at as string,
+        }));
+    } catch {
+        return [];
+    }
+}
+
+export async function createFact(input: { externalPropertyId: string; topic: string; fact: string }): Promise<{ ok: boolean; error?: string }> {
+    await assertAdmin();
+    const fact = input.fact.trim();
+    if (!fact) return { ok: false, error: 'Empty fact' };
+    const topic = FACT_TOPICS.includes(input.topic) ? input.topic : 'general';
+    try {
+        const admin = await getSupabaseAdmin();
+        const { error } = await admin.from('ai_property_fact').insert({
+            external_property_id: input.externalPropertyId,
+            topic, fact, source: 'manual', status: 'active',
+        });
+        if (error) throw error;
+        return { ok: true };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Create failed' };
+    }
+}
+
+export async function updateFact(input: { id: string; topic?: string; fact?: string }): Promise<{ ok: boolean; error?: string }> {
+    await assertAdmin();
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (input.fact !== undefined) {
+        const f = input.fact.trim();
+        if (!f) return { ok: false, error: 'Empty fact' };
+        patch.fact = f;
+    }
+    if (input.topic !== undefined) patch.topic = FACT_TOPICS.includes(input.topic) ? input.topic : 'general';
+    try {
+        const admin = await getSupabaseAdmin();
+        const { error } = await admin.from('ai_property_fact').update(patch).eq('id', input.id);
+        if (error) throw error;
+        return { ok: true };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Update failed' };
+    }
+}
+
+export async function setFactStatus(id: string, status: 'active' | 'rejected'): Promise<{ ok: boolean; error?: string }> {
+    await assertAdmin();
+    try {
+        const admin = await getSupabaseAdmin();
+        const { error } = await admin.from('ai_property_fact')
+            .update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+        if (error) throw error;
+        return { ok: true };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Update failed' };
+    }
+}
+
+export async function deleteFact(id: string): Promise<{ ok: boolean; error?: string }> {
+    await assertAdmin();
+    try {
+        const admin = await getSupabaseAdmin();
+        const { error } = await admin.from('ai_property_fact').delete().eq('id', id);
+        if (error) throw error;
+        return { ok: true };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Delete failed' };
+    }
+}
+
 // ── Ligação propriedade Beds24 ↔ propriedade do site ─────────────────────────
 
 export interface PropertyLinkSuggestion {
@@ -764,6 +867,19 @@ export async function getKnowledgeForProperty(externalPropertyId: string): Promi
     return loadPropertyKnowledge(externalPropertyId);
 }
 
+/** Dados extra para o ContextPanel: factos (p/ cobertura) + se pode gerir memória. */
+export async function getPanelExtras(externalPropertyId: string): Promise<{ facts: { topic: string; status: string }[] }> {
+    await assertAdmin(); // super_admin apenas (INBOX_ROLES)
+    try {
+        const admin = await getSupabaseAdmin();
+        const { data } = await admin.from('ai_property_fact')
+            .select('topic, status').eq('external_property_id', externalPropertyId);
+        return { facts: (data ?? []) as { topic: string; status: string }[] };
+    } catch {
+        return { facts: [] };
+    }
+}
+
 // ── Modos por propriedade (lista para settings) ──────────────────────────────
 
 export interface PropertyBotRow {
@@ -786,4 +902,45 @@ export async function listPropertyBotModes(): Promise<PropertyBotRow[]> {
             botMode: (p.bot_mode as 'off' | 'drafts' | 'auto') ?? 'off',
             linked: !!p.internal_property_id,
         }));
+}
+
+// ── Gestão de memória (página) ────────────────────────────────────────────────
+
+export interface MemoryPropertyItem { beds24PropertyId: number; name: string; linked: boolean }
+
+export async function listMemoryProperties(): Promise<MemoryPropertyItem[]> {
+    await assertAdmin();
+    const admin = await getSupabaseAdmin();
+    const { data } = await admin.from('beds24_properties')
+        .select('beds24_property_id, name, internal_property_id').order('name');
+    return ((data ?? []) as { beds24_property_id: number; name: string; internal_property_id: string | null }[])
+        .map((p) => ({ beds24PropertyId: p.beds24_property_id, name: p.name, linked: !!p.internal_property_id }));
+}
+
+export interface MemoryProperty {
+    beds24PropertyId: number;
+    name: string;
+    internalPropertyId: string | null;
+    knowledge: PropertyKnowledge | null;
+    facts: PropertyFactRow[];
+}
+
+export async function getMemoryForProperty(beds24PropertyId: number): Promise<MemoryProperty> {
+    await assertAdmin();
+    const admin = await getSupabaseAdmin();
+    const { data: prop } = await admin.from('beds24_properties')
+        .select('beds24_property_id, name, internal_property_id')
+        .eq('beds24_property_id', beds24PropertyId).maybeSingle();
+    const p = prop as { name: string; internal_property_id: string | null } | null;
+    const facts = await listFactsForProperty(String(beds24PropertyId));
+    const knowledge = p?.internal_property_id
+        ? await loadPropertyKnowledge(String(beds24PropertyId))
+        : null;
+    return {
+        beds24PropertyId,
+        name: p?.name ?? String(beds24PropertyId),
+        internalPropertyId: p?.internal_property_id ?? null,
+        knowledge,
+        facts,
+    };
 }
