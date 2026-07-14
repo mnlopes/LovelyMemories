@@ -71,6 +71,21 @@ Sessão E2E com a conta Carolina (inquiry 89794243, Virtudes One em `drafts`) fe
      PENDENTE: **push para prod** — `git push origin main`. origin/main está em `cef9fd6` (provider/hierarquia,
      JÁ em prod); por push estão os 10 commits do preview do calendário (2f7acfc..cc52977, specs+plano+código).
      Hebraico do namespace AdminReservations continua por traduzir (gap pré-existente, out of scope).
+   - ✅ **FEITO — branch `feat/beds24-booking-detail` (2026-07-14), NÃO mergeado, NÃO pushed:** ficha de
+     detalhe READ-ONLY ao clicar numa barra Beds24 no calendário (nível PMS de topo, tipo Hospitable/Guesty).
+     Slide-over direito (framer-motion, igual ao ReservationDetailSheet): header (avatar+iniciais, chip canal,
+     pill status, selo Beds24) → estadia (check-in/out c/ dia da semana, nº noites, propriedade, hóspedes) →
+     financeiro (breakdown de `invoiceItems` do raw quando existe, senão total+comissão; payout líquido
+     destacado) → contacto clicável (mailto/tel, ou estado "gerido pelo canal" se mascarado) → meta
+     (booking #id, ref. canal, reservada/modificada, origem). Nova action `getBeds24BookingDetail(id)`
+     (fetch-on-click, service-role, nunca lança; PII só sai aqui, não no preview magro). Barra Beds24 passou
+     a `cursor-pointer`; diretas do site continuam a abrir o sheet antigo. i18n `AdminReservations.beds24Detail`
+     en/pt (he = inglês, paridade estrutural). SDD 4 tasks + reviews (fix: parsing defensivo de invoiceItems +
+     guarda NaN nas noites). Specs/plano: docs/superpowers/{specs,plans}/2026-07-14-beds24-booking-detail*.
+     tsc+build+test:security limpos (falhas do test:security são pré-existentes na base, validação de criação
+     de reservas — não tocada). PENDENTE: **E2E visual como super_admin** (auth-gated, como os outros itens
+     deste admin — arranca e a rota resolve sem erro, mas o click-through precisa de login); depois merge→main
+     local + push (com o preview do calendário, ainda por push).
 4. Experiência 17/07 ~10:01: payload do "Farewell Porto" agendado → marcador de scheduled para
    isentar do auto-off.
 
