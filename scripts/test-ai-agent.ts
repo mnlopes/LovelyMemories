@@ -61,5 +61,40 @@ const knowledgeTool: AgentTool = {
     const r7 = await runAgent({ systemPrompt: "x", userMessage: "têm bicicletas?", history: [], tools: [], callModel: honest });
     t("não coberto com draft", r7.covered === false && r7.reason === "not_covered" && !!r7.reply);
 
+    // 8. JSON precedido E seguido de prosa → parseia corretamente
+    let calls8 = 0;
+    const proseAround: ModelCaller = async () => {
+        calls8++;
+        if (calls8 === 1) return { type: "tool_calls", calls: [{ name: "getKnowledge", args: {} }] };
+        return { type: "text", text: `Here's my answer: ${JSON.stringify({ covered: true, reply: "A password é pw123", citations: ["knowledge.wifiPassword"], language: "en" })} Hope that helps!` };
+    };
+    const r8 = await runAgent({ systemPrompt: "x", userMessage: "wifi?", history: [], tools: [knowledgeTool], callModel: proseAround });
+    t("prosa à volta do JSON parseia", r8.covered === true && r8.reply === "A password é pw123" && r8.citations.join() === "knowledge.wifiPassword");
+
+    // 9. JSON dentro de fence ``` simples (sem "json") → parseia
+    let calls9 = 0;
+    const plainFence: ModelCaller = async () => {
+        calls9++;
+        if (calls9 === 1) return { type: "tool_calls", calls: [{ name: "getKnowledge", args: {} }] };
+        return { type: "text", text: "```\n" + JSON.stringify({ covered: true, reply: "sim!", citations: ["knowledge.wifiPassword"], language: "en" }) + "\n```" };
+    };
+    const r9 = await runAgent({ systemPrompt: "x", userMessage: "q", history: [], tools: [knowledgeTool], callModel: plainFence });
+    t("fence simples ``` parseia", r9.covered === true && r9.reply === "sim!");
+
+    // 10. Texto sem nenhum objeto JSON → parse_error
+    const noJson: ModelCaller = async () => ({ type: "text", text: "Desculpa, não sei responder a isso agora." });
+    const r10 = await runAgent({ systemPrompt: "x", userMessage: "q", history: [], tools: [], callModel: noJson });
+    t("sem JSON nenhum escala parse_error", r10.covered === false && r10.reason === "parse_error");
+
+    // 11. Chaves aninhadas dentro de valores string (ex: reply contém "{") → parseia
+    let calls11 = 0;
+    const nestedBraces: ModelCaller = async () => {
+        calls11++;
+        if (calls11 === 1) return { type: "tool_calls", calls: [{ name: "getKnowledge", args: {} }] };
+        return { type: "text", text: JSON.stringify({ covered: true, reply: "Usa o código {1234} na porta", citations: ["knowledge.wifiPassword"], language: "en" }) };
+    };
+    const r11 = await runAgent({ systemPrompt: "x", userMessage: "q", history: [], tools: [knowledgeTool], callModel: nestedBraces });
+    t("chavetas aninhadas em string parseiam", r11.covered === true && r11.reply === "Usa o código {1234} na porta");
+
     process.exit(failed ? 1 : 0);
 })();

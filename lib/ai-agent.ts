@@ -49,10 +49,41 @@ object — no markdown fence, no extra text:
 - Never confirm, accept, pre-approve or modify a booking; invite the guest to complete the booking
   and note the team will confirm.`;
 
-/** Extrai o primeiro objeto JSON do texto (tolera fences ```json e prosa à volta). */
+/** Extrai o objeto JSON balanceado ({ ... }) de um texto, ignorando chavetas dentro de strings. */
+function extractBalancedJson(text: string): string | null {
+    const start = text.indexOf("{");
+    if (start === -1) return null;
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < text.length; i++) {
+        const ch = text[i];
+        if (inString) {
+            if (escaped) {
+                escaped = false;
+            } else if (ch === "\\") {
+                escaped = true;
+            } else if (ch === '"') {
+                inString = false;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inString = true;
+        } else if (ch === "{") {
+            depth++;
+        } else if (ch === "}") {
+            depth--;
+            if (depth === 0) return text.slice(start, i + 1);
+        }
+    }
+    return null;
+}
+
+/** Extrai o primeiro objeto JSON do texto (tolera fences ``` / ```json e prosa antes/depois). */
 function parseOutcome(text: string): { covered: boolean; reply: string | null; citations: string[] } | null {
-    const cleaned = text.replace(/^```json?\s*|```\s*$/g, "").trim();
-    const candidate = cleaned.startsWith("{") ? cleaned : cleaned.slice(cleaned.indexOf("{"));
+    const candidate = extractBalancedJson(text);
+    if (!candidate) return null;
     try {
         const parsed = JSON.parse(candidate) as { covered?: unknown; reply?: unknown; citations?: unknown };
         if (typeof parsed.covered !== "boolean") return null;
