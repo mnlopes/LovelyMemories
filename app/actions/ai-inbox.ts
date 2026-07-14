@@ -104,7 +104,9 @@ export async function getInboxData(): Promise<InboxData> {
         admin.from('ai_messaging_settings').select('bot_globally_enabled').eq('id', 1).maybeSingle(),
     ]);
 
-    const queue: QueueItem[] = (queueRes.data ?? []).map((r) => ({
+    const queue: QueueItem[] = (queueRes.data ?? [])
+        .filter((r) => /^\d+$/.test(String(r.reservation_ref)))
+        .map((r) => ({
         id: r.id as string,
         reservationId: (r.reservation_ref as string) ?? '',
         guestName: (r.guest_name as string) ?? null,
@@ -121,7 +123,11 @@ export async function getInboxData(): Promise<InboxData> {
         pendingByReservation.set(q.reservationId, (pendingByReservation.get(q.reservationId) ?? 0) + 1);
     }
 
-    const conversations: InboxConversation[] = (convRes.data ?? []).map((c) => ({
+    const conversations: InboxConversation[] = (convRes.data ?? [])
+        // Só conversas Beds24 (reservation_id numérico). Exclui os dados legados
+        // do Hospitable (reservation_id em UUID) da POC antiga.
+        .filter((c) => /^\d+$/.test(String(c.reservation_id)))
+        .map((c) => ({
         reservationId: c.reservation_id as string,
         guestName: (c.guest_name as string) ?? null,
         propertyName: (c.property_name as string) ?? null,
