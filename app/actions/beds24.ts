@@ -253,6 +253,7 @@ export async function fetchMessagesFromApi(beds24BookingId: number) {
 
 export interface Beds24CalendarBooking {
     id: string;                 // `b24-${beds24_booking_id}` — nunca colide com uuids
+    beds24_booking_id: number;  // id numérico Beds24 — para abrir a ficha de detalhe
     property_id: string;        // internal_property_id (propriedade do site)
     guest_name: string;
     check_in: string;           // arrival (YYYY-MM-DD)
@@ -304,6 +305,7 @@ export async function getBeds24CalendarPreview(): Promise<Beds24CalendarPreviewR
             .filter((r) => r.arrival && r.departure)
             .map((r) => ({
                 id: `b24-${r.beds24_booking_id}`,
+                beds24_booking_id: r.beds24_booking_id as number,
                 property_id: linkMap.get(r.beds24_property_id as number)!,
                 guest_name: [r.guest_first_name, r.guest_last_name].filter(Boolean).join(' ') || 'Airbnb guest',
                 check_in: r.arrival as string,
@@ -317,5 +319,126 @@ export async function getBeds24CalendarPreview(): Promise<Beds24CalendarPreviewR
         return { ok: true, internalPropertyIds: [...new Set(linkMap.values())], bookings };
     } catch (err) {
         return { ok: false, error: err instanceof Error ? err.message : 'Preview failed' };
+    }
+}
+
+// ---------- Ficha de detalhe read-only (clique na barra Beds24 do calendário) ----------
+
+export interface Beds24InvoiceItem {
+    description: string;
+    amount: number;
+}
+
+export interface Beds24BookingDetail {
+    beds24_booking_id: number;
+    guest_name: string;
+    guest_email: string | null;
+    guest_phone: string | null;
+    channel: string | null;
+    status: string | null;
+    sub_status: string | null;
+    arrival: string;
+    departure: string;
+    nights: number;
+    num_adult: number | null;
+    num_child: number | null;
+    property_title: string | null;
+    price: number | null;
+    commission: number | null;
+    net_payout: number | null;
+    invoice_items: Beds24InvoiceItem[];
+    api_reference: string | null;
+    booking_time: string | null;
+    modified_time: string | null;
+    first_seen_via: string | null;
+}
+
+export type Beds24BookingDetailResult =
+    | { ok: true; booking: Beds24BookingDetail }
+    | { ok: false; error: string };
+
+/**
+ * Detalhe completo de UMA reserva Beds24 (fetch-on-click do calendário admin).
+ * PII (email/telefone) só sai daqui, nunca no preview magro. Nunca lança.
+ */
+export async function getBeds24BookingDetail(beds24BookingId: number): Promise<Beds24BookingDetailResult> {
+    try {
+        await guard();
+        const supabase = await getSupabaseAdmin();
+        const { data: row, error } = await supabase
+            .from('beds24_bookings')
+            .select('*')
+            .eq('beds24_booking_id', beds24BookingId)
+            .single();
+        if (error || !row) throw new Error(error?.message || 'Reserva não encontrada');
+
+        // Título da propriedade do site via ligação beds24_properties → properties
+        let propertyTitle: string | null = null;
+        const { data: link } = await supabase
+            .from('beds24_properties')
+            .select('internal_property_id, name')
+            .eq('beds24_property_id', row.beds24_property_id)
+            .single();
+        if (link?.internal_property_id) {
+            const { data: prop } = await supabase
+                .from('properties')
+                .select('title')
+                .eq('id', link.internal_property_id)
+                .single();
+            propertyTitle = (prop?.title as string) ?? (link?.name as string) ?? null;
+        } else {
+            propertyTitle = (link?.name as string) ?? null;
+        }
+
+        // invoiceItems best-effort do raw JSONB (forma varia; nunca rebenta)
+        const rawItems = (row.raw as Record<string, unknown> | null)?.invoiceItems;
+        const invoiceItems: Beds24InvoiceItem[] = Array.isArray(rawItems)
+            ? rawItems
+                .map((it: Record<string, unknown>) => {
+                    const amount = Number(it.lineTotal ?? it.amount ?? NaN);
+                    const description = String(it.description ?? it.type ?? '').trim();
+                    return { description, amount };
+                })
+                .filter((it) => it.description !== '' && Number.isFinite(it.amount) && it.amount !== 0)
+            : [];
+
+        const toNum = (v: unknown): number | null => {
+            const n = typeof v === 'number' ? v : v ? Number(v) : NaN;
+            return Number.isFinite(n) ? n : null;
+        };
+        const price = toNum(row.price);
+        const commission = toNum(row.commission);
+        const nights = Math.max(1, Math.round(
+            (new Date(row.departure as string).getTime() - new Date(row.arrival as string).getTime()) / 86400000,
+        ));
+
+        return {
+            ok: true,
+            booking: {
+                beds24_booking_id: row.beds24_booking_id as number,
+                guest_name: [row.guest_first_name, row.guest_last_name].filter(Boolean).join(' ') || 'Airbnb guest',
+                guest_email: (row.guest_email as string) ?? null,
+                guest_phone: (row.guest_phone as string) ?? null,
+                channel: (row.channel as string) ?? null,
+                status: (row.status as string) ?? null,
+                sub_status: (row.sub_status as string) ?? null,
+                arrival: row.arrival as string,
+                departure: row.departure as string,
+                nights,
+                num_adult: toNum(row.num_adult),
+                num_child: toNum(row.num_child),
+                property_title: propertyTitle,
+                price,
+                commission,
+                net_payout: price !== null ? price - (commission ?? 0) : null,
+                invoice_items: invoiceItems,
+                api_reference: (row.api_reference as string) ?? null,
+                booking_time: (row.booking_time as string) ?? null,
+                modified_time: (row.modified_time as string) ?? null,
+                first_seen_via: (row.first_seen_via as string) ?? null,
+            },
+        };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Detail failed' };
     }
 }
