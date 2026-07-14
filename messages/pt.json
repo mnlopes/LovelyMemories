@@ -2561,6 +2561,26 @@
             "guidebookUrl": "URL do guia",
             "tips": "Dicas locais",
             "toneNotes": "Notas de tom"
+        },
+        "factsTitle": "Factos",
+        "factsPending": "Sugeridos pelo bot — rever",
+        "factsAddPlaceholder": "Adiciona um facto que o bot pode usar…",
+        "factsEmpty": "Ainda sem factos.",
+        "add": "Adicionar",
+        "edit": "Editar",
+        "delete": "Apagar",
+        "deactivate": "Desativar",
+        "cancel": "Cancelar",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "learned": "aprendido",
+        "topic": {
+            "amenities": "Comodidades",
+            "access": "Acesso",
+            "parking": "Estacionamento",
+            "house_rules": "Regras da casa",
+            "area": "Zona",
+            "general": "Geral"
         }
     }
 }

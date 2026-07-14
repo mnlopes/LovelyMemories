@@ -2570,6 +2570,26 @@
             "guidebookUrl": "Guidebook URL",
             "tips": "Local tips",
             "toneNotes": "Tone notes"
+        },
+        "factsTitle": "Facts",
+        "factsPending": "Suggested by the bot — review",
+        "factsAddPlaceholder": "Add a fact the bot can use…",
+        "factsEmpty": "No facts yet.",
+        "add": "Add",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deactivate": "Deactivate",
+        "cancel": "Cancel",
+        "approve": "Approve",
+        "reject": "Reject",
+        "learned": "learned",
+        "topic": {
+            "amenities": "Amenities",
+            "access": "Access",
+            "parking": "Parking",
+            "house_rules": "House rules",
+            "area": "Area",
+            "general": "General"
         }
     }
 }

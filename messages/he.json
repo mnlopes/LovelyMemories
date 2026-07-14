@@ -1364,6 +1364,26 @@
             "guidebookUrl": "כתובת מדריך האורח",
             "tips": "טיפים מקומיים",
             "toneNotes": "הערות טון"
+        },
+        "factsTitle": "עובדות",
+        "factsPending": "הוצע על ידי הבוט — לבדיקה",
+        "factsAddPlaceholder": "הוסף עובדה שהבוט יכול להשתמש בה…",
+        "factsEmpty": "אין עדיין עובדות.",
+        "add": "הוסף",
+        "edit": "ערוך",
+        "delete": "מחק",
+        "deactivate": "השבת",
+        "cancel": "בטל",
+        "approve": "אשר",
+        "reject": "דחה",
+        "learned": "נלמד",
+        "topic": {
+            "amenities": "מתקנים",
+            "access": "גישה",
+            "parking": "חניה",
+            "house_rules": "כללי הבית",
+            "area": "אזור",
+            "general": "כללי"
         }
     }
 }
