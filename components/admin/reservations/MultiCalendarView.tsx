@@ -264,6 +264,9 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                         <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-amber-400"></div>{t('legend.pending')}</div>
                         <div className="flex items-center gap-1.5"><div className="size-2 rounded-full border border-slate-200 bg-slate-50" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(148,163,184,0.1) 2px, rgba(148,163,184,0.1) 4px)' }}></div>{t('legend.blocked')}</div>
                         <div className="flex items-center gap-1.5"><div className="size-2 rounded-full border border-rose-200 bg-rose-50" style={{ background: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(244,63,94,0.1) 2px, rgba(244,63,94,0.1) 4px)' }}></div>Airbnb</div>
+                        {reservations.some((r: any) => r.is_beds24) && (
+                            <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-rose-500"></div>{t('legend.beds24')}</div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -358,20 +361,27 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 effectiveStatus = 'completed';
                                             }
 
+                                            const isBeds24 = !!res.is_beds24;
+
                                             return (
                                                 <div
                                                     key={res.id}
-                                                    onClick={() => setSelectedReservation(res)}
+                                                    onClick={() => { if (!isBeds24) setSelectedReservation(res); }}
                                                     title={`${res.guest_name || t('guest')} · ${format(new Date(res.check_in), 'd MMM', { locale: dateLocale })} → ${format(new Date(res.check_out), 'd MMM', { locale: dateLocale })}`}
                                                     className={cn(
-                                                        "absolute top-1/2 -translate-y-1/2 h-8 cursor-pointer flex items-center px-3 z-10 transition-all hover:brightness-110",
-                                                        getStatusColor(effectiveStatus),
+                                                        "absolute top-1/2 -translate-y-1/2 h-8 flex items-center px-3 z-10 transition-all",
+                                                        isBeds24
+                                                            ? "bg-rose-500 text-white cursor-default hover:brightness-105 animate-in fade-in duration-300"
+                                                            : cn("cursor-pointer hover:brightness-110", getStatusColor(effectiveStatus)),
                                                     )}
                                                     style={{ left: `${style.left}px`, width: `${style.width}px`, clipPath: getBarClipPath(startsBefore, endsAfter) }}
                                                 >
                                                     <div className="flex justify-between items-center w-full gap-2 overflow-hidden">
                                                         <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
-                                                        {res.total_price ? <span className="text-[10px] font-bold whitespace-nowrap shrink-0 leading-none">€{res.total_price}</span> : null}
+                                                        <span className="flex items-center gap-1.5 shrink-0">
+                                                            {res.total_price ? <span className="text-[10px] font-bold whitespace-nowrap leading-none">€{res.total_price}</span> : null}
+                                                            {isBeds24 && <span className="rounded bg-white/25 px-1 py-px text-[8px] font-bold uppercase tracking-wider leading-none">Beds24</span>}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             );
