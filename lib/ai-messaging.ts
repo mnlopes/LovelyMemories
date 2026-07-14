@@ -167,13 +167,6 @@ export interface DraftContext {
     history: ThreadMessage[];
     /** Effective brand tone/instructions (DB override, else the built-in default). */
     brandTone?: string | null;
-    /**
-     * When true, buildSystemPrompt() instructs the model to respond with a strict JSON decision
-     * envelope instead of free-form guest-facing text. Used by the Task 3 decision pipeline
-     * (lib/ai-decision.ts) to ask the model whether the property knowledge covers the guest's
-     * question before auto-sending anything.
-     */
-    decisionMode?: boolean;
 }
 
 /** The built-in default tone, shown in the editor as the starting point. */
@@ -391,20 +384,6 @@ export function buildSystemPrompt(ctx: DraftContext): string {
             typeof r.previousStays === "number" && r.previousStays > 0 && `Returning guest — ${r.previousStays} previous stay(s). Acknowledge warmly.`,
         ].filter(Boolean);
         if (res.length) parts.push(`Reservation:\n${res.join("\n")}`);
-    }
-
-    if (ctx.decisionMode) {
-        parts.push(
-            `DECISION MODE: Do not write a normal reply. Respond with ONLY a single JSON object (no markdown, ` +
-            `no code fence, no extra text) with exactly these fields:\n` +
-            `{"covered": boolean, "citation": string, "reply": string}\n` +
-            `- "covered" must be true ONLY if the guest's question is explicitly answered by the property ` +
-            `information above — never mark it true from general knowledge or a guess.\n` +
-            `- "citation" must name the specific knowledge field you used (e.g. "wifi", "doorCode", ` +
-            `"checkIn", "houseRules"); use an empty string if "covered" is false.\n` +
-            `- "reply" is the guest-facing message: the drafted answer when covered is true, or a short, ` +
-            `honest note that the team will confirm when covered is false. Never invent information.`
-        );
     }
 
     return parts.join("\n\n");
