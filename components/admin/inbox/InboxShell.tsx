@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, MessagesSquare, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 import { getInboxData, getThread, type InboxData, type ThreadData } from "@/app/actions/ai-inbox";
 import { ConversationList } from "./ConversationList";
 import { ThreadView } from "./ThreadView";
@@ -40,8 +41,38 @@ export function InboxShell() {
 
     useEffect(() => {
         void refresh();
+        // Polling 30s = fallback (o browser atrasa timers de tabs em background).
         const id = setInterval(() => void refresh(), 30_000);
-        return () => clearInterval(id);
+        // Refresh imediato ao voltar à tab — cobre o caso "respondi noutra janela".
+        const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
+        document.addEventListener("visibilitychange", onVisible);
+        window.addEventListener("focus", onVisible);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener("visibilitychange", onVisible);
+            window.removeEventListener("focus", onVisible);
+        };
+    }, [refresh]);
+
+    useEffect(() => {
+        // Supabase Realtime: push instantâneo quando entram mensagens/drafts novos.
+        // Precisa de Realtime ativo + policy de SELECT para staff nas 3 tabelas
+        // (migração 20260714200000). Debounce 1s: um webhook toca várias tabelas.
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const poke = () => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => void refresh(), 1_000);
+        };
+        const channel = supabase
+            .channel("ai-inbox-live")
+            .on("postgres_changes", { event: "INSERT", schema: "public", table: "beds24_messages" }, poke)
+            .on("postgres_changes", { event: "*", schema: "public", table: "ai_message_log" }, poke)
+            .on("postgres_changes", { event: "*", schema: "public", table: "ai_conversation" }, poke)
+            .subscribe();
+        return () => {
+            if (timer) clearTimeout(timer);
+            void supabase.removeChannel(channel);
+        };
     }, [refresh]);
 
     const onSelect = useCallback(async (reservationId: string) => {
