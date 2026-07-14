@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ interface MultiCalendarViewProps {
 export function MultiCalendarView({ reservations, properties, propertyImages, locale = 'pt', blockedDates = [], onRefresh }: MultiCalendarViewProps) {
     const t = useTranslations('AdminReservations.multiCalendar');
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [rangeDays, setRangeDays] = useState<7 | 14 | 31>(31);
     const [selectedReservation, setSelectedReservation] = useState<any | null>(null);
     const [selectedBeds24Id, setSelectedBeds24Id] = useState<number | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -78,14 +79,18 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         };
     };
 
-    // Get days for the current month view
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    // Janela visível: 31d = mês de calendário (comportamento clássico);
+    // 7d/14d = janela deslizante a partir de currentDate (estilo Guesty/Hostaway).
+    const rangeStart = rangeDays === 31 ? startOfMonth(currentDate) : startOfDay(currentDate);
+    const rangeEnd = rangeDays === 31 ? endOfMonth(currentDate) : startOfDay(addDays(rangeStart, rangeDays - 1));
+    const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
 
-    // Navigation
-    const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-    const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+    // Largura de célula por alcance: vistas curtas = células largas (espaço p/ preços).
+    const cellWidth = rangeDays === 7 ? 110 : rangeDays === 14 ? 76 : 48;
+
+    // Navigation: mês na 31d, salto de rangeDays dias nas curtas.
+    const nextMonth = () => setCurrentDate(rangeDays === 31 ? addMonths(currentDate, 1) : addDays(currentDate, rangeDays));
+    const prevMonth = () => setCurrentDate(rangeDays === 31 ? subMonths(currentDate, 1) : addDays(currentDate, -rangeDays));
     const goToToday = () => setCurrentDate(new Date());
 
     // Filtering logic
@@ -123,7 +128,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
             if (!visiblePropertyIds.includes(res.property_id)) return false;
             const checkIn = new Date(res.check_in);
             const checkOut = new Date(res.check_out);
-            return !(checkOut <= monthStart || checkIn >= monthEnd);
+            return !(checkOut <= rangeStart || checkIn >= rangeEnd);
         })
         .reduce((acc, res) => {
             const propId = res.property_id;
@@ -138,36 +143,34 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         if (!visiblePropertyIds.includes(b.property_id)) return false;
         const start = new Date(b.start_date);
         const end = new Date(b.end_date);
-        return !(end <= monthStart || start >= monthEnd);
+        return !(end <= rangeStart || start >= rangeEnd);
     });
 
-    // Bar style calculation
+    // Bar style calculation — por índice de dia na janela (funciona através de meses)
     const getBarStyle = (startDateStr: string, endDateStr: string) => {
         const checkIn = new Date(startDateStr);
         const checkOut = new Date(endDateStr);
 
-        // Use midnight comparison for day numbers
         const d_checkIn = startOfDay(checkIn);
         const d_checkOut = startOfDay(checkOut);
-        const d_monthStart = startOfDay(monthStart);
-        const d_monthEnd = startOfDay(monthEnd);
+        const d_rangeStart = startOfDay(rangeStart);
+        const d_rangeEnd = startOfDay(rangeEnd);
 
-        const effectiveStart = d_checkIn < d_monthStart ? d_monthStart : d_checkIn;
-        const effectiveEnd = d_checkOut > d_monthEnd ? d_monthEnd : d_checkOut;
+        const effectiveStart = d_checkIn < d_rangeStart ? d_rangeStart : d_checkIn;
+        const effectiveEnd = d_checkOut > d_rangeEnd ? d_rangeEnd : d_checkOut;
 
-        const CELL_WIDTH = 48;
-        const startDay = effectiveStart.getDate();
-        const endDay = effectiveEnd.getDate();
+        const startIdx = differenceInCalendarDays(effectiveStart, d_rangeStart);
+        const endIdx = differenceInCalendarDays(effectiveEnd, d_rangeStart);
 
-        let leftPos = (startDay - 1) * CELL_WIDTH;
-        if (isSameDay(effectiveStart, checkIn)) leftPos += (CELL_WIDTH / 2) + 2;
+        let leftPos = startIdx * cellWidth;
+        if (isSameDay(effectiveStart, checkIn)) leftPos += (cellWidth / 2) + 2;
 
-        let rightPos = endDay * CELL_WIDTH;
+        let rightPos = (endIdx + 1) * cellWidth;
         if (isSameDay(effectiveEnd, checkOut)) {
-            rightPos = ((endDay - 1) * CELL_WIDTH) + (CELL_WIDTH / 2) - 2;
+            rightPos = endIdx * cellWidth + (cellWidth / 2) - 2;
         }
 
-        let width = rightPos - leftPos;
+        const width = rightPos - leftPos;
         return { left: leftPos, width: Math.max(width, 10) };
     };
 
@@ -210,7 +213,9 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
                             className="flex items-center gap-2 text-base md:text-xl font-bold text-[#171717] dark:text-admin-dark-text-primary capitalize hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg px-2 py-1 rounded-lg transition-colors"
                         >
-                            {format(currentDate, "MMMM yyyy", { locale: dateLocale })}
+                            {rangeDays === 31
+                                ? format(currentDate, "MMMM yyyy", { locale: dateLocale })
+                                : `${format(rangeStart, "d MMM", { locale: dateLocale })} – ${format(rangeEnd, "d MMM", { locale: dateLocale })}`}
                             <ChevronDown className="size-4 text-[#a3a3a3]" />
                         </button>
                         {isDatePickerOpen && (
@@ -255,6 +260,22 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                         <button onClick={prevMonth} className="p-1 hover:bg-white dark:hover:bg-admin-dark-surface rounded-md shadow-sm transition-all text-[#171717] dark:text-white"><ChevronLeft className="size-4" /></button>
                         <button onClick={goToToday} className="px-3 py-1 text-xs font-bold text-[#171717] dark:text-white hover:bg-white dark:hover:bg-admin-dark-surface rounded-md shadow-sm transition-all">{t('today')}</button>
                         <button onClick={nextMonth} className="p-1 hover:bg-white dark:hover:bg-admin-dark-surface rounded-md shadow-sm transition-all text-[#171717] dark:text-white"><ChevronRight className="size-4" /></button>
+                    </div>
+                    <div className="flex items-center gap-0.5 bg-[#f5f5f5] dark:bg-admin-dark-bg p-1 rounded-lg border border-[#eeeeee] dark:border-admin-dark-border">
+                        {([7, 14, 31] as const).map((r) => (
+                            <button
+                                key={r}
+                                onClick={() => setRangeDays(r)}
+                                className={cn(
+                                    "px-2.5 py-1 text-xs font-bold rounded-md transition-all",
+                                    rangeDays === r
+                                        ? "bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-white shadow-sm"
+                                        : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white",
+                                )}
+                            >
+                                {t(`range${r}`)}
+                            </button>
+                        ))}
                     </div>
                     <span className="text-xs font-medium text-[#a3a3a3] bg-[#f5f5f5] dark:bg-admin-dark-bg px-3 py-1 rounded-full border border-admin-border hidden md:block">{t('reservationsCount', { count: reservationsInMonth.length })}</span>
                 </div>
@@ -303,8 +324,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                 <ChevronLeft className={cn("size-4 transition-transform duration-300", !isSidebarOpen && "rotate-180")} />
                             </button>
                         </div>
-                        {daysInMonth.map((day) => (
-                            <div key={day.toISOString()} className={cn("flex-shrink-0 w-[48px] flex flex-col items-center justify-center border-r border-admin-border dark:border-admin-dark-border/50 transition-colors", isToday(day) ? "bg-amber-50/50 dark:bg-amber-500/10" : "")}>
+                        {days.map((day) => (
+                            <div key={day.toISOString()} style={{ width: cellWidth }} className={cn("flex-shrink-0 flex flex-col items-center justify-center border-r border-admin-border dark:border-admin-dark-border/50 transition-colors", isToday(day) ? "bg-amber-50/50 dark:bg-amber-500/10" : "")}>
                                 <span className="text-[10px] font-bold text-[#a3a3a3] uppercase">{format(day, "EEE", { locale: dateLocale })}</span>
                                 <span className={cn("text-sm font-bold mt-0.5 size-6 flex items-center justify-center rounded-full", isToday(day) ? "bg-[#171717] text-white dark:bg-white dark:text-black" : "text-[#171717] dark:text-white")}>{format(day, "d")}</span>
                             </div>
@@ -340,8 +361,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                         )}
                                     </div>
                                     <div className="relative flex flex-1">
-                                        {daysInMonth.map((day) => (
-                                            <div key={day.toISOString()} className={cn("flex-shrink-0 w-[48px] border-r border-admin-border dark:border-admin-dark-border/50 h-full relative", [0, 6].includes(day.getDay()) ? "bg-[#f8f8f8] dark:bg-white/[0.03]" : "")}>
+                                        {days.map((day) => (
+                                            <div key={day.toISOString()} style={{ width: cellWidth }} className={cn("flex-shrink-0 border-r border-admin-border dark:border-admin-dark-border/50 h-full relative", [0, 6].includes(day.getDay()) ? "bg-[#f8f8f8] dark:bg-white/[0.03]" : "")}>
                                                 {isToday(day) && <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-red-500 z-10"><div className="absolute -top-1 -left-[3px] size-2 rounded-full bg-red-500" /></div>}
                                             </div>
                                         ))}
@@ -349,8 +370,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                             const style = getBarStyle(res.check_in, res.check_out);
                                             const resStart = startOfDay(new Date(res.check_in)).getTime();
                                             const resEnd = startOfDay(new Date(res.check_out)).getTime();
-                                            const viewStart = startOfDay(monthStart).getTime();
-                                            const viewEnd = startOfDay(monthEnd).getTime();
+                                            const viewStart = startOfDay(rangeStart).getTime();
+                                            const viewEnd = startOfDay(rangeEnd).getTime();
                                             
                                             const startsBefore = resStart < viewStart;
                                             const endsAfter = resEnd > viewEnd;
@@ -393,8 +414,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                             const isAirbnb = block.source === 'airbnb_booking';
                                             const blockStart = startOfDay(new Date(block.start_date)).getTime();
                                             const blockEnd = startOfDay(new Date(block.end_date)).getTime();
-                                            const viewStart = startOfDay(monthStart).getTime();
-                                            const viewEnd = startOfDay(monthEnd).getTime();
+                                            const viewStart = startOfDay(rangeStart).getTime();
+                                            const viewEnd = startOfDay(rangeEnd).getTime();
 
                                             const startsBefore = blockStart < viewStart;
                                             const endsAfter = blockEnd > viewEnd;
