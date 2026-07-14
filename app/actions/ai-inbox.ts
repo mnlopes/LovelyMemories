@@ -11,6 +11,7 @@ import {
     type ProviderStatus, type PropertyKnowledge, type ThreadMessage,
 } from '@/lib/ai-messaging';
 import { decide } from '@/lib/ai-decision';
+import { FACT_TOPICS } from '@/lib/ai-knowledge';
 
 /**
  * Server actions do inbox de IA (transporte Beds24).
@@ -556,7 +557,6 @@ export interface PropertyFactRow {
     createdAt: string;
 }
 
-export const FACT_TOPICS = ['amenities', 'access', 'parking', 'house_rules', 'area', 'general'];
 
 /** Factos active + pending de uma propriedade (para o ecrã de gestão). */
 export async function listFactsForProperty(externalPropertyId: string): Promise<PropertyFactRow[]> {

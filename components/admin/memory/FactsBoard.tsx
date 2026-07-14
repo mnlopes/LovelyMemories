@@ -5,9 +5,9 @@ import { useTranslations } from "next-intl";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import {
     createFact, updateFact, setFactStatus, deleteFact, reviewFact,
-    FACT_TOPICS,
     type PropertyFactRow,
 } from "@/app/actions/ai-inbox";
+import { FACT_TOPICS } from "@/lib/ai-knowledge";
 
 export function FactsBoard(props: {
     externalPropertyId: string;

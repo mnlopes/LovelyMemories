@@ -98,6 +98,9 @@ export const CHECKLIST_FIELDS: KnowledgeField[] = [
     "apartmentAccess", "parking", "emergencyContact", "houseRules", "tips",
 ];
 
+/** Tópicos válidos de um facto (partilhado entre a action server e o board no cliente). */
+export const FACT_TOPICS = ["amenities", "access", "parking", "house_rules", "area", "general"];
+
 /** Que campos do checklist um facto de cada topic cobre. */
 const TOPIC_COVERS: Record<string, KnowledgeField[]> = {
     access: ["buildingAccess", "apartmentAccess"],
