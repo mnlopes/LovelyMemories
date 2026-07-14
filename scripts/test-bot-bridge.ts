@@ -30,6 +30,11 @@ async function main() {
     }
     t("pré: bot_mode legível", typeof prop?.bot_mode === "string");
 
+    // O teste (b) mede o gate do modo 'off' — forçar 'off' e repor no fim
+    // (em produção a cobaia pode estar em drafts/auto).
+    const originalMode = prop?.bot_mode ?? "off";
+    await supabase.from("beds24_properties").update({ bot_mode: "off" }).eq("beds24_property_id", 341090);
+
     // (a) host desliga o bot
     await processBotMessages(booking, [
         { id: 888801, bookingId: 999901, source: "host", message: "resposta humana", time: new Date().toISOString() } as never,
@@ -49,7 +54,8 @@ async function main() {
     const { data: rows } = await supabase.from("ai_message_log").select("id").eq("reservation_ref", "999901");
     t("mode off não cria fila", (rows?.length ?? 0) === 0);
 
-    // Limpeza
+    // Limpeza (inclui repor o bot_mode real da cobaia)
+    await supabase.from("beds24_properties").update({ bot_mode: originalMode }).eq("beds24_property_id", 341090);
     await supabase.from("ai_conversation").delete().eq("reservation_id", "999901");
     await supabase.from("ai_message_log").delete().eq("reservation_ref", "999901");
     console.log(failed ? `${failed} FALHAS` : "todos os testes passaram");

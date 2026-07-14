@@ -67,8 +67,10 @@ export async function ingestBookings(bookings: Beds24Booking[], via: SyncVia): P
     return { inserted: toInsert.length, updated: toUpdate.length };
 }
 
-export async function ingestMessages(messages: Beds24Message[], via: SyncVia): Promise<{ inserted: number }> {
-    if (messages.length === 0) return { inserted: 0 };
+export async function ingestMessages(
+    messages: Beds24Message[], via: SyncVia,
+): Promise<{ inserted: number; newMessages: Beds24Message[] }> {
+    if (messages.length === 0) return { inserted: 0, newMessages: [] };
     const supabase = await getSupabaseAdmin();
     const now = new Date().toISOString();
 
@@ -105,7 +107,10 @@ export async function ingestMessages(messages: Beds24Message[], via: SyncVia): P
         await supabase.from('beds24_messages').update({ read: m.read }).eq('beds24_message_id', m.id);
     }
 
-    return { inserted: toInsert.length };
+    // newMessages = só as que NUNCA tínhamos visto — o webhook do Beds24 traz o
+    // histórico completo da conversa, e o bot-bridge só deve reagir às novas
+    // (senão respostas humanas antigas re-desligam o bot a cada webhook).
+    return { inserted: toInsert.length, newMessages: toInsert };
 }
 
 /**

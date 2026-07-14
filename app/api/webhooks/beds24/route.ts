@@ -62,10 +62,14 @@ export async function POST(request: NextRequest) {
             await ingestBookings([payload.booking], 'webhook');
         }
         if (payload?.messages?.length) {
-            await ingestMessages(payload.messages, 'webhook');
+            const { newMessages } = await ingestMessages(payload.messages, 'webhook');
             // Bot bridge: corre depois da ingestão e nunca lança — o webhook
-            // responde 200 e a medição de latência não muda.
-            await processBotMessages(payload?.booking ?? null, payload.messages);
+            // responde 200 e a medição de latência não muda. Recebe APENAS as
+            // mensagens novas: o payload traz o histórico completo e reprocessá-lo
+            // faria o auto-off disparar com respostas humanas antigas.
+            if (newMessages.length) {
+                await processBotMessages(payload?.booking ?? null, newMessages);
+            }
         }
     } catch (e) {
         processingError = e instanceof Error ? e.message : String(e);
