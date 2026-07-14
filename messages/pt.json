@@ -144,6 +144,8 @@
         "clearFilters": "Limpar Filtros",
         "calendar": "Calendário",
         "list": "Lista",
+        "dataSource": "Fonte",
+        "beds24PreviewError": "Não foi possível carregar os dados Beds24 — a mostrar iCal.",
         "searchPlaceholder": "Pesquisar por hóspede, email ou propriedade...",
         "table": {
             "guestProperty": "Hóspede & Propriedade",
@@ -229,7 +231,8 @@
                 "confirmed": "Confirmado",
                 "checkedIn": "Check-In",
                 "pending": "Pendente",
-                "blocked": "Bloqueio"
+                "blocked": "Bloqueio",
+                "beds24": "Beds24"
             }
         },
         "detail": {

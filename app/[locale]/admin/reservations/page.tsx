@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { deleteReservation } from "@/app/actions/reservation";
+import { getBeds24CalendarPreview, type Beds24CalendarPreviewResult } from "@/app/actions/beds24";
 import { deleteBlockedDate } from "@/app/actions/blocked-dates";
 import { updateReservationStatus, finishReservationEarly } from "@/app/actions/admin-reservation-actions";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
@@ -50,6 +51,26 @@ export default function AdminReservationsPage() {
 
     // Detail Sheet State
     const [detailSheetReservation, setDetailSheetReservation] = useState<any | null>(null);
+
+    // Preview Beds24 no calendário (super_admin; lente local, não persiste)
+    const [beds24Preview, setBeds24Preview] = useState(false);
+    const [beds24Data, setBeds24Data] = useState<Extract<Beds24CalendarPreviewResult, { ok: true }> | null>(null);
+    const [beds24Loading, setBeds24Loading] = useState(false);
+
+    const toggleBeds24Preview = async () => {
+        if (beds24Preview) { setBeds24Preview(false); setBeds24Data(null); return; }
+        setBeds24Loading(true);
+        try {
+            const r = await getBeds24CalendarPreview();
+            if (!r.ok) { toast.error(t('beds24PreviewError')); return; }
+            setBeds24Data(r);
+            setBeds24Preview(true);
+        } catch {
+            toast.error(t('beds24PreviewError'));
+        } finally {
+            setBeds24Loading(false);
+        }
+    };
 
     // Fetch user role
     useEffect(() => {
@@ -441,6 +462,20 @@ export default function AdminReservationsPage() {
         return 0; // Default no sort if needed
     });
 
+    // Com o preview ligado: nas propriedades ligadas ao Beds24, as barras iCal
+    // (blocked_dates airbnb_booking) saem e entram as reservas Beds24 ricas.
+    // Diretas do site e bloqueios manuais ficam. Só afeta a vista Calendar.
+    const previewPropertyIds = beds24Preview && beds24Data ? new Set(beds24Data.internalPropertyIds) : null;
+    const calendarBlockedDates = previewPropertyIds
+        ? blockedDates.filter((b: any) => !(b.source === 'airbnb_booking' && previewPropertyIds.has(b.property_id)))
+        : blockedDates;
+    const calendarReservations = previewPropertyIds
+        ? [
+            ...reservations.filter((r: any) => !(r.is_airbnb && previewPropertyIds.has(r.property_id))),
+            ...beds24Data!.bookings.map((b) => ({ ...b, property_name: propertiesMap[b.property_id]?.title || 'Unknown Property' })),
+        ]
+        : reservations;
+
     return (
         <div className="space-y-10 pb-20">
             {/* Header */}
@@ -450,6 +485,25 @@ export default function AdminReservationsPage() {
                     <p className="text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle')}</p>
                 </div>
                 <div className="flex gap-3">
+                    {view === 'calendar' && role === 'super_admin' && (
+                        <div className="flex items-center gap-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 transition-colors duration-300">
+                            <span className="pl-2 text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t('dataSource')}</span>
+                            <button
+                                onClick={() => { if (beds24Preview) void toggleBeds24Preview(); }}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${!beds24Preview ? 'bg-[#171717] dark:bg-white text-white dark:text-black shadow-sm' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                            >
+                                iCal
+                            </button>
+                            <button
+                                onClick={() => { if (!beds24Preview) void toggleBeds24Preview(); }}
+                                disabled={beds24Loading}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all disabled:opacity-60 ${beds24Preview ? 'bg-rose-500 text-white shadow-sm' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
+                            >
+                                <span className={`size-1.5 rounded-full ${beds24Preview ? 'bg-white' : 'bg-rose-400'} ${beds24Loading ? 'animate-pulse' : ''}`} />
+                                Beds24
+                            </button>
+                        </div>
+                    )}
                     <div className="bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 flex transition-colors duration-300">
                         <button
                             onClick={() => setView('calendar')}
@@ -713,11 +767,11 @@ export default function AdminReservationsPage() {
             {view === 'calendar' ? (
                 /* Calendar View */
                 <MultiCalendarView
-                    reservations={reservations}
+                    reservations={calendarReservations}
                     properties={propertiesMap}
                     propertyImages={propertyImagesMap}
                     locale={locale}
-                    blockedDates={blockedDates}
+                    blockedDates={calendarBlockedDates}
                     onRefresh={fetchData}
                 />
             ) : (
