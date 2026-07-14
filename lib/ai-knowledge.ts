@@ -114,7 +114,7 @@ const TOPIC_COVERS: Record<string, KnowledgeField[]> = {
  */
 export function computeCoverage(
     k: PropertyKnowledge | null,
-    facts: Pick<PropertyFact, "topic" | "status">[],
+    facts: { topic: string; status: string }[],
 ): Record<KnowledgeField, boolean> {
     const covered = {} as Record<KnowledgeField, boolean>;
     for (const f of CHECKLIST_FIELDS) {
