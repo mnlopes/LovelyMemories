@@ -2,6 +2,23 @@
 
 **Última atualização:** 2026-07-14. **Começar por aqui** ao retomar (mesmo noutra conta).
 
+## 📍 SESSÃO 2026-07-14 (tarde) — inbox em produção, rollout das 6 em curso
+
+**Inbox LIVE em produção** (tab default de admin/activity, só super_admin, full-width) com dados reais. Fixes desta sessão (todos em main): full-width (ca47063), filtro de legadas NA QUERY — as 190 conversas Hospitable com datas enchiam o limit(100) e escondiam as Beds24 com last_message_at NULL (fd2711c), **regra "inbox só mostra conversas com mensagens"** — threads vazias aparecem sozinhas à 1ª mensagem via webhook (5aa52c3), backfill script (8b7b0b7).
+
+**Rollout de ligação das 6 owned (estado ao fim da sessão):**
+- Virtudes One 341090: ✅ ligada + webhook + reservas importadas (cobaia; bot_mode=drafts)
+- Virtudes Two 341089: ✅ ligada + webhook configurado; falta "importar reservas" no painel
+- Casa Serena 341088, Terraced Loft 341087, The Alluring 341086, The Root 341085: ⏳ imported; ciclo por fazer = calendário(verificar preços!)→ligar→webhook(Settings→Properties→[prop]→Access, v2 with personal data, mesmo URL/secret)→importar reservas. Instant book: João tem de aceitar por anúncio.
+
+**Esclarecimento dado ao Marcelo:** "importar reservas" enche a NOSSA beds24_bookings (painel/inbox/futuro PMS); NÃO toca nos calendários do site — o iCal continua a mandar na produção até ao cutover (ponte beds24_bookings→site é decisão futura).
+
+**Notas de produto anotadas:**
+- Indicador "está a escrever" (como o Airbnb): IMPOSSÍVEL via API (Airbnb não expõe typing a terceiros). Alternativa aprovada a fazer: Supabase Realtime para mensagens aparecerem em segundos (vs refresh 30s).
+- ⚠ **Mensagens agendadas do Airbnb** (respostas rápidas do Achilleas, ex. códigos check-in às 15h): chegam como host messages que não enviámos → auto-off do bot dispara nessas conversas. Aceite para já; Fase 2: migrar agendadas para o nosso sistema OU refinar auto-off.
+- Histórico pré-ligação NÃO é importável (provado: Alice Nolan, mensagens 04/07 → GET devolve 0). Regra da transição: inbox para responder, Airbnb para histórico antigo; cohort esgota-se com os checkouts.
+- E2E pendente: Marcelo ia testar Carolina (mensagem→draft→enviar→auto-off) e knowledge/modo auto. OpenAI 429 → fallback Gemini funciona.
+
 ## ✅✅ DÚVIDA CRÍTICA RESPONDIDA: o webhook DISPARA com mensagens novas (2026-07-14)
 Teste real com a conta Carolina (inquiry 89794243, Virtudes One): cada mensagem gerou um booking webhook (eventos #12-16), latência 349ms–1.3s, mensagens ingeridas em beds24_messages via webhook. **Conclusão: o bot corre por webhook, SEM polling.** Abordagem C decidida a favor do webhook. (Nota: era inquiry/consulta, não reserva confirmada — mesmo assim dispara.)
 
