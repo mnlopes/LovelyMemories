@@ -463,11 +463,11 @@ export default function AdminReservationsPage() {
     });
 
     // Com o preview ligado: nas propriedades ligadas ao Beds24, as barras iCal
-    // (blocked_dates airbnb_booking) saem e entram as reservas Beds24 ricas.
+    // (blocked_dates airbnb_booking / booking_com) saem e entram as reservas Beds24 ricas.
     // Diretas do site e bloqueios manuais ficam. Só afeta a vista Calendar.
     const previewPropertyIds = beds24Preview && beds24Data ? new Set(beds24Data.internalPropertyIds) : null;
     const calendarBlockedDates = previewPropertyIds
-        ? blockedDates.filter((b: any) => !(b.source === 'airbnb_booking' && previewPropertyIds.has(b.property_id)))
+        ? blockedDates.filter((b: any) => !(['airbnb_booking', 'booking_com'].includes(b.source) && previewPropertyIds.has(b.property_id)))
         : blockedDates;
     const calendarReservations = previewPropertyIds
         ? [
