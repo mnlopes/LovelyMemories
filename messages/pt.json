@@ -253,8 +253,9 @@
             "bookedAt": "Reservada em",
             "modifiedAt": "Última alteração",
             "origin": "Origem",
-            "statusConfirmed": "Confirmada",
-            "statusNew": "Nova",
+            "statusUpcoming": "Confirmada",
+            "statusStaying": "Em estadia",
+            "statusCompleted": "Concluída",
             "statusCancelled": "Cancelada",
             "loadError": "Não foi possível carregar a reserva"
         },

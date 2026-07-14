@@ -1420,8 +1420,9 @@
             "bookedAt": "Booked on",
             "modifiedAt": "Last change",
             "origin": "Origin",
-            "statusConfirmed": "Confirmed",
-            "statusNew": "New",
+            "statusUpcoming": "Confirmed",
+            "statusStaying": "Staying now",
+            "statusCompleted": "Completed",
             "statusCancelled": "Cancelled",
             "loadError": "Could not load the booking"
         }

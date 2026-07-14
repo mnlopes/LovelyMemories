@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { pt } from "date-fns/locale";
 import { X, Globe, Mail, Phone, Users, Home, ArrowRight, ShieldCheck } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -48,12 +48,25 @@ export function Beds24BookingDetailSheet({ beds24BookingId, onClose }: Beds24Boo
         ? booking.guest_name.split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase()
         : "";
     const isAirbnb = (booking?.channel ?? "").toLowerCase().includes("airbnb");
-    const statusKey = booking?.status === "confirmed" ? "statusConfirmed"
-        : booking?.status === "new" ? "statusNew" : "statusCancelled";
-    const statusClasses = booking?.status === "confirmed"
+    // Status do ciclo da estadia (mais útil que o status cru do Beds24): cancelada > concluída
+    // > em estadia > a chegar. Cancelada só surge se a reserva foi cancelada após a barra existir.
+    const effStatus: "cancelled" | "completed" | "staying" | "upcoming" = (() => {
+        if (!booking) return "upcoming";
+        if (["cancelled", "canceled", "cancel", "black"].includes((booking.status ?? "").toLowerCase())) return "cancelled";
+        const today = startOfDay(new Date()).getTime();
+        const arr = startOfDay(new Date(booking.arrival)).getTime();
+        const dep = startOfDay(new Date(booking.departure)).getTime();
+        if (dep <= today) return "completed";
+        if (arr <= today) return "staying";
+        return "upcoming";
+    })();
+    const statusKey = effStatus === "upcoming" ? "statusUpcoming"
+        : effStatus === "staying" ? "statusStaying"
+        : effStatus === "completed" ? "statusCompleted" : "statusCancelled";
+    const statusClasses = effStatus === "upcoming"
         ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
-        : booking?.status === "new"
-            ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30"
+        : effStatus === "staying"
+            ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30"
             : "bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-white/10";
     const fmtDay = (d: string) => format(new Date(d), "EEE, d MMM", { locale: dateLocale });
     const fmtStamp = (d: string) => format(new Date(d), "d MMM yyyy, HH:mm", { locale: dateLocale });
@@ -208,7 +221,9 @@ export function Beds24BookingDetailSheet({ beds24BookingId, onClose }: Beds24Boo
                             </div>
 
                             {/* Meta */}
-                            <div className="px-1 space-y-1.5 text-[11px] text-gray-400">
+                            <div className="rounded-2xl border border-gray-100 dark:border-white/10 p-5">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3">{t("meta")}</p>
+                                <div className="space-y-1.5 text-[11px] text-gray-400">
                                 <div className="flex justify-between gap-3"><span>{t("booking")}</span><span className="font-mono">#{booking.beds24_booking_id}</span></div>
                                 {booking.api_reference && (
                                     <div className="flex justify-between gap-3"><span>{t("reference")}</span><span className="font-mono truncate max-w-[200px]">{booking.api_reference}</span></div>
@@ -222,6 +237,7 @@ export function Beds24BookingDetailSheet({ beds24BookingId, onClose }: Beds24Boo
                                 {booking.first_seen_via && (
                                     <div className="flex justify-between gap-3"><span>{t("origin")}</span><span className="capitalize">{booking.first_seen_via}</span></div>
                                 )}
+                                </div>
                             </div>
                         </>
                     )}
