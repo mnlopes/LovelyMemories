@@ -169,6 +169,14 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         return { left: leftPos, width: Math.max(width, 10) };
     };
 
+    // Paralelogramo à Hospitable: arestas diagonais (~9px) no check-in/check-out ao
+    // meio-dia; aresta reta quando a barra continua para fora do mês visível.
+    const getBarClipPath = (startsBefore: boolean, endsAfter: boolean) => {
+        const l = startsBefore ? 0 : 9;
+        const r = endsAfter ? 0 : 9;
+        return `polygon(${l}px 0, 100% 0, calc(100% - ${r}px) 100%, 0 100%)`;
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'confirmed': return "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600/20";
@@ -351,16 +359,15 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                             }
 
                                             return (
-                                                <div 
-                                                    key={res.id} 
-                                                    onClick={() => setSelectedReservation(res)} 
+                                                <div
+                                                    key={res.id}
+                                                    onClick={() => setSelectedReservation(res)}
+                                                    title={`${res.guest_name || t('guest')} · ${format(new Date(res.check_in), 'd MMM', { locale: dateLocale })} → ${format(new Date(res.check_out), 'd MMM', { locale: dateLocale })}`}
                                                     className={cn(
-                                                        "absolute top-1/2 -translate-y-1/2 h-8 cursor-pointer flex items-center px-2 z-10 border transition-all hover:brightness-110 shadow-sm", 
+                                                        "absolute top-1/2 -translate-y-1/2 h-8 cursor-pointer flex items-center px-3 z-10 transition-all hover:brightness-110",
                                                         getStatusColor(effectiveStatus),
-                                                        startsBefore ? "rounded-l-none border-l-0" : "rounded-l-md",
-                                                        endsAfter ? "rounded-r-none border-r-0" : "rounded-r-md"
-                                                    )} 
-                                                    style={{ left: `${style.left}px`, width: `${style.width}px` }}
+                                                    )}
+                                                    style={{ left: `${style.left}px`, width: `${style.width}px`, clipPath: getBarClipPath(startsBefore, endsAfter) }}
                                                 >
                                                     <div className="flex justify-between items-center w-full gap-2 overflow-hidden">
                                                         <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
@@ -384,19 +391,15 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 <div
                                                     key={block.id}
                                                     className={cn(
-                                                        "absolute top-1/2 -translate-y-1/2 h-9 flex items-center px-2 z-0 border shadow-sm transition-all",
-                                                        isAirbnb
-                                                            ? "border-rose-300/60 bg-rose-100 dark:bg-rose-900/30 dark:border-rose-500/30"
-                                                            : "border-slate-300/60 bg-slate-100 dark:bg-slate-800 dark:border-slate-600",
-                                                        startsBefore ? "rounded-l-none border-l-0" : "rounded-l-lg",
-                                                        endsAfter ? "rounded-r-none border-r-0" : "rounded-r-lg"
+                                                        "absolute top-1/2 -translate-y-1/2 h-9 flex items-center px-3 z-0 transition-all",
                                                     )}
                                                     style={{
                                                         left: `${style.left}px`,
                                                         width: `${style.width}px`,
+                                                        clipPath: getBarClipPath(startsBefore, endsAfter),
                                                         background: isAirbnb
-                                                            ? 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 6px, #ffe4e6 6px, #ffe4e6 12px)'
-                                                            : 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #f1f5f9 6px, #f1f5f9 12px)'
+                                                            ? 'repeating-linear-gradient(45deg, #ffe4e6, #ffe4e6 6px, #fecdd3 6px, #fecdd3 12px)'
+                                                            : 'repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 6px, #e2e8f0 6px, #e2e8f0 12px)'
                                                     }}
                                                 >
                                                     {isAirbnb ? (
