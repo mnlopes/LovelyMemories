@@ -1331,5 +1331,11 @@
         "cancel": "ביטול",
         "viaWebhook": "דרך webhook",
         "pendingCount": "{count} ממתינות"
+    },
+    "AiMemory": {
+        "title": "זיכרון הנכס",
+        "subtitle": "קשר, מלא את הפרטים החיוניים ונהל את העובדות שהבוט משתמש בהן.",
+        "backToInbox": "חזרה לתיבה",
+        "loading": "טוען…"
     }
 }

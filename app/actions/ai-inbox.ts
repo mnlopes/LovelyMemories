@@ -902,3 +902,47 @@ export async function listPropertyBotModes(): Promise<PropertyBotRow[]> {
             linked: !!p.internal_property_id,
         }));
 }
+
+// ── Gestão de memória (página) ────────────────────────────────────────────────
+
+export interface MemoryPropertyItem { beds24PropertyId: number; name: string; linked: boolean }
+
+export async function listMemoryProperties(): Promise<MemoryPropertyItem[]> {
+    await assertAdmin();
+    const admin = await getSupabaseAdmin();
+    const { data } = await admin.from('beds24_properties')
+        .select('beds24_property_id, name, internal_property_id').order('name');
+    return ((data ?? []) as { beds24_property_id: number; name: string; internal_property_id: string | null }[])
+        .map((p) => ({ beds24PropertyId: p.beds24_property_id, name: p.name, linked: !!p.internal_property_id }));
+}
+
+export interface MemoryProperty {
+    beds24PropertyId: number;
+    name: string;
+    internalPropertyId: string | null;
+    knowledge: PropertyKnowledge | null;
+    facts: PropertyFactRow[];
+}
+
+export async function getMemoryForProperty(beds24PropertyId: number): Promise<MemoryProperty> {
+    await assertAdmin();
+    const admin = await getSupabaseAdmin();
+    const { data: prop } = await admin.from('beds24_properties')
+        .select('beds24_property_id, name, internal_property_id')
+        .eq('beds24_property_id', beds24PropertyId).maybeSingle();
+    const p = prop as { name: string; internal_property_id: string | null } | null;
+    const [{ loadPropertyKnowledge }, facts] = await Promise.all([
+        import('@/lib/ai-messaging'),
+        listFactsForProperty(String(beds24PropertyId)),
+    ]);
+    const knowledge = p?.internal_property_id
+        ? await loadPropertyKnowledge(String(beds24PropertyId))
+        : null;
+    return {
+        beds24PropertyId,
+        name: p?.name ?? String(beds24PropertyId),
+        internalPropertyId: p?.internal_property_id ?? null,
+        knowledge,
+        facts,
+    };
+}

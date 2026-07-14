@@ -2528,5 +2528,11 @@
         "cancel": "Cancelar",
         "viaWebhook": "via webhook",
         "pendingCount": "{count} pendentes"
+    },
+    "AiMemory": {
+        "title": "Memória da propriedade",
+        "subtitle": "Liga, preenche os essenciais e cura os factos que o bot usa para responder.",
+        "backToInbox": "Voltar ao inbox",
+        "loading": "A carregar…"
     }
 }

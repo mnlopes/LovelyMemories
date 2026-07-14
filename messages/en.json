@@ -2537,5 +2537,11 @@
         "cancel": "Cancel",
         "viaWebhook": "via webhook",
         "pendingCount": "{count} pending"
+    },
+    "AiMemory": {
+        "title": "Property memory",
+        "subtitle": "Link, fill the essentials and curate facts the bot uses to reply.",
+        "backToInbox": "Back to inbox",
+        "loading": "Loading…"
     }
 }
