@@ -7,6 +7,7 @@ import { beds24Request } from '@/lib/beds24/client';
 import {
     describeProvider, buildContext, DEFAULT_BRAND_TONE_TEXT,
     mapPropertyBase, mapExtrasRow, EXTRAS_COLUMNS, PROPERTY_BASE_COLUMNS,
+    loadPropertyKnowledge,
     type ProviderStatus, type PropertyKnowledge, type ThreadMessage,
 } from '@/lib/ai-messaging';
 import { decide } from '@/lib/ai-decision';
@@ -555,7 +556,7 @@ export interface PropertyFactRow {
     createdAt: string;
 }
 
-const FACT_TOPICS = ['amenities', 'access', 'parking', 'house_rules', 'area', 'general'];
+export const FACT_TOPICS = ['amenities', 'access', 'parking', 'house_rules', 'area', 'general'];
 
 /** Factos active + pending de uma propriedade (para o ecrã de gestão). */
 export async function listFactsForProperty(externalPropertyId: string): Promise<PropertyFactRow[]> {
@@ -867,15 +868,15 @@ export async function getKnowledgeForProperty(externalPropertyId: string): Promi
 }
 
 /** Dados extra para o ContextPanel: factos (p/ cobertura) + se pode gerir memória. */
-export async function getPanelExtras(externalPropertyId: string): Promise<{ facts: { topic: string; status: string }[]; isSuperAdmin: boolean }> {
+export async function getPanelExtras(externalPropertyId: string): Promise<{ facts: { topic: string; status: string }[] }> {
     await assertAdmin(); // super_admin apenas (INBOX_ROLES)
     try {
         const admin = await getSupabaseAdmin();
         const { data } = await admin.from('ai_property_fact')
             .select('topic, status').eq('external_property_id', externalPropertyId);
-        return { facts: (data ?? []) as { topic: string; status: string }[], isSuperAdmin: true };
+        return { facts: (data ?? []) as { topic: string; status: string }[] };
     } catch {
-        return { facts: [], isSuperAdmin: true };
+        return { facts: [] };
     }
 }
 
@@ -931,10 +932,7 @@ export async function getMemoryForProperty(beds24PropertyId: number): Promise<Me
         .select('beds24_property_id, name, internal_property_id')
         .eq('beds24_property_id', beds24PropertyId).maybeSingle();
     const p = prop as { name: string; internal_property_id: string | null } | null;
-    const [{ loadPropertyKnowledge }, facts] = await Promise.all([
-        import('@/lib/ai-messaging'),
-        listFactsForProperty(String(beds24PropertyId)),
-    ]);
+    const facts = await listFactsForProperty(String(beds24PropertyId));
     const knowledge = p?.internal_property_id
         ? await loadPropertyKnowledge(String(beds24PropertyId))
         : null;

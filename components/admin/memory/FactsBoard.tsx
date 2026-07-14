@@ -5,10 +5,9 @@ import { useTranslations } from "next-intl";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import {
     createFact, updateFact, setFactStatus, deleteFact, reviewFact,
+    FACT_TOPICS,
     type PropertyFactRow,
 } from "@/app/actions/ai-inbox";
-
-const TOPICS = ["amenities", "access", "parking", "house_rules", "area", "general"];
 
 export function FactsBoard(props: {
     externalPropertyId: string;
@@ -21,8 +20,17 @@ export function FactsBoard(props: {
     const [newFact, setNewFact] = useState("");
     const [editId, setEditId] = useState<string | null>(null);
     const [editText, setEditText] = useState("");
+    const [error, setError] = useState<string | null>(null);
 
-    const run = (fn: () => Promise<unknown>) => startAction(async () => { await fn(); props.onChanged(); });
+    const run = (fn: () => Promise<unknown>) => startAction(async () => {
+        const result = await fn();
+        if (result && typeof result === "object" && "ok" in result && (result as { ok: boolean }).ok === false) {
+            setError((result as { error?: string }).error ?? "error");
+            return;
+        }
+        setError(null);
+        props.onChanged();
+    });
     const pending = props.facts.filter((f) => f.status === "pending");
     const active = props.facts.filter((f) => f.status === "active");
     const byTopic = (topic: string) => active.filter((f) => f.topic === topic);
@@ -53,16 +61,17 @@ export function FactsBoard(props: {
             {/* Adicionar */}
             <div className="mb-4 flex flex-wrap items-end gap-2">
                 <select value={newTopic} onChange={(e) => setNewTopic(e.target.value)} className="rounded-lg border border-[#e5e5e5] bg-white px-2.5 py-1.5 text-sm dark:border-admin-dark-border dark:bg-transparent">
-                    {TOPICS.map((tp) => <option key={tp} value={tp}>{t(`topic.${tp}`)}</option>)}
+                    {FACT_TOPICS.map((tp) => <option key={tp} value={tp}>{t(`topic.${tp}`)}</option>)}
                 </select>
                 <input value={newFact} onChange={(e) => setNewFact(e.target.value)} placeholder={t("factsAddPlaceholder")} className="min-w-[200px] flex-1 rounded-lg border border-[#e5e5e5] bg-white px-2.5 py-1.5 text-sm dark:border-admin-dark-border dark:bg-transparent" />
                 <button disabled={!newFact.trim()} onClick={() => { run(() => createFact({ externalPropertyId: props.externalPropertyId, topic: newTopic, fact: newFact })); setNewFact(""); }} className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
                     <Plus className="h-4 w-4" /> {t("add")}
                 </button>
             </div>
+            {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
 
             {/* Ativos por tópico */}
-            {TOPICS.map((tp) => {
+            {FACT_TOPICS.map((tp) => {
                 const items = byTopic(tp);
                 if (!items.length) return null;
                 return (
@@ -74,7 +83,7 @@ export function FactsBoard(props: {
                                     {editId === f.id ? (
                                         <>
                                             <input value={editText} onChange={(e) => setEditText(e.target.value)} className="flex-1 rounded border border-[#e5e5e5] bg-white px-2 py-1 dark:border-admin-dark-border dark:bg-transparent" />
-                                            <button onClick={() => { run(() => updateFact({ id: f.id, fact: editText })); setEditId(null); }} className="rounded p-1 text-emerald-600 hover:bg-emerald-100" title={t("save")}><Check className="h-4 w-4" /></button>
+                                            <button disabled={!editText.trim()} onClick={() => { run(() => updateFact({ id: f.id, fact: editText })); setEditId(null); }} className="rounded p-1 text-emerald-600 hover:bg-emerald-100 disabled:opacity-50" title={t("save")}><Check className="h-4 w-4" /></button>
                                             <button onClick={() => setEditId(null)} className="rounded p-1 text-[#737373] hover:bg-[#f0f0f0]" title={t("cancel")}><X className="h-4 w-4" /></button>
                                         </>
                                     ) : (
@@ -82,7 +91,7 @@ export function FactsBoard(props: {
                                             <span className="flex-1 text-[#525252] dark:text-white/70">{f.fact}{f.source === "learned" && <span className="ml-1.5 text-[10px] text-[#a3a3a3]">({t("learned")})</span>}</span>
                                             <button onClick={() => { setEditId(f.id); setEditText(f.fact); }} className="rounded p-1 text-[#737373] hover:bg-[#f0f0f0] dark:hover:bg-white/10" title={t("edit")}><Pencil className="h-3.5 w-3.5" /></button>
                                             <button onClick={() => run(() => setFactStatus(f.id, "rejected"))} className="rounded p-1 text-[#737373] hover:bg-[#f0f0f0] dark:hover:bg-white/10" title={t("deactivate")}><X className="h-3.5 w-3.5" /></button>
-                                            <button onClick={() => run(() => deleteFact(f.id))} className="rounded p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-500/20" title={t("delete")}><Trash2 className="h-3.5 w-3.5" /></button>
+                                            <button onClick={() => { if (window.confirm(t("confirmDelete"))) run(() => deleteFact(f.id)); }} className="rounded p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-500/20" title={t("delete")}><Trash2 className="h-3.5 w-3.5" /></button>
                                         </>
                                     )}
                                 </li>

@@ -2574,6 +2574,7 @@
         "approve": "Aprovar",
         "reject": "Rejeitar",
         "learned": "aprendido",
+        "confirmDelete": "Apagar este facto definitivamente?",
         "topic": {
             "amenities": "Comodidades",
             "access": "Acesso",

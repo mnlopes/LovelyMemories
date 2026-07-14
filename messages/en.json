@@ -2583,6 +2583,7 @@
         "approve": "Approve",
         "reject": "Reject",
         "learned": "learned",
+        "confirmDelete": "Delete this fact permanently?",
         "topic": {
             "amenities": "Amenities",
             "access": "Access",

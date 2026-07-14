@@ -1377,6 +1377,7 @@
         "approve": "אשר",
         "reject": "דחה",
         "learned": "נלמד",
+        "confirmDelete": "למחוק עובדה זו לצמיתות?",
         "topic": {
             "amenities": "מתקנים",
             "access": "גישה",
