@@ -21,6 +21,14 @@ sem tocar na produção (o iCal continua a mandar no site até ao cutover).
    mas mostram nome do hóspede e preço (como as diretas) + selo pequeno "Beds24".
    **Requisito explícito: qualidade premium, moderna, pixel-perfect** — ao nível do resto
    do backoffice (transições suaves, dark mode impecável, microdetalhes).
+5. **Barras diagonais à Hospitable em TODO o calendário (2026-07-14, mockup aprovado)** —
+   todas as barras (diretas, Beds24, iCal, bloqueios de owner) passam a paralelogramo:
+   começam ao meio-dia da célula de check-in e acabam ao meio-dia da de check-out, com
+   arestas diagonais (~9px de inclinação; `clip-path: polygon`). Semântica: o dia de
+   turnover fica visivelmente partilhado entre check-out e check-in. Aplica-se sempre,
+   com o preview ligado ou desligado — um único sistema visual, sem mistura de estilos.
+   Detalhes premium: transição suave ao alternar a fonte (fade, não flash), hover com
+   tooltip (datas/noites), dark mode com os mesmos tons.
 4. **Abordagem A: server action** — `beds24_bookings` tem RLS service-role only (dados
    pessoais); não se abre policy. O preview lê via action com `getSupabaseAdmin()`,
    como o resto de `app/actions/beds24.ts`. Zero migrações.
