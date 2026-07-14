@@ -97,6 +97,9 @@ export async function getInboxData(): Promise<InboxData> {
             // Filtrar as legadas do Hospitable JÁ NA QUERY (UUIDs têm hífen; ids
             // Beds24 são numéricos) — senão enchem o limit e escondem as reais.
             .not('reservation_id', 'like', '%-%')
+            // Inbox = mensagens: conversas sem qualquer mensagem ficam fora até
+            // à primeira (o webhook preenche last_message_at e elas aparecem).
+            .not('last_message_at', 'is', null)
             .order('last_message_at', { ascending: false, nullsFirst: false })
             .limit(100),
         admin.from('ai_message_log')
