@@ -5,10 +5,11 @@ import { cookies } from 'next/headers';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { beds24Request } from '@/lib/beds24/client';
 import {
-    describeProvider, draftReply, buildContext, DEFAULT_BRAND_TONE_TEXT,
+    describeProvider, buildContext, DEFAULT_BRAND_TONE_TEXT,
     mapPropertyBase, mapExtrasRow, EXTRAS_COLUMNS, PROPERTY_BASE_COLUMNS,
     type ProviderStatus, type PropertyKnowledge, type ThreadMessage,
 } from '@/lib/ai-messaging';
+import { decide } from '@/lib/ai-decision';
 
 /**
  * Server actions do inbox de IA (transporte Beds24).
@@ -381,9 +382,22 @@ export async function regenerateDraft(rowId: string): Promise<{ ok: boolean; dra
             } : null,
             history,
         });
-        const draft = await draftReply(ctx);
+        // Mesmo motor do webhook: agente com ferramentas (calendário + knowledge),
+        // não o draftReply clássico — senão o regenerate "não sabe" preços.
+        const decision = await decide(ctx);
+        const draft = decision.action === 'auto_send' ? decision.reply : decision.draft;
+        if (!draft) return { ok: false, error: 'O agente não conseguiu redigir (LLM indisponível?). Tenta outra vez.' };
         await admin.from('ai_message_log')
-            .update({ ai_draft: draft, status: 'draft', error: null, updated_at: new Date().toISOString() })
+            .update({
+                ai_draft: draft,
+                status: 'draft',
+                decision: decision.action === 'auto_send'
+                    ? 'needs_human'
+                    : (decision.reason.startsWith('hard_rule') ? 'hard_rule' : 'needs_human'),
+                knowledge_citation: decision.action === 'auto_send' ? decision.citation : null,
+                error: null,
+                updated_at: new Date().toISOString(),
+            })
             .eq('id', rowId);
         return { ok: true, draft };
     } catch (err) {
