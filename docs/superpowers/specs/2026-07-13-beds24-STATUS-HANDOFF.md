@@ -1,6 +1,46 @@
 # Beds24 PMS — PONTO DE SITUAÇÃO / HANDOFF
 
-**Última atualização:** 2026-07-14 (noite). **Começar por aqui** ao retomar (mesmo noutra conta).
+**Última atualização:** 2026-07-14 (final da noite). **Começar por aqui** ao retomar (mesmo noutra conta).
+
+## ✅ AGENTE EM PRODUÇÃO, E2E VALIDADO PELO MARCELO — 2026-07-14 (final da noite)
+
+Sessão E2E com a conta Carolina (inquiry 89794243, Virtudes One em `drafts`) fechada com o
+**marco atingido**: draft real no inbox de produção com preços do calendário Beds24 —
+"Para 3 noites em setembro, de 10 a 13, o custo total é de €300" (coerente com o painel).
+
+**Estado feito nesta sessão (tudo em main, deployed):**
+- Merge `worktree-ai-agent-tools` → main (b707385) + push. Migração `20260715090000_ai_property_fact`
+  APLICADA pelo Marcelo; `scripts/import-property-facts.ts` corrido → **18 factos** nas 6 owned
+  (house_manual, directions, check_in_option.instruction, amenities, wifi do raw Beds24);
+  re-run = skip (idempotente). Teste live: direções do aeroporto → auto_send com `fact:<uuid>`.
+- **BUG CRÍTICO corrigido (d059cb2):** o webhook Beds24 traz o histórico COMPLETO da conversa;
+  o bridge processava tudo → respostas humanas antigas re-desligavam o bot a cada webhook
+  (auto-off em loop, mesmo depois de reativado). Fix: `ingestMessages` devolve `newMessages`
+  e o route só passa essas ao bridge. `test-bot-bridge` agora força/repõe o bot_mode da cobaia.
+- **Supabase Realtime no inbox CONSTRUÍDO (e3fb6c1)** + migração `20260714200000_ai_inbox_realtime`
+  (policies SELECT staff nas 3 tabelas + publication) — APLICADA pelo Marcelo. Verificado: mensagem
+  aparece sozinha (~1s após o webhook). + refresh on-focus no InboxShell (a causa do "só atualiza
+  com F5": browsers travam timers em background e não havia refresh ao focar).
+- **Providers:** Marcelo carregou €5 na API OpenAI (platform.openai.com; ChatGPT Plus NÃO dá API).
+  `AI_MESSAGING_PROVIDER=openai` + `OPENAI_API_KEY` no Vercel Production (env exige redeploy).
+  `buildModelCaller` respeita a env var (OpenAI↔Gemini) + fallback de modelo Gemini 2.5→2.0 (b8deafc)
+  + **`response_format: json_object` no OpenAI** (3f035db) — gpt-4o-mini respondia em prosa depois
+  das tools → parse_error no gate. Armadilha de alucinação PASS com OpenAI primário.
+- **Regenerate corrigido (0c8dca1):** usava o `draftReply` clássico (sem tools, recusava preços);
+  agora usa `decide()` e grava decision/citação.
+- Quota free do Gemini: 2.5-flash tem **20 req/DIA** (esgotada nos testes; 2.0-flash idem).
+  Recomendado ativar billing Gemini como segundo provider pago.
+
+**FALTA (retomar aqui):**
+1. E2E restante: learning loop live (pergunta não coberta → escalação → responder pelo inbox →
+   facto pending nas sugestões do BotSettings → aprovar), modo `auto` na cobaia, e host-reply
+   auto-off pós-fix (reativar deve AGORA manter-se ligado).
+2. Rollout: pôr as outras 5 owned em `drafts` (e ligar as 4 que faltam ao Airbnb — ver sessão tarde).
+3. Pedidos do Marcelo (novas features): **página de gestão da memória por propriedade** (CRUD de
+   factos ativos agrupados por tópico; vista visual "estilo Graphify" como extra) e **seletor de
+   provider no BotSettings** (BD em vez de env var).
+4. Experiência 17/07 ~10:01: payload do "Farewell Porto" agendado → marcador de scheduled para
+   isentar do auto-off.
 
 ## 🤖 AGENTE ESCALÁVEL IMPLEMENTADO — 2026-07-14 (noite), branch worktree-ai-agent-tools
 
@@ -24,18 +64,7 @@ cita o nome da ferramenta e o gate escala tudo (invalid_citation).
 **Descoberta:** o count/head do PostgREST devolve 204 sem erro para tabelas inexistentes —
 verificar existência com select real.
 
-**PENDENTE (Marcelo, por ordem):**
-1. Aplicar `supabase/migrations/20260715090000_ai_property_fact.sql` no dashboard Supabase
-   (a tabela NÃO existe ainda — verificado 2026-07-14 noite).
-2. Correr `npx tsx scripts/import-property-facts.ts` (uma vez; idempotente; usa as chaves reais
-   do raw: house_manual, directions, check_in_option.instruction, amenities, wifi).
-3. Gemini free-tier = 5 req/min e o agente usa 2–3 chamadas por mensagem → com várias conversas
-   ativa o billing do Gemini OU define `AI_MESSAGING_PROVIDER=gemini` + plano pago; OpenAI
-   continua em 429 de quota.
-4. Merge da branch → main → deploy; Virtudes One em `drafts` no BotSettings.
-5. E2E real (conta Carolina): pergunta preço/disponibilidade → draft com citação calendar:…;
-   pergunta sem cobertura → escalação; responder pelo Airbnb (João) → facto pending nas
-   sugestões do BotSettings (engrenagem do inbox).
+**PENDENTES desta secção: TODOS FEITOS na sessão seguinte (ver secção ✅ acima).**
 
 ## 📍 SESSÃO 2026-07-14 (tarde) — inbox em produção, rollout das 6 em curso
 
