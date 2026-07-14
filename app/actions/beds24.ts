@@ -394,12 +394,14 @@ export async function getBeds24BookingDetail(beds24BookingId: number): Promise<B
         const rawItems = (row.raw as Record<string, unknown> | null)?.invoiceItems;
         const invoiceItems: Beds24InvoiceItem[] = Array.isArray(rawItems)
             ? rawItems
-                .map((it: Record<string, unknown>) => {
-                    const amount = Number(it.lineTotal ?? it.amount ?? NaN);
-                    const description = String(it.description ?? it.type ?? '').trim();
+                .map((it): Beds24InvoiceItem | null => {
+                    if (!it || typeof it !== 'object') return null;
+                    const rec = it as Record<string, unknown>;
+                    const amount = Number(rec.lineTotal ?? rec.amount ?? NaN);
+                    const description = String(rec.description ?? rec.type ?? '').trim();
                     return { description, amount };
                 })
-                .filter((it) => it.description !== '' && Number.isFinite(it.amount) && it.amount !== 0)
+                .filter((it): it is Beds24InvoiceItem => it !== null && it.description !== '' && Number.isFinite(it.amount) && it.amount !== 0)
             : [];
 
         const toNum = (v: unknown): number | null => {
@@ -408,9 +410,10 @@ export async function getBeds24BookingDetail(beds24BookingId: number): Promise<B
         };
         const price = toNum(row.price);
         const commission = toNum(row.commission);
-        const nights = Math.max(1, Math.round(
+        const nightsRaw = Math.round(
             (new Date(row.departure as string).getTime() - new Date(row.arrival as string).getTime()) / 86400000,
-        ));
+        );
+        const nights = Number.isFinite(nightsRaw) ? Math.max(1, nightsRaw) : 1;
 
         return {
             ok: true,
