@@ -6,6 +6,7 @@ import { Link } from "@/i18n/routing";
 import { ArrowLeft } from "lucide-react";
 import { getMemoryForProperty, type MemoryProperty, type MemoryPropertyItem } from "@/app/actions/ai-inbox";
 import { LinkSection } from "./LinkSection";
+import { EssentialsForm } from "./EssentialsForm";
 
 export function PropertyMemoryManager(props: {
     properties: MemoryPropertyItem[];
@@ -57,7 +58,7 @@ export function PropertyMemoryManager(props: {
                     <LinkSection beds24PropertyId={data.beds24PropertyId} onLinked={reload} />
                 ) : (
                     <div className="space-y-6">
-                        {/* Task 6: <EssentialsForm /> */}
+                        <EssentialsForm internalPropertyId={data.internalPropertyId} knowledge={data.knowledge} onSaved={reload} />
                         {/* Task 7: <FactsBoard /> */}
                         <pre className="text-xs text-[#a3a3a3]">linked — {data.facts.length} factos</pre>
                     </div>

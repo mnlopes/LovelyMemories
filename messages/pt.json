@@ -2537,6 +2537,30 @@
         "linkTitle": "Ainda não ligada",
         "linkHelp": "Liga esta propriedade Beds24 a uma propriedade do site para preencher os essenciais.",
         "linkPlaceholder": "Escolhe uma propriedade…",
-        "linkButton": "Ligar"
+        "linkButton": "Ligar",
+        "essentialsTitle": "Essenciais",
+        "essentialsBase": "Do site (só leitura)",
+        "essentialsSecrets": "Segredos (preencher à mão)",
+        "essentialsBaseNote": "Edita estes na ficha da propriedade do site.",
+        "emptyFromSite": "— (vazio no site)",
+        "save": "Guardar",
+        "field": {
+            "checkIn": "Check-in",
+            "checkOut": "Check-out",
+            "address": "Morada",
+            "houseRules": "Regras da casa",
+            "amenities": "Comodidades",
+            "parking": "Estacionamento",
+            "wifiName": "Rede Wi-Fi",
+            "wifiPassword": "Password Wi-Fi",
+            "doorCode": "Código da porta",
+            "buildingAccess": "Acesso ao prédio",
+            "apartmentAccess": "Acesso ao apartamento",
+            "emergencyContact": "Contacto de emergência",
+            "govFormUrl": "URL do formulário SEF",
+            "guidebookUrl": "URL do guia",
+            "tips": "Dicas locais",
+            "toneNotes": "Notas de tom"
+        }
     }
 }

@@ -2546,6 +2546,30 @@
         "linkTitle": "Not linked yet",
         "linkHelp": "Link this Beds24 property to a site listing to fill the essentials.",
         "linkPlaceholder": "Choose a property…",
-        "linkButton": "Link"
+        "linkButton": "Link",
+        "essentialsTitle": "Essentials",
+        "essentialsBase": "From the site (read-only)",
+        "essentialsSecrets": "Secrets (fill by hand)",
+        "essentialsBaseNote": "Edit these on the property page of the site.",
+        "emptyFromSite": "— (empty on site)",
+        "save": "Save",
+        "field": {
+            "checkIn": "Check-in",
+            "checkOut": "Check-out",
+            "address": "Address",
+            "houseRules": "House rules",
+            "amenities": "Amenities",
+            "parking": "Parking",
+            "wifiName": "Wi-Fi network",
+            "wifiPassword": "Wi-Fi password",
+            "doorCode": "Door code",
+            "buildingAccess": "Building access",
+            "apartmentAccess": "Apartment access",
+            "emergencyContact": "Emergency contact",
+            "govFormUrl": "SEF form URL",
+            "guidebookUrl": "Guidebook URL",
+            "tips": "Local tips",
+            "toneNotes": "Tone notes"
+        }
     }
 }
