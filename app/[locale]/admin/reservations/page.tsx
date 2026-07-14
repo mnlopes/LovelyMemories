@@ -773,6 +773,7 @@ export default function AdminReservationsPage() {
                     locale={locale}
                     blockedDates={calendarBlockedDates}
                     onRefresh={fetchData}
+                    canShowPrices={role === 'super_admin'}
                 />
             ) : (
                 /* List View */

@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe, Euro } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
 import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
+import { getBeds24DailyPrices } from "@/app/actions/beds24";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
 interface MultiCalendarViewProps {
@@ -17,9 +19,10 @@ interface MultiCalendarViewProps {
     locale?: string;
     blockedDates?: any[];
     onRefresh?: () => void;
+    canShowPrices?: boolean;
 }
 
-export function MultiCalendarView({ reservations, properties, propertyImages, locale = 'pt', blockedDates = [], onRefresh }: MultiCalendarViewProps) {
+export function MultiCalendarView({ reservations, properties, propertyImages, locale = 'pt', blockedDates = [], onRefresh, canShowPrices = false }: MultiCalendarViewProps) {
     const t = useTranslations('AdminReservations.multiCalendar');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [rangeDays, setRangeDays] = useState<7 | 14 | 31>(31);
@@ -92,6 +95,32 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     const nextMonth = () => setCurrentDate(rangeDays === 31 ? addMonths(currentDate, 1) : addDays(currentDate, rangeDays));
     const prevMonth = () => setCurrentDate(rangeDays === 31 ? subMonths(currentDate, 1) : addDays(currentDate, -rangeDays));
     const goToToday = () => setCurrentDate(new Date());
+
+    // Toggle "€ Preços" (super_admin; só vistas 7/14 — na 31d as células são estreitas demais)
+    const [showPrices, setShowPrices] = useState(false);
+    const [pricesByWindow, setPricesByWindow] = useState<Record<string, Record<string, Record<string, number>>>>({});
+    const [pricesLoading, setPricesLoading] = useState(false);
+    const windowKey = `${format(rangeStart, "yyyy-MM-dd")}|${format(rangeEnd, "yyyy-MM-dd")}`;
+    const windowPrices = pricesByWindow[windowKey];
+
+    useEffect(() => {
+        if (!showPrices || !canShowPrices || rangeDays === 31 || windowPrices) return;
+        let cancelled = false;
+        setPricesLoading(true);
+        // endDate exclusivo do getRoomCalendar → +1 dia para incluir a última noite visível
+        getBeds24DailyPrices(format(rangeStart, "yyyy-MM-dd"), format(addDays(rangeEnd, 1), "yyyy-MM-dd"))
+            .then((r) => {
+                if (cancelled) return;
+                if (r.ok) {
+                    setPricesByWindow((prev) => ({ ...prev, [windowKey]: r.prices }));
+                } else {
+                    toast.error(t("pricesError"));
+                    setShowPrices(false);
+                }
+            })
+            .finally(() => { if (!cancelled) setPricesLoading(false); });
+        return () => { cancelled = true; };
+    }, [showPrices, canShowPrices, rangeDays, windowKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Filtering logic
     const allPropertyIds = Object.keys(properties).filter(id => !getPropData(id).is_multi_unit);
@@ -277,6 +306,24 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             </button>
                         ))}
                     </div>
+                    {canShowPrices && (
+                        <button
+                            onClick={() => setShowPrices((v) => !v)}
+                            disabled={rangeDays === 31}
+                            title={rangeDays === 31 ? t("pricesDisabledHint") : undefined}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all",
+                                rangeDays === 31
+                                    ? "text-[#d4d4d4] dark:text-white/20 border-[#f5f5f5] dark:border-admin-dark-border cursor-not-allowed"
+                                    : showPrices
+                                        ? "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30"
+                                        : "bg-white dark:bg-admin-dark-bg text-[#a3a3a3] border-[#eeeeee] dark:border-admin-dark-border hover:text-[#171717] dark:hover:text-white",
+                            )}
+                        >
+                            <Euro className="size-3" />
+                            {t("prices")}
+                        </button>
+                    )}
                     <span className="text-xs font-medium text-[#a3a3a3] bg-[#f5f5f5] dark:bg-admin-dark-bg px-3 py-1 rounded-full border border-admin-border hidden md:block">{t('reservationsCount', { count: reservationsInMonth.length })}</span>
                 </div>
 
@@ -366,6 +413,38 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 {isToday(day) && <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-red-500 z-10"><div className="absolute -top-1 -left-[3px] size-2 rounded-full bg-red-500" /></div>}
                                             </div>
                                         ))}
+                                        {showPrices && rangeDays !== 31 && windowPrices?.[propId] && (() => {
+                                            // Noites cobertas por barras (reservas + bloqueios) não mostram preço
+                                            const covered = new Set<string>();
+                                            const addRange = (s: string, e: string) => {
+                                                const from = startOfDay(new Date(s));
+                                                const to = startOfDay(new Date(e)); // checkout/end exclusivo
+                                                for (let d = from; d < to; d = addDays(d, 1)) covered.add(format(d, "yyyy-MM-dd"));
+                                            };
+                                            reservationsByProperty[propId]?.forEach((r: any) => addRange(r.check_in, r.check_out));
+                                            visibleBlockedDates?.filter((b) => b.property_id === propId).forEach((b) => addRange(b.start_date, b.end_date));
+                                            return (
+                                                <div className="absolute inset-x-0 bottom-1 z-[5] pointer-events-none flex">
+                                                    {days.map((day) => {
+                                                        const key = format(day, "yyyy-MM-dd");
+                                                        const price = windowPrices[propId][key];
+                                                        return (
+                                                            <div key={key} style={{ width: cellWidth }} className="flex-shrink-0 text-center">
+                                                                {price !== undefined && !covered.has(key) && (
+                                                                    <span className={cn(
+                                                                        "font-semibold text-[#a3a3a3] dark:text-white/40 tabular-nums",
+                                                                        rangeDays === 7 ? "text-[11px]" : "text-[10px]",
+                                                                        pricesLoading && "opacity-40",
+                                                                    )}>
+                                                                        €{price}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })()}
                                         {reservationsByProperty[propId]?.map((res: any) => {
                                             const style = getBarStyle(res.check_in, res.check_out);
                                             const resStart = startOfDay(new Date(res.check_in)).getTime();
