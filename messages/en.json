@@ -2516,6 +2516,7 @@
         "status": "Status",
         "knowledge": "Property knowledge",
         "knowledgeMissing": "missing",
+        "manageMemory": "Manage memory",
         "settings": "Bot settings",
         "killSwitch": "Global bot",
         "killSwitchNote": "Turns the bot off everywhere, for every property",

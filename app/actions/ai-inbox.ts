@@ -866,6 +866,19 @@ export async function getKnowledgeForProperty(externalPropertyId: string): Promi
     return loadPropertyKnowledge(externalPropertyId);
 }
 
+/** Dados extra para o ContextPanel: factos (p/ cobertura) + se pode gerir memória. */
+export async function getPanelExtras(externalPropertyId: string): Promise<{ facts: { topic: string; status: string }[]; isSuperAdmin: boolean }> {
+    await assertAdmin(); // super_admin apenas (INBOX_ROLES)
+    try {
+        const admin = await getSupabaseAdmin();
+        const { data } = await admin.from('ai_property_fact')
+            .select('topic, status').eq('external_property_id', externalPropertyId);
+        return { facts: (data ?? []) as { topic: string; status: string }[], isSuperAdmin: true };
+    } catch {
+        return { facts: [], isSuperAdmin: true };
+    }
+}
+
 // ── Modos por propriedade (lista para settings) ──────────────────────────────
 
 export interface PropertyBotRow {

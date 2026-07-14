@@ -2507,6 +2507,7 @@
         "status": "Estado",
         "knowledge": "Conhecimento da propriedade",
         "knowledgeMissing": "em falta",
+        "manageMemory": "Gerir memória",
         "settings": "Definições do bot",
         "killSwitch": "Bot global",
         "killSwitchNote": "Desliga o bot em todo o lado, para todas as propriedades",

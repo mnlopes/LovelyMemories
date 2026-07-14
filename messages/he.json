@@ -1310,6 +1310,7 @@
         "status": "סטטוס",
         "knowledge": "מידע על הנכס",
         "knowledgeMissing": "חסר",
+        "manageMemory": "ניהול זיכרון",
         "settings": "הגדרות הבוט",
         "killSwitch": "בוט גלובלי",
         "killSwitchNote": "מכבה את הבוט בכל מקום, עבור כל הנכסים",
