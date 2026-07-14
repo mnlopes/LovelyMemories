@@ -94,11 +94,15 @@ export async function getInboxData(): Promise<InboxData> {
     const [convRes, queueRes, settingsRes] = await Promise.all([
         admin.from('ai_conversation')
             .select('reservation_id, guest_name, property_name, external_property_id, check_in, check_out, last_message_at, last_message_preview, last_message_sender, bot_enabled, bot_off_reason')
+            // Filtrar as legadas do Hospitable JÁ NA QUERY (UUIDs têm hífen; ids
+            // Beds24 são numéricos) — senão enchem o limit e escondem as reais.
+            .not('reservation_id', 'like', '%-%')
             .order('last_message_at', { ascending: false, nullsFirst: false })
             .limit(100),
         admin.from('ai_message_log')
             .select('id, reservation_ref, guest_name, property_code, incoming_message, ai_draft, decision, knowledge_citation, created_at')
             .eq('status', 'draft')
+            .not('reservation_ref', 'like', '%-%')
             .order('created_at', { ascending: false })
             .limit(50),
         admin.from('ai_messaging_settings').select('bot_globally_enabled').eq('id', 1).maybeSingle(),
