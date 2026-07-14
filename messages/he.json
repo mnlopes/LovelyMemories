@@ -1401,6 +1401,29 @@
             "legend": {
                 "beds24": "Beds24"
             }
+        },
+        "beds24Detail": {
+            "checkIn": "Check-in",
+            "checkOut": "Check-out",
+            "nights": "{count, plural, one {# night} other {# nights}}",
+            "adults": "{count, plural, one {# adult} other {# adults}}",
+            "children": "{count, plural, one {# child} other {# children}}",
+            "financial": "Financial",
+            "total": "Total",
+            "commission": "Channel commission",
+            "netPayout": "Net payout",
+            "contact": "Contact",
+            "contactMasked": "Contact managed by the channel",
+            "meta": "Details",
+            "booking": "Booking",
+            "reference": "Channel ref.",
+            "bookedAt": "Booked on",
+            "modifiedAt": "Last change",
+            "origin": "Origin",
+            "statusConfirmed": "Confirmed",
+            "statusNew": "New",
+            "statusCancelled": "Cancelled",
+            "loadError": "Could not load the booking"
         }
     }
 }

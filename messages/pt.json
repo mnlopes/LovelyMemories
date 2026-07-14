@@ -235,6 +235,29 @@
                 "beds24": "Beds24"
             }
         },
+        "beds24Detail": {
+            "checkIn": "Check-in",
+            "checkOut": "Check-out",
+            "nights": "{count, plural, one {# noite} other {# noites}}",
+            "adults": "{count, plural, one {# adulto} other {# adultos}}",
+            "children": "{count, plural, one {# criança} other {# crianças}}",
+            "financial": "Financeiro",
+            "total": "Total",
+            "commission": "Comissão do canal",
+            "netPayout": "Payout líquido",
+            "contact": "Contacto",
+            "contactMasked": "Contacto gerido pelo canal",
+            "meta": "Detalhes",
+            "booking": "Reserva",
+            "reference": "Ref. do canal",
+            "bookedAt": "Reservada em",
+            "modifiedAt": "Última alteração",
+            "origin": "Origem",
+            "statusConfirmed": "Confirmada",
+            "statusNew": "Nova",
+            "statusCancelled": "Cancelada",
+            "loadError": "Não foi possível carregar a reserva"
+        },
         "detail": {
             "bookingDetails": "Detalhes da Reserva",
             "guestDetails": "Detalhes do Hóspede",
