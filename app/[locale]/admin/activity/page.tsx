@@ -35,7 +35,11 @@ export default function ActivityLogPage() {
     ];
 
     return (
-        <div className="container mx-auto p-6 max-w-6xl">
+        <div className={cn(
+            "mx-auto p-6",
+            // O inbox usa a largura toda; as outras tabs ficam contidas.
+            activeTab === "inbox" ? "w-full max-w-none" : "container max-w-6xl",
+        )}>
             <div className="mb-8">
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                     {activeTab === "inbox" ? ti("title") : activeTab === "log" ? "Activity Log" : t("title")}
