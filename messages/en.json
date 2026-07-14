@@ -236,6 +236,12 @@
             "bedrooms": "Bedrooms",
             "bathrooms": "WCs",
             "pax": "Pax",
+            "range7": "7d",
+            "range14": "14d",
+            "range31": "31d",
+            "prices": "Prices",
+            "pricesDisabledHint": "Prices need the 7d or 14d view",
+            "pricesError": "Could not load nightly prices",
             "legend": {
                 "confirmed": "Confirmed",
                 "checkedIn": "Checked In",
