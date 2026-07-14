@@ -2533,6 +2533,10 @@
         "title": "Memória da propriedade",
         "subtitle": "Liga, preenche os essenciais e cura os factos que o bot usa para responder.",
         "backToInbox": "Voltar ao inbox",
-        "loading": "A carregar…"
+        "loading": "A carregar…",
+        "linkTitle": "Ainda não ligada",
+        "linkHelp": "Liga esta propriedade Beds24 a uma propriedade do site para preencher os essenciais.",
+        "linkPlaceholder": "Escolhe uma propriedade…",
+        "linkButton": "Ligar"
     }
 }

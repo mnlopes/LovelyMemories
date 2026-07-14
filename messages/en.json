@@ -2542,6 +2542,10 @@
         "title": "Property memory",
         "subtitle": "Link, fill the essentials and curate facts the bot uses to reply.",
         "backToInbox": "Back to inbox",
-        "loading": "Loading…"
+        "loading": "Loading…",
+        "linkTitle": "Not linked yet",
+        "linkHelp": "Link this Beds24 property to a site listing to fill the essentials.",
+        "linkPlaceholder": "Choose a property…",
+        "linkButton": "Link"
     }
 }

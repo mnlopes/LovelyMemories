@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { ArrowLeft } from "lucide-react";
 import { getMemoryForProperty, type MemoryProperty, type MemoryPropertyItem } from "@/app/actions/ai-inbox";
+import { LinkSection } from "./LinkSection";
 
 export function PropertyMemoryManager(props: {
     properties: MemoryPropertyItem[];
@@ -52,12 +53,15 @@ export function PropertyMemoryManager(props: {
 
             {loading && <p className="text-sm text-[#a3a3a3]">{t("loading")}</p>}
             {!loading && data && (
-                <div className="space-y-6">
-                    {/* Task 5: <LinkSection /> quando data.internalPropertyId == null */}
-                    {/* Task 6: <EssentialsForm /> */}
-                    {/* Task 7: <FactsBoard /> */}
-                    <pre className="text-xs text-[#a3a3a3]">{data.name} — {data.internalPropertyId ? "linked" : "not linked"} — {data.facts.length} factos</pre>
-                </div>
+                !data.internalPropertyId ? (
+                    <LinkSection beds24PropertyId={data.beds24PropertyId} onLinked={reload} />
+                ) : (
+                    <div className="space-y-6">
+                        {/* Task 6: <EssentialsForm /> */}
+                        {/* Task 7: <FactsBoard /> */}
+                        <pre className="text-xs text-[#a3a3a3]">linked — {data.facts.length} factos</pre>
+                    </div>
+                )
             )}
         </div>
     );
