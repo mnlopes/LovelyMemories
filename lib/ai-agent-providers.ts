@@ -11,6 +11,8 @@ import { isTransientLlmError } from "@/lib/ai-messaging";
  */
 
 const GEMINI_MODEL = process.env.GEMINI_MESSAGING_MODEL || "gemini-2.5-flash";
+/** Fallback com quota própria (free tier tem limites POR MODELO) — espelha ai-messaging.ts. */
+const GEMINI_FALLBACK_MODELS = ["gemini-2.0-flash"];
 const OPENAI_MODEL = process.env.OPENAI_MESSAGING_MODEL || "gpt-4o-mini";
 
 function toGeminiTools(tools: AgentTool[]): FunctionDeclaration[] {
@@ -39,13 +41,13 @@ function toGeminiContents(messages: AgentChatMessage[]): { system: string; conte
     return { system, contents };
 }
 
-async function callGemini(messages: AgentChatMessage[], tools: AgentTool[]): Promise<ModelTurn> {
+async function callGeminiModel(messages: AgentChatMessage[], tools: AgentTool[], modelName: string): Promise<ModelTurn> {
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("Missing GEMINI_API_KEY");
     const { system, contents } = toGeminiContents(messages);
     const genAI = new GoogleGenerativeAI(key);
     const model = genAI.getGenerativeModel({
-        model: GEMINI_MODEL,
+        model: modelName,
         systemInstruction: system,
         generationConfig: { temperature: 0.4 },
         ...(tools.length ? { tools: [{ functionDeclarations: toGeminiTools(tools) }] } : {}),
@@ -56,6 +58,22 @@ async function callGemini(messages: AgentChatMessage[], tools: AgentTool[]): Pro
         return { type: "tool_calls", calls: fcalls.map((c) => ({ name: c.name, args: (c.args ?? {}) as Record<string, unknown> })) };
     }
     return { type: "text", text: res.response.text().trim() };
+}
+
+/** Tenta o modelo primário e cai para os fallbacks em erros transitórios (quota por modelo). */
+async function callGemini(messages: AgentChatMessage[], tools: AgentTool[]): Promise<ModelTurn> {
+    const models = [GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS].filter((m, i, a) => a.indexOf(m) === i);
+    let lastErr: unknown;
+    for (let i = 0; i < models.length; i++) {
+        try {
+            return await callGeminiModel(messages, tools, models[i]);
+        } catch (err) {
+            lastErr = err;
+            if (i === models.length - 1 || !isTransientLlmError(err)) throw err;
+            console.warn(`[ai-agent-providers] Gemini ${models[i]} indisponível, a tentar ${models[i + 1]}`);
+        }
+    }
+    throw lastErr;
 }
 
 async function callOpenAI(messages: AgentChatMessage[], tools: AgentTool[]): Promise<ModelTurn> {
