@@ -2,6 +2,13 @@
 
 **Última atualização:** 2026-07-14. **Começar por aqui** ao retomar (mesmo noutra conta).
 
+## ✅✅ DÚVIDA CRÍTICA RESPONDIDA: o webhook DISPARA com mensagens novas (2026-07-14)
+Teste real com a conta Carolina (inquiry 89794243, Virtudes One): cada mensagem gerou um booking webhook (eventos #12-16), latência 349ms–1.3s, mensagens ingeridas em beds24_messages via webhook. **Conclusão: o bot corre por webhook, SEM polling.** Abordagem C decidida a favor do webhook. (Nota: era inquiry/consulta, não reserva confirmada — mesmo assim dispara.)
+
+**Bug encontrado e corrigido:** a conversa da Carolina não apareceu no inbox porque (a) o webhook dela chegou (~22:01) ANTES de a coluna kill-switch existir (~23:21) → o bridge deu erro engolido pelo try/catch; e (b) o inbox mostrava 190 conversas LEGADAS do Hospitable (reservation_id UUID) que afogavam as reais. Correções (commit 3486981): inbox/fila filtram só reservation_id numérico (Beds24); `scripts/reprocess-carol.ts` reprocessa mensagens já guardadas pelo bridge. Carolina recuperada (bot auto-off por human_replied, draft gerado via Gemini).
+
+**⚠ OpenAI sem quota (429)** — o pipeline cai para Gemini automaticamente e funciona; considerar forçar Gemini como default para poupar a chamada falhada. **⚠ 190 conversas legadas Hospitable** continuam na BD (filtradas, invisíveis) — limpar quando o Marcelo aprovar (são dados de POC, nunca produção).
+
 ## 🤖 BOT/INBOX MIGRADO PARA BEDS24 (2026-07-14, branch worktree-ai-inbox-beds24)
 
 Plano `docs/superpowers/plans/2026-07-13-beds24-bot-migration.md` — **Tasks 1-9 completas + verificações automáticas da Task 10** (build prod ✅, test:security ✅, test-ai-decision ✅, test-bot-bridge ✅, simulação webhook local ✅ → decisão needs_human correta com draft PT).
