@@ -484,6 +484,57 @@ export async function updateBrandTone(text: string): Promise<{ ok: boolean; erro
     }
 }
 
+// ── Provider do modelo (BotSettings; BD como fonte de verdade) ────────────────
+
+export type ProviderChoice = 'auto' | 'openai' | 'gemini';
+
+export interface ProviderSetting {
+    /** O que está guardado: 'auto' = deteção por env/chave; senão o provider fixado. */
+    selected: ProviderChoice;
+    /** O provider que corre de facto agora (resolvido). */
+    effective: 'openai' | 'gemini';
+    openaiKeyPresent: boolean;
+    geminiKeyPresent: boolean;
+}
+
+export async function getAiProvider(): Promise<ProviderSetting> {
+    await assertAdmin();
+    const status = describeProvider(); // effective + key presence (env/chave)
+    try {
+        const admin = await getSupabaseAdmin();
+        const { data } = await admin.from('ai_messaging_settings').select('ai_provider').eq('id', 1).maybeSingle();
+        const raw = data?.ai_provider;
+        const selected: ProviderChoice = raw === 'openai' || raw === 'gemini' ? raw : 'auto';
+        // Com um provider fixado e chave presente, ele é o efetivo; senão o resolvido por env/chave.
+        const pinnedUsable = (selected === 'openai' && status.openaiKeyPresent)
+            || (selected === 'gemini' && status.geminiKeyPresent);
+        return {
+            selected,
+            effective: pinnedUsable ? (selected as 'openai' | 'gemini') : status.provider,
+            openaiKeyPresent: status.openaiKeyPresent,
+            geminiKeyPresent: status.geminiKeyPresent,
+        };
+    } catch {
+        return { selected: 'auto', effective: status.provider, openaiKeyPresent: status.openaiKeyPresent, geminiKeyPresent: status.geminiKeyPresent };
+    }
+}
+
+export async function setAiProvider(choice: ProviderChoice): Promise<{ ok: boolean; error?: string }> {
+    await assertAdmin();
+    if (choice !== 'auto' && choice !== 'openai' && choice !== 'gemini') {
+        return { ok: false, error: 'Invalid provider' };
+    }
+    try {
+        const admin = await getSupabaseAdmin();
+        const { error } = await admin.from('ai_messaging_settings')
+            .upsert({ id: 1, ai_provider: choice === 'auto' ? null : choice, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        if (error) throw error;
+        return { ok: true };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Save failed' };
+    }
+}
+
 // ── Sugestões de knowledge (learning loop → aprovação humana) ─────────────────
 
 export interface FactSuggestion {

@@ -51,7 +51,14 @@ Sessão E2E com a conta Carolina (inquiry 89794243, Virtudes One em `drafts`) fe
      lib/ai-knowledge.ts. RE-CORRER `npm run build` (não só tsc) após mexer em exports de ficheiros 'use server'.
      PENDENTE: E2E live como super_admin (ligar Virtudes One→segredos→checklist ✓→factos); negar a admin
      normal (João); 2 lint set-state-in-effect deixados como o idioma existente do inbox; hebraico nativo.
-   - **seletor de provider no BotSettings** (BD em vez de env var) — POR FAZER.
+   - ✅ **FEITO (2026-07-14, em main pendente de commit):** seletor de provider no BotSettings (BD em
+     vez de env var). `ai_messaging_settings.ai_provider` (NULL='auto'/env; 'openai'|'gemini' fixa) é a
+     fonte de verdade; resolvido em `resolveMessagingProvider()` (lib/ai-messaging.ts, fail-soft→env) e
+     memoizado dentro de `buildModelCaller()` por corrida do agente → `decide()` e o learning loop
+     respeitam sem alterações; `draftReply` idem. UI: secção "AI provider" (Auto/OpenAI/Gemini) no
+     BotSettings com badge do efetivo + aviso ⚠ se falta a chave no servidor. Actions getAiProvider/
+     setAiProvider. tsc+build limpos. ⚠ MIGRAÇÃO POR APLICAR no Supabase: `20260715120000_ai_provider_setting`.
+     PENDENTE: E2E live (fixar Gemini no BotSettings → confirmar que a próxima decisão usa Gemini).
 4. Experiência 17/07 ~10:01: payload do "Farewell Porto" agendado → marcador de scheduled para
    isentar do auto-off.
 

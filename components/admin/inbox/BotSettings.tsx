@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Power } from "lucide-react";
+import { Power, Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
     getBrandTone, updateBrandTone, listPropertyBotModes, setPropertyBotMode, setGlobalBot,
-    listFactSuggestions, reviewFact,
-    type PropertyBotRow, type FactSuggestion,
+    listFactSuggestions, reviewFact, getAiProvider, setAiProvider,
+    type PropertyBotRow, type FactSuggestion, type ProviderSetting, type ProviderChoice,
 } from "@/app/actions/ai-inbox";
 
 /** Definições do bot: kill-switch global, modo por propriedade, tom da marca. */
@@ -20,12 +20,20 @@ export function BotSettings(props: { globalBotEnabled: boolean; onChanged: () =>
     const [savedFlash, setSavedFlash] = useState(false);
     const [suggestions, setSuggestions] = useState<FactSuggestion[] | null>(null);
     const [factEdits, setFactEdits] = useState<Record<string, string>>({});
+    const [provider, setProvider] = useState<ProviderSetting | null>(null);
 
     useEffect(() => {
         void listPropertyBotModes().then(setRows).catch(() => setRows([]));
         void getBrandTone().then((b) => { setTone(b.tone); setToneDefault(b.usingDefault); }).catch(() => {});
         void listFactSuggestions().then(setSuggestions).catch(() => setSuggestions([]));
+        void getAiProvider().then(setProvider).catch(() => {});
     }, []);
+
+    const handleProvider = (choice: ProviderChoice) => startTransition(async () => {
+        setProvider((prev) => (prev ? { ...prev, selected: choice } : prev)); // otimista
+        const r = await setAiProvider(choice);
+        if (r.ok) void getAiProvider().then(setProvider).catch(() => {});
+    });
 
     const handleReview = (id: string, action: "approve" | "reject") => startTransition(async () => {
         const edited = factEdits[id];
@@ -65,6 +73,47 @@ export function BotSettings(props: { globalBotEnabled: boolean; onChanged: () =>
                             props.globalBotEnabled ? "left-[26px]" : "left-0.5",
                         )} />
                     </button>
+                </div>
+            </section>
+
+            {/* Provider do modelo (BD como fonte de verdade) */}
+            <section className="rounded-xl border border-[#f5f5f5] p-4 dark:border-admin-dark-border">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[#171717] dark:text-admin-dark-text-primary">
+                            <Cpu className="h-4 w-4" />
+                            {t("provider")}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-[#a3a3a3]">{t("providerNote")}</p>
+                    </div>
+                    {provider && (
+                        <span className="shrink-0 rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium text-[#737373] dark:bg-white/10 dark:text-white/60">
+                            {t("providerEffective")}: {provider.effective === "openai" ? "OpenAI" : "Gemini"}
+                        </span>
+                    )}
+                </div>
+                <div className="mt-3 inline-flex rounded-lg border border-[#e5e5e5] p-0.5 dark:border-admin-dark-border">
+                    {(["auto", "openai", "gemini"] as const).map((choice) => {
+                        const noKey = (choice === "openai" && provider && !provider.openaiKeyPresent)
+                            || (choice === "gemini" && provider && !provider.geminiKeyPresent);
+                        const label = choice === "auto" ? t("providerAuto") : choice === "openai" ? "OpenAI" : "Gemini";
+                        return (
+                            <button
+                                key={choice}
+                                disabled={isPending || !provider}
+                                title={noKey ? t("providerNoKey") : undefined}
+                                onClick={() => handleProvider(choice)}
+                                className={cn(
+                                    "rounded-md px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50",
+                                    provider?.selected === choice
+                                        ? "bg-[#171717] text-white dark:bg-white dark:text-black"
+                                        : "text-[#737373] hover:bg-[#f5f5f5] dark:text-white/50 dark:hover:bg-white/10",
+                                )}
+                            >
+                                {label}{noKey ? " ⚠" : ""}
+                            </button>
+                        );
+                    })}
                 </div>
             </section>
 

@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { GoogleGenerativeAI, SchemaType, type FunctionDeclaration, type Content } from "@google/generative-ai";
 import type { AgentChatMessage, AgentTool, ModelCaller, ModelTurn } from "@/lib/ai-agent";
-import { isTransientLlmError } from "@/lib/ai-messaging";
+import { isTransientLlmError, resolveMessagingProvider, type AIProvider } from "@/lib/ai-messaging";
 
 /**
  * Adaptadores de function-calling por provider para o loop do agente.
@@ -113,12 +113,17 @@ async function callOpenAI(messages: AgentChatMessage[], tools: AgentTool[]): Pro
 
 /**
  * Cadeia de providers com fallover em erros transitórios.
- * A ordem respeita AI_MESSAGING_PROVIDER (a mesma env var do draftReply):
- * 'openai' → OpenAI primeiro; 'gemini' (ou ausente) → Gemini primeiro.
+ * A ordem respeita o provider escolhido na BD (BotSettings → ai_messaging_settings.ai_provider),
+ * com fallback para a env var AI_MESSAGING_PROVIDER: 'openai' → OpenAI primeiro; senão Gemini primeiro.
+ * O provider é resolvido uma vez e memoizado durante a corrida do agente (o loop de tool-calling
+ * reutiliza o mesmo caller), evitando uma leitura à BD por chamada ao modelo.
+ * `providerOverride` permite forçar o provider em testes/scripts sem tocar na BD.
  */
-export function buildModelCaller(): ModelCaller {
+export function buildModelCaller(providerOverride?: AIProvider): ModelCaller {
+    let resolved: AIProvider | undefined = providerOverride;
     return async (messages, tools) => {
-        const openAiFirst = process.env.AI_MESSAGING_PROVIDER === "openai";
+        if (!resolved) resolved = await resolveMessagingProvider();
+        const openAiFirst = resolved === "openai";
         const chain: Array<(m: AgentChatMessage[], t: AgentTool[]) => Promise<ModelTurn>> = [];
         if (openAiFirst && process.env.OPENAI_API_KEY) chain.push(callOpenAI);
         if (process.env.GEMINI_API_KEY) chain.push(callGemini);

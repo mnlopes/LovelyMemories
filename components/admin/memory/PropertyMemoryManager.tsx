@@ -60,7 +60,7 @@ export function PropertyMemoryManager(props: {
                 ) : (
                     <div className="space-y-6">
                         <EssentialsForm internalPropertyId={data.internalPropertyId} knowledge={data.knowledge} onSaved={reload} />
-                        <FactsBoard externalPropertyId={String(data.beds24PropertyId)} facts={data.facts} onChanged={reload} />
+                        <FactsBoard externalPropertyId={String(data.beds24PropertyId)} facts={data.facts} knowledge={data.knowledge} onChanged={reload} />
                     </div>
                 )
             )}

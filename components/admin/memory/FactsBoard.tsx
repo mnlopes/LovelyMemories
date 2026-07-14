@@ -2,19 +2,33 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, X, AlertTriangle } from "lucide-react";
 import {
     createFact, updateFact, setFactStatus, deleteFact, reviewFact,
     type PropertyFactRow,
 } from "@/app/actions/ai-inbox";
-import { FACT_TOPICS } from "@/lib/ai-knowledge";
+import { FACT_TOPICS, detectFactConflicts } from "@/lib/ai-knowledge";
+import type { PropertyKnowledge } from "@/lib/ai-messaging";
 
 export function FactsBoard(props: {
     externalPropertyId: string;
     facts: PropertyFactRow[];
+    knowledge: PropertyKnowledge | null;
     onChanged: () => void;
 }) {
     const t = useTranslations("AiMemory");
+
+    /** Aviso curatorial: este facto parece contradizer um essencial preenchido (o essencial ganha). */
+    const conflictNote = (factText: string) => {
+        const hits = detectFactConflicts(factText, props.knowledge);
+        if (!hits.length) return null;
+        const labels = hits.map((h) => (h === "wifi" ? "Wi-Fi" : t("conflictDoorCode"))).join(", ");
+        return (
+            <span className="mt-0.5 flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3 w-3 shrink-0" /> {t("conflictLabel")} {labels}
+            </span>
+        );
+    };
     const [, startAction] = useTransition();
     const [newTopic, setNewTopic] = useState("general");
     const [newFact, setNewFact] = useState("");
@@ -46,9 +60,12 @@ export function FactsBoard(props: {
                     <ul className="space-y-2">
                         {pending.map((f) => (
                             <li key={f.id} className="flex items-start gap-2 text-xs">
-                                <span className="flex-1 text-[#525252] dark:text-white/70">
-                                    <span className="mr-1.5 rounded bg-white/60 px-1 text-[10px] text-[#737373] dark:bg-white/10">{t(`topic.${f.topic}`)}</span>
-                                    {f.fact}
+                                <span className="flex flex-1 flex-col text-[#525252] dark:text-white/70">
+                                    <span>
+                                        <span className="mr-1.5 rounded bg-white/60 px-1 text-[10px] text-[#737373] dark:bg-white/10">{t(`topic.${f.topic}`)}</span>
+                                        {f.fact}
+                                    </span>
+                                    {conflictNote(f.fact)}
                                 </span>
                                 <button onClick={() => run(() => reviewFact(f.id, "approve"))} className="rounded p-1 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-500/20" title={t("approve")}><Check className="h-4 w-4" /></button>
                                 <button onClick={() => run(() => reviewFact(f.id, "reject"))} className="rounded p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-500/20" title={t("reject")}><X className="h-4 w-4" /></button>
@@ -88,7 +105,10 @@ export function FactsBoard(props: {
                                         </>
                                     ) : (
                                         <>
-                                            <span className="flex-1 text-[#525252] dark:text-white/70">{f.fact}{f.source === "learned" && <span className="ml-1.5 text-[10px] text-[#a3a3a3]">({t("learned")})</span>}</span>
+                                            <span className="flex flex-1 flex-col text-[#525252] dark:text-white/70">
+                                                <span>{f.fact}{f.source === "learned" && <span className="ml-1.5 text-[10px] text-[#a3a3a3]">({t("learned")})</span>}</span>
+                                                {conflictNote(f.fact)}
+                                            </span>
                                             <button onClick={() => { setEditId(f.id); setEditText(f.fact); }} className="rounded p-1 text-[#737373] hover:bg-[#f0f0f0] dark:hover:bg-white/10" title={t("edit")}><Pencil className="h-3.5 w-3.5" /></button>
                                             <button onClick={() => run(() => setFactStatus(f.id, "rejected"))} className="rounded p-1 text-[#737373] hover:bg-[#f0f0f0] dark:hover:bg-white/10" title={t("deactivate")}><X className="h-3.5 w-3.5" /></button>
                                             <button onClick={() => { if (window.confirm(t("confirmDelete"))) run(() => deleteFact(f.id)); }} className="rounded p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-500/20" title={t("delete")}><Trash2 className="h-3.5 w-3.5" /></button>

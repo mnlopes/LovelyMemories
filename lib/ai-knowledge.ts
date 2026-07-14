@@ -60,7 +60,13 @@ export function formatKnowledgeWithCitations(
     k: PropertyKnowledge | null,
     facts: PropertyFact[],
 ): { text: string; citations: string[] } {
-    const lines: string[] = [];
+    // HIERARQUIA: os campos estruturados (essenciais + segredos curados à mão na
+    // página de memória) são a fonte de verdade. Os factos livres são complementares.
+    // Se um facto contradiz um campo estruturado (ex.: duas passwords de wi-fi), o
+    // modelo tem de confiar no bloco AUTORITÁRIO. Por isso separamos em dois blocos
+    // rotulados em vez de uma lista plana onde o modelo escolheria à sorte.
+    const authoritative: string[] = [];
+    const supplementary: string[] = [];
     const citations: string[] = [];
 
     if (k) {
@@ -68,24 +74,37 @@ export function formatKnowledgeWithCitations(
             const v = k[f.key];
             if (typeof v === "string" && v.trim()) {
                 const cite = `knowledge.${String(f.key)}`;
-                lines.push(`[${cite}] ${f.label}: ${v}`);
+                authoritative.push(`[${cite}] ${f.label}: ${v}`);
                 citations.push(cite);
             }
         }
     }
     for (const fact of facts) {
         const cite = `fact:${fact.id}`;
-        lines.push(`[${cite}] ${fact.fact}`);
+        supplementary.push(`[${cite}] ${fact.fact}`);
         citations.push(cite);
     }
 
-    if (!lines.length) {
+    if (!authoritative.length && !supplementary.length) {
         return { text: "No property information is available. Do not state any property-specific detail.", citations: [] };
     }
-    return {
-        text: `Property information — cite the bracketed key of every fact you use:\n${lines.join("\n")}`,
-        citations,
-    };
+
+    const blocks: string[] = [
+        "Property information — cite the bracketed key of every fact you use.",
+    ];
+    if (authoritative.length) {
+        blocks.push(
+            `AUTHORITATIVE property details (human-curated, always correct — prefer these):\n${authoritative.join("\n")}`,
+        );
+    }
+    if (supplementary.length) {
+        blocks.push(
+            (authoritative.length
+                ? "Supplementary facts (use for details not in the authoritative block; if a fact contradicts an authoritative detail, trust the authoritative one and cite its key):\n"
+                : "Facts:\n") + supplementary.join("\n"),
+        );
+    }
+    return { text: blocks.join("\n\n"), citations };
 }
 
 /** Campos do checklist do painel do inbox (mesma ordem). */
@@ -100,6 +119,35 @@ export const CHECKLIST_FIELDS: KnowledgeField[] = [
 
 /** Tópicos válidos de um facto (partilhado entre a action server e o board no cliente). */
 export const FACT_TOPICS = ["amenities", "access", "parking", "house_rules", "area", "general"];
+
+/**
+ * Segredos estruturados que um facto livre pode CONTRADIZER, com o padrão de texto
+ * que os "toca". Aviso curatorial para a página de memória — não bloqueia nada; serve
+ * para um humano reconciliar (ex.: password de wi-fi diferente num facto e no segredo).
+ * Limitado aos segredos com campo estruturado próprio, para evitar falsos positivos.
+ */
+const CONFLICT_SECRETS: Array<{ field: keyof PropertyKnowledge; match: RegExp; label: string }> = [
+    { field: "wifiPassword", match: /wi-?fi|palavra-passe|password|senha/i, label: "wifi" },
+    { field: "wifiName", match: /wi-?fi|rede sem fios|network|ssid/i, label: "wifi" },
+    { field: "doorCode", match: /door\s*code|lockbox|cofre|teclado|c[oó]digo\s*(da porta|de entrada|de acesso|do teclado)/i, label: "doorCode" },
+];
+
+/**
+ * Rótulos dos segredos PREENCHIDOS que este facto parece contradizer (deduplicados).
+ * Vazio = sem conflito aparente. Pura, síncrona — usável no cliente.
+ */
+export function detectFactConflicts(
+    factText: string,
+    k: PropertyKnowledge | null,
+): string[] {
+    if (!k || !factText.trim()) return [];
+    const hits: string[] = [];
+    for (const c of CONFLICT_SECRETS) {
+        const v = k[c.field];
+        if (typeof v === "string" && v.trim() && c.match.test(factText)) hits.push(c.label);
+    }
+    return [...new Set(hits)];
+}
 
 /** Que campos do checklist um facto de cada topic cobre. */
 const TOPIC_COVERS: Record<string, KnowledgeField[]> = {

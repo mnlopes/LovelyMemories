@@ -32,7 +32,7 @@ import { getSupabaseAdmin } from "./supabase";
  * in lib/beds24/bot-bridge.ts.
  */
 
-type AIProvider = "openai" | "gemini";
+export type AIProvider = "openai" | "gemini";
 
 const OPENAI_MODEL = process.env.OPENAI_MESSAGING_MODEL || "gpt-4o-mini";
 // Default to the pinned stable model — the "-latest" alias has been unreliable (503 "high demand").
@@ -41,13 +41,35 @@ const GEMINI_MODEL = process.env.GEMINI_MESSAGING_MODEL || "gemini-2.5-flash";
  * whole draft attempt stays webhook-safe (a long retry/fallback chain can outlast the request). */
 const GEMINI_FALLBACK_MODELS = ["gemini-2.0-flash"];
 
-/** Picks the provider: explicit env var, else whichever API key is present (OpenAI first). */
+/** Picks the provider from env/keys only: explicit env var, else whichever API key is present (OpenAI first). */
 function resolveProvider(): AIProvider {
     const explicit = process.env.AI_MESSAGING_PROVIDER as AIProvider | undefined;
     if (explicit === "openai" || explicit === "gemini") return explicit;
     if (process.env.OPENAI_API_KEY) return "openai";
     if (process.env.GEMINI_API_KEY) return "gemini";
     return "openai";
+}
+
+/**
+ * DB-backed provider selection — the single source of truth for the running bot.
+ * `ai_messaging_settings.ai_provider` (set in BotSettings) overrides the env var;
+ * NULL/unset or any read error → fall back to the env/key auto-detection above.
+ * Fail-soft: a DB hiccup must never take the bot offline.
+ */
+export async function resolveMessagingProvider(): Promise<AIProvider> {
+    try {
+        const admin = await getSupabaseAdmin();
+        const { data } = await admin
+            .from("ai_messaging_settings")
+            .select("ai_provider")
+            .eq("id", 1)
+            .maybeSingle();
+        const v = data?.ai_provider;
+        if (v === "openai" || v === "gemini") return v;
+    } catch {
+        /* fall through to env/key detection */
+    }
+    return resolveProvider();
 }
 
 export interface ProviderStatus {
@@ -453,7 +475,7 @@ function shouldFallover(err: unknown): boolean {
  * pinned fallback models. Throws only if every option fails — the caller leaves it for a human.
  */
 export async function draftReply(ctx: DraftContext): Promise<string> {
-    const primary = resolveProvider();
+    const primary = await resolveMessagingProvider();
     const order: AIProvider[] = primary === "openai" ? ["openai", "gemini"] : ["gemini", "openai"];
     const hasKey = (p: AIProvider) => (p === "openai" ? !!process.env.OPENAI_API_KEY : !!process.env.GEMINI_API_KEY);
     const chain = order.filter(hasKey);
