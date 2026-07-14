@@ -12,7 +12,6 @@ export interface PropertyFact {
     topic: string;
     fact: string;
     source: string;
-    status?: string;
 }
 
 /** Factos ativos da propriedade. Fail-soft: erro → lista vazia. */
