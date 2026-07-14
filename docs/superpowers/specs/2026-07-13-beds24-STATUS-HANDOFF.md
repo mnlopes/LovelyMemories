@@ -36,9 +36,22 @@ Sessão E2E com a conta Carolina (inquiry 89794243, Virtudes One em `drafts`) fe
    facto pending nas sugestões do BotSettings → aprovar), modo `auto` na cobaia, e host-reply
    auto-off pós-fix (reativar deve AGORA manter-se ligado).
 2. Rollout: pôr as outras 5 owned em `drafts` (e ligar as 4 que faltam ao Airbnb — ver sessão tarde).
-3. Pedidos do Marcelo (novas features): **página de gestão da memória por propriedade** (CRUD de
-   factos ativos agrupados por tópico; vista visual "estilo Graphify" como extra) e **seletor de
-   provider no BotSettings** (BD em vez de env var).
+3. Pedidos do Marcelo (novas features):
+   - ✅ **FEITA E EM PROD (2026-07-14, branch feat/property-memory→main, push 437196a):** página de
+     gestão da memória por propriedade em `/[locale]/admin/activity/memory` (super_admin only; botão
+     "Gerir memória" no ContextPanel do inbox). 3 secções: ligação Beds24↔site (getPropertyLinkSuggestions/
+     savePropertyLinks) → essenciais (base read-only do site + segredos editáveis via upsertPropertyExtras,
+     com checklist ✓/⚠) → factos livres por tópico (CRUD + aprovar/rejeitar os pending do learning loop).
+     BÓNUS: fix do checklist do inbox — passa a contar factos ativos (computeCoverage em lib/ai-knowledge.ts,
+     mapa tópico→campo: access→building/apartmentAccess, parking, house_rules) em vez de mostrar "missing"
+     o que o bot já sabe. Sem migração. Vista-grafo "Graphify" adiada (YAGNI). Specs/plano:
+     docs/superpowers/{specs,plans}/2026-07-14-property-memory-management*.md. ⚠ ARMADILHA APRENDIDA:
+     app/actions/ai-inbox.ts é 'use server' → só exporta funções async; exportar um const (FACT_TOPICS)
+     partiu o `next build` (collect page data) apesar de tsc passar → mover consts partilhados para
+     lib/ai-knowledge.ts. RE-CORRER `npm run build` (não só tsc) após mexer em exports de ficheiros 'use server'.
+     PENDENTE: E2E live como super_admin (ligar Virtudes One→segredos→checklist ✓→factos); negar a admin
+     normal (João); 2 lint set-state-in-effect deixados como o idioma existente do inbox; hebraico nativo.
+   - **seletor de provider no BotSettings** (BD em vez de env var) — POR FAZER.
 4. Experiência 17/07 ~10:01: payload do "Farewell Porto" agendado → marcador de scheduled para
    isentar do auto-off.
 
