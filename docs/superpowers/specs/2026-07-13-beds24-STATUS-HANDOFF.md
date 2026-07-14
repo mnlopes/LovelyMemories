@@ -1,6 +1,41 @@
 # Beds24 PMS — PONTO DE SITUAÇÃO / HANDOFF
 
-**Última atualização:** 2026-07-14. **Começar por aqui** ao retomar (mesmo noutra conta).
+**Última atualização:** 2026-07-14 (noite). **Começar por aqui** ao retomar (mesmo noutra conta).
+
+## 🤖 AGENTE ESCALÁVEL IMPLEMENTADO — 2026-07-14 (noite), branch worktree-ai-agent-tools
+
+Plano `docs/superpowers/plans/2026-07-14-scalable-guest-agent.md` — **Tasks 1–10 completas**
+(verificações automáticas todas verdes; falta só o que exige o Marcelo, abaixo).
+Commits `6366ba0…` nesta branch: migração ai_property_fact → calendário Beds24 (clamp+sumarizador
+com citação) → knowledge 3 camadas → loop de tool-calling com gate de citações → providers
+Gemini/OpenAI function-calling → decide() delega no agente → import de factos → learning loop →
+fila de sugestões no BotSettings.
+
+**Verificado (2026-07-14 noite):** 5 test-scripts PASS; armadilha de alucinação PASS (preço sem
+calendário → sem números, escala); dry-runs live Virtudes One: disponibilidade/preço →
+`auto_send` com `citation: calendar:…` e dados reais (incl. noites bloqueadas detetadas);
+berço sem facto → `needs_human` com draft honesto; desconto → `hard_rule:negotiation`.
+`tsc` + eslint (ficheiros alterados) + `npm run build` + `test:security` limpos.
+
+**Fix importante durante a execução:** a ferramenta getCalendar tem de embutir a chave
+`[calendar:…]` no texto devolvido ao modelo (como as linhas `[knowledge.x]`) — sem isso o modelo
+cita o nome da ferramenta e o gate escala tudo (invalid_citation).
+
+**Descoberta:** o count/head do PostgREST devolve 204 sem erro para tabelas inexistentes —
+verificar existência com select real.
+
+**PENDENTE (Marcelo, por ordem):**
+1. Aplicar `supabase/migrations/20260715090000_ai_property_fact.sql` no dashboard Supabase
+   (a tabela NÃO existe ainda — verificado 2026-07-14 noite).
+2. Correr `npx tsx scripts/import-property-facts.ts` (uma vez; idempotente; usa as chaves reais
+   do raw: house_manual, directions, check_in_option.instruction, amenities, wifi).
+3. Gemini free-tier = 5 req/min e o agente usa 2–3 chamadas por mensagem → com várias conversas
+   ativa o billing do Gemini OU define `AI_MESSAGING_PROVIDER=gemini` + plano pago; OpenAI
+   continua em 429 de quota.
+4. Merge da branch → main → deploy; Virtudes One em `drafts` no BotSettings.
+5. E2E real (conta Carolina): pergunta preço/disponibilidade → draft com citação calendar:…;
+   pergunta sem cobertura → escalação; responder pelo Airbnb (João) → facto pending nas
+   sugestões do BotSettings (engrenagem do inbox).
 
 ## 📍 SESSÃO 2026-07-14 (tarde) — inbox em produção, rollout das 6 em curso
 

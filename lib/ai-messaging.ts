@@ -110,6 +110,8 @@ export interface PropertyKnowledge {
     id?: string | null;
     /** External (Beds24) property id — the match key for incoming messages. */
     externalPropertyId?: string | null;
+    /** Beds24 room id — needed by the agent's calendar tool. */
+    beds24RoomId?: number | null;
     /** Optional human label, e.g. "C3". No longer the primary key. */
     code?: string | null;
     listingName?: string | null;
@@ -165,13 +167,6 @@ export interface DraftContext {
     history: ThreadMessage[];
     /** Effective brand tone/instructions (DB override, else the built-in default). */
     brandTone?: string | null;
-    /**
-     * When true, buildSystemPrompt() instructs the model to respond with a strict JSON decision
-     * envelope instead of free-form guest-facing text. Used by the Task 3 decision pipeline
-     * (lib/ai-decision.ts) to ask the model whether the property knowledge covers the guest's
-     * question before auto-sending anything.
-     */
-    decisionMode?: boolean;
 }
 
 /** The built-in default tone, shown in the editor as the starting point. */
@@ -273,16 +268,19 @@ export async function loadPropertyKnowledge(externalPropertyId: string | null | 
 
         const { data: beds24Prop } = await supabase
             .from("beds24_properties")
-            .select("internal_property_id, name")
+            .select("internal_property_id, name, beds24_room_id")
             .eq("beds24_property_id", beds24PropertyId)
             .maybeSingle();
         if (!beds24Prop) return null;
+
+        const roomId = (beds24Prop as { beds24_room_id: number | null }).beds24_room_id ?? null;
 
         const internalPropertyId = (beds24Prop as { internal_property_id: string | null }).internal_property_id;
         if (!internalPropertyId) {
             // Not yet linked to a booking-site listing — partial knowledge only.
             return {
                 externalPropertyId,
+                beds24RoomId: roomId,
                 listingName: (beds24Prop as { name: string | null }).name ?? null,
             };
         }
@@ -301,6 +299,7 @@ export async function loadPropertyKnowledge(externalPropertyId: string | null | 
         return {
             id: internalPropertyId,
             externalPropertyId,
+            beds24RoomId: roomId,
             ...(prop ? mapPropertyBase(prop as Record<string, unknown>) : { listingName: (beds24Prop as { name: string | null }).name ?? null }),
             ...mapExtrasRow(extras as Record<string, unknown> | null),
         };
@@ -385,20 +384,6 @@ export function buildSystemPrompt(ctx: DraftContext): string {
             typeof r.previousStays === "number" && r.previousStays > 0 && `Returning guest — ${r.previousStays} previous stay(s). Acknowledge warmly.`,
         ].filter(Boolean);
         if (res.length) parts.push(`Reservation:\n${res.join("\n")}`);
-    }
-
-    if (ctx.decisionMode) {
-        parts.push(
-            `DECISION MODE: Do not write a normal reply. Respond with ONLY a single JSON object (no markdown, ` +
-            `no code fence, no extra text) with exactly these fields:\n` +
-            `{"covered": boolean, "citation": string, "reply": string}\n` +
-            `- "covered" must be true ONLY if the guest's question is explicitly answered by the property ` +
-            `information above — never mark it true from general knowledge or a guess.\n` +
-            `- "citation" must name the specific knowledge field you used (e.g. "wifi", "doorCode", ` +
-            `"checkIn", "houseRules"); use an empty string if "covered" is false.\n` +
-            `- "reply" is the guest-facing message: the drafted answer when covered is true, or a short, ` +
-            `honest note that the team will confirm when covered is false. Never invent information.`
-        );
     }
 
     return parts.join("\n\n");

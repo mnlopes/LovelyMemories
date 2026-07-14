@@ -295,6 +295,18 @@ export async function sendReply(reservationId: string, text: string, draftRowId?
             return { ok: false, error: msg };
         }
 
+        // Learning loop: par pergunta↔resposta ANTES de marcar o draft como sent
+        // (a query de emparelhamento do captureLearning só vê escalações em 'draft').
+        let escalatedQuestion: string | null = null;
+        if (draftRowId) {
+            const { data: draftRow } = await admin.from('ai_message_log')
+                .select('incoming_message, decision, status')
+                .eq('id', draftRowId).maybeSingle();
+            if (draftRow?.status === 'draft' && ['needs_human', 'hard_rule'].includes(draftRow.decision ?? '')) {
+                escalatedQuestion = draftRow.incoming_message ?? null;
+            }
+        }
+
         if (draftRowId) {
             await admin.from('ai_message_log').update({
                 status: 'sent', sent_message: body, sent_at: new Date().toISOString(),
@@ -310,6 +322,22 @@ export async function sendReply(reservationId: string, text: string, draftRowId?
                 sent_at: new Date().toISOString(),
             });
         }
+
+        // Learning loop: resposta humana enviada pelo backoffice ensina o bot (fail-soft)
+        try {
+            const { data: conv } = await admin
+                .from('ai_conversation')
+                .select('external_property_id')
+                .eq('reservation_id', reservationId)
+                .maybeSingle();
+            const { captureLearning } = await import('@/lib/ai-learning');
+            await captureLearning({
+                reservationId,
+                externalPropertyId: conv?.external_property_id ?? null,
+                humanAnswer: body,
+                ...(escalatedQuestion ? { question: escalatedQuestion } : {}),
+            });
+        } catch { /* learning nunca bloqueia o envio */ }
         return { ok: true };
     } catch (err) {
         return { ok: false, error: err instanceof Error ? err.message : 'Send failed' };
@@ -437,6 +465,67 @@ export async function updateBrandTone(text: string): Promise<{ ok: boolean; erro
         return { ok: true };
     } catch (err) {
         return { ok: false, error: err instanceof Error ? err.message : 'Save failed' };
+    }
+}
+
+// ── Sugestões de knowledge (learning loop → aprovação humana) ─────────────────
+
+export interface FactSuggestion {
+    id: string;
+    propertyName: string | null;
+    topic: string;
+    fact: string;
+    learnedFrom: string | null;
+    createdAt: string;
+}
+
+export async function listFactSuggestions(): Promise<FactSuggestion[]> {
+    await assertAdmin();
+    try {
+        const admin = await getSupabaseAdmin();
+        const { data: facts } = await admin
+            .from('ai_property_fact')
+            .select('id, external_property_id, topic, fact, learned_from, created_at')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        if (!facts?.length) return [];
+        const propIds = [...new Set(facts.map((f) => Number(f.external_property_id)).filter(Number.isFinite))];
+        const { data: props } = await admin
+            .from('beds24_properties')
+            .select('beds24_property_id, name')
+            .in('beds24_property_id', propIds);
+        const nameById = new Map((props ?? []).map((p) => [String(p.beds24_property_id), p.name as string]));
+        return facts.map((f) => ({
+            id: f.id as string,
+            propertyName: nameById.get(String(f.external_property_id)) ?? null,
+            topic: f.topic as string,
+            fact: f.fact as string,
+            learnedFrom: (f.learned_from as string) ?? null,
+            createdAt: f.created_at as string,
+        }));
+    } catch {
+        // Fail-soft (ex.: migração ai_property_fact ainda não aplicada)
+        return [];
+    }
+}
+
+export async function reviewFact(
+    id: string, action: 'approve' | 'reject', editedFact?: string,
+): Promise<{ ok: boolean; error?: string }> {
+    const user = await assertAdmin();
+    try {
+        const admin = await getSupabaseAdmin();
+        const { error } = await admin.from('ai_property_fact').update({
+            status: action === 'approve' ? 'active' : 'rejected',
+            ...(action === 'approve' && editedFact?.trim() ? { fact: editedFact.trim() } : {}),
+            reviewed_by: user.email ?? 'admin',
+            updated_at: new Date().toISOString(),
+        }).eq('id', id).eq('status', 'pending');
+        if (error) throw error;
+        return { ok: true };
+    } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : 'Review failed' };
     }
 }
 

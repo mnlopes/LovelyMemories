@@ -6,7 +6,8 @@ import { Power } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
     getBrandTone, updateBrandTone, listPropertyBotModes, setPropertyBotMode, setGlobalBot,
-    type PropertyBotRow,
+    listFactSuggestions, reviewFact,
+    type PropertyBotRow, type FactSuggestion,
 } from "@/app/actions/ai-inbox";
 
 /** Definições do bot: kill-switch global, modo por propriedade, tom da marca. */
@@ -17,11 +18,20 @@ export function BotSettings(props: { globalBotEnabled: boolean; onChanged: () =>
     const [tone, setTone] = useState<string>("");
     const [toneDefault, setToneDefault] = useState(true);
     const [savedFlash, setSavedFlash] = useState(false);
+    const [suggestions, setSuggestions] = useState<FactSuggestion[] | null>(null);
+    const [factEdits, setFactEdits] = useState<Record<string, string>>({});
 
     useEffect(() => {
         void listPropertyBotModes().then(setRows).catch(() => setRows([]));
         void getBrandTone().then((b) => { setTone(b.tone); setToneDefault(b.usingDefault); }).catch(() => {});
+        void listFactSuggestions().then(setSuggestions).catch(() => setSuggestions([]));
     }, []);
+
+    const handleReview = (id: string, action: "approve" | "reject") => startTransition(async () => {
+        const edited = factEdits[id];
+        const r = await reviewFact(id, action, action === "approve" ? edited : undefined);
+        if (r.ok) setSuggestions((prev) => prev?.filter((s) => s.id !== id) ?? null);
+    });
 
     const flash = () => { setSavedFlash(true); setTimeout(() => setSavedFlash(false), 1600); };
 
@@ -138,6 +148,66 @@ export function BotSettings(props: { globalBotEnabled: boolean; onChanged: () =>
                     {savedFlash && <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{t("saved")}</span>}
                     {toneDefault && <span className="text-[11px] text-[#a3a3a3]">default</span>}
                 </div>
+            </section>
+
+            {/* Sugestões de knowledge (learning loop) */}
+            <section>
+                <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#a3a3a3]">
+                    {t("factSuggestions")}
+                    {suggestions && suggestions.length > 0 && (
+                        <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
+                            {suggestions.length}
+                        </span>
+                    )}
+                </h3>
+                <p className="mb-2 text-xs text-[#a3a3a3]">{t("factSuggestionsHint")}</p>
+                {suggestions === null ? (
+                    <div className="h-16 animate-pulse rounded-xl bg-[#f5f5f5] dark:bg-white/5" aria-hidden />
+                ) : suggestions.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-[#e5e5e5] p-4 text-center text-xs text-[#a3a3a3] dark:border-admin-dark-border">
+                        {t("factEmpty")}
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {suggestions.map((s) => (
+                            <div key={s.id} className="rounded-xl border border-[#f5f5f5] p-3 dark:border-admin-dark-border">
+                                <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                                    {s.propertyName && (
+                                        <span className="text-xs font-semibold text-[#171717] dark:text-admin-dark-text-primary">{s.propertyName}</span>
+                                    )}
+                                    <span className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#737373] dark:bg-white/10 dark:text-white/60">
+                                        {s.topic}
+                                    </span>
+                                    {s.learnedFrom && (
+                                        <span className="text-[10px] text-[#a3a3a3]">{t("factFrom")} #{s.learnedFrom}</span>
+                                    )}
+                                </div>
+                                <textarea
+                                    value={factEdits[s.id] ?? s.fact}
+                                    onChange={(e) => setFactEdits((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                                    rows={2}
+                                    className="w-full rounded-lg border border-[#e5e5e5] bg-transparent p-2 text-xs leading-relaxed outline-none focus:ring-2 focus:ring-[#171717]/20 dark:border-admin-dark-border dark:text-white dark:focus:ring-white/20"
+                                />
+                                <div className="mt-2 flex gap-2">
+                                    <button
+                                        disabled={isPending}
+                                        onClick={() => handleReview(s.id, "approve")}
+                                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                                    >
+                                        {t("factApprove")}
+                                    </button>
+                                    <button
+                                        disabled={isPending}
+                                        onClick={() => handleReview(s.id, "reject")}
+                                        className="rounded-lg border border-[#e5e5e5] px-3 py-1.5 text-[11px] font-semibold text-[#737373] transition-colors hover:bg-[#f5f5f5] disabled:opacity-50 dark:border-admin-dark-border dark:text-white/60 dark:hover:bg-white/10"
+                                    >
+                                        {t("factReject")}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </section>
         </div>
     );
