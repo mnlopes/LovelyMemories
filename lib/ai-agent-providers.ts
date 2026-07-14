@@ -83,6 +83,10 @@ async function callOpenAI(messages: AgentChatMessage[], tools: AgentTool[]): Pro
     const res = await openai.chat.completions.create({
         model: OPENAI_MODEL,
         temperature: 0.4,
+        // gpt-4o-mini ignora o "ONLY JSON" do prompt depois de usar tools e responde
+        // em prosa → parse_error no gate. json_object força o envelope (as tool_calls
+        // não passam por content, não são afetadas).
+        response_format: { type: "json_object" },
         messages: messages.map((m) => m.role === "tool"
             ? { role: "user" as const, content: `[tool result: ${m.name}]\n${m.content}` }
             : { role: m.role, content: m.content }),
@@ -107,12 +111,18 @@ async function callOpenAI(messages: AgentChatMessage[], tools: AgentTool[]): Pro
     return { type: "text", text: (msg?.content ?? "").trim() };
 }
 
-/** Cadeia Gemini→OpenAI (só providers com key), com fallover em erros transitórios. */
+/**
+ * Cadeia de providers com fallover em erros transitórios.
+ * A ordem respeita AI_MESSAGING_PROVIDER (a mesma env var do draftReply):
+ * 'openai' → OpenAI primeiro; 'gemini' (ou ausente) → Gemini primeiro.
+ */
 export function buildModelCaller(): ModelCaller {
     return async (messages, tools) => {
+        const openAiFirst = process.env.AI_MESSAGING_PROVIDER === "openai";
         const chain: Array<(m: AgentChatMessage[], t: AgentTool[]) => Promise<ModelTurn>> = [];
+        if (openAiFirst && process.env.OPENAI_API_KEY) chain.push(callOpenAI);
         if (process.env.GEMINI_API_KEY) chain.push(callGemini);
-        if (process.env.OPENAI_API_KEY) chain.push(callOpenAI);
+        if (!openAiFirst && process.env.OPENAI_API_KEY) chain.push(callOpenAI);
         if (!chain.length) chain.push(callGemini); // deixa rebentar com o erro claro de key
         let lastErr: unknown;
         for (let i = 0; i < chain.length; i++) {
