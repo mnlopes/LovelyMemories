@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe, Euro, Moon } from "lucide-react";
@@ -126,6 +126,15 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     // (propriedades ligadas ao Beds24) — as restantes ficam a 72px, sem banda vazia.
     const twoBand = showPrices && rangeDays !== 31;
     const railH = 28;
+
+    // Propriedades ligadas conhecidas (união das janelas já carregadas). São estáveis
+    // entre semanas, por isso ao mudar de semana sabemos QUAIS linhas terão rail e
+    // mostramos skeleton nelas enquanto a nova janela carrega (sem salto de altura).
+    const linkedPropIds = useMemo(() => {
+        const s = new Set<string>();
+        for (const w of Object.values(pricesByWindow)) for (const pid of Object.keys(w)) s.add(pid);
+        return s;
+    }, [pricesByWindow]);
 
     // Filtering logic
     const allPropertyIds = Object.keys(properties).filter(id => !getPropData(id).is_multi_unit);
@@ -390,7 +399,9 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             const propData = getPropData(propId);
                             // Duas bandas só nas linhas com preços (ligadas): barra 62px + rail 28px.
                             const rowPrices = twoBand ? windowPrices?.[propId] : undefined;
-                            const hasRail = !!rowPrices;
+                            // Linha ligada cuja janela ainda está a carregar → rail em skeleton (sem salto).
+                            const rowLoading = twoBand && !rowPrices && pricesLoading && linkedPropIds.has(propId);
+                            const hasRail = !!rowPrices || rowLoading;
                             const rowHeight = hasRail ? 62 + railH : 72;
                             const barBandH = hasRail ? 62 : rowHeight;
                             const barCenter = barBandH / 2;
@@ -434,22 +445,27 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                     const info: Beds24DayInfo | undefined = rowPrices?.[key];
                                                     return (
                                                         <div key={key} style={{ width: cellWidth }} className="flex-shrink-0 relative flex items-center justify-center border-r border-admin-border dark:border-admin-dark-border/40">
-                                                            {info?.minStay != null && info.minStay > 1 && (
-                                                                <span
-                                                                    title={t("minStayNights", { count: info.minStay })}
-                                                                    className="absolute left-1 top-0.5 flex items-center gap-0.5 text-[8px] font-bold text-[#c4c4c4] dark:text-white/30"
-                                                                >
-                                                                    <Moon className="size-2.5" />{info.minStay}
-                                                                </span>
-                                                            )}
-                                                            {typeof info?.price === "number" && (
-                                                                <span className={cn(
-                                                                    "font-bold tabular-nums text-[#525252] dark:text-white/70",
-                                                                    rangeDays === 7 ? "text-xs" : "text-[11px]",
-                                                                    pricesLoading && "opacity-40",
-                                                                )}>
-                                                                    €{info.price}
-                                                                </span>
+                                                            {rowLoading ? (
+                                                                <div className="h-3 w-9 rounded bg-[#e5e5e5] dark:bg-white/10 animate-pulse" />
+                                                            ) : (
+                                                                <>
+                                                                    {info?.minStay != null && info.minStay > 1 && (
+                                                                        <span
+                                                                            title={t("minStayNights", { count: info.minStay })}
+                                                                            className="absolute left-1 top-0.5 flex items-center gap-0.5 text-[8px] font-bold text-[#c4c4c4] dark:text-white/30"
+                                                                        >
+                                                                            <Moon className="size-2.5" />{info.minStay}
+                                                                        </span>
+                                                                    )}
+                                                                    {typeof info?.price === "number" && (
+                                                                        <span className={cn(
+                                                                            "font-bold tabular-nums text-[#525252] dark:text-white/70",
+                                                                            rangeDays === 7 ? "text-xs" : "text-[11px]",
+                                                                        )}>
+                                                                            €{info.price}
+                                                                        </span>
+                                                                    )}
+                                                                </>
                                                             )}
                                                         </div>
                                                     );
