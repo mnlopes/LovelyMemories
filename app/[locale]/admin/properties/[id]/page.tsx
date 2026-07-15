@@ -3,15 +3,16 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import PropertyEditorForm from "@/components/admin/properties/PropertyEditorForm";
+import { PropertyDetailTabs } from "@/components/admin/properties/PropertyDetailTabs";
 
 export default async function PropertyEditorPage({
     params,
     searchParams
 }: {
-    params: Promise<{ id: string }>,
+    params: Promise<{ id: string; locale: string }>,
     searchParams: Promise<{ mode?: string, parent_id?: string }>
 }) {
-    const { id } = await params;
+    const { id, locale } = await params;
     const { mode, parent_id } = await searchParams;
     const isNew = id === 'new';
     let propertyData: any = null;
@@ -76,10 +77,17 @@ export default async function PropertyEditorPage({
     }
 
     return (
-        <PropertyEditorForm
-            isEditing={!isNew}
-            initialData={propertyData || undefined}
-            mode={mode as 'building' | undefined}
+        <PropertyDetailTabs
+            propertyId={id}
+            locale={locale}
+            isNew={isNew}
+            overview={
+                <PropertyEditorForm
+                    isEditing={!isNew}
+                    initialData={propertyData || undefined}
+                    mode={mode as "building" | undefined}
+                />
+            }
         />
     );
 }
