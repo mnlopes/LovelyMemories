@@ -1,6 +1,20 @@
 # Beds24 PMS — PONTO DE SITUAÇÃO / HANDOFF
 
-**Última atualização:** 2026-07-15. **Começar por aqui** ao retomar (mesmo noutra conta).
+**Última atualização:** 2026-07-15 (tarde). **Começar por aqui** ao retomar (mesmo noutra conta).
+
+## 🗓️ 2026-07-15 (TARDE) — 3 FIXES EM PROD + CONSOLIDAÇÃO IA DOS CALENDÁRIOS (em main LOCAL, por push)
+
+**EM PROD (origin/main = `8b9289d`), 3 fixes:**
+1. `detectFactConflicts` (`lib/ai-knowledge.ts`) — deixa de marcar "may contradict" quando o facto só tem placeholders de template (`[insert]`); o house manual do anúncio já não acende falso conflito de Wi-Fi na página Manage memory.
+2. Vista Beds24 do calendário (`app/[locale]/admin/reservations/page.tsx`) — só remove um bloco iCal se uma reserva Beds24 o cobrir; reservas concluídas ANTES da ligação (que o Beds24 nunca teve) mantêm-se visíveis via iCal (sem buracos).
+3. `importExistingBookings` (`app/actions/beds24.ts`) — usa `departureFrom` (não `arrivalFrom`) → o botão "importar reservas" apanha hóspedes ATUALMENTE na casa, não só futuros. (O webhook mantém tudo em tempo real; o botão é backfill. Reservas pré-ligação NÃO existem no Beds24 — provado ao vivo.)
+
+**Virtudes 2 (341089) webhook:** configurado corretamente no Beds24, mas 0 eventos — porque não houve atividade nova desde que foi guardado (a reserva do Carl entrou por 'manual'/backfill). Confirmar com um evento EXTERNO (conta Airbnb secundária ou reserva manual na UI Beds24 — NÃO o botão da nossa API, echo suppression).
+
+**FEATURE — Consolidação IA dos calendários (MERGED em `main` LOCAL `a85cdb5`, NÃO PUSHED, E2E por fazer):** `/admin/properties/[id]` passou a página com separadores Overview/Calendar/Reservations; Calendar reutiliza `MultiCalendarView` filtrado a 1 propriedade (default Mês) + dropdown de troca de propriedade (Lodgify); nome da propriedade no hub e "View Calendar" da lista roteiam para `?tab=calendar`; modal `AnnualCalendarTab` removido. Spec/plano `docs/superpowers/{specs,plans}/2026-07-15-calendar-ia-consolidation*`.
+- **PRÓXIMO PASSO ACORDADO (design aprovado, por construir):** restaurar as vistas **Mês** e **Ano** dentro do separador Calendar sob um seletor único Timeline·Mês·Ano. Spec: `docs/superpowers/specs/2026-07-15-calendar-views-restore-design.md`. Restaurar `AnnualCalendarTab` do git (`git show 0c2e5c0:components/admin/properties/AnnualCalendarTab.tsx`) e torná-lo controlável por fora.
+- **5 fast-follows** do review final (Marcelo escolheu merge as-is) — ver memória `calendar-workspace-state`.
+- `main` local está 9 commits à frente de `origin/main`; **`git push origin main`** para ir a prod (depois do E2E super_admin).
 
 ## 🚀 2026-07-15 — SESSÃO CALENDÁRIO PREMIUM + FIX DO BOT — TUDO EM PROD (origin/main = `b015f76`)
 
