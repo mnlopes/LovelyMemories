@@ -131,6 +131,7 @@ export function PropertyCalendarTab({ propertyId, locale, isSuperAdmin }: { prop
                         reservations={calReservations}
                         blockedDates={calBlockedDates}
                         pricePerNight={pricePerNight}
+                        priceSource={beds24Preview ? "beds24" : "site"}
                     />
                 </div>
             )}

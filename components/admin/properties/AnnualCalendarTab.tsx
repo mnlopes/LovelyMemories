@@ -10,10 +10,11 @@ import {
 import { pt, enUS } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Ban } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { getBeds24DailyPrices, type Beds24DayInfo } from "@/app/actions/beds24";
+import { getBeds24DailyPrices } from "@/app/actions/beds24";
+import { getSiteDailyPrices } from "@/app/actions/pricing";
 import {
     getBarClipPath, getReservationStatusColor, effectiveReservationStatus,
-    AIRBNB_HATCH, BOOKING_HATCH, BLOCK_HATCH, ChannelBadge,
+    AIRBNB_HATCH, BOOKING_HATCH, BLOCK_HATCH, ChannelBadge, CalendarDayPrice,
 } from "@/components/admin/reservations/calendar-bar-visuals";
 
 interface AnnualCalendarTabProps {
@@ -26,6 +27,7 @@ interface AnnualCalendarTabProps {
     reservations: any[];
     blockedDates: any[];
     pricePerNight: number | null;
+    priceSource: "site" | "beds24";
 }
 
 type CalendarView = "annual" | "monthly";
@@ -53,7 +55,7 @@ interface Bar {
     isAirbnb?: boolean;
 }
 
-export default function AnnualCalendarTab({ propertyId, activeLang = "en", view: controlledView, onViewChange, reservations, blockedDates, pricePerNight }: AnnualCalendarTabProps) {
+export default function AnnualCalendarTab({ propertyId, activeLang = "en", view: controlledView, onViewChange, reservations, blockedDates, pricePerNight, priceSource }: AnnualCalendarTabProps) {
     const dateLocale = activeLang === "pt" ? pt : enUS;
     const tc = useTranslations("AdminReservations.multiCalendar");
 
@@ -68,18 +70,21 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
     const scrollRef = useRef<HTMLDivElement>(null);
     const currentYear = new Date().getFullYear();
     const years = [currentYear, currentYear + 1];
-    const [beds24Prices, setBeds24Prices] = useState<Record<string, Beds24DayInfo> | null>(null);
+    const [dayPrices, setDayPrices] = useState<Record<string, { price: number | null; minStay: number | null }> | null>(null);
 
     useEffect(() => {
         if (view !== "monthly") return;
         let cancelled = false;
         const first = new Date(getYear(currentMonth), getMonth(currentMonth), 1);
         const nextFirst = new Date(getYear(currentMonth), getMonth(currentMonth) + 1, 1);
-        getBeds24DailyPrices(format(first, "yyyy-MM-dd"), format(nextFirst, "yyyy-MM-dd"))
-            .then((r) => { if (!cancelled) setBeds24Prices(r.ok ? (r.prices[propertyId] ?? null) : null); })
-            .catch(() => { if (!cancelled) setBeds24Prices(null); });
+        const start = format(first, "yyyy-MM-dd");
+        const end = format(nextFirst, "yyyy-MM-dd");
+        const p = priceSource === "beds24"
+            ? getBeds24DailyPrices(start, end).then((r) => (r.ok ? (r.prices[propertyId] ?? null) : null))
+            : getSiteDailyPrices(propertyId, start, end).then((r) => (r.ok ? r.prices : null));
+        p.then((prices) => { if (!cancelled) setDayPrices(prices); }).catch(() => { if (!cancelled) setDayPrices(null); });
         return () => { cancelled = true; };
-    }, [currentMonth, propertyId, view]);
+    }, [currentMonth, propertyId, view, priceSource]);
 
     // Hover state
     const [hoveredBar, setHoveredBar] = useState<Bar | null>(null);
@@ -353,11 +358,6 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                             className="ml-1 md:ml-2 px-2.5 md:px-3 py-1 text-[11px] font-bold border border-[#e5e5e5] dark:border-white/20 rounded-lg text-[#444] dark:text-white hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors shrink-0">
                             Today
                         </button>
-                        {(pricePerNight || pricePerNight === 0) && (
-                            <span className="hidden sm:inline-block ml-2 text-[10px] font-bold text-[#a3a3a3] bg-[#f5f5f5] dark:bg-white/10 px-2 py-1 rounded-lg">
-                                {pricePerNight > 0 ? `€${pricePerNight}` : '-'}<span className="font-normal">/night</span>
-                            </span>
-                        )}
                     </div>
                     {!isControlled && <ViewToggle />}
                 </div>
@@ -410,33 +410,23 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                                                         }`}>
                                                         {dayNum}
                                                     </span>
-                                                    {/* Price — show unless day has an actual guest reservation */}
-                                                    {date && !isDateReserved(date) && (() => {
-                                                        const key = format(date, "yyyy-MM-dd");
-                                                        const info = beds24Prices?.[key];
-                                                        if (info && typeof info.price === "number") {
-                                                            return (
-                                                                <span className="flex items-center gap-1 leading-none">
-                                                                    {info.minStay != null && info.minStay > 1 && (
-                                                                        <span title={tc("minStayNights", { count: info.minStay })} className="flex items-center gap-0.5 text-[8px] font-bold text-[#c4c4c4] dark:text-white/30">
-                                                                            <Moon className="size-2.5" />{info.minStay}
-                                                                        </span>
-                                                                    )}
-                                                                    <span className="text-[9px] font-bold tabular-nums text-[#525252] dark:text-white/70">€{info.price}</span>
-                                                                </span>
-                                                            );
-                                                        }
-                                                        if (pricePerNight || pricePerNight === 0) {
-                                                            return (
-                                                                <span className="text-[8px] font-semibold text-[#bbb] dark:text-admin-dark-text-secondary leading-none">
-                                                                    {pricePerNight > 0 ? `€${pricePerNight}` : "-"}
-                                                                </span>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })()}
                                                 </div>
                                             )}
+                                            {valid && date && !isDateReserved(date) && (() => {
+                                                const key = format(date, "yyyy-MM-dd");
+                                                const info = dayPrices?.[key] ?? (pricePerNight != null ? { price: pricePerNight, minStay: null } : { price: null, minStay: null });
+                                                if (typeof info.price !== "number") return null;
+                                                return (
+                                                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-1.5 py-0.5 border-t border-[#f0f0f0] dark:border-white/[0.05] z-[5]">
+                                                        <CalendarDayPrice
+                                                            info={info}
+                                                            align="between"
+                                                            priceClassName="text-[10px]"
+                                                            minStayTitle={info.minStay != null ? tc("minStayNights", { count: info.minStay }) : undefined}
+                                                        />
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     );
                                 })}
