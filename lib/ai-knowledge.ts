@@ -133,8 +133,33 @@ const CONFLICT_SECRETS: Array<{ field: keyof PropertyKnowledge; match: RegExp; l
 ];
 
 /**
+ * Marcadores de placeholder de template (ex.: manual importado do anúncio com
+ * "Wi-Fi Network: [insert] Password: [insert]"). Um slot por preencher não tem
+ * valor real, logo não pode contradizer um segredo curado.
+ */
+const PLACEHOLDER_RE = /\[[^\]]*\]|\{[^}]*\}|<[^>]*>|_{3,}|x{4,}/i;
+
+/**
+ * Há uma menção à keyword seguida de um VALOR REAL (não um placeholder de template)?
+ * Percorre cada ocorrência da keyword e inspeciona a janela seguinte: se todas as
+ * ocorrências são seguidas de um placeholder, não há valor a contradizer.
+ */
+function keywordHasRealValue(factText: string, keyword: RegExp): boolean {
+    const re = new RegExp(keyword.source, "gi");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(factText)) !== null) {
+        const window = factText.slice(m.index, m.index + 60);
+        if (!PLACEHOLDER_RE.test(window)) return true;
+        if (m.index === re.lastIndex) re.lastIndex++; // evita loop em match de largura zero
+    }
+    return false;
+}
+
+/**
  * Rótulos dos segredos PREENCHIDOS que este facto parece contradizer (deduplicados).
  * Vazio = sem conflito aparente. Pura, síncrona — usável no cliente.
+ * Um facto que só menciona o segredo com placeholders de template (ex.: house
+ * manual com "Wi-Fi Network: [insert]") NÃO conta como conflito — não há valor real.
  */
 export function detectFactConflicts(
     factText: string,
@@ -144,7 +169,9 @@ export function detectFactConflicts(
     const hits: string[] = [];
     for (const c of CONFLICT_SECRETS) {
         const v = k[c.field];
-        if (typeof v === "string" && v.trim() && c.match.test(factText)) hits.push(c.label);
+        if (typeof v === "string" && v.trim() && c.match.test(factText) && keywordHasRealValue(factText, c.match)) {
+            hits.push(c.label);
+        }
     }
     return [...new Set(hits)];
 }

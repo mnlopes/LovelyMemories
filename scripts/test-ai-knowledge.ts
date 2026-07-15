@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
-import { formatKnowledgeWithCitations, type PropertyFact } from "../lib/ai-knowledge";
+import { detectFactConflicts, formatKnowledgeWithCitations, type PropertyFact } from "../lib/ai-knowledge";
 import type { PropertyKnowledge } from "../lib/ai-messaging";
 
 let failed = 0;
@@ -18,5 +18,12 @@ t("campos vazios ausentes", !out.text.includes("doorCode"));
 const empty = formatKnowledgeWithCitations(null, []);
 t("null property = aviso", empty.text.includes("No property information"));
 t("null property = zero citações", empty.citations.length === 0);
+
+// detectFactConflicts — placeholders do manual NÃO são conflito, valores reais são
+const manual = "Wi-Fi Network: [insert] Password: [insert] Recommended comfort settings...";
+t("manual com placeholders wifi = sem conflito", detectFactConflicts(manual, k).length === 0);
+t("password real diferente = conflito wifi", detectFactConflicts("The wifi password is abc123", k).includes("wifi"));
+t("facto sem menção wifi = sem conflito", detectFactConflicts("Tem berço a pedido", k).length === 0);
+t("segredo wifi vazio = sem conflito mesmo com menção", detectFactConflicts("The wifi password is abc123", { listingName: "X" }).length === 0);
 
 process.exit(failed ? 1 : 0);
