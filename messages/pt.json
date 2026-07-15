@@ -2603,6 +2603,14 @@
             "sent": "Resposta enviada",
             "dismissFailed": "Não foi possível ignorar",
             "guestFallback": "Hóspede"
+        },
+        "push": {
+            "title": "Notificações neste dispositivo",
+            "enable": "Ativar",
+            "disable": "Desativar",
+            "enabledHint": "Recebes uma notificação quando houver um draft por rever.",
+            "disabledHint": "Ativa para seres notificado quando houver um draft por rever.",
+            "unsupported": "Este browser não suporta push. No iPhone, adiciona primeiro o site ao ecrã inicial (iOS 16.4+)."
         }
     },
     "AiMemory": {

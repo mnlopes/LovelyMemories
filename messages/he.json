@@ -1361,6 +1361,14 @@
             "sent": "Reply sent",
             "dismissFailed": "Could not dismiss",
             "guestFallback": "Guest"
+        },
+        "push": {
+            "title": "Notifications on this device",
+            "enable": "Enable",
+            "disable": "Disable",
+            "enabledHint": "You'll get a notification when a draft needs review.",
+            "disabledHint": "Enable to get notified when a draft needs review.",
+            "unsupported": "This browser doesn't support push. On iPhone, add the site to your Home Screen first (iOS 16.4+)."
         }
     },
     "AiMemory": {

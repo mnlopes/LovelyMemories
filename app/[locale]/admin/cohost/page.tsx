@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { InboxShell } from "@/components/admin/inbox/InboxShell";
 import { BotSettings } from "@/components/admin/inbox/BotSettings";
 import { DecisionFeed } from "@/components/admin/cohost/DecisionFeed";
+import { PushSettings } from "@/components/admin/cohost/PushSettings";
 
 type TabType = "decisions" | "inbox" | "settings";
 
@@ -56,6 +57,7 @@ function CohostPageInner() {
             ) : (
                 <div className="rounded-2xl border border-[#f5f5f5] bg-white shadow-sm dark:border-admin-dark-border dark:bg-admin-dark-surface overflow-hidden">
                     <BotSettings globalBotEnabled={true} onChanged={() => {}} />
+                    <PushSettings />
                 </div>
             )}
         </div>

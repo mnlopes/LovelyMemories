@@ -199,6 +199,15 @@ async function handleGuestMessage(
             decision: "needs_human",
             error: "auto-send failed",
         }).eq("id", row.id);
+        if (!sendOk) {
+            // Push "há decisão nova" (fallback email lá dentro) — nunca lança.
+            const { notifyNewDecision } = await import("@/lib/push");
+            await notifyNewDecision({
+                guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
+                propertyName: prop?.name ?? null,
+                preview: msg.message!,
+            });
+        }
         return;
     }
 
@@ -211,4 +220,12 @@ async function handleGuestMessage(
             : "needs_human",
         knowledge_citation: decision.action === "auto_send" ? decision.citation : null,
     }).eq("id", row.id);
+
+    // Push "há decisão nova" (fallback email lá dentro) — nunca lança.
+    const { notifyNewDecision } = await import("@/lib/push");
+    await notifyNewDecision({
+        guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
+        propertyName: prop?.name ?? null,
+        preview: msg.message!,
+    });
 }

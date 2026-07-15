@@ -1057,3 +1057,26 @@ export async function getPendingDecisionCount(): Promise<number> {
         .not('reservation_ref', 'like', '%-%');
     return count ?? 0;
 }
+
+// ── Co-Host: push subscriptions ───────────────────────────────────────────────
+
+export async function savePushSubscription(sub: {
+    endpoint: string; keys: { p256dh: string; auth: string };
+}): Promise<{ ok: boolean }> {
+    const user = await assertAdmin();
+    const supabase = await getSupabaseAdmin();
+    const { error } = await supabase.from('cohost_push_subscriptions').upsert({
+        user_id: user.id,
+        endpoint: sub.endpoint,
+        p256dh: sub.keys.p256dh,
+        auth: sub.keys.auth,
+    }, { onConflict: 'endpoint' });
+    return { ok: !error };
+}
+
+export async function removePushSubscription(endpoint: string): Promise<{ ok: boolean }> {
+    await assertAdmin();
+    const supabase = await getSupabaseAdmin();
+    const { error } = await supabase.from('cohost_push_subscriptions').delete().eq('endpoint', endpoint);
+    return { ok: !error };
+}
