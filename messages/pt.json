@@ -2592,7 +2592,11 @@
             "ignore": "Ignorar",
             "openConversation": "Abrir conversa",
             "allClear": "Tudo em dia — nada precisa de ti",
-            "allClearHint": "Novas mensagens de hóspedes aparecem aqui com a resposta redigida."
+            "allClearHint": "Novas mensagens de hóspedes aparecem aqui com a resposta redigida.",
+            "sendFailed": "O envio falhou — abre a conversa para responder manualmente.",
+            "sent": "Resposta enviada",
+            "dismissFailed": "Não foi possível ignorar",
+            "guestFallback": "Hóspede"
         }
     },
     "AiMemory": {

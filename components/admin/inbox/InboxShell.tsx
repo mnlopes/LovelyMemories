@@ -17,7 +17,7 @@ import { BotSettings } from "./BotSettings";
  * ThreadView/ContextPanel/BotSettings entram na task seguinte — este shell
  * já gere seleção, dados e layout.
  */
-export function InboxShell() {
+export function InboxShell({ openReservationId }: { openReservationId?: string | null }) {
     const t = useTranslations("AiInbox");
     const [data, setData] = useState<InboxData | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -85,6 +85,14 @@ export function InboxShell() {
             setThreadLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        // Deep-link: um card do feed de decisões pode pedir para abrir uma
+        // conversa específica (ver app/[locale]/admin/cohost/page.tsx).
+        if (openReservationId && openReservationId !== selectedRef.current) {
+            void onSelect(openReservationId);
+        }
+    }, [openReservationId, onSelect]);
 
     const selectedConversation = data?.conversations.find((c) => c.reservationId === selectedId) ?? null;
     const queueForSelected = data?.queue.filter((q) => q.reservationId === selectedId) ?? [];

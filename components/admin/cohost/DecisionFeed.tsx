@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { PartyPopper } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { getDecisionFeed, sendReply, updateDraft, dismissDraft } from "@/app/actions/ai-inbox";
 import { DecisionCard } from "./DecisionCard";
@@ -35,15 +36,28 @@ export function DecisionFeed({ onOpenConversation }: { onOpenConversation?: (res
     }, [refresh]);
 
     const approve = useCallback(async (rowId: string, reservationId: string, text: string) => {
-        await updateDraft(rowId, text);
-        await sendReply(reservationId, text, rowId);
+        const updateRes = await updateDraft(rowId, text);
+        if (!updateRes.ok) {
+            toast.error(t("sendFailed"));
+            void refresh();
+            return;
+        }
+        const sendRes = await sendReply(reservationId, text, rowId);
+        if (!sendRes.ok) {
+            toast.error(t("sendFailed"));
+        } else {
+            toast.success(t("sent"));
+        }
         void refresh();
-    }, [refresh]);
+    }, [refresh, t]);
 
     const dismiss = useCallback(async (rowId: string) => {
-        await dismissDraft(rowId);
+        const res = await dismissDraft(rowId);
+        if (!res.ok) {
+            toast.error(t("dismissFailed"));
+        }
         void refresh();
-    }, [refresh]);
+    }, [refresh, t]);
 
     if (cards === null) {
         return (

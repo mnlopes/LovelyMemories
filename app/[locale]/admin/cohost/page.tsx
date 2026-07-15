@@ -18,6 +18,7 @@ function CohostPageInner() {
     const [activeTab, setActiveTab] = useState<TabType>(
         ["decisions", "inbox", "settings"].includes(initial) ? initial : "decisions",
     );
+    const [openReservationId, setOpenReservationId] = useState<string | null>(null);
 
     const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
         { key: "decisions", label: t("tabs.decisions"), icon: <Sparkles className="size-4" /> },
@@ -49,9 +50,9 @@ function CohostPageInner() {
                 ))}
             </div>
             {activeTab === "decisions" ? (
-                <DecisionFeed onOpenConversation={() => setActiveTab("inbox")} />
+                <DecisionFeed onOpenConversation={(rid) => { setOpenReservationId(rid); setActiveTab("inbox"); }} />
             ) : activeTab === "inbox" ? (
-                <InboxShell />
+                <InboxShell openReservationId={openReservationId} />
             ) : (
                 <div className="rounded-2xl border border-[#f5f5f5] bg-white shadow-sm dark:border-admin-dark-border dark:bg-admin-dark-surface overflow-hidden">
                     <BotSettings globalBotEnabled={true} onChanged={() => {}} />

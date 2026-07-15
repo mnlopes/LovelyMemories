@@ -28,7 +28,7 @@ export function DecisionCard({ card, onApprove, onDismiss, onOpen }: {
         <div className="rounded-2xl border border-[#f5f5f5] bg-white p-4 shadow-sm dark:border-admin-dark-border dark:bg-admin-dark-surface">
             <div className="flex items-center justify-between gap-2 text-xs text-[#a3a3a3]">
                 <span className="truncate font-semibold">
-                    {card.guestName ?? "Guest"} · {card.propertyName ?? "—"}
+                    {card.guestName ?? t("guestFallback")} · {card.propertyName ?? "—"}
                 </span>
                 {urgent && (
                     <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">

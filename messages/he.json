@@ -1350,7 +1350,11 @@
             "ignore": "Ignore",
             "openConversation": "Open conversation",
             "allClear": "All clear — nothing needs you",
-            "allClearHint": "New guest messages will appear here with a drafted reply."
+            "allClearHint": "New guest messages will appear here with a drafted reply.",
+            "sendFailed": "Send failed — open the conversation to reply manually.",
+            "sent": "Reply sent",
+            "dismissFailed": "Could not dismiss",
+            "guestFallback": "Guest"
         }
     },
     "AiMemory": {
