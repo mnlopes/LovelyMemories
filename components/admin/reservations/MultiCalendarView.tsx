@@ -122,12 +122,10 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         return () => { cancelled = true; };
     }, [showPrices, canShowPrices, rangeDays, windowKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Linha em duas bandas quando o rail de preços está ativo (só 7/14d).
+    // Rail de preços ativo (só 7/14d). O rail só se materializa nas linhas COM dados
+    // (propriedades ligadas ao Beds24) — as restantes ficam a 72px, sem banda vazia.
     const twoBand = showPrices && rangeDays !== 31;
-    const rowHeight = twoBand ? 90 : 72;
-    const barBandH = twoBand ? 62 : rowHeight;
     const railH = 28;
-    const barCenter = barBandH / 2;
 
     // Filtering logic
     const allPropertyIds = Object.keys(properties).filter(id => !getPropData(id).is_multi_unit);
@@ -387,10 +385,15 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                     </div>
 
                     {/* Property Rows */}
-                    {/* Duas bandas: divisor entre propriedades reforçado (2px) para o rail ler como parte da linha de cima, não da de baixo */}
-                    <div className={cn(twoBand ? "divide-y-2 divide-[#e4e4e4] dark:divide-white/15" : "divide-y divide-admin-border dark:divide-admin-dark-border")}>
+                    <div className="divide-y divide-admin-border dark:divide-admin-dark-border">
                         {visiblePropertyIds.map((propId) => {
                             const propData = getPropData(propId);
+                            // Duas bandas só nas linhas com preços (ligadas): barra 62px + rail 28px.
+                            const rowPrices = twoBand ? windowPrices?.[propId] : undefined;
+                            const hasRail = !!rowPrices;
+                            const rowHeight = hasRail ? 62 + railH : 72;
+                            const barBandH = hasRail ? 62 : rowHeight;
+                            const barCenter = barBandH / 2;
                             return (
                                 <div key={propId} style={{ height: rowHeight }} className="flex hover:bg-[#fafafa]/50 dark:hover:bg-white/5 transition-colors group">
                                     <div
@@ -421,14 +424,14 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 {isToday(day) && <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-red-500 z-10"><div className="absolute -top-1 -left-[3px] size-2 rounded-full bg-red-500" /></div>}
                                             </div>
                                         ))}
-                                        {twoBand && (
+                                        {hasRail && (
                                             <div
                                                 className="absolute inset-x-0 flex border-t border-dashed border-[#f0f0f0] dark:border-white/[0.05] bg-[#fafafa]/70 dark:bg-white/[0.02] z-[5] pointer-events-none"
                                                 style={{ top: barBandH, height: railH }}
                                             >
                                                 {days.map((day) => {
                                                     const key = format(day, "yyyy-MM-dd");
-                                                    const info: Beds24DayInfo | undefined = windowPrices?.[propId]?.[key];
+                                                    const info: Beds24DayInfo | undefined = rowPrices?.[key];
                                                     return (
                                                         <div key={key} style={{ width: cellWidth }} className="flex-shrink-0 relative flex items-center justify-center border-r border-admin-border dark:border-admin-dark-border/40">
                                                             {info?.minStay != null && info.minStay > 1 && (
