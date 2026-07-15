@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
     format, startOfYear, endOfYear, eachMonthOfInterval, getDay,
@@ -8,7 +8,13 @@ import {
     getMonth, getYear, isSameDay, differenceInCalendarDays
 } from "date-fns";
 import { pt, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Globe, Ban, Building2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Ban } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { getBeds24DailyPrices, type Beds24DayInfo } from "@/app/actions/beds24";
+import {
+    getBarClipPath, getReservationStatusColor, effectiveReservationStatus,
+    AIRBNB_HATCH, BOOKING_HATCH, BLOCK_HATCH, ChannelBadge,
+} from "@/components/admin/reservations/calendar-bar-visuals";
 
 interface AnnualCalendarTabProps {
     propertyId: string;
@@ -47,6 +53,7 @@ interface Bar {
 
 export default function AnnualCalendarTab({ propertyId, activeLang = "en", view: controlledView, onViewChange, reservations, blockedDates, pricePerNight }: AnnualCalendarTabProps) {
     const dateLocale = activeLang === "pt" ? pt : enUS;
+    const tc = useTranslations("AdminReservations.multiCalendar");
 
     const [internalView, setInternalView] = useState<CalendarView>("annual");
     const view = controlledView ?? internalView;
@@ -59,6 +66,17 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
     const scrollRef = useRef<HTMLDivElement>(null);
     const currentYear = new Date().getFullYear();
     const years = [currentYear, currentYear + 1];
+    const [beds24Prices, setBeds24Prices] = useState<Record<string, Beds24DayInfo> | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        const first = new Date(getYear(currentMonth), getMonth(currentMonth), 1);
+        const nextFirst = new Date(getYear(currentMonth), getMonth(currentMonth) + 1, 1);
+        getBeds24DailyPrices(format(first, "yyyy-MM-dd"), format(nextFirst, "yyyy-MM-dd"))
+            .then((r) => { if (!cancelled) setBeds24Prices(r.ok ? (r.prices[propertyId] ?? null) : null); })
+            .catch(() => { if (!cancelled) setBeds24Prices(null); });
+        return () => { cancelled = true; };
+    }, [currentMonth, propertyId]);
 
     // Hover state
     const [hoveredBar, setHoveredBar] = useState<Bar | null>(null);
@@ -388,11 +406,30 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                                                         {dayNum}
                                                     </span>
                                                     {/* Price — show unless day has an actual guest reservation */}
-                                                    {(pricePerNight || pricePerNight === 0) && date && !isDateReserved(date) && (
-                                                        <span className="text-[8px] font-semibold text-[#bbb] dark:text-admin-dark-text-secondary leading-none">
-                                                            {pricePerNight > 0 ? `€${pricePerNight}` : '-'}
-                                                        </span>
-                                                    )}
+                                                    {date && !isDateReserved(date) && (() => {
+                                                        const key = format(date, "yyyy-MM-dd");
+                                                        const info = beds24Prices?.[key];
+                                                        if (info && typeof info.price === "number") {
+                                                            return (
+                                                                <span className="flex items-center gap-1 leading-none">
+                                                                    {info.minStay != null && info.minStay > 1 && (
+                                                                        <span title={tc("minStayNights", { count: info.minStay })} className="flex items-center gap-0.5 text-[8px] font-bold text-[#c4c4c4] dark:text-white/30">
+                                                                            <Moon className="size-2.5" />{info.minStay}
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="text-[9px] font-bold tabular-nums text-[#525252] dark:text-white/70">€{info.price}</span>
+                                                                </span>
+                                                            );
+                                                        }
+                                                        if (pricePerNight || pricePerNight === 0) {
+                                                            return (
+                                                                <span className="text-[8px] font-semibold text-[#bbb] dark:text-admin-dark-text-secondary leading-none">
+                                                                    {pricePerNight > 0 ? `€${pricePerNight}` : "-"}
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
                                                 </div>
                                             )}
                                         </div>
@@ -412,34 +449,28 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                                     const isAirbnb = bar.type === "airbnb";
                                     const isBooking = bar.type === "booking";
                                     const isBlock = bar.type === "block";
+                                    const isHatched = isAirbnb || isBooking || isBlock;
                                     const showName = bar.isStart || bar.colStart === 0;
 
                                     return (
                                         <div
                                             key={`bar-${bi}`}
                                             className={cn(
-                                                "absolute pointer-events-auto cursor-pointer group/bar transition-all duration-150 hover:brightness-[1.02] active:scale-[0.99] border shadow-sm",
-                                                isAirbnb 
-                                                    ? "border-rose-300/60 dark:border-rose-500/30" 
-                                                    : isBooking
-                                                        ? "border-blue-300/60 dark:border-blue-500/30"
-                                                        : isBlock 
-                                                            ? "border-slate-300/60 dark:border-slate-600"
-                                                            : "border-black/10 dark:border-white/10"
+                                                "absolute pointer-events-auto cursor-pointer group/bar transition-all duration-150 active:scale-[0.99]",
+                                                isHatched
+                                                    ? "hover:brightness-[1.02]"
+                                                    : cn("hover:brightness-110", getReservationStatusColor(effectiveReservationStatus(bar.status, bar.checkOut)))
                                             )}
                                             style={{
                                                 left: `${leftPct + startPadding}%`,
                                                 width: `${widthPct - startPadding - endPadding}%`,
                                                 top: topPx,
                                                 height: BAR_H,
-                                                borderRadius: `${bar.isStart ? "6px" : "0px"} ${bar.isEnd ? "6px" : "0px"} ${bar.isEnd ? "6px" : "0px"} ${bar.isStart ? "6px" : "0px"}`,
-                                                background: isAirbnb 
-                                                    ? 'repeating-linear-gradient(45deg, #fff1f2, #fff1f2 6px, #ffe4e6 6px, #ffe4e6 12px)'
-                                                    : isBooking
-                                                        ? 'repeating-linear-gradient(45deg, #eff6ff, #eff6ff 6px, #dbeafe 6px, #dbeafe 12px)'
-                                                        : isBlock
-                                                            ? 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #f1f5f9 6px, #f1f5f9 12px)'
-                                                            : getStatusColor(bar.status, bar.checkIn, bar.checkOut),
+                                                clipPath: getBarClipPath(!bar.isStart, !bar.isEnd),
+                                                background: isAirbnb ? AIRBNB_HATCH
+                                                    : isBooking ? BOOKING_HATCH
+                                                    : isBlock ? BLOCK_HATCH
+                                                    : undefined,
                                                 zIndex: 5,
                                             }}
                                             onMouseEnter={(e) => handleBarMouseEnter(e, bar)}
@@ -450,13 +481,9 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                                                 {showName && (
                                                     <div className="flex items-center gap-1.5 min-w-0">
                                                         {isAirbnb ? (
-                                                            <div className="size-5 rounded-md bg-rose-500 flex items-center justify-center shrink-0 shadow-sm">
-                                                                <Globe className="size-3 text-white" />
-                                                            </div>
+                                                            <ChannelBadge kind="airbnb-box" />
                                                         ) : isBooking ? (
-                                                            <div className="size-5 rounded-md bg-blue-600 flex items-center justify-center shrink-0 shadow-sm">
-                                                                <Building2 className="size-3 text-white" />
-                                                            </div>
+                                                            <ChannelBadge kind="booking-box" />
                                                         ) : isBlock ? (
                                                             <Ban className="size-3.5 text-slate-500 shrink-0" />
                                                         ) : (
