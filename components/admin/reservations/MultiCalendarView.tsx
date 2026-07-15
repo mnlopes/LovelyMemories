@@ -387,7 +387,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                     </div>
 
                     {/* Property Rows */}
-                    <div className="divide-y divide-admin-border dark:divide-admin-dark-border">
+                    {/* Duas bandas: divisor entre propriedades reforçado (2px) para o rail ler como parte da linha de cima, não da de baixo */}
+                    <div className={cn(twoBand ? "divide-y-2 divide-[#e4e4e4] dark:divide-white/15" : "divide-y divide-admin-border dark:divide-admin-dark-border")}>
                         {visiblePropertyIds.map((propId) => {
                             const propData = getPropData(propId);
                             return (
@@ -422,7 +423,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                         ))}
                                         {twoBand && (
                                             <div
-                                                className="absolute inset-x-0 flex border-t border-admin-border dark:border-admin-dark-border/50 bg-[#fafafa]/70 dark:bg-white/[0.02] z-[5] pointer-events-none"
+                                                className="absolute inset-x-0 flex border-t border-dashed border-[#f0f0f0] dark:border-white/[0.05] bg-[#fafafa]/70 dark:bg-white/[0.02] z-[5] pointer-events-none"
                                                 style={{ top: barBandH, height: railH }}
                                             >
                                                 {days.map((day) => {
