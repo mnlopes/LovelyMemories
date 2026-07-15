@@ -1018,6 +1018,8 @@ export async function getDecisionFeed(): Promise<DecisionCard[]> {
         .from('ai_message_log')
         .select('id, reservation_ref, guest_name, property_code, incoming_message, ai_draft, decision, created_at')
         .eq('status', 'draft')
+        // exclui rows legacy Hospitable (reservation_ref UUID) — só refs numéricas Beds24
+        .not('reservation_ref', 'like', '%-%')
         .order('created_at', { ascending: false })
         .limit(50);
     if (!rows?.length) return [];
@@ -1050,6 +1052,8 @@ export async function getPendingDecisionCount(): Promise<number> {
     const { count } = await supabase
         .from('ai_message_log')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'draft');
+        .eq('status', 'draft')
+        // exclui rows legacy Hospitable (reservation_ref UUID) — só refs numéricas Beds24
+        .not('reservation_ref', 'like', '%-%');
     return count ?? 0;
 }
