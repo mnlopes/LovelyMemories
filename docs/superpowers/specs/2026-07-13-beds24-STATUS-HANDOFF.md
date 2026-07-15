@@ -106,6 +106,23 @@ Sessão E2E com a conta Carolina (inquiry 89794243, Virtudes One em `drafts`) fe
      31d idêntica ao atual, 7/14d com células largas + janela a cruzar fim de mês, toggle € (preços nas
      livres, somem sob barras, ausentes nas iCal — ex. Virtudes One vs painel Beds24), dark mode; depois
      merge→main local + push (junto com o preview do calendário e a ficha de detalhe, ainda por push).
+   - ✅ **FEITO — branch `feat/calendar-premium-rows` (2026-07-15), NÃO mergeado, NÃO pushed:** linhas
+     premium nas vistas 7/14d do multi-calendário (estilo Hostaway/Guesty), a pedido do Marcelo (as
+     células 7/14d não pareciam premium e faltava mostrar melhor os preços por noite). Quando o toggle
+     **€ Preços** está ligado, a linha passa a **duas bandas**: barra da reserva em cima + **rail de
+     preços por noite** em baixo, com **lua + nº de estadia mínima** quando `minStay > 1`. Preço em TODAS
+     as noites com dados (removida a lógica de esconder preço sob a barra — a barra fica na banda de cima).
+     Nas não-ligadas (iCal/Airbnb) o rail fica vazio. Toggle desligado OU vista 31d → linha de uma banda
+     72px, comportamento atual intacto. Células mais largas: 7d=120px, 14d=88px (31d=48px inalterado).
+     Barras/blocos SEM alteração de estilo (só recentrados na banda de cima via `top` inline). Action
+     `getBeds24DailyPrices` estendida para devolver também `minStay` (novo type `Beds24DayInfo`). i18n
+     `minStayNights` en/pt (he=inglês, paridade). Specs/plano: docs/superpowers/{specs,plans}/
+     2026-07-15-calendar-premium-rows*.md. SDD 3 tasks + reviews (todas Spec ✅ Approved) + verificação.
+     tsc+build+test:security limpos (falhas do test:security são as pré-existentes conhecidas, Test 1/3/4/5).
+     PENDENTE: **E2E visual como super_admin** (auth-gated): 7/14d com toggle on → duas bandas, preço
+     centrado por noite, lua na Virtudes One, rail vazio nas iCal, barras diagonais com €valor inalteradas,
+     preço também sob as barras; toggle off → volta a 72px; 31d intacta; dark mode. Depois merge→main local
+     + push (com os itens do calendário ainda por push).
 4. Experiência 17/07 ~10:01: payload do "Farewell Porto" agendado → marcador de scheduled para
    isentar do auto-off.
 
