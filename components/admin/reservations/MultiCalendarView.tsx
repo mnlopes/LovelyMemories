@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe, Euro } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe, Euro, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
 import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
-import { getBeds24DailyPrices } from "@/app/actions/beds24";
+import { getBeds24DailyPrices, type Beds24DayInfo } from "@/app/actions/beds24";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -89,7 +89,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
 
     // Largura de célula por alcance: vistas curtas = células largas (espaço p/ preços).
-    const cellWidth = rangeDays === 7 ? 110 : rangeDays === 14 ? 76 : 48;
+    const cellWidth = rangeDays === 7 ? 120 : rangeDays === 14 ? 88 : 48;
 
     // Navigation: mês na 31d, salto de rangeDays dias nas curtas.
     const nextMonth = () => setCurrentDate(rangeDays === 31 ? addMonths(currentDate, 1) : addDays(currentDate, rangeDays));
@@ -98,7 +98,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
 
     // Toggle "€ Preços" (super_admin; só vistas 7/14 — na 31d as células são estreitas demais)
     const [showPrices, setShowPrices] = useState(false);
-    const [pricesByWindow, setPricesByWindow] = useState<Record<string, Record<string, Record<string, number>>>>({});
+    const [pricesByWindow, setPricesByWindow] = useState<Record<string, Record<string, Record<string, Beds24DayInfo>>>>({});
     const [pricesLoading, setPricesLoading] = useState(false);
     const windowKey = `${format(rangeStart, "yyyy-MM-dd")}|${format(rangeEnd, "yyyy-MM-dd")}`;
     const windowPrices = pricesByWindow[windowKey];
@@ -121,6 +121,13 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
             .finally(() => { if (!cancelled) setPricesLoading(false); });
         return () => { cancelled = true; };
     }, [showPrices, canShowPrices, rangeDays, windowKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Linha em duas bandas quando o rail de preços está ativo (só 7/14d).
+    const twoBand = showPrices && rangeDays !== 31;
+    const rowHeight = twoBand ? 90 : 72;
+    const barBandH = twoBand ? 62 : rowHeight;
+    const railH = 28;
+    const barCenter = barBandH / 2;
 
     // Filtering logic
     const allPropertyIds = Object.keys(properties).filter(id => !getPropData(id).is_multi_unit);
@@ -384,7 +391,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                         {visiblePropertyIds.map((propId) => {
                             const propData = getPropData(propId);
                             return (
-                                <div key={propId} className="flex h-[72px] hover:bg-[#fafafa]/50 dark:hover:bg-white/5 transition-colors group">
+                                <div key={propId} style={{ height: rowHeight }} className="flex hover:bg-[#fafafa]/50 dark:hover:bg-white/5 transition-colors group">
                                     <div
                                         className={cn("sticky left-0 z-20 bg-white dark:bg-admin-dark-surface border-r border-admin-border dark:border-admin-dark-border flex items-center px-4 transition-all duration-300", isSidebarOpen ? "w-[240px]" : "w-[80px] justify-center")}
                                         onMouseEnter={(e) => {
@@ -413,38 +420,38 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 {isToday(day) && <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-red-500 z-10"><div className="absolute -top-1 -left-[3px] size-2 rounded-full bg-red-500" /></div>}
                                             </div>
                                         ))}
-                                        {showPrices && rangeDays !== 31 && windowPrices?.[propId] && (() => {
-                                            // Noites cobertas por barras (reservas + bloqueios) não mostram preço
-                                            const covered = new Set<string>();
-                                            const addRange = (s: string, e: string) => {
-                                                const from = startOfDay(new Date(s));
-                                                const to = startOfDay(new Date(e)); // checkout/end exclusivo
-                                                for (let d = from; d < to; d = addDays(d, 1)) covered.add(format(d, "yyyy-MM-dd"));
-                                            };
-                                            reservationsByProperty[propId]?.forEach((r: any) => addRange(r.check_in, r.check_out));
-                                            visibleBlockedDates?.filter((b) => b.property_id === propId).forEach((b) => addRange(b.start_date, b.end_date));
-                                            return (
-                                                <div className="absolute inset-x-0 bottom-1 z-[5] pointer-events-none flex">
-                                                    {days.map((day) => {
-                                                        const key = format(day, "yyyy-MM-dd");
-                                                        const price = windowPrices[propId][key];
-                                                        return (
-                                                            <div key={key} style={{ width: cellWidth }} className="flex-shrink-0 text-center">
-                                                                {price !== undefined && !covered.has(key) && (
-                                                                    <span className={cn(
-                                                                        "font-semibold text-[#a3a3a3] dark:text-white/40 tabular-nums",
-                                                                        rangeDays === 7 ? "text-[11px]" : "text-[10px]",
-                                                                        pricesLoading && "opacity-40",
-                                                                    )}>
-                                                                        €{price}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            );
-                                        })()}
+                                        {twoBand && (
+                                            <div
+                                                className="absolute inset-x-0 flex border-t border-admin-border dark:border-admin-dark-border/50 bg-[#fafafa]/70 dark:bg-white/[0.02] z-[5] pointer-events-none"
+                                                style={{ top: barBandH, height: railH }}
+                                            >
+                                                {days.map((day) => {
+                                                    const key = format(day, "yyyy-MM-dd");
+                                                    const info: Beds24DayInfo | undefined = windowPrices?.[propId]?.[key];
+                                                    return (
+                                                        <div key={key} style={{ width: cellWidth }} className="flex-shrink-0 relative flex items-center justify-center border-r border-admin-border dark:border-admin-dark-border/40">
+                                                            {info?.minStay != null && info.minStay > 1 && (
+                                                                <span
+                                                                    title={t("minStayNights", { count: info.minStay })}
+                                                                    className="absolute left-1 top-0.5 flex items-center gap-0.5 text-[8px] font-bold text-[#c4c4c4] dark:text-white/30"
+                                                                >
+                                                                    <Moon className="size-2.5" />{info.minStay}
+                                                                </span>
+                                                            )}
+                                                            {typeof info?.price === "number" && (
+                                                                <span className={cn(
+                                                                    "font-bold tabular-nums text-[#525252] dark:text-white/70",
+                                                                    rangeDays === 7 ? "text-xs" : "text-[11px]",
+                                                                    pricesLoading && "opacity-40",
+                                                                )}>
+                                                                    €{info.price}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                         {reservationsByProperty[propId]?.map((res: any) => {
                                             const style = getBarStyle(res.check_in, res.check_out);
                                             const resStart = startOfDay(new Date(res.check_in)).getTime();
@@ -471,12 +478,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                     onClick={() => { if (isBeds24) setSelectedBeds24Id(res.beds24_booking_id); else setSelectedReservation(res); }}
                                                     title={`${res.guest_name || t('guest')} · ${format(new Date(res.check_in), 'd MMM', { locale: dateLocale })} → ${format(new Date(res.check_out), 'd MMM', { locale: dateLocale })}`}
                                                     className={cn(
-                                                        "absolute top-1/2 -translate-y-1/2 h-8 flex items-center px-3 z-10 transition-all",
+                                                        "absolute h-8 flex items-center px-3 z-10 transition-all",
                                                         isBeds24
                                                             ? "bg-rose-500 text-white cursor-pointer hover:brightness-105 animate-in fade-in duration-300"
                                                             : cn("cursor-pointer hover:brightness-110", getStatusColor(effectiveStatus)),
                                                     )}
-                                                    style={{ left: `${style.left}px`, width: `${style.width}px`, clipPath: getBarClipPath(startsBefore, endsAfter) }}
+                                                    style={{ left: `${style.left}px`, width: `${style.width}px`, top: barCenter, transform: "translateY(-50%)", clipPath: getBarClipPath(startsBefore, endsAfter) }}
                                                 >
                                                     <div className="flex justify-between items-center w-full gap-2 overflow-hidden">
                                                         <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
@@ -503,11 +510,13 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 <div
                                                     key={block.id}
                                                     className={cn(
-                                                        "absolute top-1/2 -translate-y-1/2 h-9 flex items-center px-3 z-0 transition-all",
+                                                        "absolute h-9 flex items-center px-3 z-0 transition-all",
                                                     )}
                                                     style={{
                                                         left: `${style.left}px`,
                                                         width: `${style.width}px`,
+                                                        top: barCenter,
+                                                        transform: "translateY(-50%)",
                                                         clipPath: getBarClipPath(startsBefore, endsAfter),
                                                         background: isAirbnb
                                                             ? 'repeating-linear-gradient(45deg, #ffe4e6, #ffe4e6 6px, #fecdd3 6px, #fecdd3 12px)'
