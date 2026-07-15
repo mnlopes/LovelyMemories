@@ -21,8 +21,10 @@ export function ReservationListCard({
     onOpenMenu: () => void;
 }) {
     // Effective status purely for UI (mirrors the desktop table).
-    let effectiveStatus = reservation.status;
-    if (!reservation.is_manual_block && reservation.status === "confirmed") {
+    // Beds24 bookings carry 'confirmed' | 'new'; treat 'new' as confirmed so the
+    // date-derived badge applies instead of hitting a missing status.new message.
+    let effectiveStatus = reservation.is_beds24 && reservation.status === "new" ? "confirmed" : reservation.status;
+    if (!reservation.is_manual_block && effectiveStatus === "confirmed") {
         const today = startOfDay(new Date()).getTime();
         const checkIn = startOfDay(new Date(reservation.check_in)).getTime();
         const checkOut = startOfDay(new Date(reservation.check_out)).getTime();
@@ -88,14 +90,16 @@ export function ReservationListCard({
                 <span className="text-[11px] text-[#a3a3a3] font-bold">
                     {t("table.reservedAt")} {formatDate(reservation.created_at)}
                 </span>
-                <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onOpenMenu(); }}
-                    className="p-2 rounded-xl text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
-                    aria-label="More actions"
-                >
-                    <MoreHorizontal className="size-5" />
-                </button>
+                {!reservation.is_beds24 && (
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onOpenMenu(); }}
+                        className="p-2 rounded-xl text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
+                        aria-label="More actions"
+                    >
+                        <MoreHorizontal className="size-5" />
+                    </button>
+                )}
             </div>
         </div>
     );
