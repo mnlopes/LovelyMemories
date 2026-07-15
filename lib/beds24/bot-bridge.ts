@@ -4,6 +4,7 @@ import type { Beds24Booking, Beds24Message } from "@/lib/beds24/types";
 import { buildContext, type ThreadMessage } from "@/lib/ai-messaging";
 import { decide } from "@/lib/ai-decision";
 import { messagesMatch } from "@/lib/ai-message-match";
+import { resolveBotAction, type BotPosture, type PropertyBotMode } from "@/lib/cohost-posture";
 
 type Supa = Awaited<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -81,13 +82,15 @@ export async function processBotMessages(booking: Beds24Booking | null, messages
                     sentByUs = (recent ?? []).some((r) => messagesMatch(r.sent_message as string, msg.message));
                 }
                 if (!sentByUs) {
+                    // Resposta humana DESPROMOVE auto→assist (não desliga: o bot continua
+                    // a redigir; só perde o direito de auto-enviar). Postura off não é tocada.
                     await supabase.from("ai_conversation").update({
-                        bot_enabled: false,
+                        bot_posture: "assist",
                         bot_off_reason: "human_replied",
                         bot_off_at: new Date().toISOString(),
                         bot_off_by: "bot",
                         updated_at: new Date().toISOString(),
-                    }).eq("reservation_id", String(bookingId)).eq("bot_enabled", true);
+                    }).eq("reservation_id", String(bookingId)).eq("bot_posture", "auto");
 
                     // Learning loop: a resposta humana no Airbnb pode ensinar o bot
                     const { captureLearning } = await import("@/lib/ai-learning");
@@ -116,17 +119,16 @@ async function handleGuestMessage(
     booking: Beds24Booking | null,
     msg: Beds24Message,
 ): Promise<void> {
-    // Bot desligado nesta conversa?
+    // Postura da conversa (default assist se a conversa ainda não existe)
     const { data: conv } = await supabase
         .from("ai_conversation")
-        .select("bot_enabled")
+        .select("bot_posture")
         .eq("reservation_id", String(bookingId))
         .maybeSingle();
-    if (conv?.bot_enabled === false) return;
-
-    // Modo da propriedade: off | drafts | auto
-    const mode = (prop?.bot_mode as "off" | "drafts" | "auto" | undefined) ?? "off";
-    if (mode === "off") return;
+    const posture = (conv?.bot_posture as BotPosture | undefined) ?? "assist";
+    const mode = (prop?.bot_mode as PropertyBotMode | undefined) ?? "off";
+    // Gate barato ANTES de gastar LLM: se nem draft vai haver, sair já.
+    if (resolveBotAction(mode, posture, "needs_human") === "skip") return;
 
     // Claim idempotente: unique parcial em external_message_id → duplicado falha o insert e saímos.
     const { data: row, error } = await supabase.from("ai_message_log").insert({
@@ -139,6 +141,14 @@ async function handleGuestMessage(
         status: "draft",
     }).select("id").single();
     if (error || !row) return;
+
+    // Nova mensagem do hóspede torna obsoletos os drafts pendentes anteriores
+    // desta conversa (spec: o draft regenera-se, não acumula).
+    await supabase.from("ai_message_log").update({
+        status: "skipped",
+        skip_reason: "superseded",
+        updated_at: new Date().toISOString(),
+    }).eq("reservation_ref", String(bookingId)).eq("status", "draft").neq("id", row.id);
 
     // Histórico recente da conversa (fonte de verdade: beds24_messages)
     const { data: threadRows } = await supabase
@@ -165,7 +175,7 @@ async function handleGuestMessage(
     });
     const decision = await decide(ctx);
 
-    if (decision.action === "auto_send" && mode === "auto") {
+    if (decision.action === "auto_send" && resolveBotAction(mode, posture, "auto_send") === "auto_send") {
         let sendOk = false;
         try {
             const res = await beds24Request<unknown>("POST", "/bookings/messages", {
