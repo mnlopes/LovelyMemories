@@ -2579,6 +2579,11 @@
         "viaWebhook": "via webhook",
         "pendingCount": "{count} pendentes"
     },
+    "AdminCohost": {
+        "title": "Co-Host",
+        "subtitle": "O assistente redige todas as respostas — tu aprovas, editas ou ignoras.",
+        "tabs": { "decisions": "Decisões", "inbox": "Inbox", "settings": "Definições" }
+    },
     "AiMemory": {
         "title": "Memória da propriedade",
         "subtitle": "Liga, preenche os essenciais e cura os factos que o bot usa para responder.",

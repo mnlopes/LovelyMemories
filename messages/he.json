@@ -1337,6 +1337,11 @@
         "viaWebhook": "דרך webhook",
         "pendingCount": "{count} ממתינות"
     },
+    "AdminCohost": {
+        "title": "Co-Host",
+        "subtitle": "Your AI assistant drafts every reply — you approve, edit or ignore.",
+        "tabs": { "decisions": "Decisions", "inbox": "Inbox", "settings": "Settings" }
+    },
     "AiMemory": {
         "title": "זיכרון הנכס",
         "subtitle": "קשר, מלא את הפרטים החיוניים ונהל את העובדות שהבוט משתמש בהן.",

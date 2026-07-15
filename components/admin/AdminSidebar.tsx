@@ -1,7 +1,7 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -88,6 +88,7 @@ export const AdminSidebar = () => {
                 title: "System",
                 items: [
                     ...(hasAccess('imports') || role === 'super_admin' || role === 'admin' ? [{ icon: FileUp, label: "Imports", path: "/admin/imports" }] : []),
+                    ...(role === 'super_admin' ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost" }] : []),
                     { icon: Activity, label: "Activity", path: "/admin/activity" },
                     // Settings only for Super Admin
                     ...(role === 'super_admin' ? [
