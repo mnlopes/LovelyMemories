@@ -49,6 +49,8 @@ interface Bar {
     stackIndex: number;
     status: string;
     type: "reservation" | "block" | "airbnb" | "booking";
+    isBeds24?: boolean;
+    isAirbnb?: boolean;
 }
 
 export default function AnnualCalendarTab({ propertyId, activeLang = "en", view: controlledView, onViewChange, reservations, blockedDates, pricePerNight }: AnnualCalendarTabProps) {
@@ -69,6 +71,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
     const [beds24Prices, setBeds24Prices] = useState<Record<string, Beds24DayInfo> | null>(null);
 
     useEffect(() => {
+        if (view !== "monthly") return;
         let cancelled = false;
         const first = new Date(getYear(currentMonth), getMonth(currentMonth), 1);
         const nextFirst = new Date(getYear(currentMonth), getMonth(currentMonth) + 1, 1);
@@ -76,7 +79,7 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
             .then((r) => { if (!cancelled) setBeds24Prices(r.ok ? (r.prices[propertyId] ?? null) : null); })
             .catch(() => { if (!cancelled) setBeds24Prices(null); });
         return () => { cancelled = true; };
-    }, [currentMonth, propertyId]);
+    }, [currentMonth, propertyId, view]);
 
     // Hover state
     const [hoveredBar, setHoveredBar] = useState<Bar | null>(null);
@@ -233,6 +236,8 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                     stackIndex: 0,
                     status: res.status || "confirmed",
                     type: "reservation",
+                    isBeds24: !!res.is_beds24,
+                    isAirbnb: !!res.is_airbnb,
                 });
 
                 dayPointer = new Date(year, month, dayNum + extent + 1);
@@ -459,7 +464,9 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                                                 "absolute pointer-events-auto cursor-pointer group/bar transition-all duration-150 active:scale-[0.99]",
                                                 isHatched
                                                     ? "hover:brightness-[1.02]"
-                                                    : cn("hover:brightness-110", getReservationStatusColor(effectiveReservationStatus(bar.status, bar.checkOut)))
+                                                    : bar.isBeds24
+                                                        ? "bg-rose-500 text-white hover:brightness-105"
+                                                        : cn("hover:brightness-110", getReservationStatusColor(effectiveReservationStatus(bar.status, bar.checkOut)))
                                             )}
                                             style={{
                                                 left: `${leftPct + startPadding}%`,
@@ -501,11 +508,14 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
                                                         </span>
                                                     </div>
                                                 )}
-                                                {bar.isEnd && bar.totalPrice && (
-                                                    <span className="text-[10px] font-bold text-white/90 shrink-0">
-                                                        €{bar.totalPrice.toLocaleString()}
-                                                    </span>
-                                                )}
+                                                <span className="flex items-center gap-1.5 shrink-0">
+                                                    {bar.isEnd && bar.totalPrice && (
+                                                        <span className="text-[10px] font-bold text-white/90 shrink-0">
+                                                            €{bar.totalPrice.toLocaleString()}
+                                                        </span>
+                                                    )}
+                                                    {bar.isBeds24 && (bar.isAirbnb ? <ChannelBadge kind="airbnb-circle" /> : <ChannelBadge kind="beds24" />)}
+                                                </span>
                                             </div>
                                         </div>
                                     );
