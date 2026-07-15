@@ -6,7 +6,7 @@ import { CalendarDays, Check, CircleAlert, Users, Brain } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import {
-    getKnowledgeForProperty, getPanelExtras, setConversationBot,
+    getKnowledgeForProperty, getPanelExtras, setConversationPosture,
     type InboxConversation, type ThreadData,
 } from "@/app/actions/ai-inbox";
 import { computeCoverage, CHECKLIST_FIELDS } from "@/lib/ai-knowledge";
@@ -92,7 +92,7 @@ export function ContextPanel(props: {
                             aria-checked={c.botEnabled}
                             disabled={isPending}
                             onClick={() => startTransition(async () => {
-                                await setConversationBot(c.reservationId, !c.botEnabled);
+                                await setConversationPosture(c.reservationId, c.botEnabled ? "off" : "assist");
                                 props.onChanged();
                             })}
                             className={cn(

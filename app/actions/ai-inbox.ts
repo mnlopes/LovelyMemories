@@ -69,6 +69,7 @@ export interface InboxConversation {
     lastMessagePreview: string | null;
     lastMessageSender: string | null;
     botEnabled: boolean;
+    botPosture: 'auto' | 'assist' | 'off';
     botOffReason: string | null;
     pendingDrafts: number;
 }
@@ -97,7 +98,7 @@ export async function getInboxData(): Promise<InboxData> {
 
     const [convRes, queueRes, settingsRes] = await Promise.all([
         admin.from('ai_conversation')
-            .select('reservation_id, guest_name, property_name, external_property_id, check_in, check_out, last_message_at, last_message_preview, last_message_sender, bot_enabled, bot_off_reason')
+            .select('reservation_id, guest_name, property_name, external_property_id, check_in, check_out, last_message_at, last_message_preview, last_message_sender, bot_enabled, bot_posture, bot_off_reason')
             // Filtrar as legadas do Hospitable JÁ NA QUERY (UUIDs têm hífen; ids
             // Beds24 são numéricos) — senão enchem o limit e escondem as reais.
             .not('reservation_id', 'like', '%-%')
@@ -148,7 +149,8 @@ export async function getInboxData(): Promise<InboxData> {
         lastMessageAt: (c.last_message_at as string) ?? null,
         lastMessagePreview: (c.last_message_preview as string) ?? null,
         lastMessageSender: (c.last_message_sender as string) ?? null,
-        botEnabled: (c.bot_enabled as boolean) ?? true,
+        botPosture: (c.bot_posture as 'auto' | 'assist' | 'off' | null) ?? 'assist',
+        botEnabled: ((c.bot_posture as string | null) ?? 'assist') !== 'off',
         botOffReason: (c.bot_off_reason as string) ?? null,
         pendingDrafts: pendingByReservation.get(c.reservation_id as string) ?? 0,
     }));
@@ -410,21 +412,25 @@ export async function regenerateDraft(rowId: string): Promise<{ ok: boolean; dra
 
 // ── Toggles do bot ────────────────────────────────────────────────────────────
 
-export async function setConversationBot(reservationId: string, enabled: boolean): Promise<{ ok: boolean; error?: string }> {
-    const user = await assertAdmin();
+export async function setConversationPosture(
+    reservationId: string,
+    posture: 'auto' | 'assist' | 'off',
+): Promise<{ ok: boolean; error?: string }> {
     try {
-        const admin = await getSupabaseAdmin();
-        const { error } = await admin.from('ai_conversation').update({
-            bot_enabled: enabled,
-            bot_off_reason: enabled ? null : 'manual',
-            bot_off_at: enabled ? null : new Date().toISOString(),
-            bot_off_by: enabled ? null : (user.email ?? 'admin'),
+        const user = await assertAdmin();
+        if (!['auto', 'assist', 'off'].includes(posture)) return { ok: false, error: 'Postura inválida' };
+        const supabase = await getSupabaseAdmin();
+        const { error } = await supabase.from('ai_conversation').update({
+            bot_posture: posture,
+            bot_off_reason: posture === 'off' ? 'manual' : null,
+            bot_off_at: posture === 'off' ? new Date().toISOString() : null,
+            bot_off_by: posture === 'off' ? (user.email ?? 'admin') : null,
             updated_at: new Date().toISOString(),
         }).eq('reservation_id', reservationId);
-        if (error) throw error;
+        if (error) return { ok: false, error: error.message };
         return { ok: true };
-    } catch (err) {
-        return { ok: false, error: err instanceof Error ? err.message : 'Update failed' };
+    } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : 'failed' };
     }
 }
 
@@ -995,4 +1001,55 @@ export async function getMemoryForProperty(beds24PropertyId: number): Promise<Me
         knowledge,
         facts,
     };
+}
+
+// ── Co-Host: feed de decisões (drafts pendentes de TODAS as conversas) ───────
+
+type DecisionCard = {
+    rowId: string; reservationId: string; guestName: string | null;
+    propertyName: string | null; incomingMessage: string; draft: string | null;
+    decision: string | null; createdAt: string; checkIn: string | null; checkOut: string | null;
+};
+
+export async function getDecisionFeed(): Promise<DecisionCard[]> {
+    await assertAdmin();
+    const supabase = await getSupabaseAdmin();
+    const { data: rows } = await supabase
+        .from('ai_message_log')
+        .select('id, reservation_ref, guest_name, property_code, incoming_message, ai_draft, decision, created_at')
+        .eq('status', 'draft')
+        .order('created_at', { ascending: false })
+        .limit(50);
+    if (!rows?.length) return [];
+    const refs = [...new Set(rows.map((r) => r.reservation_ref as string))];
+    const { data: convs } = await supabase
+        .from('ai_conversation')
+        .select('reservation_id, check_in, check_out, property_name, guest_name')
+        .in('reservation_id', refs);
+    const byRef = new Map((convs ?? []).map((c) => [c.reservation_id as string, c]));
+    return rows.map((r) => {
+        const conv = byRef.get(r.reservation_ref as string);
+        return {
+            rowId: r.id as string,
+            reservationId: r.reservation_ref as string,
+            guestName: (r.guest_name as string | null) ?? (conv?.guest_name as string | null) ?? null,
+            propertyName: (conv?.property_name as string | null) ?? (r.property_code as string | null) ?? null,
+            incomingMessage: r.incoming_message as string,
+            draft: r.ai_draft as string | null,
+            decision: r.decision as string | null,
+            createdAt: r.created_at as string,
+            checkIn: (conv?.check_in as string | null) ?? null,
+            checkOut: (conv?.check_out as string | null) ?? null,
+        };
+    });
+}
+
+export async function getPendingDecisionCount(): Promise<number> {
+    await assertAdmin();
+    const supabase = await getSupabaseAdmin();
+    const { count } = await supabase
+        .from('ai_message_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'draft');
+    return count ?? 0;
 }
