@@ -1,6 +1,29 @@
 # Beds24 PMS — PONTO DE SITUAÇÃO / HANDOFF
 
-**Última atualização:** 2026-07-14 (final da noite). **Começar por aqui** ao retomar (mesmo noutra conta).
+**Última atualização:** 2026-07-15. **Começar por aqui** ao retomar (mesmo noutra conta).
+
+## 🚀 2026-07-15 — SESSÃO CALENDÁRIO PREMIUM + FIX DO BOT — TUDO EM PROD (origin/main = `b015f76`)
+
+Nesta sessão (Marcelo pediu, tudo mergeado em main e **PUSHED para prod** — deploy Vercel):
+
+**Calendário admin `/admin/reservations` (vista Calendar, super_admin):** — a série do calendário que estava "em main local por push" foi toda PUSHED, mais melhorias novas:
+- **Vistas 7d/14d/31d** (seletor no header). 31d = mês clássico inalterado. 7/14d = **semanas alinhadas a segunda→domingo** (`startOfWeek weekStartsOn:1`), navegação salta 7/14 dias.
+- **Rail de preços por noite** (toggle "€ Preços", super_admin): linhas ligadas ao Beds24 passam a **duas bandas** (barra em cima 62px + rail 28px), preço centrado por noite + **lua de estadia mínima** (`minStay>1`). Só nas linhas COM dados (não-ligadas ficam 72px, sem banda vazia). **Skeleton** pulsante no rail enquanto a nova semana carrega (usa o conjunto de props ligadas já conhecido). Action `getBeds24DailyPrices` devolve `price`+`minStay` (type `Beds24DayInfo`).
+- **Barras premium:** reserva Airbnb via Beds24 mostra o **logo real do Airbnb** (`react-icons` `FaAirbnb`, círculo branco) em vez do badge "Beds24"; outros canais mantêm "Beds24" (não rotular mal). Blocos Airbnb iCal trocaram o `Globe` placeholder pelo logo real. Barras mantêm o paralelogramo diagonal.
+- Specs/planos: `docs/superpowers/{specs,plans}/2026-07-15-calendar-ranges-prices*` e `2026-07-15-calendar-premium-rows*`. He `multiCalendar` trazido a paridade completa (estava esparso).
+
+**🐛 FIX CRÍTICO DO BOT — auto-off no próprio envio com emoji (commit `b015f76`, EM PROD):**
+- **Sintoma (Marcelo):** clicar "Send" numa resposta desligava o bot na conversa (`bot_off_reason=human_replied`), anulando o auto-send.
+- **Root cause (provado com dados reais, conversa Carolina 89794243):** o canal Airbnb/Beds24 **devolve os emojis como `?`** no eco do webhook. O bot termina quase tudo com `😊`, por isso `sent_message` gravado (`…ajudar! 😊`) ≠ eco (`…ajudar! ?`); o `processBotMessages` lia o próprio envio como "humano respondeu" e desligava-se. Toda a resposta com emoji desligava o bot.
+- **Fix:** comparador normalizado `lib/ai-message-match.ts` (`messagesMatch`/`channelNormalize`) que ignora emoji/`?`/espaços. Aplicado em `lib/beds24/bot-bridge.ts` (auto-off) e `getThread` (rótulo bot-sent no UI). Teste `scripts/test-message-match.ts`. Verificado nos dados reais: ecos com emoji → OURS (bot fica ligado); respostas humanas reais → HUMAN (bot desliga). tsc+build limpos.
+- **NÃO precisa migração.** O caminho robusto por id continua indisponível (o `sendReply` do painel não guarda o `external_message_id` da msg enviada — melhoria futura possível se o `POST /bookings/messages` devolver o id).
+- **Nota (não é bug):** a Virtudes One em Auto-send gera drafts porque o `decide()` escala para draft quando a knowledge não cobre (ex. `wifiName`/`tips` missing) — comportamento correto (não inventa). Encher a knowledge em "Manage memory" aumenta o auto-send.
+
+**`.claude/launch.json`** continua modificado no working tree (config local, nunca committed/pushed).
+
+---
+
+## ⬇️ HISTÓRICO ANTERIOR (2026-07-14 e antes)
 
 ## ✅ AGENTE EM PRODUÇÃO, E2E VALIDADO PELO MARCELO — 2026-07-14 (final da noite)
 
