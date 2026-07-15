@@ -1446,6 +1446,14 @@
             "statusCompleted": "Completed",
             "statusCancelled": "Cancelled",
             "loadError": "Could not load the booking"
+        },
+        "propertyTabs": {
+            "overview": "Overview",
+            "calendar": "Calendar",
+            "reservations": "Reservations",
+            "switchProperty": "Property",
+            "loading": "Loading…",
+            "noReservations": "No reservations for this property yet."
         }
     }
 }

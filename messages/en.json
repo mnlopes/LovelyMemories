@@ -344,6 +344,14 @@
                 "to": "to",
                 "previous": "Previous"
             }
+        },
+        "propertyTabs": {
+            "overview": "Overview",
+            "calendar": "Calendar",
+            "reservations": "Reservations",
+            "switchProperty": "Property",
+            "loading": "Loading…",
+            "noReservations": "No reservations for this property yet."
         }
     },
     "AdminUsers": {

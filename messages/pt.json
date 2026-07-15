@@ -335,6 +335,14 @@
                 "to": "para",
                 "previous": "Anterior"
             }
+        },
+        "propertyTabs": {
+            "overview": "Visão geral",
+            "calendar": "Calendário",
+            "reservations": "Reservas",
+            "switchProperty": "Propriedade",
+            "loading": "A carregar…",
+            "noReservations": "Ainda não há reservas nesta propriedade."
         }
     },
     "AdminUsers": {
