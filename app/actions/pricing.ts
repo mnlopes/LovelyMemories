@@ -4,9 +4,10 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { getCurrentUserRole } from '@/app/actions/user';
 import { buildSiteDailyPrices, type DayPriceInfo } from '@/lib/site-daily-prices';
 
-export type { DayPriceInfo };
-
-export type SiteDailyPricesResult =
+// NOTE: this is a 'use server' file — it may only *export* async functions.
+// DayPriceInfo/SiteDailyPricesResult stay module-internal; import DayPriceInfo
+// from '@/lib/site-daily-prices' directly if a consumer needs the type.
+type SiteDailyPricesResult =
     | { ok: true; prices: Record<string, DayPriceInfo> }
     | { ok: false; error: string };
 
