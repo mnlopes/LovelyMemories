@@ -12,6 +12,7 @@ import {
 } from '@/lib/ai-messaging';
 import { decide } from '@/lib/ai-decision';
 import { FACT_TOPICS } from '@/lib/ai-knowledge';
+import { messagesMatch } from '@/lib/ai-message-match';
 
 /**
  * Server actions do inbox de IA (transporte Beds24).
@@ -211,7 +212,7 @@ export async function getThread(reservationId: string): Promise<ThreadData> {
             .filter((m) => m.message && (m.source === 'guest' || m.source === 'host'))
             .map((m) => {
                 const mine = m.source === 'host'
-                    ? botSent.find((b) => b.sent_message === m.message)
+                    ? botSent.find((b) => messagesMatch(b.sent_message, m.message as string))
                     : undefined;
                 return {
                     id: String(m.beds24_message_id),

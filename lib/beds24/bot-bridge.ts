@@ -3,6 +3,7 @@ import { beds24Request } from "@/lib/beds24/client";
 import type { Beds24Booking, Beds24Message } from "@/lib/beds24/types";
 import { buildContext, type ThreadMessage } from "@/lib/ai-messaging";
 import { decide } from "@/lib/ai-decision";
+import { messagesMatch } from "@/lib/ai-message-match";
 
 type Supa = Awaited<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -67,13 +68,18 @@ export async function processBotMessages(booking: Beds24Booking | null, messages
                     .select("id")
                     .eq("external_message_id", String(msg.id))
                     .maybeSingle();
-                const { data: sentByUs } = own ? { data: own } : await supabase
-                    .from("ai_message_log")
-                    .select("id")
-                    .eq("reservation_ref", String(bookingId))
-                    .eq("sent_message", msg.message)
-                    .gte("sent_at", new Date(Date.now() - 10 * 60 * 1000).toISOString())
-                    .maybeSingle();
+                let sentByUs = !!own;
+                if (!sentByUs) {
+                    // O canal devolve emoji como '?' no eco (e o painel não guarda o id
+                    // da msg enviada), por isso comparamos por forma NORMALIZADA, não '==='.
+                    const { data: recent } = await supabase
+                        .from("ai_message_log")
+                        .select("sent_message")
+                        .eq("reservation_ref", String(bookingId))
+                        .not("sent_message", "is", null)
+                        .gte("sent_at", new Date(Date.now() - 10 * 60 * 1000).toISOString());
+                    sentByUs = (recent ?? []).some((r) => messagesMatch(r.sent_message as string, msg.message));
+                }
                 if (!sentByUs) {
                     await supabase.from("ai_conversation").update({
                         bot_enabled: false,
