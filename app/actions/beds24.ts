@@ -160,11 +160,15 @@ export async function connectCobaia(beds24PropertyId: number) {
     return res[0];
 }
 
-/** Importa as reservas futuras existentes da cobaia (depois de ligada). */
+/** Importa as reservas existentes da propriedade (depois de ligada). */
 export async function importExistingBookings(beds24PropertyId: number) {
     await guard();
+    // departureFrom (não arrivalFrom): uma reserva ainda é relevante enquanto não
+    // fizer check-out. arrivalFrom=hoje perdia os hóspedes ATUALMENTE na casa (check-in
+    // no passado, check-out no futuro). departureFrom=hoje apanha atuais + futuras.
+    // O webhook mantém tudo em tempo real; isto é o backfill de segurança.
     const res = await beds24Request<Beds24Booking>('GET', '/bookings', {
-        query: { propertyId: [beds24PropertyId], arrivalFrom: new Date().toISOString().slice(0, 10) },
+        query: { propertyId: [beds24PropertyId], departureFrom: new Date().toISOString().slice(0, 10) },
         context: 'action',
     }) as Beds24ApiEnvelope<Beds24Booking>;
     const result = await ingestBookings(res.data ?? [], 'manual');
