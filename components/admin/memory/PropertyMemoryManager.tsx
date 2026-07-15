@@ -30,7 +30,7 @@ export function PropertyMemoryManager(props: {
 
     return (
         <div className="container max-w-4xl py-6">
-            <Link href="/admin/activity" className="mb-4 inline-flex items-center gap-1.5 text-sm text-[#737373] hover:text-[#171717] dark:text-white/50 dark:hover:text-white">
+            <Link href="/admin/cohost?tab=inbox" className="mb-4 inline-flex items-center gap-1.5 text-sm text-[#737373] hover:text-[#171717] dark:text-white/50 dark:hover:text-white">
                 <ArrowLeft className="h-4 w-4" /> {t("backToInbox")}
             </Link>
             <h1 className="mb-1 text-xl font-semibold text-[#171717] dark:text-admin-dark-text-primary">{t("title")}</h1>

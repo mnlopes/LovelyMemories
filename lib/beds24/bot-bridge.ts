@@ -13,7 +13,7 @@ type Supa = Awaited<ReturnType<typeof getSupabaseAdmin>>;
  * o webhook responde 200 independentemente do bot (payload bruto fica
  * em beds24_webhook_events, reprocessável).
  *
- * host  → bot off na conversa (exceto mensagens enviadas pelo próprio bot).
+ * host  → despromove a postura auto→assist na conversa (o bot continua a redigir; exceto mensagens enviadas pelo próprio bot).
  * guest → motor de decisão: auto-send (modo 'auto' + knowledge coberto) ou fila humana.
  */
 export async function processBotMessages(booking: Beds24Booking | null, messages: Beds24Message[]): Promise<void> {
@@ -62,7 +62,7 @@ export async function processBotMessages(booking: Beds24Booking | null, messages
             if (!msg.message) continue;
 
             if (msg.source === "host") {
-                // Resposta humana desliga o bot nesta conversa; mensagens que o
+                // Resposta humana despromove auto→assist nesta conversa; mensagens que o
                 // PRÓPRIO bot/painel enviou (registadas em ai_message_log) não.
                 const { data: own } = await supabase
                     .from("ai_message_log")
