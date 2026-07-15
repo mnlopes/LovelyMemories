@@ -1,7 +1,7 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -9,6 +9,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAdminNav } from "./AdminNavProvider";
+import { getPendingDecisionCount } from "@/app/actions/ai-inbox";
+
+type NavItem = { icon: LucideIcon; label: string; path: string; badge?: number };
 
 export const AdminSidebar = () => {
     const pathname = usePathname();
@@ -16,6 +19,7 @@ export const AdminSidebar = () => {
     const { mobileOpen, setMobileOpen } = useAdminNav();
     const [role, setRole] = useState<string | null>(null);
     const [permissions, setPermissions] = useState<{ module_name: string; can_view: boolean }[]>([]);
+    const [cohostPending, setCohostPending] = useState(0);
 
     const checkActive = (path: string) => {
         const pathParts = pathname.split('/');
@@ -49,13 +53,22 @@ export const AdminSidebar = () => {
         fetchRoleAndPermissions();
     }, []);
 
+    useEffect(() => {
+        if (role !== "super_admin") return;
+        let alive = true;
+        const load = () => { void getPendingDecisionCount().then((n) => { if (alive) setCohostPending(n); }).catch(() => {}); };
+        load();
+        const id = setInterval(load, 60_000);
+        return () => { alive = false; clearInterval(id); };
+    }, [role]);
+
     const hasAccess = (moduleName: string) => {
         if (role === 'super_admin') return true;
         const p = permissions.find(p => p.module_name === moduleName);
         return p?.can_view || false;
     };
 
-    const menuSections = [
+    const menuSections: { title: string; items: NavItem[] }[] = [
         {
             title: t('management'),
             items: [
@@ -88,7 +101,7 @@ export const AdminSidebar = () => {
                 title: "System",
                 items: [
                     ...(hasAccess('imports') || role === 'super_admin' || role === 'admin' ? [{ icon: FileUp, label: "Imports", path: "/admin/imports" }] : []),
-                    ...(role === 'super_admin' ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost" }] : []),
+                    ...(role === 'super_admin' ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: cohostPending }] : []),
                     { icon: Activity, label: "Activity", path: "/admin/activity" },
                     // Settings only for Super Admin
                     ...(role === 'super_admin' ? [
@@ -190,6 +203,12 @@ export const AdminSidebar = () => {
                                         {!isCollapsed && (
                                             <span className="text-sm font-bold tracking-tight whitespace-nowrap overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200">
                                                 {item.label}
+                                            </span>
+                                        )}
+
+                                        {!isCollapsed && !!item.badge && (
+                                            <span className="ml-auto rounded-full bg-[#c5a059] px-1.5 py-0.5 text-[10px] font-bold text-white min-w-4 text-center">
+                                                {item.badge}
                                             </span>
                                         )}
 

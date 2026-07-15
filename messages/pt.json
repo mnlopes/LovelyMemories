@@ -2582,7 +2582,18 @@
     "AdminCohost": {
         "title": "Co-Host",
         "subtitle": "O assistente redige todas as respostas — tu aprovas, editas ou ignoras.",
-        "tabs": { "decisions": "Decisões", "inbox": "Inbox", "settings": "Definições" }
+        "tabs": { "decisions": "Decisões", "inbox": "Inbox", "settings": "Definições" },
+        "feed": {
+            "pending": "{count} por rever",
+            "needsYou": "Precisa de ti",
+            "noDraft": "Sem draft — escreve a resposta",
+            "approveSend": "Aprovar e enviar",
+            "sending": "A enviar…",
+            "ignore": "Ignorar",
+            "openConversation": "Abrir conversa",
+            "allClear": "Tudo em dia — nada precisa de ti",
+            "allClearHint": "Novas mensagens de hóspedes aparecem aqui com a resposta redigida."
+        }
     },
     "AiMemory": {
         "title": "Memória da propriedade",

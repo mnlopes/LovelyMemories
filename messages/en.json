@@ -2591,7 +2591,18 @@
     "AdminCohost": {
         "title": "Co-Host",
         "subtitle": "Your AI assistant drafts every reply — you approve, edit or ignore.",
-        "tabs": { "decisions": "Decisions", "inbox": "Inbox", "settings": "Settings" }
+        "tabs": { "decisions": "Decisions", "inbox": "Inbox", "settings": "Settings" },
+        "feed": {
+            "pending": "{count} to review",
+            "needsYou": "Needs you",
+            "noDraft": "No draft — write a reply",
+            "approveSend": "Approve & send",
+            "sending": "Sending…",
+            "ignore": "Ignore",
+            "openConversation": "Open conversation",
+            "allClear": "All clear — nothing needs you",
+            "allClearHint": "New guest messages will appear here with a drafted reply."
+        }
     },
     "AiMemory": {
         "title": "Property memory",
