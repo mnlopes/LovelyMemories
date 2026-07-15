@@ -242,6 +242,7 @@
             "prices": "Prices",
             "pricesDisabledHint": "Prices need the 7d or 14d view",
             "pricesError": "Could not load nightly prices",
+            "minStayNights": "Min. {count} nights",
             "legend": {
                 "confirmed": "Confirmed",
                 "checkedIn": "Checked In",

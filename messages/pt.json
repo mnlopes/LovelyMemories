@@ -233,6 +233,7 @@
             "prices": "Preços",
             "pricesDisabledHint": "Os preços precisam da vista 7d ou 14d",
             "pricesError": "Não foi possível carregar os preços por noite",
+            "minStayNights": "Mín. {count} noites",
             "legend": {
                 "confirmed": "Confirmado",
                 "checkedIn": "Check-In",
