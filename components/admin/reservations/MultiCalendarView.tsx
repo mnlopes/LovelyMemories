@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Euro, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Euro } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
 import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
 import { getBeds24DailyPrices, type Beds24DayInfo } from "@/app/actions/beds24";
-import { getBarClipPath, getReservationStatusColor, effectiveReservationStatus, AIRBNB_HATCH, BLOCK_HATCH, ChannelBadge } from "@/components/admin/reservations/calendar-bar-visuals";
+import { getBarClipPath, getReservationStatusColor, effectiveReservationStatus, AIRBNB_HATCH, BLOCK_HATCH, ChannelBadge, CalendarDayPrice } from "@/components/admin/reservations/calendar-bar-visuals";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -432,24 +432,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                             {rowLoading ? (
                                                                 <div className="h-3 w-9 rounded bg-[#e5e5e5] dark:bg-white/10 animate-pulse" />
                                                             ) : (
-                                                                <>
-                                                                    {info?.minStay != null && info.minStay > 1 && (
-                                                                        <span
-                                                                            title={t("minStayNights", { count: info.minStay })}
-                                                                            className="absolute left-1 top-0.5 flex items-center gap-0.5 text-[8px] font-bold text-[#c4c4c4] dark:text-white/30"
-                                                                        >
-                                                                            <Moon className="size-2.5" />{info.minStay}
-                                                                        </span>
-                                                                    )}
-                                                                    {typeof info?.price === "number" && (
-                                                                        <span className={cn(
-                                                                            "font-bold tabular-nums text-[#525252] dark:text-white/70",
-                                                                            rangeDays === 7 ? "text-xs" : "text-[11px]",
-                                                                        )}>
-                                                                            €{info.price}
-                                                                        </span>
-                                                                    )}
-                                                                </>
+                                                                <CalendarDayPrice
+                                                                    info={info ?? { price: null, minStay: null }}
+                                                                    align="center"
+                                                                    priceClassName={rangeDays === 7 ? "text-xs" : "text-[11px]"}
+                                                                    minStayTitle={info?.minStay != null ? t("minStayNights", { count: info.minStay }) : undefined}
+                                                                />
                                                             )}
                                                         </div>
                                                     );

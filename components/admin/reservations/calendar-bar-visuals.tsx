@@ -1,6 +1,7 @@
 import { startOfDay } from "date-fns";
-import { Building2 } from "lucide-react";
+import { Building2, Moon } from "lucide-react";
 import { FaAirbnb } from "react-icons/fa";
+import { cn } from "@/lib/utils";
 
 /** Parallelogram clip-path (Hospitable-style): diagonal ~9px edge at a real
  *  check-in/check-out; straight edge (0px) when the bar continues past that side. */
@@ -58,4 +59,41 @@ export function ChannelBadge({ kind }: { kind: "airbnb-circle" | "beds24" | "air
                 </span>
             );
     }
+}
+
+/** Moon (minStay) + € price glyph, shared by the Timeline rail and the Month rail.
+ *  align "center": moon absolutely to the left, price centered (Timeline rail cell,
+ *  which supplies its own relative/flex-center container).
+ *  align "between": moon left, price right in a flex-between row (Month bottom rail). */
+export function CalendarDayPrice({
+    info, align, priceClassName = "text-[11px]", minStayTitle,
+}: {
+    info: { price: number | null; minStay: number | null };
+    align: "center" | "between";
+    priceClassName?: string;
+    minStayTitle?: string;
+}) {
+    const hasMoon = info.minStay != null && info.minStay > 1;
+    const hasPrice = typeof info.price === "number";
+    if (!hasMoon && !hasPrice) return null;
+    return (
+        <>
+            {hasMoon ? (
+                <span
+                    title={minStayTitle}
+                    className={cn(
+                        "flex items-center gap-0.5 text-[8px] font-bold text-[#c4c4c4] dark:text-white/30",
+                        align === "center" && "absolute left-1 top-0.5",
+                    )}
+                >
+                    <Moon className="size-2.5" />{info.minStay}
+                </span>
+            ) : align === "between" ? <span /> : null}
+            {hasPrice ? (
+                <span className={cn("font-bold tabular-nums text-[#525252] dark:text-white/70", priceClassName)}>
+                    €{info.price}
+                </span>
+            ) : align === "between" ? <span /> : null}
+        </>
+    );
 }
