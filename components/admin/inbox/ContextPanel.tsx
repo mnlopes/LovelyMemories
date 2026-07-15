@@ -83,33 +83,36 @@ export function ContextPanel(props: {
             <section>
                 <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#a3a3a3]">Bot</h3>
                 <div className="rounded-xl border border-[#f5f5f5] p-3 dark:border-admin-dark-border">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary">
-                            {c.botEnabled ? t("botOn") : t("botOff")}
-                        </span>
-                        <button
-                            role="switch"
-                            aria-checked={c.botEnabled}
-                            disabled={isPending}
-                            onClick={() => startTransition(async () => {
-                                await setConversationPosture(c.reservationId, c.botEnabled ? "off" : "assist");
-                                props.onChanged();
-                            })}
-                            className={cn(
-                                "relative h-6 w-11 rounded-full transition-colors disabled:opacity-50",
-                                c.botEnabled ? "bg-emerald-500" : "bg-[#d4d4d4] dark:bg-white/20",
-                            )}
-                        >
-                            <span className={cn(
-                                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all",
-                                c.botEnabled ? "left-[22px]" : "left-0.5",
-                            )} />
-                        </button>
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-1 rounded-lg border border-[#f5f5f5] p-0.5 dark:border-white/10">
+                            {(["auto", "assist", "off"] as const).map((p) => (
+                                <button
+                                    key={p}
+                                    onClick={() => startTransition(async () => {
+                                        await setConversationPosture(c.reservationId, p);
+                                        props.onChanged();
+                                    })}
+                                    disabled={isPending}
+                                    className={cn(
+                                        "rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors disabled:opacity-50",
+                                        c.botPosture === p
+                                            ? p === "off"
+                                                ? "bg-red-500 text-white"
+                                                : "bg-[#171717] text-white dark:bg-white dark:text-black"
+                                            : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white",
+                                    )}
+                                    aria-pressed={c.botPosture === p}
+                                    title={t(`posture_${p}_hint`)}
+                                >
+                                    {t(`posture_${p}`)}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-[11px] leading-snug text-[#a3a3a3]">
+                            {t("autoOffNote")}
+                            {c.botOffReason === "human_replied" && ` · ${t("humanActive")}`}
+                        </p>
                     </div>
-                    <p className="mt-1.5 text-[11px] leading-snug text-[#a3a3a3]">
-                        {t("autoOffNote")}
-                        {c.botOffReason === "human_replied" && ` · ${t("humanActive")}`}
-                    </p>
                 </div>
             </section>
 

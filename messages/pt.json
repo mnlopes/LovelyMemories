@@ -2577,7 +2577,13 @@
         "saved": "Guardado",
         "cancel": "Cancelar",
         "viaWebhook": "via webhook",
-        "pendingCount": "{count} pendentes"
+        "pendingCount": "{count} pendentes",
+        "posture_auto": "Auto",
+        "posture_auto_hint": "O bot responde sozinho (ainda sem uso)",
+        "posture_assist": "Assist",
+        "posture_assist_hint": "O bot redige tudo — tu envias",
+        "posture_off": "Off",
+        "posture_off_hint": "O bot não faz nada nesta conversa"
     },
     "AdminCohost": {
         "title": "Co-Host",

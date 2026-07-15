@@ -1335,7 +1335,13 @@
         "saved": "נשמר",
         "cancel": "ביטול",
         "viaWebhook": "דרך webhook",
-        "pendingCount": "{count} ממתינות"
+        "pendingCount": "{count} ממתינות",
+        "posture_auto": "Auto",
+        "posture_auto_hint": "Bot replies by itself (not in use yet)",
+        "posture_assist": "Assist",
+        "posture_assist_hint": "Bot drafts every reply — you send",
+        "posture_off": "Off",
+        "posture_off_hint": "Bot does nothing on this conversation"
     },
     "AdminCohost": {
         "title": "Co-Host",
