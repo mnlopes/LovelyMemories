@@ -342,7 +342,10 @@
             "reservations": "Reservas",
             "switchProperty": "Propriedade",
             "loading": "A carregar…",
-            "noReservations": "Ainda não há reservas nesta propriedade."
+            "noReservations": "Ainda não há reservas nesta propriedade.",
+            "viewTimeline": "Timeline",
+            "viewMonth": "Mês",
+            "viewYear": "Ano"
         }
     },
     "AdminUsers": {

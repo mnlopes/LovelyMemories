@@ -351,7 +351,10 @@
             "reservations": "Reservations",
             "switchProperty": "Property",
             "loading": "Loading…",
-            "noReservations": "No reservations for this property yet."
+            "noReservations": "No reservations for this property yet.",
+            "viewTimeline": "Timeline",
+            "viewMonth": "Month",
+            "viewYear": "Year"
         }
     },
     "AdminUsers": {
