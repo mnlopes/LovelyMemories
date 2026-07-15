@@ -2,11 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, MoreHorizontal, Search, Building2, Home, Trash2, Eye, EyeOff, CalendarDays, X, RefreshCw, AlertCircle, Globe } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Building2, Home, Trash2, Eye, EyeOff, CalendarDays, RefreshCw, AlertCircle, Globe } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
-import AnnualCalendarTab from "@/components/admin/properties/AnnualCalendarTab";
 import { syncPropertyICal } from "@/app/actions/ical";
 import { toast } from "sonner";
 import ImportAirbnbModal from "@/components/admin/properties/ImportAirbnbModal";
@@ -30,7 +29,6 @@ export default function AdminProperties() {
     const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
     const [isRetryingAll, setIsRetryingAll] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-    const [calendarPropertyId, setCalendarPropertyId] = useState<string | null>(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     // Modal State
@@ -485,7 +483,7 @@ export default function AdminProperties() {
                                                     type="button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setCalendarPropertyId(property.id);
+                                                        window.location.href = `/${locale}/admin/properties/${property.id}?tab=calendar`;
                                                     }}
                                                     className="text-[#a3a3a3] hover:text-blue-500 dark:hover:text-blue-400 transition-all p-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl"
                                                     title="View Calendar"
@@ -583,7 +581,7 @@ export default function AdminProperties() {
                             formatRelativeTime={formatRelativeTime}
                             syncing={syncingIds.has(property.id)}
                             onForceSync={(e) => handleForceSync(e, property.id, title)}
-                            onOpenCalendar={() => setCalendarPropertyId(property.id)}
+                            onOpenCalendar={() => window.location.href = `/${locale}/admin/properties/${property.id}?tab=calendar`}
                             onOpenMenu={() => setOpenMenuId(openMenuId === property.id ? null : property.id)}
                         />
                     );
@@ -637,37 +635,6 @@ export default function AdminProperties() {
                 onAction={modalConfig.onAction}
             />
 
-            {/* Annual Calendar Modal */}
-            {calendarPropertyId && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-admin-dark-surface w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl border border-[#eaeaea] dark:border-admin-dark-border flex flex-col">
-                        <div className="px-6 py-4 border-b border-[#eaeaea] dark:border-admin-dark-border flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                                    <CalendarDays className="size-5" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                                        Calendar
-                                    </h3>
-                                    <p className="text-xs font-medium text-[#a3a3a3]">
-                                        {properties.find(p => p.id === calendarPropertyId)?.title?.[locale] || properties.find(p => p.id === calendarPropertyId)?.title?.en || 'Unknown Property'}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setCalendarPropertyId(null)}
-                                className="p-2 -mr-2 text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg rounded-xl transition-colors"
-                            >
-                                <X className="size-5" />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto overflow-x-hidden w-full custom-scrollbar relative bg-[#fafafa] dark:bg-admin-dark-bg">
-                            <AnnualCalendarTab propertyId={calendarPropertyId} activeLang={locale} />
-                        </div>
-                    </div>
-                </div>
-            )}
             {/* Modals */}
             <ImportAirbnbModal 
                 isOpen={isImportModalOpen} 

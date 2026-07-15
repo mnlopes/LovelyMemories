@@ -6,6 +6,7 @@ import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Euro, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { Link } from "@/i18n/routing";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
 import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
 import { getBeds24DailyPrices, type Beds24DayInfo } from "@/app/actions/beds24";
@@ -419,12 +420,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                         onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
                                     >
                                         {isSidebarOpen ? (
-                                            <div className="w-full text-left">
+                                            <Link href={`/admin/properties/${propId}?tab=calendar`} className="w-full text-left hover:opacity-80 transition-opacity">
                                                 <span className="text-xs font-bold text-[#171717] dark:text-white block truncate leading-tight">{propData.title}</span>
                                                 <span className="text-[9px] text-[#a3a3a3] font-bold uppercase tracking-wider block truncate mt-1">
                                                     {propData.city || 'Sem Zona'}
                                                 </span>
-                                            </div>
+                                            </Link>
                                         ) : (
                                             <div className="size-11 rounded-xl bg-[#f5f5f5] dark:bg-admin-dark-bg flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 ring-emerald-500/20 transition-all shadow-sm">
                                                 {propData.mainImage ? <Image src={propData.mainImage} alt={propData.title} width={44} height={44} className="size-full object-cover" /> : <span className="text-xs font-bold text-[#a3a3a3]">{propData.title.substring(0, 2).toUpperCase()}</span>}
