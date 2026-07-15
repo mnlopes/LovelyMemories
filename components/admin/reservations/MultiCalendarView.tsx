@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe, Euro, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -83,8 +83,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     };
 
     // Janela visível: 31d = mês de calendário (comportamento clássico);
-    // 7d/14d = janela deslizante a partir de currentDate (estilo Guesty/Hostaway).
-    const rangeStart = rangeDays === 31 ? startOfMonth(currentDate) : startOfDay(currentDate);
+    // 7d/14d = semanas alinhadas a segunda-feira (segunda→domingo), não a começar em currentDate.
+    const rangeStart = rangeDays === 31 ? startOfMonth(currentDate) : startOfWeek(currentDate, { weekStartsOn: 1 });
     const rangeEnd = rangeDays === 31 ? endOfMonth(currentDate) : startOfDay(addDays(rangeStart, rangeDays - 1));
     const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
 
