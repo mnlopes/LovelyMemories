@@ -463,14 +463,17 @@ export async function getBeds24BookingDetail(beds24BookingId: number): Promise<B
 
 // ---------- Preços por noite (toggle € do multi-calendário admin) ----------
 
+export type Beds24DayInfo = { price: number | null; minStay: number | null };
+
 export type Beds24DailyPricesResult =
-    | { ok: true; prices: Record<string, Record<string, number>> }
+    | { ok: true; prices: Record<string, Record<string, Beds24DayInfo>> }
     | { ok: false; error: string };
 
 /**
- * Preço da noite (price1) das propriedades LIGADAS, para o toggle "€" do calendário.
- * `endDate` é EXCLUSIVO (semântica do getRoomCalendar) — o cliente passa rangeEnd+1.
- * Best-effort por quarto: um quarto que falhe sai do mapa sem derrubar o resto. Nunca lança.
+ * Preço da noite (price1) + estadia mínima (minStay) das propriedades LIGADAS,
+ * para o rail "€" do calendário. `endDate` é EXCLUSIVO (semântica do getRoomCalendar)
+ * — o cliente passa rangeEnd+1. Best-effort por quarto: um quarto que falhe sai do
+ * mapa sem derrubar o resto. Nunca lança.
  */
 export async function getBeds24DailyPrices(startDate: string, endDate: string): Promise<Beds24DailyPricesResult> {
     try {
@@ -482,13 +485,15 @@ export async function getBeds24DailyPrices(startDate: string, endDate: string): 
             .not('internal_property_id', 'is', null)
             .not('beds24_room_id', 'is', null);
         if (error) throw error;
-        const prices: Record<string, Record<string, number>> = {};
+        const prices: Record<string, Record<string, Beds24DayInfo>> = {};
         await Promise.all((props ?? []).map(async (p) => {
             try {
                 const days = await getRoomCalendar(Number(p.beds24_room_id), startDate, endDate);
-                const map: Record<string, number> = {};
+                const map: Record<string, Beds24DayInfo> = {};
                 for (const d of days) {
-                    if (typeof d.price === 'number') map[d.date] = d.price;
+                    if (typeof d.price === 'number' || typeof d.minStay === 'number') {
+                        map[d.date] = { price: d.price, minStay: d.minStay };
+                    }
                 }
                 if (Object.keys(map).length > 0) prices[p.internal_property_id as string] = map;
             } catch {
