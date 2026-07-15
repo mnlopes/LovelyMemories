@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isToday, isWithinInterval, startOfDay, endOfDay, isSameDay, setMonth, setYear, addDays, differenceInCalendarDays } from "date-fns";
 import { pt } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Globe, Euro, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Calendar as CalendarIcon, Info, Check, Filter, ChevronDown, Ban, MapPin, Users, Bed, Bath, X, Euro, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
 import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
 import { getBeds24DailyPrices, type Beds24DayInfo } from "@/app/actions/beds24";
+import { FaAirbnb } from "react-icons/fa";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -509,7 +510,15 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                         <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
                                                         <span className="flex items-center gap-1.5 shrink-0">
                                                             {res.total_price ? <span className="text-[10px] font-bold whitespace-nowrap leading-none">€{res.total_price}</span> : null}
-                                                            {isBeds24 && <span className="rounded bg-white/25 px-1 py-px text-[8px] font-bold uppercase tracking-wider leading-none">Beds24</span>}
+                                                            {isBeds24 && (
+                                                                res.is_airbnb ? (
+                                                                    <span title="Airbnb" className="flex items-center justify-center size-4 rounded-full bg-white shrink-0">
+                                                                        <FaAirbnb className="size-2.5 text-rose-500" />
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="rounded bg-white/25 px-1 py-px text-[8px] font-bold uppercase tracking-wider leading-none">Beds24</span>
+                                                                )
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -546,7 +555,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                     {isAirbnb ? (
                                                         <div className="flex items-center gap-1.5 overflow-hidden">
                                                             <div className="size-5 rounded-md bg-rose-500 flex items-center justify-center shrink-0 shadow-sm">
-                                                                <Globe className="size-3 text-white" />
+                                                                <FaAirbnb className="size-3 text-white" />
                                                             </div>
                                                             <span className="text-[10px] font-bold text-rose-800 dark:text-rose-200 truncate">
                                                                 Airbnb
