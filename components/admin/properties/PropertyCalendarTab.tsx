@@ -49,6 +49,7 @@ export function PropertyCalendarTab({ propertyId, locale }: { propertyId: string
                     <button
                         key={v}
                         onClick={() => setView(v)}
+                        aria-label={label}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-200
                             ${view === v
                                 ? "bg-white dark:bg-admin-dark-surface text-[#171717] dark:text-white shadow-sm"
@@ -75,12 +76,20 @@ export function PropertyCalendarTab({ propertyId, locale }: { propertyId: string
                     onRefresh={refresh}
                 />
             ) : (
-                <AnnualCalendarTab
-                    propertyId={propertyId}
-                    activeLang={locale}
-                    view={view}
-                    onViewChange={(v) => setView(v)}
-                />
+                // AnnualCalendarTab was built for a modal that bounded its height; it relies on
+                // h-full + an internal overflow-y-auto scrollport, sticky headers, and a "Today"
+                // scroll-to FAB. This admin page has no ancestor with a definite height, so we
+                // give it one here: viewport height minus the admin header (h-16/h-20), the page
+                // padding (p-4 sm:p-6 lg:p-10), the property tab nav, the property dropdown row,
+                // and the view switcher above it (~20rem covers that stack across breakpoints).
+                <div className="h-[calc(100vh-20rem)] min-h-[32rem]">
+                    <AnnualCalendarTab
+                        propertyId={propertyId}
+                        activeLang={locale}
+                        view={view}
+                        onViewChange={(v) => setView(v)}
+                    />
+                </div>
             )}
         </div>
     );
