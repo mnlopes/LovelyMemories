@@ -21,12 +21,13 @@ interface MultiCalendarViewProps {
     blockedDates?: any[];
     onRefresh?: () => void;
     canShowPrices?: boolean;
+    initialRange?: 7 | 14 | 31;
 }
 
-export function MultiCalendarView({ reservations, properties, propertyImages, locale = 'pt', blockedDates = [], onRefresh, canShowPrices = false }: MultiCalendarViewProps) {
+export function MultiCalendarView({ reservations, properties, propertyImages, locale = 'pt', blockedDates = [], onRefresh, canShowPrices = false, initialRange = 31 }: MultiCalendarViewProps) {
     const t = useTranslations('AdminReservations.multiCalendar');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [rangeDays, setRangeDays] = useState<7 | 14 | 31>(31);
+    const [rangeDays, setRangeDays] = useState<7 | 14 | 31>(initialRange);
     const [selectedReservation, setSelectedReservation] = useState<any | null>(null);
     const [selectedBeds24Id, setSelectedBeds24Id] = useState<number | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
