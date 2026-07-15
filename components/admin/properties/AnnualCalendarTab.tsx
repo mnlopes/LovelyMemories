@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
     format, startOfYear, endOfYear, eachMonthOfInterval, getDay,
@@ -8,8 +8,7 @@ import {
     getMonth, getYear, isSameDay, differenceInCalendarDays
 } from "date-fns";
 import { pt, enUS } from "date-fns/locale";
-import { Loader2, ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Globe, Ban, Building2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { ChevronLeft, ChevronRight, LayoutGrid, CalendarDays, Tag, Moon, Globe, Ban, Building2 } from "lucide-react";
 
 interface AnnualCalendarTabProps {
     propertyId: string;
@@ -18,6 +17,9 @@ interface AnnualCalendarTabProps {
     view?: CalendarView;
     /** Called whenever the view should change (both the toggle and the "click a mini-month" action). */
     onViewChange?: (v: CalendarView) => void;
+    reservations: any[];
+    blockedDates: any[];
+    pricePerNight: number | null;
 }
 
 type CalendarView = "annual" | "monthly";
@@ -43,11 +45,7 @@ interface Bar {
     type: "reservation" | "block" | "airbnb" | "booking";
 }
 
-export default function AnnualCalendarTab({ propertyId, activeLang = "en", view: controlledView, onViewChange }: AnnualCalendarTabProps) {
-    const [reservations, setReservations] = useState<Res[]>([]);
-    const [blockedDates, setBlockedDates] = useState<Res[]>([]);
-    const [pricePerNight, setPricePerNight] = useState<number | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+export default function AnnualCalendarTab({ propertyId, activeLang = "en", view: controlledView, onViewChange, reservations, blockedDates, pricePerNight }: AnnualCalendarTabProps) {
     const dateLocale = activeLang === "pt" ? pt : enUS;
 
     const [internalView, setInternalView] = useState<CalendarView>("annual");
@@ -66,23 +64,6 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
     const [hoveredBar, setHoveredBar] = useState<Bar | null>(null);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
     const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    useEffect(() => {
-        if (!propertyId || propertyId === "new") { setIsLoading(false); return; }
-        Promise.all([
-            supabase.from("reservations")
-                .select("id, check_in, check_out, status, guest_name, total_price")
-                .eq("property_id", propertyId)
-                .neq("status", "cancelled"),
-            supabase.from("blocked_dates").select("id, start_date, end_date, source, reason").eq("property_id", propertyId),
-            supabase.from("properties").select("price_per_night").eq("id", propertyId).single(),
-        ]).then(([resResult, blockResult, propResult]) => {
-            if (!resResult.error) setReservations(resResult.data || []);
-            if (!blockResult.error) setBlockedDates(blockResult.data || []);
-            if (!propResult.error && propResult.data) setPricePerNight(propResult.data.price_per_night);
-            setIsLoading(false);
-        });
-    }, [propertyId]);
 
     const isDateUnavailable = (date: Date) => {
         const d = startOfDay(date);
@@ -149,12 +130,6 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
         if (seg) segments.push(seg);
         return { segments, startOffset, daysInMonth };
     };
-
-    if (isLoading) return (
-        <div className="flex items-center justify-center p-20">
-            <Loader2 className="size-8 animate-spin text-[#a3a3a3]" />
-        </div>
-    );
 
     const todayDate = new Date();
 

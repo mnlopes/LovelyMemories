@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import PropertyEditorForm from "@/components/admin/properties/PropertyEditorForm";
 import { PropertyDetailTabs } from "@/components/admin/properties/PropertyDetailTabs";
+import { getCurrentUserRole } from "@/app/actions/user";
 
 export default async function PropertyEditorPage({
     params,
@@ -76,11 +77,15 @@ export default async function PropertyEditorPage({
         }
     }
 
+    const role = await getCurrentUserRole();
+    const isSuperAdmin = role === "super_admin";
+
     return (
         <PropertyDetailTabs
             propertyId={id}
             locale={locale}
             isNew={isNew}
+            isSuperAdmin={isSuperAdmin}
             overview={
                 <PropertyEditorForm
                     isEditing={!isNew}

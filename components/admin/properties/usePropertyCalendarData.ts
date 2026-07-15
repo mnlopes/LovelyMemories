@@ -17,12 +17,13 @@ export function usePropertyCalendarData(propertyId: string, locale: string) {
     const [blockedDates, setBlockedDates] = useState<any[]>([]);
     const [propertyImages, setPropertyImages] = useState<Record<string, string>>({});
     const [allProperties, setAllProperties] = useState<{ id: string; title: string }[]>([]);
+    const [pricePerNight, setPricePerNight] = useState<number | null>(null);
 
     const refresh = useCallback(async () => {
         setLoading(true);
         const [resRes, propRes, blockRes, allRes] = await Promise.all([
             supabase.from("reservations").select("*, properties:property_id(*)").eq("property_id", propertyId).order("created_at", { ascending: false }),
-            supabase.from("properties").select("id, title, subtitle, images, city, address, bedrooms, bathrooms, max_guests, is_multi_unit").eq("id", propertyId).single(),
+            supabase.from("properties").select("id, title, subtitle, images, city, address, bedrooms, bathrooms, max_guests, is_multi_unit, price_per_night").eq("id", propertyId).single(),
             supabase.from("blocked_dates").select("*").eq("property_id", propertyId),
             supabase.from("properties").select("id, title").order("title", { ascending: true }),
         ]);
@@ -33,6 +34,7 @@ export function usePropertyCalendarData(propertyId: string, locale: string) {
             const enhanced = { ...prop, title: tr(prop.title, locale) || "Untitled Property", subtitle: tr(prop.subtitle, locale), city: tr(prop.city, locale), mainImage };
             setProperties([enhanced]);
             setPropertyImages(mainImage ? { [prop.id]: mainImage } : {});
+            setPricePerNight(typeof prop.price_per_night === "number" ? prop.price_per_night : null);
         }
         setReservations((resRes.data || []).map((res: any) => ({ ...res, property_name: tr(res.properties?.title, locale) })));
         setBlockedDates(blockRes.data || []);
@@ -42,5 +44,5 @@ export function usePropertyCalendarData(propertyId: string, locale: string) {
 
     useEffect(() => { void refresh(); }, [refresh]);
 
-    return { loading, properties, reservations, blockedDates, propertyImages, allProperties, refresh };
+    return { loading, properties, reservations, blockedDates, propertyImages, allProperties, pricePerNight, refresh };
 }

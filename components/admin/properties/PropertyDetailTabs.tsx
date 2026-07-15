@@ -15,11 +15,13 @@ export function PropertyDetailTabs({
     locale,
     isNew,
     overview,
+    isSuperAdmin,
 }: {
     propertyId: string;
     locale: string;
     isNew: boolean;
     overview: React.ReactNode;
+    isSuperAdmin: boolean;
 }) {
     const t = useTranslations("AdminReservations.propertyTabs");
     const sp = useSearchParams();
@@ -54,7 +56,7 @@ export function PropertyDetailTabs({
             </nav>
 
             {active === "overview" && overview}
-            {active === "calendar" && <PropertyCalendarTab propertyId={propertyId} locale={locale} />}
+            {active === "calendar" && <PropertyCalendarTab propertyId={propertyId} locale={locale} isSuperAdmin={isSuperAdmin} />}
             {active === "reservations" && <PropertyReservationsTab propertyId={propertyId} locale={locale} />}
         </div>
     );
