@@ -10,7 +10,7 @@ import { Link } from "@/i18n/routing";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
 import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
 import { getBeds24DailyPrices, type Beds24DayInfo } from "@/app/actions/beds24";
-import { FaAirbnb } from "react-icons/fa";
+import { getBarClipPath, getReservationStatusColor, effectiveReservationStatus, AIRBNB_HATCH, BLOCK_HATCH, ChannelBadge } from "@/components/admin/reservations/calendar-bar-visuals";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -218,25 +218,6 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
 
         const width = rightPos - leftPos;
         return { left: leftPos, width: Math.max(width, 10) };
-    };
-
-    // Paralelogramo à Hospitable: arestas diagonais (~9px) no check-in/check-out ao
-    // meio-dia; aresta reta quando a barra continua para fora do mês visível.
-    const getBarClipPath = (startsBefore: boolean, endsAfter: boolean) => {
-        const l = startsBefore ? 0 : 9;
-        const r = endsAfter ? 0 : 9;
-        return `polygon(${l}px 0, 100% 0, calc(100% - ${r}px) 100%, 0 100%)`;
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'confirmed': return "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600/20";
-            case 'pending': return "bg-amber-200 hover:bg-amber-300 text-amber-950 border-amber-300/50";
-            case 'checked-in': return "bg-blue-500 hover:bg-blue-600 text-white border-blue-600/20";
-            case 'checked-out':
-            case 'completed': return "bg-slate-400 hover:bg-slate-500 text-white border-slate-500/20";
-            default: return "bg-slate-400 text-white border-slate-500/20";
-        }
     };
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -485,13 +466,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                             const startsBefore = resStart < viewStart;
                                             const endsAfter = resEnd > viewEnd;
 
-                                            const today = startOfDay(new Date());
-                                            const resCheckOutDate = startOfDay(new Date(res.check_out));
-
-                                            let effectiveStatus = res.status;
-                                            if (res.status === 'confirmed' && resCheckOutDate.getTime() <= today.getTime()) {
-                                                effectiveStatus = 'completed';
-                                            }
+                                            const effectiveStatus = effectiveReservationStatus(res.status, res.check_out);
 
                                             const isBeds24 = !!res.is_beds24;
 
@@ -504,7 +479,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                         "absolute h-8 flex items-center px-3 z-10 transition-all",
                                                         isBeds24
                                                             ? "bg-rose-500 text-white cursor-pointer hover:brightness-105 animate-in fade-in duration-300"
-                                                            : cn("cursor-pointer hover:brightness-110", getStatusColor(effectiveStatus)),
+                                                            : cn("cursor-pointer hover:brightness-110", getReservationStatusColor(effectiveStatus)),
                                                     )}
                                                     style={{ left: `${style.left}px`, width: `${style.width}px`, top: barCenter, transform: "translateY(-50%)", clipPath: getBarClipPath(startsBefore, endsAfter) }}
                                                 >
@@ -512,15 +487,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                         <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
                                                         <span className="flex items-center gap-1.5 shrink-0">
                                                             {res.total_price ? <span className="text-[10px] font-bold whitespace-nowrap leading-none">€{res.total_price}</span> : null}
-                                                            {isBeds24 && (
-                                                                res.is_airbnb ? (
-                                                                    <span title="Airbnb" className="flex items-center justify-center size-4 rounded-full bg-white shrink-0">
-                                                                        <FaAirbnb className="size-2.5 text-rose-500" />
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="rounded bg-white/25 px-1 py-px text-[8px] font-bold uppercase tracking-wider leading-none">Beds24</span>
-                                                                )
-                                                            )}
+                                                            {isBeds24 && (res.is_airbnb ? <ChannelBadge kind="airbnb-circle" /> : <ChannelBadge kind="beds24" />)}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -549,16 +516,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                         top: barCenter,
                                                         transform: "translateY(-50%)",
                                                         clipPath: getBarClipPath(startsBefore, endsAfter),
-                                                        background: isAirbnb
-                                                            ? 'repeating-linear-gradient(45deg, #ffe4e6, #ffe4e6 6px, #fecdd3 6px, #fecdd3 12px)'
-                                                            : 'repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 6px, #e2e8f0 6px, #e2e8f0 12px)'
+                                                        background: isAirbnb ? AIRBNB_HATCH : BLOCK_HATCH,
                                                     }}
                                                 >
                                                     {isAirbnb ? (
                                                         <div className="flex items-center gap-1.5 overflow-hidden">
-                                                            <div className="size-5 rounded-md bg-rose-500 flex items-center justify-center shrink-0 shadow-sm">
-                                                                <FaAirbnb className="size-3 text-white" />
-                                                            </div>
+                                                            <ChannelBadge kind="airbnb-box" />
                                                             <span className="text-[10px] font-bold text-rose-800 dark:text-rose-200 truncate">
                                                                 Airbnb
                                                             </span>
