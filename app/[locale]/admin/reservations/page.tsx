@@ -19,6 +19,7 @@ import { applyBeds24Lens } from "@/lib/beds24-calendar-lens";
 
 import { ActivityTimeline } from "@/components/admin/ActivityTimeline";
 import { ReservationDetailSheet } from "@/components/admin/ReservationDetailSheet";
+import { Beds24BookingDetailSheet } from "@/components/admin/reservations/Beds24BookingDetailSheet";
 import { MultiCalendarView } from "@/components/admin/reservations/MultiCalendarView";
 import { ReservationListCard } from "@/components/admin/reservations/ReservationListCard";
 import { History } from "lucide-react";
@@ -52,6 +53,8 @@ export default function AdminReservationsPage() {
 
     // Detail Sheet State
     const [detailSheetReservation, setDetailSheetReservation] = useState<any | null>(null);
+    // Beds24 booking detail (external, read-only) — opened from Beds24-source rows
+    const [selectedBeds24Id, setSelectedBeds24Id] = useState<number | null>(null);
 
     // Preview Beds24 no calendário (super_admin; lente local, não persiste)
     const [beds24Preview, setBeds24Preview] = useState(false);
@@ -407,8 +410,17 @@ export default function AdminReservationsPage() {
         return new Date(dateString).toLocaleDateString();
     };
 
+    // Beds24 source lens (super_admin). Shared transform — see lib/beds24-calendar-lens.ts.
+    // Applied to BOTH views: with the toggle off the lens returns `reservations` unchanged.
+    const { reservations: calendarReservations, blockedDates: calendarBlockedDates } = applyBeds24Lens(
+        reservations,
+        blockedDates,
+        beds24Preview && beds24Data ? { bookings: beds24Data.bookings, internalPropertyIds: beds24Data.internalPropertyIds } : null,
+        (b) => ({ ...b, property_name: propertiesMap[b.property_id]?.title || 'Unknown Property' }),
+    );
+
     // Filter Logic
-    const filteredReservations = reservations.filter(res => {
+    const filteredReservations = calendarReservations.filter(res => {
         const query = searchQuery.toLowerCase();
         const guestName = (res.guest_name || '').toLowerCase();
         const guestEmail = (res.guest_email || '').toLowerCase();
@@ -463,14 +475,6 @@ export default function AdminReservationsPage() {
         return 0; // Default no sort if needed
     });
 
-    // Beds24 source lens (super_admin). Shared transform — see lib/beds24-calendar-lens.ts.
-    const { reservations: calendarReservations, blockedDates: calendarBlockedDates } = applyBeds24Lens(
-        reservations,
-        blockedDates,
-        beds24Preview && beds24Data ? { bookings: beds24Data.bookings, internalPropertyIds: beds24Data.internalPropertyIds } : null,
-        (b) => ({ ...b, property_name: propertiesMap[b.property_id]?.title || 'Unknown Property' }),
-    );
-
     return (
         <div className="space-y-10 pb-20">
             {/* Header */}
@@ -480,7 +484,7 @@ export default function AdminReservationsPage() {
                     <p className="text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle')}</p>
                 </div>
                 <div className="flex gap-3">
-                    {view === 'calendar' && role === 'super_admin' && (
+                    {role === 'super_admin' && (
                         <div className="flex items-center gap-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 transition-colors duration-300">
                             <span className="pl-2 text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t('dataSource')}</span>
                             <button
@@ -816,8 +820,10 @@ export default function AdminReservationsPage() {
                                 const today = startOfDay(new Date());
                                 
                                 // Determine effective status purely for UI
-                                let effectiveStatus = reservation.status;
-                                if (!reservation.is_manual_block && reservation.status === 'confirmed') {
+                                // Beds24 bookings carry 'confirmed' | 'new'; treat 'new' as confirmed
+                                // so the date-derived badge applies instead of the default fallback.
+                                let effectiveStatus = reservation.is_beds24 && reservation.status === 'new' ? 'confirmed' : reservation.status;
+                                if (!reservation.is_manual_block && effectiveStatus === 'confirmed') {
                                     const checkInDate = startOfDay(new Date(reservation.check_in));
                                     const checkOutDate = startOfDay(new Date(reservation.check_out));
                                     
@@ -832,14 +838,16 @@ export default function AdminReservationsPage() {
                                 <tr
                                     key={reservation.id}
                                     onClick={() => {
-                                        if (!reservation.is_manual_block) {
+                                        if (reservation.is_beds24) {
+                                            setSelectedBeds24Id(reservation.beds24_booking_id);
+                                        } else if (!reservation.is_manual_block) {
                                             setDetailSheetReservation(reservation);
                                         }
                                     }}
                                     className={cn(
                                         "group transition-all border-b border-[#f5f5f5] dark:border-admin-dark-border relative",
-                                        !reservation.is_manual_block && "cursor-pointer",
-                                        detailSheetReservation?.id === reservation.id
+                                        (!reservation.is_manual_block || reservation.is_beds24) && "cursor-pointer",
+                                        detailSheetReservation?.id === reservation.id || (reservation.is_beds24 && selectedBeds24Id === reservation.beds24_booking_id)
                                             ? "bg-gold-100/50 dark:bg-gold-500/10 shadow-[inset_4px_0_0_0_#c5a059]"
                                             : "hover:bg-[#fafafa]/50 dark:hover:bg-admin-dark-bg/50"
                                     )}
@@ -945,6 +953,9 @@ export default function AdminReservationsPage() {
                                         )}
                                     </td>
                                     <td className="px-8 py-6 text-right font-medium relative" onClick={(e) => e.stopPropagation()}>
+                                        {reservation.is_beds24 ? (
+                                            <span className="text-[#a3a3a3] dark:text-admin-dark-text-secondary font-semibold text-xs px-3">-</span>
+                                        ) : (
                                         <button
                                             id={`menu-trigger-${reservation.id}`}
                                             onClick={(e) => {
@@ -955,6 +966,7 @@ export default function AdminReservationsPage() {
                                         >
                                             <MoreHorizontal className="size-5" />
                                         </button>
+                                        )}
 
                                         {/* Dropdown Menu */}
                                         {openMenuId === reservation.id && (role === 'admin' || role === 'super_admin') && (
@@ -1056,7 +1068,7 @@ export default function AdminReservationsPage() {
                             t={t}
                             formatDate={formatDate}
                             isNew={isNew}
-                            onOpenDetail={() => setDetailSheetReservation(reservation)}
+                            onOpenDetail={() => reservation.is_beds24 ? setSelectedBeds24Id(reservation.beds24_booking_id) : setDetailSheetReservation(reservation)}
                             onOpenMenu={() => setOpenMenuId(openMenuId === reservation.id ? null : reservation.id)}
                         />
                     ))}
@@ -1149,6 +1161,11 @@ export default function AdminReservationsPage() {
                 reservation={detailSheetReservation}
                 onClose={() => setDetailSheetReservation(null)}
                 onRefresh={fetchData}
+            />
+            {/* Beds24 booking detail (external, read-only) */}
+            <Beds24BookingDetailSheet
+                beds24BookingId={selectedBeds24Id}
+                onClose={() => setSelectedBeds24Id(null)}
             />
         </div>
     );
