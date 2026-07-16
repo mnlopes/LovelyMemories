@@ -13,6 +13,7 @@ import {
 import { decide } from '@/lib/ai-decision';
 import { FACT_TOPICS } from '@/lib/ai-knowledge';
 import { messagesMatch } from '@/lib/ai-message-match';
+import { buildCardFallback } from '@/lib/ai-card-meta';
 
 /**
  * Server actions do inbox de IA (transporte Beds24).
@@ -1009,6 +1010,7 @@ type DecisionCard = {
     rowId: string; reservationId: string; guestName: string | null;
     propertyName: string | null; incomingMessage: string; draft: string | null;
     decision: string | null; createdAt: string; checkIn: string | null; checkOut: string | null;
+    cardTitle: string; cardSummary: string; cardWhy: string | null;
 };
 
 export async function getDecisionFeed(): Promise<DecisionCard[]> {
@@ -1016,7 +1018,7 @@ export async function getDecisionFeed(): Promise<DecisionCard[]> {
     const supabase = await getSupabaseAdmin();
     const { data: rows } = await supabase
         .from('ai_message_log')
-        .select('id, reservation_ref, guest_name, property_code, incoming_message, ai_draft, decision, created_at')
+        .select('id, reservation_ref, guest_name, property_code, incoming_message, ai_draft, decision, created_at, card_title, card_summary, card_why')
         .eq('status', 'draft')
         // exclui rows legacy Hospitable (reservation_ref UUID) — só refs numéricas Beds24
         .not('reservation_ref', 'like', '%-%')
@@ -1031,6 +1033,9 @@ export async function getDecisionFeed(): Promise<DecisionCard[]> {
     const byRef = new Map((convs ?? []).map((c) => [c.reservation_id as string, c]));
     return rows.map((r) => {
         const conv = byRef.get(r.reservation_ref as string);
+        const fb = (r.card_title && r.card_summary)
+            ? null
+            : buildCardFallback((r.guest_name as string | null) ?? null, r.incoming_message as string);
         return {
             rowId: r.id as string,
             reservationId: r.reservation_ref as string,
@@ -1042,6 +1047,9 @@ export async function getDecisionFeed(): Promise<DecisionCard[]> {
             createdAt: r.created_at as string,
             checkIn: (conv?.check_in as string | null) ?? null,
             checkOut: (conv?.check_out as string | null) ?? null,
+            cardTitle: (r.card_title as string | null) ?? fb!.title,
+            cardSummary: (r.card_summary as string | null) ?? fb!.summary,
+            cardWhy: (r.card_why as string | null) ?? (fb ? fb.why : null),
         };
     });
 }

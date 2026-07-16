@@ -186,39 +186,65 @@ async function handleGuestMessage(
         } catch (e) {
             console.error("[bot-bridge] auto-send failed:", e);
         }
-        await supabase.from("ai_message_log").update(sendOk ? {
-            status: "sent",
-            sent_message: decision.reply,
-            decision: "auto_sent",
-            knowledge_citation: decision.citation,
-            auto_sent_at: new Date().toISOString(),
-            sent_at: new Date().toISOString(),
-        } : {
+        if (sendOk) {
+            await supabase.from("ai_message_log").update({
+                status: "sent",
+                sent_message: decision.reply,
+                decision: "auto_sent",
+                knowledge_citation: decision.citation,
+                auto_sent_at: new Date().toISOString(),
+                sent_at: new Date().toISOString(),
+            }).eq("id", row.id);
+            return;
+        }
+
+        // Auto-send falhou → cai na fila humana; a meta do cartão só compensa calcular aqui
+        // (nunca no ramo de sucesso, para não gastar chamada LLM à toa).
+        const { generateCardMeta } = await import("@/lib/ai-card-meta");
+        const cardMeta = await generateCardMeta({
+            guestMessage: msg.message!,
+            draft: decision.reply,
+            guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
+            propertyName: prop?.name ?? null,
+        });
+        await supabase.from("ai_message_log").update({
             status: "draft",
             ai_draft: decision.reply,
             decision: "needs_human",
             error: "auto-send failed",
+            card_title: cardMeta?.title ?? null,
+            card_summary: cardMeta?.summary ?? null,
+            card_why: cardMeta?.why ?? null,
         }).eq("id", row.id);
-        if (!sendOk) {
-            // Push "há decisão nova" (fallback email lá dentro) — nunca lança.
-            const { notifyNewDecision } = await import("@/lib/push");
-            await notifyNewDecision({
-                guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
-                propertyName: prop?.name ?? null,
-                preview: msg.message!,
-            });
-        }
+        // Push "há decisão nova" (fallback email lá dentro) — nunca lança.
+        const { notifyNewDecision } = await import("@/lib/push");
+        await notifyNewDecision({
+            guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
+            propertyName: prop?.name ?? null,
+            preview: msg.message!,
+        });
         return;
     }
 
     // Modo 'drafts', ou needs_human em qualquer modo → fila humana com draft
+    const draftText = decision.action === "auto_send" ? decision.reply : decision.draft;
+    const { generateCardMeta } = await import("@/lib/ai-card-meta");
+    const cardMeta = await generateCardMeta({
+        guestMessage: msg.message!,
+        draft: draftText,
+        guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
+        propertyName: prop?.name ?? null,
+    });
     await supabase.from("ai_message_log").update({
         status: "draft",
-        ai_draft: decision.action === "auto_send" ? decision.reply : decision.draft,
+        ai_draft: draftText,
         decision: decision.action === "needs_human" && decision.reason.startsWith("hard_rule")
             ? "hard_rule"
             : "needs_human",
         knowledge_citation: decision.action === "auto_send" ? decision.citation : null,
+        card_title: cardMeta?.title ?? null,
+        card_summary: cardMeta?.summary ?? null,
+        card_why: cardMeta?.why ?? null,
     }).eq("id", row.id);
 
     // Push "há decisão nova" (fallback email lá dentro) — nunca lança.

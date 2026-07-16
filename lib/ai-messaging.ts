@@ -467,14 +467,16 @@ function shouldFallover(err: unknown): boolean {
 }
 
 /**
- * Calls the LLM and returns the drafted reply text. Does not send anything.
- *
- * Resilience: transient upstream errors (503/overloaded/rate limit) are retried with backoff;
- * if a provider is still down, it falls over to the other provider when that key is present
- * (so with both keys set, an outage on one is covered by the other). Within Gemini it also tries
- * pinned fallback models. Throws only if every option fails — the caller leaves it for a human.
+ * Shared chain/retry/fallover driver: tries OpenAI (with retry) or the Gemini chain (which does
+ * its own per-model retry), in the DB/env-resolved provider order, falling over to the other
+ * provider on transient/model errors. Used by both draftReply() and completeText() so the two
+ * share identical resilience behavior — only the underlying provider calls differ.
  */
-export async function draftReply(ctx: DraftContext): Promise<string> {
+async function runProviderChain(
+    tryOpenAI: () => Promise<string | undefined>,
+    tryGemini: () => Promise<string | undefined>,
+    emptyResultMessage: string,
+): Promise<string> {
     const primary = await resolveMessagingProvider();
     const order: AIProvider[] = primary === "openai" ? ["openai", "gemini"] : ["gemini", "openai"];
     const hasKey = (p: AIProvider) => (p === "openai" ? !!process.env.OPENAI_API_KEY : !!process.env.GEMINI_API_KEY);
@@ -485,9 +487,9 @@ export async function draftReply(ctx: DraftContext): Promise<string> {
     for (let i = 0; i < chain.length; i++) {
         const p = chain[i];
         try {
-            const draft = p === "gemini" ? await draftWithGeminiChain(ctx) : await withRetry(() => draftWithOpenAI(ctx));
-            if (draft) return draft;
-            lastErr = new Error("The model returned an empty draft.");
+            const result = p === "gemini" ? await tryGemini() : await withRetry(tryOpenAI);
+            if (result) return result;
+            lastErr = new Error(emptyResultMessage);
         } catch (err) {
             lastErr = err;
             const isLast = i === chain.length - 1;
@@ -495,20 +497,62 @@ export async function draftReply(ctx: DraftContext): Promise<string> {
             console.warn(`[ai-messaging] ${p} unavailable, falling over to ${chain[i + 1]}:`, err instanceof Error ? err.message : err);
         }
     }
-    throw lastErr ?? new Error("The model returned an empty draft.");
+    throw lastErr ?? new Error(emptyResultMessage);
 }
 
-async function draftWithOpenAI(ctx: DraftContext): Promise<string | undefined> {
+/**
+ * Calls the LLM and returns the drafted reply text. Does not send anything.
+ *
+ * Resilience: transient upstream errors (503/overloaded/rate limit) are retried with backoff;
+ * if a provider is still down, it falls over to the other provider when that key is present
+ * (so with both keys set, an outage on one is covered by the other). Within Gemini it also tries
+ * pinned fallback models. Throws only if every option fails — the caller leaves it for a human.
+ */
+export async function draftReply(ctx: DraftContext): Promise<string> {
+    return runProviderChain(
+        () => draftWithOpenAI(ctx),
+        () => draftWithGeminiChain(ctx),
+        "The model returned an empty draft.",
+    );
+}
+
+/**
+ * Generic LLM completion (system + user text in, text out) sharing draftReply()'s exact
+ * provider order / retry / fallover chain — used for lightweight post-decision calls (e.g.
+ * card metadata) that don't need the full DraftContext (property/reservation/history) assembly.
+ * Throws on total failure — callers that must never throw (e.g. generateCardMeta) catch it.
+ */
+export async function completeText(system: string, user: string): Promise<string> {
+    return runProviderChain(
+        () => completeWithOpenAI(system, user),
+        () => completeWithGeminiChain(system, user),
+        "The model returned an empty response.",
+    );
+}
+
+/** Raw OpenAI chat-completions call — same endpoint/params for both draftReply and completeText. */
+async function callOpenAIChat(messages: ChatMessage[]): Promise<string | undefined> {
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error("Missing OPENAI_API_KEY. Set it in .env.local to draft AI replies.");
 
     const openai = new OpenAI({ apiKey: key });
     const response = await openai.chat.completions.create({
         model: OPENAI_MODEL,
-        messages: buildMessages(ctx),
+        messages,
         temperature: 0.6,
     });
     return response.choices[0]?.message?.content?.trim();
+}
+
+async function draftWithOpenAI(ctx: DraftContext): Promise<string | undefined> {
+    return callOpenAIChat(buildMessages(ctx));
+}
+
+async function completeWithOpenAI(system: string, user: string): Promise<string | undefined> {
+    return callOpenAIChat([
+        { role: "system", content: system },
+        { role: "user", content: user },
+    ]);
 }
 
 /** Tries the configured Gemini model, then pinned fallbacks, retrying transient errors on each. */
@@ -527,16 +571,44 @@ async function draftWithGeminiChain(ctx: DraftContext): Promise<string | undefin
     throw lastErr;
 }
 
-async function draftWithGemini(ctx: DraftContext, modelName: string): Promise<string | undefined> {
+/** Same Gemini model/fallback chain as draftWithGeminiChain, for the raw system+user text call. */
+async function completeWithGeminiChain(system: string, user: string): Promise<string | undefined> {
+    const models = [GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS].filter((m, i, a) => a.indexOf(m) === i);
+    let lastErr: unknown;
+    for (let i = 0; i < models.length; i++) {
+        try {
+            return await withRetry(() => completeWithGemini(system, user, models[i]));
+        } catch (err) {
+            lastErr = err;
+            if (!shouldFallover(err) || i === models.length - 1) throw err;
+            console.warn(`[ai-messaging] Gemini model ${models[i]} unavailable, trying ${models[i + 1]}`);
+        }
+    }
+    throw lastErr;
+}
+
+/** Raw Gemini call shared by draftWithGemini and completeWithGemini — same model/generation config. */
+async function callGemini(
+    systemInstruction: string,
+    history: { role: "user" | "model"; parts: { text: string }[] }[],
+    userMessage: string,
+    modelName: string,
+): Promise<string | undefined> {
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("Missing GEMINI_API_KEY. Set it in .env.local to draft AI replies.");
 
     const genAI = new GoogleGenerativeAI(key);
     const model = genAI.getGenerativeModel({
         model: modelName,
-        systemInstruction: buildSystemPrompt(ctx),
+        systemInstruction,
         generationConfig: { temperature: 0.6 },
     });
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessage(userMessage);
+    return result.response.text().trim();
+}
+
+async function draftWithGemini(ctx: DraftContext, modelName: string): Promise<string | undefined> {
     // Gemini history must start with a user turn; guest = user, host = model. Most threads open
     // with OUR scheduled welcome message (a host/model turn), which Gemini rejects outright
     // ("First content should be with role 'user'") — drop leading host turns until the first
@@ -546,7 +618,9 @@ async function draftWithGemini(ctx: DraftContext, modelName: string): Promise<st
         parts: [{ text: m.content }],
     }));
     while (history.length && history[0].role !== "user") history.shift();
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessage(ctx.guestMessage);
-    return result.response.text().trim();
+    return callGemini(buildSystemPrompt(ctx), history, ctx.guestMessage, modelName);
+}
+
+async function completeWithGemini(system: string, user: string, modelName: string): Promise<string | undefined> {
+    return callGemini(system, [], user, modelName);
 }
