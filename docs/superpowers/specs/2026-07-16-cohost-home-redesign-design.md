@@ -14,7 +14,7 @@
 
 ## 1. Cartões com resumo inteligente (fundação de dados)
 
-- `decide()` (lib/ai-decision.ts) devolve também `card: { title, summary, why }` — título 2–4 palavras no idioma do admin-side PT (ex. "Early check-in + Wi-Fi"), summary ≤2 frases (situação + o que o draft propõe), why 1 frase. Mesmo call LLM (campos extra no JSON de resposta), não é chamada adicional.
+- Após o `decide()`, uma função nova `generateCardMeta()` produz `{ title, summary, why }` — título 2–4 palavras em PT (ex. "Early check-in + Wi-Fi"), summary ≤2 frases (situação + o que o draft propõe), why 1 frase. **Chamada LLM leve separada** (decisão de implementação 2026-07-16: o draft tem 2 caminhos internos — knowledge outcome e draftReply de escalação — e alterar o formato de output do draft principal arriscava a qualidade; a chamada extra é barata e o fallback heurístico cobre qualquer falha). Nunca no caminho de auto-send com sucesso.
 - Migração manual: `ai_message_log` + 3 colunas `card_title text, card_summary text, card_why text`. Bridge guarda-as ao enfileirar (queue path e auto-send falhado).
 - **Fallback puro** (função testável): quando null (drafts antigos, hard_rule sem LLM) → title = primeira linha da mensagem truncada (~40 chars), summary = preview da mensagem, why = null (secção esconde-se). O feed NUNCA depende do LLM para renderizar.
 - `getDecisionFeed()` devolve os 3 campos novos (com fallback aplicado no server).
