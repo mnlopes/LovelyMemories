@@ -215,9 +215,11 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             const dayAgoISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
             const [pendingRes, failedRes, staleRes, allDraftsRes] = await Promise.all([
+                // exclui rows legacy Hospitable (reservation_ref UUID)
                 admin.from('ai_message_log')
                     .select('id, guest_name, incoming_message, card_title, created_at, reservation_ref')
                     .eq('status', 'draft')
+                    .not('reservation_ref', 'like', '%-%')
                     .order('created_at', { ascending: false })
                     .limit(3),
                 admin.from('ai_message_log')
@@ -232,9 +234,11 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                     .lt('created_at', dayAgoISO)
                     .order('created_at', { ascending: true })
                     .limit(1),
+                // exclui rows legacy Hospitable (reservation_ref UUID)
                 admin.from('ai_message_log')
                     .select('id, reservation_ref')
-                    .eq('status', 'draft'),
+                    .eq('status', 'draft')
+                    .not('reservation_ref', 'like', '%-%'),
             ]);
 
             const pending = (pendingRes.data ?? []).map((row) => ({
