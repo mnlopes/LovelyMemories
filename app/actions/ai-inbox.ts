@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { format } from 'date-fns';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { beds24Request } from '@/lib/beds24/client';
 import {
@@ -1087,4 +1088,74 @@ export async function removePushSubscription(endpoint: string): Promise<{ ok: bo
     const supabase = await getSupabaseAdmin();
     const { error } = await supabase.from('cohost_push_subscriptions').delete().eq('endpoint', endpoint);
     return { ok: !error };
+}
+
+// ── Co-Host: concluídas recentemente + contexto de saudação ──────────────────
+
+type RecentCompletedItem = {
+    rowId: string; guestName: string | null; propertyName: string | null; sentAt: string; auto: boolean;
+};
+
+export async function getRecentCompleted(): Promise<RecentCompletedItem[]> {
+    await assertAdmin();
+    const supabase = await getSupabaseAdmin();
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+        .from('ai_message_log')
+        .select('id, guest_name, property_code, sent_at, decision')
+        .eq('status', 'sent')
+        .gte('sent_at', since)
+        .not('reservation_ref', 'like', '%-%')
+        .order('sent_at', { ascending: false })
+        .limit(10);
+    return (data ?? []).map((r) => ({
+        rowId: r.id as string,
+        guestName: (r.guest_name as string | null) ?? null,
+        propertyName: (r.property_code as string | null) ?? null,
+        sentAt: r.sent_at as string,
+        auto: r.decision === 'auto_sent',
+    }));
+}
+
+type CohostContext = {
+    firstName: string; pending: number; staying: number; arrivalsToday: number;
+};
+
+export async function getCohostContext(): Promise<CohostContext> {
+    const user = await assertAdmin();
+    const supabase = await getSupabaseAdmin();
+    const today = format(new Date(), 'yyyy-MM-dd');
+
+    const [profileRes, pendingRes, stayingRes, arrivalsResRes, blockedRes] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle(),
+        supabase.from('ai_message_log')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'draft')
+            .not('reservation_ref', 'like', '%-%'),
+        supabase.from('reservations')
+            .select('id', { count: 'exact', head: true })
+            .in('status', ['confirmed', 'checked-in'])
+            .lte('check_in', today)
+            .gt('check_out', today),
+        supabase.from('reservations')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'confirmed')
+            .eq('check_in', today),
+        supabase.from('blocked_dates')
+            .select('id', { count: 'exact', head: true })
+            .eq('source', 'airbnb_booking')
+            .eq('start_date', today),
+    ]);
+
+    const fullName = (profileRes.data?.full_name as string | null) ?? null;
+    const firstName = fullName?.trim()
+        ? fullName.trim().split(/\s+/)[0]
+        : (user.email ?? '').split('@')[0];
+
+    return {
+        firstName,
+        pending: pendingRes.count ?? 0,
+        staying: stayingRes.count ?? 0,
+        arrivalsToday: (arrivalsResRes.count ?? 0) + (blockedRes.count ?? 0),
+    };
 }
