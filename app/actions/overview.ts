@@ -94,7 +94,7 @@ const STATUS_ORDER: Record<StayStatus, number> = {
 // hífen); refs com hífen são resíduo do fornecedor anterior (Hospitable/UUID).
 const isBeds24Ref = (ref: string | null | undefined): ref is string => !!ref && !ref.includes('-');
 
-export async function getOverviewData(): Promise<OverviewData> {
+export async function getOverviewData(locale: string = 'en'): Promise<OverviewData> {
     let firstNameFallback = '';
     try {
         const { user, profile } = await assertAdmin();
@@ -103,7 +103,6 @@ export async function getOverviewData(): Promise<OverviewData> {
         const today = new Date();
         const todayISO = format(today, 'yyyy-MM-dd');
         const windowEndISO = format(addDays(today, 7), 'yyyy-MM-dd');
-        const locale = 'en'; // getOverviewData não recebe locale (chamador é a Overview do admin, en por omissão)
 
         const admin = await getSupabaseAdmin();
 
