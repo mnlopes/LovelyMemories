@@ -78,14 +78,15 @@ export default async function PropertyEditorPage({
     }
 
     const role = await getCurrentUserRole();
-    const isSuperAdmin = role === "super_admin";
+    // Lente Beds24/preços no calendário da propriedade: super_admin + admin (leitura only).
+    const canUseBeds24Lens = role === "super_admin" || role === "admin";
 
     return (
         <PropertyDetailTabs
             propertyId={id}
             locale={locale}
             isNew={isNew}
-            isSuperAdmin={isSuperAdmin}
+            canUseBeds24Lens={canUseBeds24Lens}
             overview={
                 <PropertyEditorForm
                     isEditing={!isNew}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { CalendarRange, CalendarDays, LayoutGrid } from "lucide-react";
+import { CalendarRange, LayoutGrid } from "lucide-react";
 import { MultiCalendarView } from "@/components/admin/reservations/MultiCalendarView";
 import AnnualCalendarTab from "@/components/admin/properties/AnnualCalendarTab";
 import { usePropertyCalendarData } from "@/components/admin/properties/usePropertyCalendarData";
@@ -13,7 +13,7 @@ import { getBeds24CalendarPreview, type Beds24CalendarPreviewResult } from "@/ap
 
 type CalendarTabView = "timeline" | "monthly" | "annual";
 
-export function PropertyCalendarTab({ propertyId, locale, isSuperAdmin }: { propertyId: string; locale: string; isSuperAdmin: boolean }) {
+export function PropertyCalendarTab({ propertyId, locale, canUseBeds24Lens }: { propertyId: string; locale: string; canUseBeds24Lens: boolean }) {
     const t = useTranslations("AdminReservations.propertyTabs");
     const tc = useTranslations("AdminReservations");
     const router = useRouter();
@@ -45,9 +45,10 @@ export function PropertyCalendarTab({ propertyId, locale, isSuperAdmin }: { prop
         : null;
     const { reservations: calReservations, blockedDates: calBlockedDates } = applyBeds24Lens(reservations, blockedDates, scopedPreview);
 
+    // Só Timeline + Year (a vista Month foi escondida — estava meio partida e redundante;
+    // o código do modo mensal fica no AnnualCalendarTab mas sem ponto de entrada, "para já").
     const segments: [CalendarTabView, string, typeof CalendarRange][] = [
         ["timeline", t("viewTimeline"), CalendarRange],
-        ["monthly", t("viewMonth"), CalendarDays],
         ["annual", t("viewYear"), LayoutGrid],
     ];
 
@@ -67,7 +68,7 @@ export function PropertyCalendarTab({ propertyId, locale, isSuperAdmin }: { prop
                         ))}
                     </select>
                 </div>
-                {isSuperAdmin && (
+                {canUseBeds24Lens && (
                     <div className="flex items-center gap-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1">
                         <span className="pl-2 text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">{tc("dataSource")}</span>
                         <button

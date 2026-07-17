@@ -582,19 +582,14 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
 
                                             return (
                                                 <div key={monthIndex} className="flex flex-col group">
-                                                    <button className="w-full text-left" onClick={() => { setCurrentMonth(new Date(year, monthIndex, 1)); setView("monthly"); }}>
-                                                        <h3 className="text-[12px] font-bold text-[#444] dark:text-admin-dark-text-secondary mb-1.5 capitalize flex items-center gap-1">
-                                                            {format(monthDate, "MMM", { locale: dateLocale })}
-                                                            <span className="opacity-0 group-hover:opacity-100 transition-all duration-150 text-[8px] text-blue-500 font-bold uppercase tracking-wider">
-                                                                View →
-                                                            </span>
-                                                        </h3>
-                                                    </button>
+                                                    {/* Drill-down para a vista Month desativado (Month escondido "para já") */}
+                                                    <h3 className="text-[12px] font-bold text-[#444] dark:text-admin-dark-text-secondary mb-1.5 capitalize flex items-center gap-1">
+                                                        {format(monthDate, "MMM", { locale: dateLocale })}
+                                                    </h3>
 
                                                     <div
-                                                        className="relative w-full cursor-pointer"
+                                                        className="relative w-full"
                                                         style={{ height: rows * ROW_H }}
-                                                        onClick={() => { setCurrentMonth(new Date(year, monthIndex, 1)); setView("monthly"); }}
                                                     >
                                                         {/* Dot grid — past=light, future=dark, today=hidden (handled separately below) */}
                                                         <div className="absolute inset-0 grid grid-cols-7 pointer-events-none">
