@@ -17,6 +17,7 @@
         "reports": "Relatórios",
         "finances": "Finanças",
         "performance": "Desempenho",
+        "more": "Mais",
         "signOut": "Sair"
     },
     "OwnerSidebar": {
@@ -2663,7 +2664,11 @@
         "colCohost": "Co-Host",
         "stOccupied": "Ocupada",
         "stArrivesToday": "Chega hoje",
-        "stFree": "Livre"
+        "stFree": "Livre",
+        "pillStaying": "em estadia",
+        "pillArriving": "chegadas",
+        "pillDeparting": "partidas",
+        "nextArrivalShort": "próx.: {date}"
     },
     "AiMemory": {
         "title": "Memória da propriedade",

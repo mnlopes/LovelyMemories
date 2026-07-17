@@ -17,6 +17,7 @@
         "reports": "Reports",
         "finances": "Finances",
         "performance": "Performance",
+        "more": "More",
         "signOut": "Sign Out"
     },
     "OwnerSidebar": {
@@ -2672,7 +2673,11 @@
         "colCohost": "Co-Host",
         "stOccupied": "Occupied",
         "stArrivesToday": "Arrives today",
-        "stFree": "Free"
+        "stFree": "Free",
+        "pillStaying": "staying",
+        "pillArriving": "arriving",
+        "pillDeparting": "departing",
+        "nextArrivalShort": "next: {date}"
     },
     "AiMemory": {
         "title": "Property memory",

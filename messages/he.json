@@ -48,6 +48,7 @@
         "reports": "דוחות",
         "finances": "כספים",
         "performance": "ביצועים",
+        "more": "עוד",
         "signOut": "התנתק"
     },
     "AdminHeader": {
@@ -1421,7 +1422,11 @@
         "colCohost": "Co-Host",
         "stOccupied": "Occupied",
         "stArrivesToday": "Arrives today",
-        "stFree": "Free"
+        "stFree": "Free",
+        "pillStaying": "staying",
+        "pillArriving": "arriving",
+        "pillDeparting": "departing",
+        "nextArrivalShort": "next: {date}"
     },
     "AiMemory": {
         "title": "זיכרון הנכס",

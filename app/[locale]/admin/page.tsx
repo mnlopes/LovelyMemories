@@ -83,25 +83,40 @@ export default function AdminOverview() {
     };
 
     return (
-        <div className="space-y-16 pb-20">
+        <div className="space-y-8 md:space-y-16 pb-4">
             {/* Header Section */}
             <section>
-                <h2 className="text-3xl font-bold tracking-tight text-admin-text-primary">
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-admin-text-primary">
                     {t(greetingKey, { name })}
                 </h2>
                 <p className="text-admin-text-secondary mt-2 font-medium">
                     {format(new Date(), 'EEEE, d MMM', { locale: dateLocale })}
+                    {/* Desktop: frase de contexto completa; mobile: pills numeradas por baixo. */}
                     {data && (
-                        <>
+                        <span className="hidden md:inline">
                             {" · "}
                             {t("contextLine", {
                                 staying: data.counts.staying,
                                 arrivals: data.counts.arrivalsToday,
                                 departures: data.counts.departuresTomorrow,
                             })}
-                        </>
+                        </span>
                     )}
                 </p>
+                {data && (
+                    <div className="mt-4 grid grid-cols-3 gap-2 md:hidden">
+                        {[
+                            { n: data.counts.staying, label: t("pillStaying"), cls: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" },
+                            { n: data.counts.arrivalsToday, label: t("pillArriving"), cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" },
+                            { n: data.counts.departuresTomorrow, label: t("pillDeparting"), cls: "bg-admin-bg text-admin-text-secondary" },
+                        ].map((s, i) => (
+                            <div key={i} className={`rounded-xl py-2.5 text-center ${s.cls}`}>
+                                <p className="text-lg font-bold leading-none">{s.n}</p>
+                                <p className="mt-1 text-[10px] uppercase tracking-wide font-semibold opacity-80">{s.label}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </section>
 
             {/* Co-Host banner */}
@@ -220,7 +235,39 @@ export default function AdminOverview() {
                 {data === null ? (
                     <div className="h-64 rounded-2xl bg-admin-surface border border-admin-border animate-pulse" />
                 ) : (
-                    <div className="bg-admin-surface rounded-2xl border border-admin-border overflow-hidden shadow-sm transition-colors duration-300 overflow-x-auto">
+                    <>
+                    {/* Mobile: cartões tocáveis (a tabela abaixo é só desktop) */}
+                    <div className="md:hidden flex flex-col gap-2">
+                        {data.properties.map((property) => {
+                            const today = stTodayLabel(property.today);
+                            return (
+                                <Link
+                                    key={property.id}
+                                    href={`/admin/properties/${property.id}`}
+                                    className="flex items-center gap-3 bg-admin-surface rounded-2xl border border-admin-border p-3 shadow-sm active:scale-[0.99] transition-transform"
+                                >
+                                    <div className="size-11 rounded-xl bg-admin-bg bg-cover bg-center shrink-0 border border-admin-border" style={{ backgroundImage: property.image ? `url(${property.image})` : undefined }} />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-admin-text-primary truncate text-sm">{property.title}</p>
+                                        <p className="text-xs text-admin-text-secondary mt-0.5 truncate">
+                                            {property.city ?? '—'}
+                                            {property.nextArrival && ` · ${t("nextArrivalShort", { date: format(new Date(property.nextArrival), 'MMM d') })}`}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1 shrink-0">
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ${today.cls}`}>
+                                            {today.label}
+                                        </span>
+                                        {data.cohost !== null && property.pendingCount > 0 && (
+                                            <span className="text-[10px] font-bold text-[#c5a059]">{t("toReview", { count: property.pendingCount })}</span>
+                                        )}
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+
+                    <div className="hidden md:block bg-admin-surface rounded-2xl border border-admin-border overflow-hidden shadow-sm transition-colors duration-300 overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-admin-border">
@@ -275,6 +322,7 @@ export default function AdminOverview() {
                             </tbody>
                         </table>
                     </div>
+                    </>
                 )}
             </section>
         </div>

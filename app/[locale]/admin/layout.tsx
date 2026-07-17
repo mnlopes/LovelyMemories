@@ -1,4 +1,5 @@
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminBottomNav } from "@/components/admin/AdminBottomNav";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminThemeProvider } from "@/components/admin/AdminThemeProvider";
 import { AdminNavProvider } from "@/components/admin/AdminNavProvider";
@@ -81,12 +82,16 @@ export default async function AdminLayout({
                             {/* Main Content Area */}
                             <main className="flex-1 overflow-y-auto bg-admin-bg flex flex-col">
                                 <AdminHeader user={user} profile={profile} />
-                                <div className="p-4 sm:p-6 lg:p-10 w-full space-y-8 lg:space-y-16">
+                                {/* pb extra no mobile: espaço para a barra de navegação inferior fixa */}
+                                <div className="px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 lg:pt-10 pb-28 lg:pb-10 w-full space-y-8 lg:space-y-16">
                                     <div className="w-full">
                                         {children}
                                     </div>
                                 </div>
                             </main>
+
+                            {/* Barra de navegação inferior (mobile) */}
+                            <AdminBottomNav />
                         </div>
                     </div>
                 </AdminNavProvider>
