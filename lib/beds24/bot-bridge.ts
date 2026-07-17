@@ -162,6 +162,30 @@ async function handleGuestMessage(
         .filter((r) => r.message && (r.source === "guest" || r.source === "host"))
         .map((r) => ({ role: r.source as "guest" | "host", content: r.message as string, at: r.message_time }));
 
+    // Hóspede recorrente: estadias passadas concluídas do mesmo hóspede (nome+apelido),
+    // na mesma propriedade Beds24. Best-effort — 0 em qualquer falha.
+    let previousStays = 0;
+    const first = booking?.firstName ?? null;
+    const last = booking?.lastName ?? null;
+    if (first && last && propertyId) {
+        const todayISO = new Date().toISOString().slice(0, 10);
+        const { data: past } = await supabase
+            .from("beds24_bookings")
+            .select("beds24_booking_id")
+            .eq("beds24_property_id", propertyId)
+            .eq("guest_first_name", first)
+            .eq("guest_last_name", last)
+            .in("status", ["confirmed", "new"])
+            .lt("departure", todayISO)
+            .neq("beds24_booking_id", bookingId);
+        previousStays = past?.length ?? 0;
+    }
+    const status = (booking?.status ?? "").toLowerCase();
+    const isConfirmed = status === "confirmed" || status === "new";
+    const nights = booking?.arrival && booking?.departure
+        ? Math.max(0, Math.round((new Date(booking.departure).getTime() - new Date(booking.arrival).getTime()) / 86400000))
+        : null;
+
     const ctx = await buildContext({
         guestMessage: msg.message!,
         externalPropertyId: propertyId ? String(propertyId) : null,
@@ -169,7 +193,10 @@ async function handleGuestMessage(
             guestName: [booking.firstName, booking.lastName].filter(Boolean).join(" ") || null,
             checkInDate: booking.arrival ?? null,
             checkOutDate: booking.departure ?? null,
-            guests: booking.numAdult ?? null,
+            guests: (booking.numAdult ?? 0) + (booking.numChild ?? 0) || null,
+            nights,
+            isConfirmed,
+            previousStays,
         } : null,
         history,
     });
