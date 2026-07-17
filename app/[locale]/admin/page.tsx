@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Plus, Sparkles } from "lucide-react";
+import { MoreHorizontal, Sparkles } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
@@ -85,29 +85,23 @@ export default function AdminOverview() {
     return (
         <div className="space-y-16 pb-20">
             {/* Header Section */}
-            <section className="flex justify-between items-end">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-admin-text-primary">
-                        {t(greetingKey, { name })}
-                    </h2>
-                    <p className="text-admin-text-secondary mt-2 font-medium">
-                        {format(new Date(), 'EEEE, d MMM', { locale: dateLocale })}
-                        {data && (
-                            <>
-                                {" · "}
-                                {t("contextLine", {
-                                    staying: data.counts.staying,
-                                    arrivals: data.counts.arrivalsToday,
-                                    departures: data.counts.departuresTomorrow,
-                                })}
-                            </>
-                        )}
-                    </p>
-                </div>
-                <button className="px-5 py-2.5 bg-admin-surface text-admin-text-primary border border-admin-border rounded text-sm font-semibold hover:bg-admin-bg transition-all flex items-center gap-2 shadow-sm">
-                    <Plus className="size-4" />
-                    {t("newProperty")}
-                </button>
+            <section>
+                <h2 className="text-3xl font-bold tracking-tight text-admin-text-primary">
+                    {t(greetingKey, { name })}
+                </h2>
+                <p className="text-admin-text-secondary mt-2 font-medium">
+                    {format(new Date(), 'EEEE, d MMM', { locale: dateLocale })}
+                    {data && (
+                        <>
+                            {" · "}
+                            {t("contextLine", {
+                                staying: data.counts.staying,
+                                arrivals: data.counts.arrivalsToday,
+                                departures: data.counts.departuresTomorrow,
+                            })}
+                        </>
+                    )}
+                </p>
             </section>
 
             {/* Co-Host banner */}
