@@ -59,24 +59,19 @@ export function DecisionDetailSheet({ card, onClose, onApprove, onDismiss, onOpe
                             [t("profileStay"), `${fmt(card.checkIn)} → ${fmt(card.checkOut)}`],
                             [t("profileProperty"), card.propertyName ?? "—"],
                         ].map(([k, v]) => (
-                            <div key={k} className="flex justify-between border-b border-[#f5f5f5] px-4 py-2.5 text-[13px] last:border-b-0 dark:border-white/10">
-                                <span className="font-semibold text-[#a3a3a3]">{k}</span>
-                                <span className="font-bold text-[#171717] dark:text-white">{v}</span>
+                            <div key={k} className="flex justify-between gap-4 border-b border-[#f5f5f5] px-4 py-2.5 text-[13px] last:border-b-0 dark:border-white/10">
+                                <span className="shrink-0 font-semibold text-[#a3a3a3]">{k}</span>
+                                <span className="min-w-0 text-right font-bold text-[#171717] dark:text-white">{v}</span>
                             </div>
                         ))}
                     </div>
-                    {card.cardWhy && (
-                        <div className="rounded-2xl bg-[#f7f1e6] p-4 text-[12.5px] text-[#171717] dark:bg-[#2a2517] dark:text-white/90">
-                            <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-[#c5a059]">{t("whyMatters")}</p>
-                            {card.cardWhy}
-                        </div>
-                    )}
-                    <div className="rounded-2xl bg-[#fafafa] p-4 text-[13px] dark:bg-white/5">
-                        <div className="mb-1 flex items-baseline justify-between gap-2">
+                    {/* Mensagem do hóspede = herói do sheet (fundo creme = "lê isto") */}
+                    <div className="rounded-2xl bg-[#f7f1e6] p-4 dark:bg-[#2a2517]">
+                        <div className="mb-1.5 flex items-baseline justify-between gap-2">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t("guestMessage")}</p>
                             <p className="shrink-0 text-[10px] font-semibold text-[#a3a3a3]">{format(new Date(card.createdAt), "d MMM · HH:mm")}</p>
                         </div>
-                        <p className="whitespace-pre-wrap text-[#171717] dark:text-white/90">{card.incomingMessage}</p>
+                        <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-[#171717] dark:text-white/90">{card.incomingMessage}</p>
                     </div>
                     <div className="rounded-2xl border-2 border-dashed border-[#e5e5e5] p-4 dark:border-white/10">
                         <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#c5a059]">{t("draftLabel")}</p>
