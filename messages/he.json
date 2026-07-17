@@ -1464,7 +1464,16 @@
         "emptyCalendar": "No properties with gaps.",
         "direct": "Direct",
         "legendGap": "orphan night (gap)",
-        "legendBooked": "booked"
+        "legendBooked": "booked",
+        "windowDays": "{count} days",
+        "subtitleShort": "orphan nights between bookings",
+        "emptySubDays": "No short gaps between bookings in the next {count} days.",
+        "popFreeNights": "Free nights",
+        "popOut": "Checkout",
+        "popNextArrival": "Next arrival",
+        "popOpenCalendar": "Open calendar",
+        "popMakeBookable": "Make bookable · soon",
+        "popMakeBookableSoon": "Coming in phase 2: adjust min-stay so these nights become bookable."
     },
     "AiMemory": {
         "title": "זיכרון הנכס",

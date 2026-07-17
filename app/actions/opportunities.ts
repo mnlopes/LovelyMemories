@@ -14,7 +14,6 @@ import { findGaps, type Interval } from '@/lib/opportunities';
  */
 
 const OPP_ROLES = ['super_admin', 'admin'];
-const WINDOW_DAYS = 60;
 const MAX_GAP_NIGHTS = 3;
 
 async function assertAdmin() {
@@ -91,10 +90,12 @@ function empty(from: string, to: string): OpportunitiesData {
     return { windowFrom: from, windowTo: to, opportunities: [], rows: [] };
 }
 
-export async function getOpportunities(locale: string = 'en'): Promise<OpportunitiesData> {
+// Janela de 30 dias por defeito (menos ruído); 60 carrega mais a pedido.
+export async function getOpportunities(locale: string = 'en', windowDays: number = 30): Promise<OpportunitiesData> {
+    const days = windowDays === 60 ? 60 : 30;
     const today = new Date();
     const todayISO = format(today, 'yyyy-MM-dd');
-    const windowEndISO = format(addDays(today, WINDOW_DAYS), 'yyyy-MM-dd');
+    const windowEndISO = format(addDays(today, days), 'yyyy-MM-dd');
 
     try {
         await assertAdmin();

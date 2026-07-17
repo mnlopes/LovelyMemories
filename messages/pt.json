@@ -2706,7 +2706,16 @@
         "emptyCalendar": "Sem casas com gaps.",
         "direct": "Direta",
         "legendGap": "noite órfã (gap)",
-        "legendBooked": "reservado"
+        "legendBooked": "reservado",
+        "windowDays": "{count} dias",
+        "subtitleShort": "noites órfãs entre reservas",
+        "emptySubDays": "Sem buracos curtos entre reservas nos próximos {count} dias.",
+        "popFreeNights": "Noites livres",
+        "popOut": "Saída",
+        "popNextArrival": "Próxima chegada",
+        "popOpenCalendar": "Abrir no calendário",
+        "popMakeBookable": "Tornar reservável · em breve",
+        "popMakeBookableSoon": "Na fase 2: ajustar o min-stay para estas noites ficarem reserváveis."
     },
     "AiMemory": {
         "title": "Memória da propriedade",

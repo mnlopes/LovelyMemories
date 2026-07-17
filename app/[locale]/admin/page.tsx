@@ -26,9 +26,10 @@ export default function AdminOverview() {
     // Desktop: filtro da tabela Property status + estado do dismiss no rail Co-Host.
     const [propFilter, setPropFilter] = useState<"all" | "free" | "arriving" | "attention">("all");
     const [dismissing, setDismissing] = useState<string | null>(null);
-    // Desktop: modo Opportunities (switch no header) + dados dos gaps (60 dias).
+    // Desktop: modo Opportunities (switch no header) + dados dos gaps (janela 30/60 dias).
     const [oppMode, setOppMode] = useState(false);
     const [oppData, setOppData] = useState<OpportunitiesData | null>(null);
+    const [oppDays, setOppDays] = useState<30 | 60>(30);
 
     const handleDismiss = async (rowId: string) => {
         setDismissing(rowId);
@@ -67,8 +68,12 @@ export default function AdminOverview() {
     useEffect(() => {
         if (!isAuthorized) return;
         getOverviewData(locale).then(setData);
-        getOpportunities(locale).then(setOppData);
     }, [isAuthorized, locale]);
+
+    useEffect(() => {
+        if (!isAuthorized) return;
+        getOpportunities(locale, oppDays).then(setOppData);
+    }, [isAuthorized, locale, oppDays]);
 
     if (isAuthorized === null) {
         return (
@@ -327,7 +332,7 @@ export default function AdminOverview() {
                 <div className="min-w-0 space-y-5">
                     {oppMode ? (
                         oppData ? (
-                            <OpportunitiesView data={oppData} locale={locale} />
+                            <OpportunitiesView data={oppData} locale={locale} days={oppDays} onDaysChange={setOppDays} />
                         ) : (
                             <div className="h-96 rounded-2xl bg-admin-surface border border-admin-border animate-pulse" />
                         )

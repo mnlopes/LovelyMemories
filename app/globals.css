@@ -557,3 +557,14 @@ html,
     display: none !important;
     /* Simplify: remove default arrow */
 }
+/* Opportunities gap heartbeat — borda dourada a "respirar" para sinalizar a noite órfã */
+@keyframes gap-heartbeat {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); border-color: rgba(197, 160, 89, 0.45); }
+    50% { box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.13); border-color: rgba(197, 160, 89, 1); }
+}
+.gap-heartbeat { animation: gap-heartbeat 2.1s ease-in-out infinite; }
+@keyframes gap-heartbeat-icon {
+    0%, 100% { opacity: 0.55; transform: scale(0.92); }
+    50% { opacity: 1; transform: scale(1); }
+}
+.gap-heartbeat-icon { animation: gap-heartbeat-icon 2.1s ease-in-out infinite; }
