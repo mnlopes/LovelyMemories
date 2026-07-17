@@ -13,7 +13,8 @@ import { deriveStayStatus, derivePropertyToday, type StayStatus } from '@/lib/ov
  * nunca lança — em erro devolve uma estrutura vazia (mas válida).
  */
 
-const OVERVIEW_ROLES = ['super_admin'];
+// Overview aberto a super_admin + admin (2026-07-17).
+const OVERVIEW_ROLES = ['super_admin', 'admin'];
 
 async function assertAdmin() {
     const cookieStore = await cookies();
@@ -43,9 +44,9 @@ type CohostAlert = { kind: 'send_failed' | 'stale_draft'; label: string } | null
 type OverviewData = {
     firstName: string;
     counts: { staying: number; arrivalsToday: number; departuresTomorrow: number; pending: number };
-    cohost: { pending: { rowId: string; title: string }[]; alert: { kind: 'send_failed' | 'stale_draft'; label: string } | null } | null;
-    stays: { guestName: string; propertyTitle: string; propertyImage: string | null; checkIn: string; checkOut: string; guests: number | null; status: 'arrives_today' | 'departs_tomorrow' | 'staying' | 'arrives_soon'; source: 'direct' | 'airbnb' }[];
-    properties: { id: string; title: string; city: string | null; image: string | null; today: 'occupied' | 'arrives_today' | 'free'; nextArrival: string | null; pendingCount: number }[];
+    cohost: { pending: { rowId: string; title: string; guestName: string | null; message: string; propertyCode: string | null; createdAt: string }[]; alert: { kind: 'send_failed' | 'stale_draft'; label: string } | null } | null;
+    stays: { guestName: string; propertyTitle: string; propertyImage: string | null; checkIn: string; checkOut: string; guests: number | null; status: 'arrives_today' | 'departs_tomorrow' | 'staying' | 'arrives_soon'; source: 'direct' | 'airbnb'; sameDayTurn: boolean }[];
+    properties: { id: string; title: string; city: string | null; image: string | null; today: 'occupied' | 'arrives_today' | 'free'; nextArrival: string | null; guestInHouse: { name: string; checkOut: string } | null; pendingCount: number }[];
 };
 
 // Estrutura vazia mas válida — usada em qualquer falha (o contrato é nunca lançar).
@@ -193,10 +194,17 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             pending: 0, // preenchido abaixo (secção co-host), best-effort
         };
 
+        // Same-day turn: uma saída cuja propriedade recebe uma chegada no MESMO dia.
+        // (Calculável já com os dados existentes; "cleaning booked"/"gap nights" ficam
+        // para o futuro — não há dados de limpeza nem query de calendário aqui.)
+        const arrivalKeys = new Set(allStays.map((s) => `${s.propertyId}|${s.checkIn}`));
+
+        // Cap 20 (não 8): o desktop divide em listas de chegadas/partidas; o carrossel
+        // mobile faz slice(0,8) no cliente para manter o comportamento anterior.
         const stays = withStatus
             .slice()
             .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || a.checkIn.localeCompare(b.checkIn))
-            .slice(0, 8)
+            .slice(0, 20)
             .map((s) => {
                 const prop = propertyMap.get(s.propertyId);
                 return {
@@ -208,6 +216,7 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                     guests: s.guests,
                     status: s.status,
                     source: s.source,
+                    sameDayTurn: s.status === 'departs_tomorrow' && arrivalKeys.has(`${s.propertyId}|${s.checkOut}`),
                 };
             });
 
@@ -225,6 +234,10 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             const upcoming = propStays
                 .filter((s) => s.checkIn >= todayISO)
                 .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+            // Hóspede em casa esta noite (check-in ≤ hoje < check-out) — para a coluna
+            // "Guest in house" do desktop; nome vazio = bloco Airbnb sem nome (a UI
+            // mostra a etiqueta genérica).
+            const inHouse = propStays.find((s) => s.checkIn <= todayISO && s.checkOut > todayISO) ?? null;
             return {
                 id: p.id as string,
                 title: prop.title,
@@ -232,6 +245,7 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                 image: prop.image,
                 today: derivePropertyToday(propStays.map((s) => ({ check_in: s.checkIn, check_out: s.checkOut })), todayISO),
                 nextArrival: upcoming[0]?.checkIn ?? null,
+                guestInHouse: inHouse ? { name: inHouse.guestName, checkOut: inHouse.checkOut } : null,
                 pendingCount: 0, // preenchido abaixo (secção co-host), best-effort
             };
         });
@@ -246,7 +260,7 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             const [pendingRes, failedRes, staleRes, allDraftsRes] = await Promise.all([
                 // exclui rows legacy Hospitable (reservation_ref UUID)
                 admin.from('ai_message_log')
-                    .select('id, guest_name, incoming_message, card_title, created_at, reservation_ref')
+                    .select('id, guest_name, incoming_message, card_title, created_at, reservation_ref, property_code')
                     .eq('status', 'draft')
                     .not('reservation_ref', 'like', '%-%')
                     .order('created_at', { ascending: false })
@@ -273,6 +287,10 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             const pending = (pendingRes.data ?? []).map((row) => ({
                 rowId: row.id as string,
                 title: (row.card_title as string | null) ?? buildCardFallback(row.guest_name as string | null, row.incoming_message as string).title,
+                guestName: (row.guest_name as string | null) ?? null,
+                message: (row.incoming_message as string) ?? '',
+                propertyCode: (row.property_code as string | null) ?? null,
+                createdAt: row.created_at as string,
             }));
 
             const alert: CohostAlert =

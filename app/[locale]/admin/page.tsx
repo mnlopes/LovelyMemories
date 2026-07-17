@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Sparkles } from "lucide-react";
+import { MoreHorizontal, Sparkles, AlertTriangle, LogIn, LogOut } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Link } from "@/i18n/routing";
 import { getOverviewData } from "@/app/actions/overview";
+import { dismissDraft } from "@/app/actions/ai-inbox";
 
 type OverviewDataLike = Awaited<ReturnType<typeof getOverviewData>>;
 
@@ -20,6 +21,19 @@ export default function AdminOverview() {
     const t = useTranslations("AdminOverview");
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
     const [data, setData] = useState<OverviewDataLike | null>(null);
+    // Desktop: filtro da tabela Property status + estado do dismiss no rail Co-Host.
+    const [propFilter, setPropFilter] = useState<"all" | "free" | "arriving" | "attention">("all");
+    const [dismissing, setDismissing] = useState<string | null>(null);
+
+    const handleDismiss = async (rowId: string) => {
+        setDismissing(rowId);
+        try {
+            await dismissDraft(rowId);
+            setData(await getOverviewData(locale));
+        } finally {
+            setDismissing(null);
+        }
+    };
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -35,7 +49,7 @@ export default function AdminOverview() {
                 .eq('id', user.id)
                 .single();
 
-            if (profile?.role !== 'super_admin') {
+            if (profile?.role !== 'super_admin' && profile?.role !== 'admin') {
                 const loc = window.location.pathname.split('/')[1] || 'en';
                 router.push(`/${loc}/admin/properties`);
             } else {
@@ -82,27 +96,60 @@ export default function AdminOverview() {
         return { label: t("stFree"), cls: "bg-admin-bg text-admin-text-secondary border border-admin-border" };
     };
 
+    // ── Desktop: dados derivados para as listas, filtros e rail ──────────────
+    const arrivals = data?.stays.filter((s) => s.status === 'arrives_today') ?? [];
+    const departures = data?.stays.filter((s) => s.status === 'departs_tomorrow') ?? [];
+    const filterCounts = {
+        all: data?.properties.length ?? 0,
+        free: data?.properties.filter((p) => p.today === 'free').length ?? 0,
+        arriving: data?.properties.filter((p) => p.today === 'arrives_today').length ?? 0,
+        attention: data?.properties.filter((p) => p.pendingCount > 0).length ?? 0,
+    };
+    const filteredProperties = (data?.properties ?? []).filter((p) =>
+        propFilter === 'all' ? true
+            : propFilter === 'free' ? p.today === 'free'
+                : propFilter === 'arriving' ? p.today === 'arrives_today'
+                    : p.pendingCount > 0
+    );
+    // FREE em dourado no desktop (destaca as noites vendáveis — âmbar já é o "arrives today").
+    const tonightChip = (today: 'occupied' | 'arrives_today' | 'free') =>
+        today === 'free'
+            ? { label: t("stFree"), cls: "bg-[#c5a059]/10 text-[#a9863f] dark:text-[#c5a059] border border-[#c5a059]/25" }
+            : stTodayLabel(today);
+
     return (
-        <div className="space-y-8 md:space-y-16 pb-4">
+        <div className="space-y-8 md:space-y-6 pb-4">
             {/* Header Section */}
-            <section>
-                <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-admin-text-primary">
-                    {t(greetingKey, { name })}
-                </h2>
-                <p className="text-admin-text-secondary mt-2 font-medium">
-                    {format(new Date(), 'EEEE, d MMM', { locale: dateLocale })}
-                    {/* Desktop: frase de contexto completa; mobile: pills numeradas por baixo. */}
-                    {data && (
-                        <span className="hidden md:inline">
-                            {" · "}
-                            {t("contextLine", {
-                                staying: data.counts.staying,
-                                arrivals: data.counts.arrivalsToday,
-                                departures: data.counts.departuresTomorrow,
-                            })}
-                        </span>
-                    )}
-                </p>
+            <section className="md:flex md:items-end md:justify-between md:gap-6">
+                <div>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-admin-text-primary">
+                        {t(greetingKey, { name })}
+                    </h2>
+                    <p className="text-admin-text-secondary mt-2 font-medium">
+                        {format(new Date(), 'EEEE, d MMM', { locale: dateLocale })}
+                    </p>
+                </div>
+                {/* Desktop: tiles de estatística clicáveis (mobile: pills numeradas por baixo). */}
+                {data && (
+                    <div className="hidden md:flex gap-2.5 shrink-0">
+                        {[
+                            { n: data.counts.staying, label: t("pillStaying"), numCls: "text-admin-text-primary" },
+                            { n: data.counts.arrivalsToday, label: t("pillArriving"), numCls: "text-emerald-600 dark:text-emerald-400" },
+                            { n: data.counts.departuresTomorrow, label: t("pillDeparting"), numCls: "text-amber-600 dark:text-amber-400" },
+                        ].map((s, i) => (
+                            <Link key={i} href="/admin/reservations" className="bg-admin-surface border border-admin-border rounded-xl px-4 py-2.5 text-center min-w-[88px] hover:border-admin-text-secondary/40 transition-colors">
+                                <p className={`text-xl font-bold leading-none ${s.numCls}`}>{s.n}</p>
+                                <p className="mt-1 text-[10px] font-semibold text-admin-text-secondary">{s.label}</p>
+                            </Link>
+                        ))}
+                        {data.cohost !== null && (
+                            <Link href="/admin/cohost" className="bg-[#14161a] dark:bg-black border border-[#14161a] dark:border-white/10 rounded-xl px-4 py-2.5 text-center min-w-[88px] hover:opacity-90 transition-opacity">
+                                <p className="text-xl font-bold leading-none text-[#c5a059]">{data.counts.pending}</p>
+                                <p className="mt-1 text-[10px] font-semibold text-white/60">{t("tileToReview")}</p>
+                            </Link>
+                        )}
+                    </div>
+                )}
                 {data && (
                     <div className="mt-4 grid grid-cols-3 gap-2 md:hidden">
                         {[
@@ -119,9 +166,9 @@ export default function AdminOverview() {
                 )}
             </section>
 
-            {/* Co-Host banner */}
+            {/* Co-Host banner — só mobile (no desktop o co-host vive no rail lateral) */}
             {data === null ? (
-                <section className="rounded-[20px] bg-admin-surface border border-admin-border p-6 h-28 animate-pulse" />
+                <section className="md:hidden rounded-[20px] bg-admin-surface border border-admin-border p-6 h-28 animate-pulse" />
             ) : data.cohost !== null ? (
                 <>
                 {/* Mobile: banner compacto (título+badge · subtítulo/alerta · CTA largo) */}
@@ -141,43 +188,11 @@ export default function AdminOverview() {
                     </Link>
                 </section>
 
-                {/* Desktop: banner rico com chips dos drafts */}
-                <section className="hidden md:flex rounded-[20px] bg-[#14161a] dark:bg-black text-white p-6 flex-wrap items-center gap-5 shadow-sm">
-                    <div className="bg-[#c5a059]/15 text-[#c5a059] rounded-2xl size-11 flex items-center justify-center shrink-0">
-                        <Sparkles className="size-5" />
-                    </div>
-                    <div className="flex-1 min-w-[220px]">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-bold">{t("cohostTitle")}</h3>
-                            <span className="bg-white text-[#14161a] text-[11px] font-bold px-2 py-0.5 rounded-full">
-                                {t("toReview", { count: data.counts.pending })}
-                            </span>
-                        </div>
-                        <p className="text-white/70 text-sm mt-1">{t("cohostSub", { count: data.counts.pending })}</p>
-                        {(data.cohost.pending.length > 0 || data.cohost.alert) && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                                {data.cohost.pending.map((p) => (
-                                    <span key={p.rowId} className="bg-white/10 border border-white/15 rounded-full px-3 py-1 text-[11px] font-bold">
-                                        {p.title}
-                                    </span>
-                                ))}
-                                {data.cohost.alert && (
-                                    <span className="border border-red-400/40 text-red-300 rounded-full px-3 py-1 text-[11px] font-bold">
-                                        {data.cohost.alert.label}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                    <Link href="/admin/cohost" className="bg-[#c5a059] text-[#14161a] rounded-2xl px-5 py-3 text-[12.5px] font-extrabold shrink-0">
-                        {t("openCohost")}
-                    </Link>
-                </section>
                 </>
             ) : null}
 
-            {/* Arrivals & Departures */}
-            <section className="space-y-6">
+            {/* Arrivals & Departures — só mobile (desktop usa as listas compactas abaixo) */}
+            <section className="md:hidden space-y-6">
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold tracking-tight dark:text-admin-dark-text-primary">{t("staysTitle")}</h3>
                     <Link href="/admin/reservations" className="text-xs font-semibold text-admin-text-secondary hover:text-admin-text-primary transition-colors">
@@ -196,9 +211,10 @@ export default function AdminOverview() {
                     </div>
                 ) : (
                     <>
-                    {/* Mobile: carrossel horizontal de cartões compactos */}
+                    {/* Mobile: carrossel horizontal de cartões compactos (cap 8 — o servidor
+                        devolve até 20 para as listas desktop) */}
                     <div className="md:hidden -mx-4 px-4 flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-hide">
-                        {data.stays.map((stay, idx) => {
+                        {data.stays.slice(0, 8).map((stay, idx) => {
                             const chip = chipForStatus(stay.status, stay.checkIn);
                             return (
                                 <div key={idx} className="snap-start shrink-0 w-[168px] bg-admin-surface rounded-xl border border-admin-border overflow-hidden shadow-sm">
@@ -230,59 +246,12 @@ export default function AdminOverview() {
                         })}
                     </div>
 
-                    {/* Desktop: grid de cartões completos */}
-                    <div className="hidden md:grid grid-cols-2 xl:grid-cols-4 gap-4">
-                        {data.stays.map((stay, idx) => {
-                            const chip = chipForStatus(stay.status, stay.checkIn);
-                            return (
-                                <div key={idx} className="bg-admin-surface rounded-xl border border-admin-border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="h-24 bg-cover bg-center relative bg-[#f5f5f5] dark:bg-white/5">
-                                        {stay.propertyImage && (
-                                            <img src={stay.propertyImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                                        )}
-                                        <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${chip.cls}`}>
-                                            {chip.label}
-                                        </span>
-                                    </div>
-                                    <div className="p-4">
-                                        {/* Propriedade = título (é o que o operador reconhece); hóspede só quando o temos. */}
-                                        <p className="font-bold text-admin-text-primary truncate">{stay.propertyTitle}</p>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            {stay.guestName
-                                                ? <span className="text-xs text-admin-text-secondary truncate">{stay.guestName}</span>
-                                                : <span className="text-xs text-admin-text-secondary italic">{t("guestUnknown")}</span>}
-                                            {stay.source === 'airbnb' && (
-                                                <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 uppercase tracking-wide">Airbnb</span>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-4 py-3 mt-2 border-t border-admin-border">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-admin-text-secondary uppercase font-bold tracking-wider">{t("datesLabel")}</span>
-                                                <span className="text-xs font-semibold text-admin-text-primary">
-                                                    {format(new Date(stay.checkIn), 'MMM d')} – {format(new Date(stay.checkOut), 'MMM d')}
-                                                </span>
-                                            </div>
-                                            {stay.guests != null && (
-                                                <>
-                                                    <div className="w-px h-8 bg-admin-border"></div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] text-admin-text-secondary uppercase font-bold tracking-wider">{t("guestsLabel")}</span>
-                                                        <span className="text-xs font-semibold text-admin-text-primary">{stay.guests}</span>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
                     </>
                 )}
             </section>
 
-            {/* Property status */}
-            <section className="space-y-6">
+            {/* Property status — só mobile (desktop usa a tabela densa com filtros abaixo) */}
+            <section className="md:hidden space-y-6">
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold tracking-tight dark:text-admin-dark-text-primary">{t("propertiesTitle")}</h3>
                     <Link href="/admin/properties" className="text-xs font-semibold text-admin-text-secondary hover:text-admin-text-primary transition-colors">
@@ -324,64 +293,262 @@ export default function AdminOverview() {
                         })}
                     </div>
 
-                    <div className="hidden md:block bg-admin-surface rounded-2xl border border-admin-border overflow-hidden shadow-sm transition-colors duration-300 overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="border-b border-admin-border">
-                                    <th className="px-8 py-5 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colProperty")}</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colToday")}</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colNextArrival")}</th>
-                                    {data.cohost !== null && (
-                                        <th className="px-8 py-5 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colCohost")}</th>
-                                    )}
-                                    <th className="px-8 py-5 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-admin-border">
-                                {data.properties.map((property) => {
-                                    const today = stTodayLabel(property.today);
-                                    return (
-                                        <tr key={property.id} className="group hover:bg-admin-bg transition-colors">
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="size-[34px] rounded bg-admin-bg bg-cover bg-center shrink-0 shadow-sm border border-admin-border" style={{ backgroundImage: property.image ? `url(${property.image})` : undefined }}></div>
-                                                    <div>
-                                                        <p className="font-bold text-admin-text-primary">{property.title}</p>
-                                                        <p className="text-xs text-admin-text-secondary mt-0.5">{property.city ?? '—'}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${today.cls}`}>
-                                                    {today.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <p className="text-sm font-medium text-admin-text-primary">
-                                                    {property.nextArrival ? format(new Date(property.nextArrival), 'MMM d') : '—'}
-                                                </p>
-                                            </td>
-                                            {data.cohost !== null && (
-                                                <td className="px-8 py-6">
-                                                    <p className={`text-sm font-bold ${property.pendingCount > 0 ? 'text-[#c5a059]' : 'text-admin-text-secondary'}`}>
-                                                        {property.pendingCount > 0 ? t("toReview", { count: property.pendingCount }) : '—'}
-                                                    </p>
-                                                </td>
-                                            )}
-                                            <td className="px-8 py-6 text-right font-medium">
-                                                <Link href={`/admin/properties/${property.id}`} className="text-admin-text-secondary hover:text-admin-text-primary transition-colors inline-flex">
-                                                    <MoreHorizontal className="size-5" />
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
                     </>
                 )}
             </section>
+
+            {/* ── Desktop: duas colunas — listas + tabela | rail Co-Host ─────────
+                Rail só ≥lg (no MacBook 13" o conteúdo tem ~1000px úteis; abaixo de
+                lg o rail cai para baixo do conteúdo a toda a largura). */}
+            <div className="hidden md:grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
+                <div className="min-w-0 space-y-5">
+                    {data === null ? (
+                        <>
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="h-64 rounded-2xl bg-admin-surface border border-admin-border animate-pulse" />
+                                <div className="h-64 rounded-2xl bg-admin-surface border border-admin-border animate-pulse" />
+                            </div>
+                            <div className="h-96 rounded-2xl bg-admin-surface border border-admin-border animate-pulse" />
+                        </>
+                    ) : (
+                        <>
+                            {/* Chegadas hoje | Saídas amanhã — listas compactas lado a lado */}
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="bg-admin-surface rounded-2xl border border-admin-border overflow-hidden shadow-sm">
+                                    <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-admin-border">
+                                        <h3 className="text-[13px] font-bold text-admin-text-primary flex items-center gap-1.5 min-w-0">
+                                            <LogIn className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <span className="truncate">{t("arrivingToday")} · {arrivals.length}</span>
+                                        </h3>
+                                        <Link href="/admin/reservations" className="text-[11px] font-semibold text-[#c5a059] hover:opacity-80 shrink-0">
+                                            {t("seeCalendar")}
+                                        </Link>
+                                    </div>
+                                    {arrivals.length === 0 ? (
+                                        <p className="px-4 py-6 text-xs text-admin-text-secondary">{t("noArrivals")}</p>
+                                    ) : (
+                                        <div className="py-1.5">
+                                            {arrivals.slice(0, 6).map((stay, idx) => (
+                                                <div key={idx} className="flex items-center gap-2.5 px-4 py-2">
+                                                    <div className="size-9 rounded-lg bg-admin-bg bg-cover bg-center shrink-0 border border-admin-border" style={{ backgroundImage: stay.propertyImage ? `url(${stay.propertyImage})` : undefined }} />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-[13px] font-bold text-admin-text-primary truncate">{stay.propertyTitle}</p>
+                                                        <p className="text-[11px] text-admin-text-secondary truncate">
+                                                            {stay.guestName || t("guestUnknown")} · {format(new Date(stay.checkIn), 'MMM d')} – {format(new Date(stay.checkOut), 'MMM d')}
+                                                            {stay.guests != null && <> · {stay.guests}p</>}
+                                                        </p>
+                                                    </div>
+                                                    {stay.source === 'airbnb' && (
+                                                        <span className="shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 uppercase">Airbnb</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {arrivals.length > 6 && (
+                                                <Link href="/admin/reservations" className="block px-4 pb-2.5 pt-1 text-[11px] font-semibold text-[#c5a059]">
+                                                    {t("showAll", { count: arrivals.length })}
+                                                </Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-admin-surface rounded-2xl border border-admin-border overflow-hidden shadow-sm">
+                                    <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-admin-border">
+                                        <h3 className="text-[13px] font-bold text-admin-text-primary flex items-center gap-1.5 min-w-0">
+                                            <LogOut className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                            <span className="truncate">{t("departingTomorrow")} · {departures.length}</span>
+                                        </h3>
+                                    </div>
+                                    {departures.length === 0 ? (
+                                        <p className="px-4 py-6 text-xs text-admin-text-secondary">{t("noDepartures")}</p>
+                                    ) : (
+                                        <div className="py-1.5">
+                                            {departures.slice(0, 6).map((stay, idx) => (
+                                                <div key={idx} className="flex items-center gap-2.5 px-4 py-2">
+                                                    <div className="size-9 rounded-lg bg-admin-bg bg-cover bg-center shrink-0 border border-admin-border" style={{ backgroundImage: stay.propertyImage ? `url(${stay.propertyImage})` : undefined }} />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-[13px] font-bold text-admin-text-primary truncate">{stay.propertyTitle}</p>
+                                                        <p className="text-[11px] text-admin-text-secondary truncate">
+                                                            {stay.guestName || t("guestUnknown")} · {t("outOn", { date: format(new Date(stay.checkOut), 'MMM d') })}
+                                                        </p>
+                                                    </div>
+                                                    {stay.sameDayTurn && (
+                                                        <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                                            {t("sameDayTurn")}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {departures.length > 6 && (
+                                                <Link href="/admin/reservations" className="block px-4 pb-2.5 pt-1 text-[11px] font-semibold text-[#c5a059]">
+                                                    {t("showAll", { count: departures.length })}
+                                                </Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Property status — tabela densa com filtros */}
+                            <div className="bg-admin-surface rounded-2xl border border-admin-border overflow-hidden shadow-sm">
+                                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-admin-border flex-wrap">
+                                    <h3 className="text-[13px] font-bold text-admin-text-primary">{t("propertiesTitle")}</h3>
+                                    <div className="flex gap-1.5 flex-wrap">
+                                        {([
+                                            { key: 'all', label: t("filterAll"), count: filterCounts.all },
+                                            { key: 'free', label: t("filterFree"), count: filterCounts.free },
+                                            { key: 'arriving', label: t("filterArriving"), count: filterCounts.arriving },
+                                            ...(data.cohost !== null ? [{ key: 'attention', label: t("filterAttention"), count: filterCounts.attention }] : []),
+                                        ] as { key: 'all' | 'free' | 'arriving' | 'attention'; label: string; count: number }[]).map((f) => (
+                                            <button
+                                                key={f.key}
+                                                onClick={() => setPropFilter(f.key)}
+                                                className={`text-[11px] font-semibold rounded-full px-2.5 py-1 transition-colors ${propFilter === f.key
+                                                    ? 'bg-admin-text-primary text-admin-surface'
+                                                    : 'border border-admin-border text-admin-text-secondary hover:text-admin-text-primary'}`}
+                                            >
+                                                {f.label} {f.count}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <table className="w-full text-left table-fixed">
+                                    <thead>
+                                        <tr className="border-b border-admin-border">
+                                            <th className="w-[30%] px-4 py-3 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colProperty")}</th>
+                                            <th className="w-[13%] px-2 py-3 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colTonight")}</th>
+                                            <th className="w-[24%] px-2 py-3 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colGuestInHouse")}</th>
+                                            <th className="w-[13%] px-2 py-3 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colNextArrival")}</th>
+                                            {data.cohost !== null && (
+                                                <th className="w-[14%] px-2 py-3 text-[10px] font-bold text-admin-text-secondary uppercase tracking-widest">{t("colCohost")}</th>
+                                            )}
+                                            <th className="w-[6%] px-4 py-3"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-admin-border">
+                                        {filteredProperties.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={data.cohost !== null ? 6 : 5} className="px-4 py-6 text-xs text-admin-text-secondary">—</td>
+                                            </tr>
+                                        ) : filteredProperties.map((property) => {
+                                            const tonight = tonightChip(property.today);
+                                            return (
+                                                <tr key={property.id} className={`group transition-colors ${property.today === 'free' ? 'bg-[#c5a059]/[0.05] hover:bg-[#c5a059]/10' : 'hover:bg-admin-bg'}`}>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            <div className="size-8 rounded-lg bg-admin-bg bg-cover bg-center shrink-0 border border-admin-border" style={{ backgroundImage: property.image ? `url(${property.image})` : undefined }} />
+                                                            <div className="min-w-0">
+                                                                <p className="text-[13px] font-bold text-admin-text-primary truncate">{property.title}</p>
+                                                                <p className="text-[11px] text-admin-text-secondary truncate">{property.city ?? '—'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-2 py-3">
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ${tonight.cls}`}>
+                                                            {tonight.label}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-2 py-3">
+                                                        {property.guestInHouse ? (
+                                                            <p className="text-xs text-admin-text-primary truncate">
+                                                                {property.guestInHouse.name || t("guestUnknown")}
+                                                                <span className="text-admin-text-secondary"> · {t("outOn", { date: format(new Date(property.guestInHouse.checkOut), 'MMM d') })}</span>
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-xs text-admin-text-secondary">—</p>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-2 py-3">
+                                                        <p className="text-xs font-medium text-admin-text-primary">
+                                                            {property.nextArrival ? format(new Date(property.nextArrival), 'MMM d') : '—'}
+                                                        </p>
+                                                    </td>
+                                                    {data.cohost !== null && (
+                                                        <td className="px-2 py-3">
+                                                            {property.pendingCount > 0 ? (
+                                                                <Link href="/admin/cohost" className="text-xs font-bold text-[#c5a059] hover:opacity-80">
+                                                                    {t("toReview", { count: property.pendingCount })} →
+                                                                </Link>
+                                                            ) : (
+                                                                <p className="text-xs text-admin-text-secondary">—</p>
+                                                            )}
+                                                        </td>
+                                                    )}
+                                                    <td className="px-4 py-3 text-right">
+                                                        <Link href={`/admin/properties/${property.id}`} className="text-admin-text-secondary hover:text-admin-text-primary transition-colors inline-flex">
+                                                            <MoreHorizontal className="size-4" />
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Rail Co-Host — rascunhos reais com a mensagem do hóspede */}
+                {data === null ? (
+                    <div className="h-80 rounded-[20px] bg-admin-surface border border-admin-border animate-pulse" />
+                ) : data.cohost !== null ? (
+                    <aside className="rounded-[20px] bg-[#14161a] dark:bg-black text-white p-5 lg:sticky lg:top-24">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="size-4 text-[#c5a059] shrink-0" />
+                            <h3 className="font-bold text-sm">{t("cohostTitle")}</h3>
+                            <span className="ml-auto bg-[#c5a059] text-[#14161a] text-[11px] font-bold px-2.5 py-0.5 rounded-full shrink-0">
+                                {t("toReview", { count: data.counts.pending })}
+                            </span>
+                        </div>
+                        <p className="text-white/60 text-xs mt-1.5">{t("cohostSub", { count: data.counts.pending })}</p>
+                        {data.cohost.alert && (
+                            <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2.5">
+                                <AlertTriangle className="size-3.5 text-red-300 shrink-0 mt-0.5" />
+                                <p className="text-[11px] font-semibold text-red-300">{data.cohost.alert.label}</p>
+                            </div>
+                        )}
+                        <div className="mt-3 space-y-2">
+                            {data.cohost.pending.length === 0 ? (
+                                <p className="text-xs text-white/50 py-2">{t("cohostEmpty")}</p>
+                            ) : data.cohost.pending.map((p) => (
+                                <div key={p.rowId} className="rounded-xl bg-white/[0.06] p-3">
+                                    <div className="flex items-baseline justify-between gap-2">
+                                        <p className="text-[12px] font-bold truncate">
+                                            {p.guestName || t("guestUnknown")}
+                                            {p.propertyCode ? <span className="text-white/50 font-semibold"> · {p.propertyCode}</span> : null}
+                                        </p>
+                                        <span className="text-[10px] text-white/40 shrink-0">{format(new Date(p.createdAt), 'HH:mm')}</span>
+                                    </div>
+                                    {/* A mensagem do hóspede é o herói (mesma decisão do DecisionDetailSheet) */}
+                                    <p className="text-[12px] text-white/75 leading-relaxed mt-1 line-clamp-2">“{p.message}”</p>
+                                    <div className="flex gap-2 mt-2.5">
+                                        <Link
+                                            href={`/admin/cohost?decision=${p.rowId}`}
+                                            className="bg-[#c5a059] text-[#14161a] rounded-lg px-3 py-1.5 text-[11px] font-extrabold hover:opacity-90 transition-opacity"
+                                        >
+                                            {t("reviewDraft")}
+                                        </Link>
+                                        <button
+                                            onClick={() => handleDismiss(p.rowId)}
+                                            disabled={dismissing === p.rowId}
+                                            className="border border-white/15 text-white/60 hover:text-white rounded-lg px-3 py-1.5 text-[11px] font-bold disabled:opacity-50 transition-colors"
+                                        >
+                                            {t("dismiss")}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <Link
+                            href="/admin/cohost"
+                            className="mt-3 flex items-center justify-center border border-white/15 text-[#c5a059] rounded-xl py-2.5 text-[12px] font-bold hover:bg-white/5 transition-colors"
+                        >
+                            {data.counts.pending > 0 ? t("openCohostAll", { count: data.counts.pending }) : t("openCohost")}
+                        </Link>
+                    </aside>
+                ) : null}
+            </div>
         </div>
     );
 }
