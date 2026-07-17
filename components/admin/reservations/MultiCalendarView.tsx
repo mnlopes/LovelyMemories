@@ -68,6 +68,26 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
 
     const dateLocale = locale === 'pt' ? pt : undefined;
 
+    // Mobile: 7 dias fixos, colunas ajustadas à largura do ecrã (sem scroll horizontal).
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 767px)");
+        const update = () => setIsMobile(mq.matches);
+        update();
+        mq.addEventListener("change", update);
+        return () => mq.removeEventListener("change", update);
+    }, []);
+
+    const [containerW, setContainerW] = useState(0);
+    useEffect(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(() => setContainerW(el.clientWidth));
+        ro.observe(el);
+        setContainerW(el.clientWidth);
+        return () => ro.disconnect();
+    }, []);
+
     const getPropData = (id: string) => {
         const prop = properties[id];
         if (!prop) return { id, title: id, city: '', mainImage: propertyImages?.[id] || '', is_multi_unit: false };
@@ -85,18 +105,25 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         };
     };
 
+    // Mobile força 7 dias (o seletor 7/14/31 é desktop-only).
+    const effRange = isMobile ? 7 : rangeDays;
+
     // Janela visível: 31d = mês de calendário (comportamento clássico);
     // 7d/14d = semanas alinhadas a segunda-feira (segunda→domingo), não a começar em currentDate.
-    const rangeStart = rangeDays === 31 ? startOfMonth(currentDate) : startOfWeek(currentDate, { weekStartsOn: 1 });
-    const rangeEnd = rangeDays === 31 ? endOfMonth(currentDate) : startOfDay(addDays(rangeStart, rangeDays - 1));
+    const rangeStart = effRange === 31 ? startOfMonth(currentDate) : startOfWeek(currentDate, { weekStartsOn: 1 });
+    const rangeEnd = effRange === 31 ? endOfMonth(currentDate) : startOfDay(addDays(rangeStart, effRange - 1));
     const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
 
-    // Largura de célula por alcance: vistas curtas = células largas (espaço p/ preços).
-    const cellWidth = rangeDays === 7 ? 120 : rangeDays === 14 ? 88 : 48;
+    // Largura de célula: no mobile calculada para os 7 dias caberem no ecrã
+    // (largura do contentor − rail de 44px, ÷7); no desktop por alcance.
+    const MOBILE_RAIL_W = 44;
+    const cellWidth = isMobile
+        ? Math.max(36, Math.floor(((containerW || 360) - MOBILE_RAIL_W) / 7))
+        : effRange === 7 ? 120 : effRange === 14 ? 88 : 48;
 
-    // Navigation: mês na 31d, salto de rangeDays dias nas curtas.
-    const nextMonth = () => setCurrentDate(rangeDays === 31 ? addMonths(currentDate, 1) : addDays(currentDate, rangeDays));
-    const prevMonth = () => setCurrentDate(rangeDays === 31 ? subMonths(currentDate, 1) : addDays(currentDate, -rangeDays));
+    // Navigation: mês na 31d, salto de effRange dias nas curtas.
+    const nextMonth = () => setCurrentDate(effRange === 31 ? addMonths(currentDate, 1) : addDays(currentDate, effRange));
+    const prevMonth = () => setCurrentDate(effRange === 31 ? subMonths(currentDate, 1) : addDays(currentDate, -effRange));
     const goToToday = () => setCurrentDate(new Date());
 
     // Toggle "€ Preços" (super_admin; só vistas 7/14 — na 31d as células são estreitas demais)
@@ -107,7 +134,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     const windowPrices = pricesByWindow[windowKey];
 
     useEffect(() => {
-        if (!showPrices || !canShowPrices || rangeDays === 31 || windowPrices) return;
+        if (!showPrices || !canShowPrices || effRange === 31 || windowPrices) return;
         let cancelled = false;
         setPricesLoading(true);
         // endDate exclusivo do getRoomCalendar → +1 dia para incluir a última noite visível
@@ -123,12 +150,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
             })
             .finally(() => { if (!cancelled) setPricesLoading(false); });
         return () => { cancelled = true; };
-    }, [showPrices, canShowPrices, rangeDays, windowKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [showPrices, canShowPrices, effRange, windowKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Rail de preços ativo (só 7/14d). O rail só se materializa nas linhas COM dados
     // (propriedades ligadas ao Beds24) — as restantes ficam a 72px, sem banda vazia.
-    const twoBand = showPrices && rangeDays !== 31;
-    const railH = 28;
+    const twoBand = showPrices && effRange !== 31;
+    const railH = isMobile ? 22 : 28;
 
     // Propriedades ligadas conhecidas (união das janelas já carregadas). São estáveis
     // entre semanas, por isso ao mudar de semana sabemos QUAIS linhas terão rail e
@@ -230,11 +257,11 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
     }, []);
 
     return (
-        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-admin-border dark:border-admin-dark-border shadow-sm flex flex-col h-auto min-h-[600px] transition-all duration-300">
+        <div className="bg-white dark:bg-admin-dark-surface rounded-2xl border border-admin-border dark:border-admin-dark-border shadow-sm flex flex-col h-auto min-h-[440px] md:min-h-[600px] transition-all duration-300">
             {/* Header / Controls */}
-            <div className="px-3 md:px-6 py-3 md:py-4 border-b border-admin-border dark:border-admin-dark-border flex items-center justify-between bg-white/50 dark:bg-admin-dark-surface/50 backdrop-blur-sm z-50 relative">
+            <div className="px-3 md:px-6 py-3 md:py-4 border-b border-admin-border dark:border-admin-dark-border flex items-center justify-between bg-white/50 dark:bg-admin-dark-surface/50 backdrop-blur-sm z-[14] relative">
 
-                <div className="flex items-center gap-4 w-1/3">
+                <div className="flex items-center gap-4 w-auto md:w-1/3 min-w-0">
                     <div className="relative" ref={datePickerRef}>
                         <button
                             onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
@@ -265,7 +292,31 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                     </div>
                 </div>
 
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+                {/* Mobile: navegação compacta ‹ Hoje › + € (o resto dos controlos é desktop) */}
+                <div className="flex md:hidden items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-0.5 bg-[#f5f5f5] dark:bg-admin-dark-bg p-0.5 rounded-lg border border-[#eeeeee] dark:border-admin-dark-border">
+                        <button onClick={prevMonth} className="p-1.5 rounded-md text-[#171717] dark:text-white" aria-label="‹"><ChevronLeft className="size-4" /></button>
+                        <button onClick={goToToday} className="px-2 py-1 text-xs font-bold text-[#171717] dark:text-white">{t('today')}</button>
+                        <button onClick={nextMonth} className="p-1.5 rounded-md text-[#171717] dark:text-white" aria-label="›"><ChevronRight className="size-4" /></button>
+                    </div>
+                    {canShowPrices && (
+                        <button
+                            onClick={() => setShowPrices((v) => !v)}
+                            aria-label={t("prices")}
+                            aria-pressed={showPrices}
+                            className={cn(
+                                "flex items-center justify-center size-8 rounded-lg border transition-all",
+                                showPrices
+                                    ? "bg-[#171717] dark:bg-white text-white dark:text-black border-[#171717] dark:border-white"
+                                    : "bg-white dark:bg-admin-dark-bg text-[#a3a3a3] border-[#eeeeee] dark:border-admin-dark-border",
+                            )}
+                        >
+                            <Euro className="size-3.5" />
+                        </button>
+                    )}
+                </div>
+
+                <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-3">
                     <div className="relative" ref={regionFilterRef}>
                         <button onClick={() => setIsRegionFilterOpen(!isRegionFilterOpen)} className={cn("hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-all", selectedRegion !== "all" ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400" : "bg-white dark:bg-admin-dark-bg text-[#a3a3a3] border-[#eeeeee] hover:text-[#171717]")}>
                             <MapPin className="size-3" />
@@ -325,7 +376,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                     <span className="text-xs font-medium text-[#a3a3a3] bg-[#f5f5f5] dark:bg-admin-dark-bg px-3 py-1 rounded-full border border-admin-border hidden md:block">{t('reservationsCount', { count: reservationsInMonth.length })}</span>
                 </div>
 
-                <div className="flex items-center justify-end gap-6 w-1/3">
+                <div className="hidden md:flex items-center justify-end gap-6 w-1/3">
                     <div className="hidden lg:flex items-center gap-4 text-[10px] font-medium text-[#a3a3a3]">
                         <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-emerald-500"></div>{t('legend.confirmed')}</div>
                         <div className="flex items-center gap-1.5"><div className="size-2 rounded-full bg-blue-500"></div>{t('legend.checkedIn')}</div>
@@ -343,8 +394,8 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
             <div className="flex-1 overflow-auto custom-scrollbar relative" ref={scrollContainerRef}>
                 <div className="inline-block min-w-full">
                     {/* Calendar Header Row */}
-                    <div className="sticky top-0 z-30 flex bg-[#fafafa] dark:bg-admin-dark-bg border-b border-admin-border dark:border-admin-dark-border h-[48px]">
-                        <div className={cn("sticky left-0 z-40 bg-[#fafafa] dark:bg-admin-dark-bg border-r border-admin-border dark:border-admin-dark-border flex items-center justify-between px-3 transition-all duration-300", isSidebarOpen ? "w-[240px]" : "w-[80px]")}>
+                    <div className="sticky top-0 z-[12] flex bg-[#fafafa] dark:bg-admin-dark-bg border-b border-admin-border dark:border-admin-dark-border h-[40px] md:h-[48px]">
+                        <div className={cn("sticky left-0 z-[13] bg-[#fafafa] dark:bg-admin-dark-bg border-r border-admin-border dark:border-admin-dark-border flex items-center justify-center md:justify-between px-1 md:px-3 transition-all duration-300", isSidebarOpen ? "w-[240px]" : "w-[44px] md:w-[80px]")}>
                             <div className="relative" ref={filterRef}>
                                 <button onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-bold transition-all border", filteredPropertyIds.length > 0 ? "bg-[#171717] text-white" : "bg-white text-[#171717] border-[#eeeeee] dark:bg-admin-dark-surface dark:text-white hover:bg-[#fafafa]")}>
                                     <Filter className="size-3.5" />
@@ -365,14 +416,14 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                     </div>
                                 )}
                             </div>
-                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1.5 rounded-md text-[#a3a3a3] hover:text-[#171717] transition-colors">
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="hidden md:block p-1.5 rounded-md text-[#a3a3a3] hover:text-[#171717] transition-colors">
                                 <ChevronLeft className={cn("size-4 transition-transform duration-300", !isSidebarOpen && "rotate-180")} />
                             </button>
                         </div>
                         {days.map((day) => (
                             <div key={day.toISOString()} style={{ width: cellWidth }} className={cn("flex-shrink-0 flex flex-col items-center justify-center border-r border-admin-border dark:border-admin-dark-border/50 transition-colors", isToday(day) ? "bg-amber-50/50 dark:bg-amber-500/10" : "")}>
-                                <span className="text-[10px] font-bold text-[#a3a3a3] uppercase">{format(day, "EEE", { locale: dateLocale })}</span>
-                                <span className={cn("text-sm font-bold mt-0.5 size-6 flex items-center justify-center rounded-full", isToday(day) ? "bg-[#171717] text-white dark:bg-white dark:text-black" : "text-[#171717] dark:text-white")}>{format(day, "d")}</span>
+                                <span className="text-[8px] md:text-[10px] font-bold text-[#a3a3a3] uppercase">{format(day, "EEE", { locale: dateLocale })}</span>
+                                <span className={cn("text-xs md:text-sm font-bold mt-0.5 size-5 md:size-6 flex items-center justify-center rounded-full", isToday(day) ? "bg-[#171717] text-white dark:bg-white dark:text-black" : "text-[#171717] dark:text-white")}>{format(day, "d")}</span>
                             </div>
                         ))}
                     </div>
@@ -386,13 +437,30 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             // Linha ligada cuja janela ainda está a carregar → rail em skeleton (sem salto).
                             const rowLoading = twoBand && !rowPrices && pricesLoading && linkedPropIds.has(propId);
                             const hasRail = !!rowPrices || rowLoading;
-                            const rowHeight = hasRail ? 62 + railH : 72;
-                            const barBandH = hasRail ? 62 : rowHeight;
+                            const bandH = isMobile ? 44 : 62;
+                            const baseRowH = isMobile ? 48 : 72;
+                            const rowHeight = hasRail ? bandH + railH : baseRowH;
+                            const barBandH = hasRail ? bandH : rowHeight;
                             const barCenter = barBandH / 2;
+                            // Mobile: preço só nas noites LIVRES — numa noite reservada não é acionável
+                            // e escondê-lo faz os buracos vendáveis saltar à vista.
+                            let occupiedNights: Set<string> | null = null;
+                            if (isMobile && hasRail) {
+                                occupiedNights = new Set<string>();
+                                const addSpan = (s: string, e: string) => {
+                                    const from = startOfDay(new Date(s));
+                                    const to = startOfDay(new Date(e));
+                                    for (let d = from < rangeStart ? rangeStart : from; d < to && d <= rangeEnd; d = addDays(d, 1)) {
+                                        occupiedNights!.add(format(d, "yyyy-MM-dd"));
+                                    }
+                                };
+                                for (const r of reservationsByProperty[propId] ?? []) addSpan(r.check_in, r.check_out);
+                                for (const b of (visibleBlockedDates ?? []).filter((bl: any) => bl.property_id === propId)) addSpan(b.start_date, b.end_date);
+                            }
                             return (
                                 <div key={propId} style={{ height: rowHeight }} className="flex hover:bg-[#fafafa]/50 dark:hover:bg-white/5 transition-colors group">
                                     <div
-                                        className={cn("sticky left-0 z-20 bg-white dark:bg-admin-dark-surface border-r border-admin-border dark:border-admin-dark-border flex items-center px-4 transition-all duration-300", isSidebarOpen ? "w-[240px]" : "w-[80px] justify-center")}
+                                        className={cn("sticky left-0 z-[11] bg-white dark:bg-admin-dark-surface border-r border-admin-border dark:border-admin-dark-border flex items-center px-1 md:px-4 transition-all duration-300", isSidebarOpen ? "w-[240px]" : "w-[44px] md:w-[80px] justify-center")}
                                         onMouseEnter={(e) => {
                                             setHoveredPropertyId(propId);
                                             setMousePos({ x: e.clientX, y: e.clientY });
@@ -408,7 +476,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 </span>
                                             </Link>
                                         ) : (
-                                            <div className="size-11 rounded-xl bg-[#f5f5f5] dark:bg-admin-dark-bg flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 ring-emerald-500/20 transition-all shadow-sm">
+                                            <div className="size-8 md:size-11 rounded-lg md:rounded-xl bg-[#f5f5f5] dark:bg-admin-dark-bg flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 ring-emerald-500/20 transition-all shadow-sm">
                                                 {propData.mainImage ? <Image src={propData.mainImage} alt={propData.title} width={44} height={44} className="size-full object-cover" /> : <span className="text-xs font-bold text-[#a3a3a3]">{propData.title.substring(0, 2).toUpperCase()}</span>}
                                             </div>
                                         )}
@@ -416,7 +484,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                     <div className="relative flex flex-1">
                                         {days.map((day) => (
                                             <div key={day.toISOString()} style={{ width: cellWidth }} className={cn("flex-shrink-0 border-r border-admin-border dark:border-admin-dark-border/50 h-full relative", [0, 6].includes(day.getDay()) ? "bg-[#f8f8f8] dark:bg-white/[0.03]" : "")}>
-                                                {isToday(day) && <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-red-500 z-10"><div className="absolute -top-1 -left-[3px] size-2 rounded-full bg-red-500" /></div>}
+                                                {isToday(day) && <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px md:w-[2px] bg-red-500/50 md:bg-red-500 z-10"><div className="hidden md:block absolute -top-1 -left-[3px] size-2 rounded-full bg-red-500" /></div>}
                                             </div>
                                         ))}
                                         {hasRail && (
@@ -433,9 +501,12 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                                 <div className="h-3 w-9 rounded bg-[#e5e5e5] dark:bg-white/10 animate-pulse" />
                                                             ) : (
                                                                 <CalendarDayPrice
-                                                                    info={info ?? { price: null, minStay: null }}
+                                                                    // Mobile: sem lua (min-stay) e preço só em noite livre.
+                                                                    info={isMobile
+                                                                        ? { price: occupiedNights?.has(key) ? null : (info?.price ?? null), minStay: null }
+                                                                        : (info ?? { price: null, minStay: null })}
                                                                     align="center"
-                                                                    priceClassName={rangeDays === 7 ? "text-xs" : "text-[11px]"}
+                                                                    priceClassName={isMobile ? "text-[10px]" : effRange === 7 ? "text-xs" : "text-[11px]"}
                                                                     minStayTitle={info?.minStay != null ? t("minStayNights", { count: info.minStay }) : undefined}
                                                                 />
                                                             )}
@@ -464,7 +535,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                     onClick={() => { if (isBeds24) setSelectedBeds24Id(res.beds24_booking_id); else setSelectedReservation(res); }}
                                                     title={`${res.guest_name || t('guest')} · ${format(new Date(res.check_in), 'd MMM', { locale: dateLocale })} → ${format(new Date(res.check_out), 'd MMM', { locale: dateLocale })}`}
                                                     className={cn(
-                                                        "absolute h-8 flex items-center px-3 z-10 transition-all",
+                                                        "absolute h-7 md:h-8 flex items-center px-1.5 md:px-3 z-10 transition-all",
                                                         isBeds24
                                                             ? "bg-rose-500 text-white cursor-pointer hover:brightness-105 animate-in fade-in duration-300"
                                                             : cn("cursor-pointer hover:brightness-110", getReservationStatusColor(effectiveStatus)),
@@ -474,7 +545,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                     <div className="flex justify-between items-center w-full gap-2 overflow-hidden">
                                                         <span className="text-[10px] font-bold truncate shrink leading-none">{res.guest_name || t('guest')}</span>
                                                         <span className="flex items-center gap-1.5 shrink-0">
-                                                            {res.total_price ? <span className="text-[10px] font-bold whitespace-nowrap leading-none">€{res.total_price}</span> : null}
+                                                            {res.total_price ? <span className="hidden md:inline text-[10px] font-bold whitespace-nowrap leading-none">€{res.total_price}</span> : null}
                                                             {isBeds24 && (res.is_airbnb ? <ChannelBadge kind="airbnb-circle" /> : <ChannelBadge kind="beds24" />)}
                                                         </span>
                                                     </div>
@@ -496,7 +567,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                                                 <div
                                                     key={block.id}
                                                     className={cn(
-                                                        "absolute h-9 flex items-center px-3 z-0 transition-all",
+                                                        "absolute h-7 md:h-9 flex items-center px-1.5 md:px-3 z-0 transition-all",
                                                     )}
                                                     style={{
                                                         left: `${style.left}px`,
@@ -531,6 +602,16 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                         })}
                     </div>
                 </div>
+            </div>
+
+            {/* Legenda compacta (mobile; a completa vive no header desktop) */}
+            <div className="flex md:hidden items-center justify-center gap-3 px-3 py-2 border-t border-admin-border dark:border-admin-dark-border text-[9px] font-medium text-[#a3a3a3]">
+                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-emerald-500" />{t('legend.confirmed')}</span>
+                {reservations.some((r: any) => r.is_beds24) && (
+                    <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-rose-500" />{t('legend.beds24')}</span>
+                )}
+                <span className="flex items-center gap-1"><span className="size-2 rounded-full" style={{ background: AIRBNB_HATCH }} />Airbnb</span>
+                <span className="flex items-center gap-1"><span className="size-2 rounded-full" style={{ background: BLOCK_HATCH }} />{t('legend.blocked')}</span>
             </div>
 
             {visiblePropertyIds.length === 0 && <div className="h-[400px] flex flex-col items-center justify-center text-[#a3a3a3]"><Filter className="size-8 mb-4 opacity-50" /><p>{t('noProperties')}</p></div>}

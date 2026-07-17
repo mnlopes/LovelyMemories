@@ -476,17 +476,18 @@ export default function AdminReservationsPage() {
     });
 
     return (
-        <div className="space-y-10 pb-20">
+        <div className="space-y-4 md:space-y-10 pb-4 md:pb-20">
             {/* Header */}
-            <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-end">
+            <div className="flex flex-col gap-3 md:gap-4 md:flex-row md:justify-between md:items-end">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
-                    <p className="text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle')}</p>
+                    <h2 className="text-xl md:text-3xl font-bold tracking-tight text-[#171717] dark:text-admin-dark-text-primary">{t('title')}</h2>
+                    {/* Subtítulo é redundante no mobile */}
+                    <p className="hidden md:block text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle')}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 justify-between md:justify-end">
                     {role === 'super_admin' && (
                         <div className="flex items-center gap-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 transition-colors duration-300">
-                            <span className="pl-2 text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t('dataSource')}</span>
+                            <span className="hidden md:inline pl-2 text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t('dataSource')}</span>
                             <button
                                 onClick={() => { if (beds24Preview) void toggleBeds24Preview(); }}
                                 className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${!beds24Preview ? 'bg-[#171717] dark:bg-white text-white dark:text-black shadow-sm' : 'text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white'}`}
