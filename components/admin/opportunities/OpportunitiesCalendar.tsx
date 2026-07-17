@@ -189,7 +189,8 @@ export function OpportunitiesCalendar({
                                         );
                                     })}
 
-                                    {/* Noite órfã — só borda dourada a pulsar (heartbeat) + triângulo de alerta */}
+                                    {/* Noite órfã — mesma forma/altura das barras (clip-path + h-7, centrada),
+                                        preenchimento dourado leve a pulsar (heartbeat) + triângulo de alerta */}
                                     {rowGaps.map((g) => {
                                         const p = place(g.gapStart, g.gapEnd);
                                         if (!p) return null;
@@ -198,10 +199,10 @@ export function OpportunitiesCalendar({
                                                 key={g.id}
                                                 onClick={(e) => openPopover(g, e)}
                                                 title={t("legendGap")}
-                                                className="gap-heartbeat self-center h-9 my-auto mx-0.5 rounded-md border-[1.5px] flex items-center justify-center z-[3] hover:bg-[#c5a059]/10 transition-colors"
-                                                style={{ gridColumn: `${p.col + 1} / span ${p.span}`, borderColor: "rgba(197,160,89,.5)" }}
+                                                className="gap-heartbeat self-center h-7 flex items-center justify-center z-[3] overflow-hidden"
+                                                style={{ gridColumn: `${p.col + 1} / span ${p.span}`, clipPath: getBarClipPath(p.startsBefore, p.endsAfter), background: "rgba(197,160,89,.16)" }}
                                             >
-                                                <AlertTriangle className="gap-heartbeat-icon size-3.5 text-[#c5a059]" />
+                                                <AlertTriangle className="gap-heartbeat-icon size-3.5 text-[#a9863f]" />
                                             </button>
                                         );
                                     })}
@@ -215,8 +216,8 @@ export function OpportunitiesCalendar({
             {/* Legenda */}
             <div className="flex items-center gap-4 px-4 py-2.5 border-t border-admin-border text-[10.5px] text-admin-text-secondary">
                 <span className="inline-flex items-center gap-1.5">
-                    <span className="w-5 h-3.5 rounded border-[1.5px] border-[#c5a059] inline-flex items-center justify-center">
-                        <AlertTriangle className="size-2 text-[#c5a059]" />
+                    <span className="w-5 h-3.5 inline-flex items-center justify-center" style={{ background: "rgba(197,160,89,.24)", clipPath: getBarClipPath(false, false) }}>
+                        <AlertTriangle className="size-2 text-[#a9863f]" />
                     </span>
                     {t("legendGap")}
                 </span>

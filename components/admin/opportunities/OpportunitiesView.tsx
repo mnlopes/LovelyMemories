@@ -24,7 +24,13 @@ export function OpportunitiesView({
     const t = useTranslations("AdminOpportunities");
     const dateLocale = locale === "pt" ? pt : undefined;
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [minNights, setMinNights] = useState<1 | 2 | 3>(1);
     const cardsRef = useRef<HTMLDivElement>(null);
+
+    // Filtro por tamanho mínimo do gap — client-side sobre os dados já carregados (instantâneo).
+    const opps = data.opportunities.filter((o) => o.nights >= minNights);
+    const propIds = new Set(opps.map((o) => o.propertyId));
+    const rows = data.rows.filter((r) => propIds.has(r.propertyId));
 
     const today = new Date();
     const daysUntil = (iso: string) => {
@@ -36,30 +42,47 @@ export function OpportunitiesView({
 
     const scrollCards = (dir: -1 | 1) => cardsRef.current?.scrollBy({ left: dir * 400, behavior: "smooth" });
 
-    const windowToggle = (
-        <div className="flex gap-0.5 bg-admin-bg border border-admin-border rounded-lg p-0.5">
-            {([30, 60] as const).map((d) => (
-                <button
-                    key={d}
-                    onClick={() => onDaysChange(d)}
-                    className={`text-[11px] font-bold rounded-md px-2.5 py-1 transition-colors ${days === d
-                        ? "bg-admin-surface text-admin-text-primary shadow-sm"
-                        : "text-admin-text-secondary hover:text-admin-text-primary"}`}
-                >
-                    {t("windowDays", { count: d })}
-                </button>
-            ))}
+    const controls = (
+        <div className="flex items-center gap-2">
+            <span className="text-[9.5px] font-bold uppercase tracking-wider text-admin-text-secondary">{t("minGapLabel")}</span>
+            <div className="flex gap-0.5 bg-admin-bg border border-admin-border rounded-lg p-0.5">
+                {([1, 2, 3] as const).map((n) => (
+                    <button
+                        key={n}
+                        onClick={() => setMinNights(n)}
+                        className={`text-[11px] font-bold rounded-md px-2 py-1 transition-colors ${minNights === n
+                            ? "bg-admin-surface text-admin-text-primary shadow-sm"
+                            : "text-admin-text-secondary hover:text-admin-text-primary"}`}
+                    >
+                        {n}+
+                    </button>
+                ))}
+            </div>
+            <span className="w-px h-4 bg-admin-border" />
+            <div className="flex gap-0.5 bg-admin-bg border border-admin-border rounded-lg p-0.5">
+                {([30, 60] as const).map((d) => (
+                    <button
+                        key={d}
+                        onClick={() => onDaysChange(d)}
+                        className={`text-[11px] font-bold rounded-md px-2.5 py-1 transition-colors ${days === d
+                            ? "bg-admin-surface text-admin-text-primary shadow-sm"
+                            : "text-admin-text-secondary hover:text-admin-text-primary"}`}
+                    >
+                        {t("windowDays", { count: d })}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 
-    if (data.opportunities.length === 0) {
+    if (opps.length === 0) {
         return (
             <div className="space-y-4">
-                <div className="bg-admin-surface rounded-2xl border border-admin-border p-3 flex items-center justify-between">
+                <div className="bg-admin-surface rounded-2xl border border-admin-border p-3 flex items-center justify-between flex-wrap gap-2">
                     <span className="text-sm font-bold text-admin-text-primary flex items-center gap-2">
                         <Sparkles className="size-4 text-[#c5a059]" />{t("title")}
                     </span>
-                    {windowToggle}
+                    {controls}
                 </div>
                 <div className="bg-admin-surface rounded-2xl border border-admin-border p-12 text-center shadow-sm">
                     <Sparkles className="size-6 text-[#c5a059] mx-auto mb-3" />
@@ -78,16 +101,13 @@ export function OpportunitiesView({
                     <span className="text-sm font-bold text-admin-text-primary flex items-center gap-2">
                         <Sparkles className="size-4 text-[#c5a059]" />
                         {t("title")}
-                        <span className="text-[10.5px] font-bold text-[#a9863f] bg-[#c5a059]/14 rounded-full px-2 py-0.5">{data.opportunities.length}</span>
+                        <span className="text-[10.5px] font-bold text-[#a9863f] bg-[#c5a059]/14 rounded-full px-2 py-0.5">{opps.length}</span>
                     </span>
-                    <div className="flex items-center gap-3">
-                        <span className="text-[11px] text-admin-text-secondary hidden lg:inline">{t("subtitleShort")}</span>
-                        {windowToggle}
-                    </div>
+                    {controls}
                 </div>
                 <div className="relative">
                     <div ref={cardsRef} className="flex gap-2.5 p-3 overflow-x-auto scroll-smooth scrollbar-hide">
-                        {data.opportunities.map((o) => {
+                        {opps.map((o) => {
                             const active = selectedId === o.id;
                             return (
                                 <button
@@ -130,8 +150,8 @@ export function OpportunitiesView({
 
             {/* Calendário filtrável */}
             <OpportunitiesCalendar
-                rows={data.rows}
-                opportunities={data.opportunities}
+                rows={rows}
+                opportunities={opps}
                 windowFrom={data.windowFrom}
                 windowTo={data.windowTo}
                 selectedId={selectedId}

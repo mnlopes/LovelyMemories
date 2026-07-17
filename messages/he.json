@@ -1466,6 +1466,7 @@
         "legendGap": "orphan night (gap)",
         "legendBooked": "booked",
         "windowDays": "{count} days",
+        "minGapLabel": "gap",
         "subtitleShort": "orphan nights between bookings",
         "emptySubDays": "No short gaps between bookings in the next {count} days.",
         "popFreeNights": "Free nights",

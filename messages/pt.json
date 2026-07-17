@@ -2708,6 +2708,7 @@
         "legendGap": "noite órfã (gap)",
         "legendBooked": "reservado",
         "windowDays": "{count} dias",
+        "minGapLabel": "gap",
         "subtitleShort": "noites órfãs entre reservas",
         "emptySubDays": "Sem buracos curtos entre reservas nos próximos {count} dias.",
         "popFreeNights": "Noites livres",
