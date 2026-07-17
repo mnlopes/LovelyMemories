@@ -83,7 +83,7 @@ export default async function AdminLayout({
                             <main className="flex-1 overflow-y-auto bg-admin-bg flex flex-col">
                                 <AdminHeader user={user} profile={profile} />
                                 {/* pb extra no mobile: espaço para a barra de navegação inferior fixa */}
-                                <div className="px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 lg:pt-10 pb-28 lg:pb-10 w-full space-y-8 lg:space-y-16">
+                                <div className="px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 lg:pt-10 pb-28 md:pb-10 w-full space-y-8 lg:space-y-16">
                                     <div className="w-full">
                                         {children}
                                     </div>

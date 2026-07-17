@@ -63,7 +63,7 @@ export const AdminBottomNav = () => {
 
     return (
         <nav
-            className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex bg-admin-surface border-t border-admin-border"
+            className="md:hidden fixed bottom-0 inset-x-0 z-40 flex bg-admin-surface border-t border-admin-border"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
             {items.map((item) => {
