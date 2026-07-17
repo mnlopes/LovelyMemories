@@ -2645,6 +2645,7 @@
         "cohostTitle": "O teu Co-Host",
         "toReview": "{count} por rever",
         "cohostSub": "Redigiu {count} respostas à espera da tua aprovação.",
+        "reviewReplies": "Rever {count} respostas →",
         "openCohost": "Abrir Co-Host →",
         "staysTitle": "Chegadas & Partidas",
         "seeCalendar": "Ver calendário →",

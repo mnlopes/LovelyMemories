@@ -2654,6 +2654,7 @@
         "cohostTitle": "Your Co-Host",
         "toReview": "{count} to review",
         "cohostSub": "Drafted {count} replies waiting for your approval.",
+        "reviewReplies": "Review {count} replies →",
         "openCohost": "Open Co-Host →",
         "staysTitle": "Arrivals & Departures",
         "seeCalendar": "See calendar →",

@@ -123,7 +123,26 @@ export default function AdminOverview() {
             {data === null ? (
                 <section className="rounded-[20px] bg-admin-surface border border-admin-border p-6 h-28 animate-pulse" />
             ) : data.cohost !== null ? (
-                <section className="rounded-[20px] bg-[#14161a] dark:bg-black text-white p-6 flex flex-wrap items-center gap-5 shadow-sm">
+                <>
+                {/* Mobile: banner compacto (título+badge · subtítulo/alerta · CTA largo) */}
+                <section className="md:hidden rounded-[20px] bg-[#14161a] dark:bg-black text-white p-5 shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="size-4 text-[#c5a059] shrink-0" />
+                        <h3 className="font-bold text-sm">{t("cohostTitle")}</h3>
+                        <span className="ml-auto bg-white text-[#14161a] text-[11px] font-bold px-2.5 py-0.5 rounded-full shrink-0">
+                            {t("toReview", { count: data.counts.pending })}
+                        </span>
+                    </div>
+                    <p className={`text-sm mt-1.5 ${data.cohost.alert ? "text-red-300" : "text-white/70"}`}>
+                        {data.cohost.alert ? data.cohost.alert.label : t("cohostSub", { count: data.counts.pending })}
+                    </p>
+                    <Link href="/admin/cohost" className="mt-4 flex items-center justify-center bg-[#c5a059] text-[#14161a] rounded-2xl py-3 text-[13px] font-extrabold">
+                        {t("reviewReplies", { count: data.counts.pending })}
+                    </Link>
+                </section>
+
+                {/* Desktop: banner rico com chips dos drafts */}
+                <section className="hidden md:flex rounded-[20px] bg-[#14161a] dark:bg-black text-white p-6 flex-wrap items-center gap-5 shadow-sm">
                     <div className="bg-[#c5a059]/15 text-[#c5a059] rounded-2xl size-11 flex items-center justify-center shrink-0">
                         <Sparkles className="size-5" />
                     </div>
@@ -154,6 +173,7 @@ export default function AdminOverview() {
                         {t("openCohost")}
                     </Link>
                 </section>
+                </>
             ) : null}
 
             {/* Arrivals & Departures */}
@@ -175,7 +195,43 @@ export default function AdminOverview() {
                         {t("noStays")}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <>
+                    {/* Mobile: carrossel horizontal de cartões compactos */}
+                    <div className="md:hidden -mx-4 px-4 flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-hide">
+                        {data.stays.map((stay, idx) => {
+                            const chip = chipForStatus(stay.status, stay.checkIn);
+                            return (
+                                <div key={idx} className="snap-start shrink-0 w-[168px] bg-admin-surface rounded-xl border border-admin-border overflow-hidden shadow-sm">
+                                    <div className="h-20 bg-cover bg-center relative bg-[#f5f5f5] dark:bg-white/5">
+                                        {stay.propertyImage && (
+                                            <img src={stay.propertyImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                                        )}
+                                        <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${chip.cls}`}>
+                                            {chip.label}
+                                        </span>
+                                    </div>
+                                    <div className="p-2.5">
+                                        <p className="font-bold text-admin-text-primary truncate text-[13px]">{stay.propertyTitle}</p>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            {stay.guestName
+                                                ? <span className="text-[11px] text-admin-text-secondary truncate">{stay.guestName}</span>
+                                                : <span className="text-[11px] text-admin-text-secondary italic truncate">{t("guestUnknown")}</span>}
+                                            {stay.source === 'airbnb' && (
+                                                <span className="shrink-0 text-[8px] font-bold px-1 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 uppercase">Airbnb</span>
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] font-semibold text-admin-text-primary mt-1.5">
+                                            {format(new Date(stay.checkIn), 'MMM d')} – {format(new Date(stay.checkOut), 'MMM d')}
+                                            {stay.guests != null && <span className="text-admin-text-secondary font-normal"> · {stay.guests}p</span>}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Desktop: grid de cartões completos */}
+                    <div className="hidden md:grid grid-cols-2 xl:grid-cols-4 gap-4">
                         {data.stays.map((stay, idx) => {
                             const chip = chipForStatus(stay.status, stay.checkIn);
                             return (
@@ -221,6 +277,7 @@ export default function AdminOverview() {
                             );
                         })}
                     </div>
+                    </>
                 )}
             </section>
 
