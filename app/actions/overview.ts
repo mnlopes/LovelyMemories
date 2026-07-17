@@ -44,7 +44,7 @@ type OverviewData = {
     firstName: string;
     counts: { staying: number; arrivalsToday: number; departuresTomorrow: number; pending: number };
     cohost: { pending: { rowId: string; title: string }[]; alert: { kind: 'send_failed' | 'stale_draft'; label: string } | null } | null;
-    stays: { guestName: string; propertyTitle: string; propertyImage: string | null; checkIn: string; checkOut: string; guests: number | null; status: 'arrives_today' | 'departs_tomorrow' | 'staying' | 'arrives_soon' }[];
+    stays: { guestName: string; propertyTitle: string; propertyImage: string | null; checkIn: string; checkOut: string; guests: number | null; status: 'arrives_today' | 'departs_tomorrow' | 'staying' | 'arrives_soon'; source: 'direct' | 'airbnb' }[];
     properties: { id: string; title: string; city: string | null; image: string | null; today: 'occupied' | 'arrives_today' | 'free'; nextArrival: string | null; pendingCount: number }[];
 };
 
@@ -106,7 +106,7 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
 
         const admin = await getSupabaseAdmin();
 
-        const [reservationsRes, blockedRes, propertiesRes] = await Promise.all([
+        const [reservationsRes, blockedRes, propertiesRes, b24LinkRes, b24BookingsRes] = await Promise.all([
             admin.from('reservations')
                 .select('id, property_id, guest_name, check_in, check_out, adults, children, infants, status')
                 .in('status', ['confirmed', 'checked-in'])
@@ -121,7 +121,28 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                 .select('id, title, city, images, is_active, is_multi_unit')
                 .eq('is_active', true)
                 .eq('is_multi_unit', false),
+            // Beds24: ligação property↔internal + reservas na janela → nome REAL do hóspede
+            // para as chegadas que hoje só existem como blocos iCal do Airbnb (6 casas ligadas).
+            admin.from('beds24_properties').select('beds24_property_id, internal_property_id').not('internal_property_id', 'is', null),
+            admin.from('beds24_bookings')
+                .select('beds24_property_id, arrival, guest_first_name, guest_last_name, num_adult, num_child')
+                .in('status', ['confirmed', 'new'])
+                .gte('arrival', todayISO)
+                .lte('arrival', windowEndISO),
         ]);
+
+        // Map (internal_property_id|arrival) → { name, guests } a partir do Beds24.
+        const b24Link = new Map((b24LinkRes.data ?? []).map((l) => [l.beds24_property_id as number, l.internal_property_id as string]));
+        const b24ByPropDay = new Map<string, { name: string; guests: number | null }>();
+        for (const bk of b24BookingsRes.data ?? []) {
+            const internalId = b24Link.get(bk.beds24_property_id as number);
+            if (!internalId) continue;
+            const name = [bk.guest_first_name, bk.guest_last_name].filter(Boolean).join(' ').trim();
+            b24ByPropDay.set(`${internalId}|${bk.arrival as string}`, {
+                name: name || '',
+                guests: ((bk.num_adult as number) ?? 0) + ((bk.num_child as number) ?? 0) || null,
+            });
+        }
 
         const propertyRows = propertiesRes.data ?? [];
         const propertyMap = new Map(propertyRows.map((p) => [
@@ -133,7 +154,7 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             },
         ]));
 
-        type RawStay = { propertyId: string; guestName: string; checkIn: string; checkOut: string; guests: number | null };
+        type RawStay = { propertyId: string; guestName: string; checkIn: string; checkOut: string; guests: number | null; source: 'direct' | 'airbnb' };
 
         const reservationStays: RawStay[] = (reservationsRes.data ?? []).map((r) => ({
             propertyId: r.property_id as string,
@@ -141,15 +162,22 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             checkIn: r.check_in as string,
             checkOut: r.check_out as string,
             guests: (r.adults ?? 0) + (r.children ?? 0) + (r.infants ?? 0) || null,
+            source: 'direct',
         }));
 
-        const blockedStays: RawStay[] = (blockedRes.data ?? []).map((b) => ({
-            propertyId: b.property_id as string,
-            guestName: 'Airbnb',
-            checkIn: b.start_date as string,
-            checkOut: b.end_date as string,
-            guests: null,
-        }));
+        const blockedStays: RawStay[] = (blockedRes.data ?? []).map((b) => {
+            // Enriquecer com o nome real do Beds24 quando a data de chegada coincide (6 casas ligadas);
+            // senão fica sem nome (o cartão mostra a propriedade + etiqueta "Airbnb").
+            const b24 = b24ByPropDay.get(`${b.property_id as string}|${b.start_date as string}`);
+            return {
+                propertyId: b.property_id as string,
+                guestName: b24?.name ?? '',
+                checkIn: b.start_date as string,
+                checkOut: b.end_date as string,
+                guests: b24?.guests ?? null,
+                source: 'airbnb',
+            };
+        });
 
         const allStays = [...reservationStays, ...blockedStays];
 
@@ -179,6 +207,7 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                     checkOut: s.checkOut,
                     guests: s.guests,
                     status: s.status,
+                    source: s.source,
                 };
             });
 

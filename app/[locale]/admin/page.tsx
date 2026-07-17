@@ -180,8 +180,16 @@ export default function AdminOverview() {
                                         </span>
                                     </div>
                                     <div className="p-4">
-                                        <p className="font-bold text-admin-text-primary">{stay.guestName}</p>
-                                        <p className="text-xs text-admin-text-secondary mt-0.5">{stay.propertyTitle}</p>
+                                        {/* Propriedade = título (é o que o operador reconhece); hóspede só quando o temos. */}
+                                        <p className="font-bold text-admin-text-primary truncate">{stay.propertyTitle}</p>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                            {stay.guestName
+                                                ? <span className="text-xs text-admin-text-secondary truncate">{stay.guestName}</span>
+                                                : <span className="text-xs text-admin-text-secondary italic">{t("guestUnknown")}</span>}
+                                            {stay.source === 'airbnb' && (
+                                                <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 uppercase tracking-wide">Airbnb</span>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-4 py-3 mt-2 border-t border-admin-border">
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] text-admin-text-secondary uppercase font-bold tracking-wider">{t("datesLabel")}</span>
@@ -189,11 +197,15 @@ export default function AdminOverview() {
                                                     {format(new Date(stay.checkIn), 'MMM d')} – {format(new Date(stay.checkOut), 'MMM d')}
                                                 </span>
                                             </div>
-                                            <div className="w-px h-8 bg-admin-border"></div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-admin-text-secondary uppercase font-bold tracking-wider">{t("guestsLabel")}</span>
-                                                <span className="text-xs font-semibold text-admin-text-primary">{stay.guests ?? '—'}</span>
-                                            </div>
+                                            {stay.guests != null && (
+                                                <>
+                                                    <div className="w-px h-8 bg-admin-border"></div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-admin-text-secondary uppercase font-bold tracking-wider">{t("guestsLabel")}</span>
+                                                        <span className="text-xs font-semibold text-admin-text-primary">{stay.guests}</span>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

@@ -9,18 +9,24 @@ export type CardMeta = { title: string; summary: string; why: string | null };
  * cabem em 44 caracteres, sem cortar a meio de uma frase; se mesmo a primeira já for maior que
  * isso, corta-se a meio com reticências.
  */
+const GREETING = /^(ol[áa]|oi|ola|bom dia|boa tarde|boa noite|hello|hi|hey|hola|shalom)[\s!,.…]*$/i;
+
 export function buildCardFallback(_guestName: string | null, incomingMessage: string): CardMeta {
     const text = (incomingMessage ?? "").trim();
     if (!text) return { title: "Nova mensagem", summary: "Nova mensagem do hóspede.", why: null };
 
-    const sentences = text.split(/\n+|(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+    let sentences = text.split(/\n+|(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+    // Descartar saudações iniciais ("Olá!", "Bom dia") quando há conteúdo a seguir —
+    // senão o título ficava só "Olá!" quando a frase seguinte é longa.
+    while (sentences.length > 1 && GREETING.test(sentences[0])) sentences = sentences.slice(1);
+
     let title = "";
     for (const s of sentences) {
         const candidate = title ? `${title} ${s}` : s;
         if (candidate.length <= 44) title = candidate;
         else break;
     }
-    if (!title) title = `${sentences[0].slice(0, 44)}…`;
+    if (!title) title = `${sentences[0].slice(0, 44).trim()}…`;
 
     const summary = text.slice(0, 160) || "Nova mensagem do hóspede.";
     return { title, summary, why: null };

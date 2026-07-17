@@ -2651,6 +2651,7 @@
         "chipArrives": "Chega {day}",
         "datesLabel": "Datas",
         "guestsLabel": "Hóspedes",
+        "guestUnknown": "Hóspede Airbnb",
         "propertiesTitle": "Estado das propriedades",
         "seeAll": "Ver todas →",
         "colProperty": "Propriedade",

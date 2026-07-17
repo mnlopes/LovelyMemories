@@ -2660,6 +2660,7 @@
         "chipArrives": "Arrives {day}",
         "datesLabel": "Dates",
         "guestsLabel": "Guests",
+        "guestUnknown": "Airbnb guest",
         "propertiesTitle": "Property status",
         "seeAll": "See all →",
         "colProperty": "Property",
