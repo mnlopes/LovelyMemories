@@ -2,6 +2,7 @@ import type { AgentTool } from "@/lib/ai-agent";
 import type { DraftContext } from "@/lib/ai-messaging";
 import { getRoomCalendar, summariseCalendar } from "@/lib/beds24/calendar";
 import { loadPropertyFacts, formatKnowledgeWithCitations } from "@/lib/ai-knowledge";
+import { datesOverlapStay } from "@/lib/reservation-window";
 
 /**
  * Constrói as ferramentas do agente LIGADAS à propriedade da conversa.
@@ -41,6 +42,14 @@ export function buildAgentTools(ctx: DraftContext): AgentTool[] {
                 const checkOut = String(args.checkOut ?? "");
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(checkIn) || !/^\d{4}-\d{2}-\d{2}$/.test(checkOut)) {
                     return { content: "Error: invalid dates. Use YYYY-MM-DD.", citations: [] };
+                }
+                const stay = ctx.reservation;
+                if (stay?.isConfirmed && stay.checkInDate && stay.checkOutDate
+                    && datesOverlapStay(checkIn, checkOut, stay.checkInDate, stay.checkOutDate)) {
+                    return {
+                        content: "These dates are the guest's own CONFIRMED stay — their booking is confirmed, this is not an availability question. Do not report these dates as unavailable.",
+                        citations: [],
+                    };
                 }
                 const days = await getRoomCalendar(roomId, checkIn, checkOut);
                 const s = summariseCalendar(days, checkIn, checkOut);
