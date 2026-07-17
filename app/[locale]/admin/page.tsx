@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Sparkles, AlertTriangle, LogIn, LogOut } from "lucide-react";
+import { MoreHorizontal, Sparkles, AlertTriangle, LogIn, LogOut, X } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
@@ -9,7 +9,9 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Link } from "@/i18n/routing";
 import { getOverviewData } from "@/app/actions/overview";
+import { getOpportunities, type OpportunitiesData } from "@/app/actions/opportunities";
 import { dismissDraft } from "@/app/actions/ai-inbox";
+import { OpportunitiesView } from "@/components/admin/opportunities/OpportunitiesView";
 
 type OverviewDataLike = Awaited<ReturnType<typeof getOverviewData>>;
 
@@ -24,6 +26,9 @@ export default function AdminOverview() {
     // Desktop: filtro da tabela Property status + estado do dismiss no rail Co-Host.
     const [propFilter, setPropFilter] = useState<"all" | "free" | "arriving" | "attention">("all");
     const [dismissing, setDismissing] = useState<string | null>(null);
+    // Desktop: modo Opportunities (switch no header) + dados dos gaps (60 dias).
+    const [oppMode, setOppMode] = useState(false);
+    const [oppData, setOppData] = useState<OpportunitiesData | null>(null);
 
     const handleDismiss = async (rowId: string) => {
         setDismissing(rowId);
@@ -62,6 +67,7 @@ export default function AdminOverview() {
     useEffect(() => {
         if (!isAuthorized) return;
         getOverviewData(locale).then(setData);
+        getOpportunities(locale).then(setOppData);
     }, [isAuthorized, locale]);
 
     if (isAuthorized === null) {
@@ -127,6 +133,7 @@ export default function AdminOverview() {
                     </h2>
                     <p className="text-admin-text-secondary mt-2 font-medium">
                         {format(new Date(), 'EEEE, d MMM', { locale: dateLocale })}
+                        {oppMode && <span className="text-[#a9863f]"> · {t("modeLabel")}</span>}
                     </p>
                 </div>
                 {/* Desktop: tiles de estatística — só informação, não clicáveis (mobile: pills por baixo). */}
@@ -147,6 +154,22 @@ export default function AdminOverview() {
                                 <p className="text-xl font-bold leading-none text-[#c5a059]">{data.counts.pending}</p>
                                 <p className="mt-1 text-[10px] font-semibold text-white/60">{t("tileToReview")}</p>
                             </div>
+                        )}
+                        {/* Switch para o modo Opportunities — só aparece quando há gaps */}
+                        {oppData && oppData.opportunities.length > 0 && (
+                            <button
+                                onClick={() => setOppMode((v) => !v)}
+                                aria-pressed={oppMode}
+                                className={`relative rounded-xl px-4 py-2.5 text-center min-w-[88px] border-2 transition-colors ${oppMode
+                                    ? "border-[#c5a059] bg-[#c5a059]/[0.08]"
+                                    : "border-admin-border bg-admin-surface hover:border-[#c5a059]/60"}`}
+                            >
+                                <p className="text-xl font-bold leading-none text-[#a9863f]">{oppData.opportunities.length}</p>
+                                <p className="mt-1 text-[10px] font-semibold text-[#a9863f] flex items-center justify-center gap-1">
+                                    {t("tileGaps")}{oppMode && <X className="size-2.5" />}
+                                </p>
+                                {!oppMode && <span className="absolute -top-1 -right-1 size-2.5 rounded-full bg-[#c5a059] border-2 border-admin-bg" />}
+                            </button>
                         )}
                     </div>
                 )}
@@ -302,7 +325,13 @@ export default function AdminOverview() {
                 lg o rail cai para baixo do conteúdo a toda a largura). */}
             <div className="hidden md:grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
                 <div className="min-w-0 space-y-5">
-                    {data === null ? (
+                    {oppMode ? (
+                        oppData ? (
+                            <OpportunitiesView data={oppData} locale={locale} />
+                        ) : (
+                            <div className="h-96 rounded-2xl bg-admin-surface border border-admin-border animate-pulse" />
+                        )
+                    ) : data === null ? (
                         <>
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="h-64 rounded-2xl bg-admin-surface border border-admin-border animate-pulse" />

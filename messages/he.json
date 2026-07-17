@@ -1445,7 +1445,26 @@
         "reviewDraft": "Review draft",
         "dismiss": "Dismiss",
         "openCohostAll": "Open Co-Host · all {count} →",
-        "cohostEmpty": "All caught up — no drafts waiting."
+        "cohostEmpty": "All caught up — no drafts waiting.",
+        "tileGaps": "gaps",
+        "modeLabel": "Opportunities mode"
+    },
+    "AdminOpportunities": {
+        "title": "Opportunities",
+        "subtitle": "orphan nights between bookings · next 60 days",
+        "oneNight": "1 night",
+        "nNights": "{count} nights",
+        "inDays": "in {count} days",
+        "inDaysOne": "in 1 day",
+        "nowGap": "now",
+        "emptyTitle": "No orphan nights",
+        "emptySub": "No short gaps between bookings in the next 60 days.",
+        "centeredOn": "centered on the gap · {date}",
+        "showingAll": "showing {count} properties",
+        "emptyCalendar": "No properties with gaps.",
+        "direct": "Direct",
+        "legendGap": "orphan night (gap)",
+        "legendBooked": "booked"
     },
     "AiMemory": {
         "title": "זיכרון הנכס",

@@ -2687,7 +2687,26 @@
         "reviewDraft": "Rever rascunho",
         "dismiss": "Dispensar",
         "openCohostAll": "Abrir Co-Host · {count} →",
-        "cohostEmpty": "Tudo em dia — sem rascunhos pendentes."
+        "cohostEmpty": "Tudo em dia — sem rascunhos pendentes.",
+        "tileGaps": "gaps",
+        "modeLabel": "modo Opportunities"
+    },
+    "AdminOpportunities": {
+        "title": "Opportunities",
+        "subtitle": "noites órfãs entre reservas · próximos 60 dias",
+        "oneNight": "1 noite",
+        "nNights": "{count} noites",
+        "inDays": "em {count} dias",
+        "inDaysOne": "em 1 dia",
+        "nowGap": "agora",
+        "emptyTitle": "Sem noites órfãs",
+        "emptySub": "Sem buracos curtos entre reservas nos próximos 60 dias.",
+        "centeredOn": "centrado no gap · {date}",
+        "showingAll": "a mostrar {count} casas",
+        "emptyCalendar": "Sem casas com gaps.",
+        "direct": "Direta",
+        "legendGap": "noite órfã (gap)",
+        "legendBooked": "reservado"
     },
     "AiMemory": {
         "title": "Memória da propriedade",
