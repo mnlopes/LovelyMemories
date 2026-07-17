@@ -44,6 +44,20 @@ Decisions/Inbox/Settings transbordavam no mobile ("Settings" cortado + scroll). 
 ## i18n adicionada (en/pt/he em paridade)
 `AdminCohost.feed.ctxStaying/ctxArriving`, `AiInbox.photo`, `AdminSidebar.more`, `AdminOverview.pillStaying/pillArriving/pillDeparting/nextArrivalShort/reviewReplies`. (he tem dívida conhecida — algumas ficaram em inglês, consistente com o resto do ficheiro.)
 
+## ⭐ PRÓXIMA TAREFA PRIORITÁRIA (Marcelo, 2026-07-17): abrir o Co-Host aos Admin
+Hoje **só o `super_admin`** acede a tudo do Co-Host. O Marcelo quer **dar acesso a tudo do Co-Host também ao role `admin`** (Decisions, Inbox, Settings, banner no Overview, badges). O código já anticipa isto (há comentários "depois alargar a 'admin' (uma linha)"). Pontos exatos a mudar de `['super_admin']`/`role === 'super_admin'` para **incluir `'admin'`**:
+
+1. **Guard da rota** — `app/[locale]/admin/cohost/layout.tsx`: `guardRoles(["super_admin"], locale)` → `["super_admin", "admin"]`. (É o portão de acesso às páginas /admin/cohost.)
+2. **Data layer do feed/inbox/decisões** — `app/actions/ai-inbox.ts` linha ~52: `const INBOX_ROLES = ['super_admin'];` → `['super_admin', 'admin']`. Cobre `getDecisionFeed`, `getPendingDecisionCount`, `getCohostContext`, `sendReply`, `updateDraft`, `dismissDraft`, `regenerateDraft`, BotSettings, etc. (todas chamam `assertAdmin()` que valida contra `INBOX_ROLES`).
+3. **Sidebar** — `components/admin/AdminSidebar.tsx`: linha ~105 (item "Co-Host" + badge) `role === 'super_admin'` → incluir admin; e linha ~58 `if (role !== "super_admin") return;` (fetch do `cohostPending`) → incluir admin, senão o badge não carrega para admins.
+4. **Bottom nav** — `components/admin/AdminBottomNav.tsx`: o tab Co-Host e o fetch do `pending` estão gated por `role === "super_admin"` → incluir admin.
+
+**Nuance a decidir com o Marcelo (NÃO assumir):**
+- **Banner Co-Host no Overview** (`app/[locale]/admin/page.tsx` + `app/actions/overview.ts` `OVERVIEW_ROLES = ['super_admin']`): o **/admin (Overview) é super_admin-only** — o `page.tsx` redireciona admin→/admin/properties. Abrir a secção co-host do Overview a admins implica primeiro decidir se os admins passam a ter Overview de todo. Provavelmente **fora de âmbito** desta tarefa (os admins entram no Co-Host pelo sidebar/bottom nav, não pelo Overview). Confirmar.
+- **Settings do Co-Host** inclui o **toggle global do bot** (BotSettings — liga/desliga o bot em TODAS as casas) e o web push. "Tudo do co-host" implica dar isto aos admins também; se o Marcelo quiser limitar (ex.: admins só Decisions/Inbox, sem o kill-switch global), aí é mais que "uma linha" — precisa de gating por sub-secção. **Perguntar** antes de implementar.
+
+Depois de mudar: `npx tsc --noEmit` + `npm run build` + push. Testar com uma conta `admin` (não só super_admin).
+
 ## 🔨 POR FAZER (candidatos ao próximo mockup→fix)
 1. **Vista Mês e Ano** do MultiCalendarView em mobile — só a Timeline foi tratada; as outras vistas provavelmente partem na mesma. (O toggle de vistas Timeline/Mês/Ano existe — ver memória `calendar-workspace-state`.)
 2. **Calendário da propriedade** (`/admin/properties/[id]?tab=calendar`) em mobile — não tocado.
