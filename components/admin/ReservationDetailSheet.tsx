@@ -137,8 +137,8 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                 className="fixed right-0 top-0 h-full w-full max-w-xl bg-white dark:bg-admin-dark-surface shadow-2xl z-[101] flex flex-col overflow-hidden"
             >
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between bg-white dark:bg-admin-dark-surface sticky top-0 z-10">
-                    <div>
+                <div className="p-4 md:p-6 border-b border-gray-100 dark:border-white/10 flex items-center justify-between gap-2 bg-white dark:bg-admin-dark-surface sticky top-0 z-10">
+                    <div className="min-w-0 flex-1">
                         {reservation.status === 'owner_block' ? (
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-3">
@@ -187,7 +187,7 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                             </>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={() => setShowHistory(!showHistory)}
                             className={cn(
@@ -197,8 +197,8 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                                     : "text-[#B08D4A] border-[#B08D4A]/20 hover:bg-[#B08D4A]/5"
                             )}
                         >
-                            <History className="size-3.5" />
-                            {t('history')}
+                            <History className="size-3.5 shrink-0" />
+                            <span className="hidden sm:inline">{t('history')}</span>
                         </button>
                         <button
                             onClick={onClose}
@@ -217,27 +217,31 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
                             {/* Main Grid: Trip & Guest Info */}
                             <div className="grid grid-cols-1 gap-4">
                                 {/* Dates & Property Combined */}
-                                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                {/* Mobile: empilhado (data em cima, propriedade em baixo); desktop: lado a lado. */}
+                                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0">
                                             <Calendar className="size-4" />
                                         </div>
-                                        <div>
+                                        <div className="min-w-0">
                                             <p className="text-[10px] text-gray-400 uppercase font-bold">{t('stay')}</p>
-                                            <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                            <p className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
                                                 {formatDate(reservation.check_in)} - {formatDate(reservation.check_out)}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="h-8 w-px bg-gray-200 dark:bg-white/10 mx-2" />
-                                    <div className="flex items-center gap-3 text-right">
-                                        <div>
+                                    <div className="hidden md:block h-8 w-px bg-gray-200 dark:bg-white/10 mx-2 shrink-0" />
+                                    <div className="flex items-center gap-3 min-w-0 md:text-right">
+                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0 md:hidden">
+                                            <Home className="size-4" />
+                                        </div>
+                                        <div className="min-w-0 md:order-1">
                                             <p className="text-[10px] text-gray-400 uppercase font-bold">{t('property')}</p>
-                                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-[150px]">
+                                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate md:max-w-[150px]">
                                                 {reservation.property_name || reservation.properties?.title?.[locale] || reservation.properties?.title?.en || reservation.properties?.title?.pt || reservation.property?.title || 'Unknown'}
                                             </p>
                                         </div>
-                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg shrink-0 hidden md:block md:order-2">
                                             <Home className="size-4" />
                                         </div>
                                     </div>
