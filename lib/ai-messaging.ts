@@ -172,6 +172,10 @@ export interface ReservationContext {
     checkOutDate?: string | null;
     guests?: number | null;
     previousStays?: number | null;
+    /** Estadia confirmada (status confirmed/new) vs inquiry (pré-reserva). */
+    isConfirmed?: boolean;
+    /** Nº de noites (derivado das datas). */
+    nights?: number | null;
 }
 
 export interface ThreadMessage {
@@ -402,10 +406,18 @@ export function buildSystemPrompt(ctx: DraftContext): string {
             r.guestName && `Guest name: ${r.guestName}`,
             r.checkInDate && `Arriving: ${r.checkInDate}`,
             r.checkOutDate && `Leaving: ${r.checkOutDate}`,
+            typeof r.nights === "number" && r.nights > 0 && `Nights: ${r.nights}`,
             typeof r.guests === "number" && `Party size: ${r.guests}`,
             typeof r.previousStays === "number" && r.previousStays > 0 && `Returning guest — ${r.previousStays} previous stay(s). Acknowledge warmly.`,
         ].filter(Boolean);
         if (res.length) parts.push(`Reservation:\n${res.join("\n")}`);
+        if (r.isConfirmed && r.checkInDate && r.checkOutDate) {
+            parts.push(
+                `IMPORTANT — this guest has a CONFIRMED booking for ${r.checkInDate} to ${r.checkOutDate}. ` +
+                `Their stay is confirmed; never question it or check availability for those dates (they are reserved for this guest). ` +
+                `Only use the calendar tool if the guest asks about DIFFERENT dates (extending, or a future stay).`,
+            );
+        }
     }
 
     return parts.join("\n\n");
