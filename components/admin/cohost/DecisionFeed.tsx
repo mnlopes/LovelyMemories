@@ -61,32 +61,32 @@ export function DecisionFeed({ onOpenConversation, initialDecisionId }: { onOpen
         if (match) setSelected(match);
     }, [initialDecisionId, cards]);
 
+    // Otimista: tira o cartão e desce o contador já, antes do round-trip.
+    // O refresh() no fim reconcilia — restaura em falha, confirma em sucesso.
+    const removeCardOptimistic = useCallback((rowId: string) => {
+        setSelected(null);
+        setCards((prev) => (prev ? prev.filter((c) => c.rowId !== rowId) : prev));
+        setContext((prev) => (prev ? { ...prev, pending: Math.max(0, prev.pending - 1) } : prev));
+    }, []);
+
     const approve = useCallback(async (rowId: string, reservationId: string, text: string) => {
+        removeCardOptimistic(rowId);
         const updateRes = await updateDraft(rowId, text);
-        if (!updateRes.ok) {
-            toast.error(t("sendFailed"));
-            void refresh();
-            return;
-        }
-        const sendRes = await sendReply(reservationId, text, rowId);
-        if (!sendRes.ok) {
+        const sendRes = updateRes.ok ? await sendReply(reservationId, text, rowId) : { ok: false };
+        if (!updateRes.ok || !sendRes.ok) {
             toast.error(t("sendFailed"));
         } else {
             toast.success(t("sent"));
-            setSelected(null);
         }
         void refresh();
-    }, [refresh, t]);
+    }, [refresh, removeCardOptimistic, t]);
 
     const dismiss = useCallback(async (rowId: string) => {
+        removeCardOptimistic(rowId);
         const res = await dismissDraft(rowId);
-        if (!res.ok) {
-            toast.error(t("dismissFailed"));
-        } else {
-            setSelected(null);
-        }
+        if (!res.ok) toast.error(t("dismissFailed"));
         void refresh();
-    }, [refresh, t]);
+    }, [refresh, removeCardOptimistic, t]);
 
     const openConversation = useCallback((reservationId: string) => {
         setSelected(null);
