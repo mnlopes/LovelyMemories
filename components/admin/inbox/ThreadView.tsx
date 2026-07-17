@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { BookOpenCheck, PencilLine, RefreshCw, Send, Sparkles, X } from "lucide-react";
+import { BookOpenCheck, ImageIcon, PencilLine, RefreshCw, Send, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
     sendReply, updateDraft, dismissDraft, regenerateDraft,
@@ -12,6 +12,50 @@ import {
 function fmtTime(iso: string | null): string {
     if (!iso) return "";
     return new Date(iso).toLocaleString("pt-PT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * Airbnb envia partilhas de foto como HTML (`<a href="…muscache…Messaging-…jpeg">`).
+ * Extrai o link da imagem e devolve o texto sem tags para não mostrar markup cru.
+ */
+function parseMessageBody(raw: string): { text: string; imageUrl: string | null } {
+    const href = raw.match(/<a[^>]+href="([^"]+)"/i)?.[1] ?? null;
+    const isImage = href
+        ? /\.(jpe?g|png|webp|gif)(\?|$)/i.test(href) || /muscache\.com\/.*Messaging-/i.test(href)
+        : false;
+    const text = raw.replace(/<[^>]+>/g, "").trim();
+    return { text, imageUrl: isImage ? href : null };
+}
+
+/** Corpo da mensagem: thumbnail para fotos (fallback etiqueta se expirar), texto seguro. */
+function MessageBody({ body, className }: { body: string; className?: string }) {
+    const t = useTranslations("AiInbox");
+    const { text, imageUrl } = parseMessageBody(body);
+    const [imgError, setImgError] = useState(false);
+
+    if (imageUrl && !imgError) {
+        return (
+            <div>
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL assinado expira; sem otimizador */}
+                <img
+                    src={imageUrl}
+                    alt={t("photo")}
+                    onError={() => setImgError(true)}
+                    className="max-h-64 max-w-full rounded-xl object-cover"
+                />
+                {text && <p className={cn("mt-1.5 whitespace-pre-wrap break-words", className)}>{text}</p>}
+            </div>
+        );
+    }
+    if (imageUrl && imgError) {
+        return (
+            <a href={imageUrl} target="_blank" rel="noopener noreferrer" className={cn("inline-flex items-center gap-1.5 underline underline-offset-2", className)}>
+                <ImageIcon className="h-4 w-4 shrink-0" />
+                {t("photo")}
+            </a>
+        );
+    }
+    return <p className={cn("whitespace-pre-wrap break-words", className)}>{text || body}</p>;
 }
 
 function fmtLatency(ms: number | null): string | null {
@@ -62,7 +106,7 @@ export function ThreadView(props: {
                                             <Sparkles className="h-3 w-3" />
                                             {t("autoSent")}
                                         </div>
-                                        <p className="whitespace-pre-wrap text-sm text-[#171717] dark:text-white/90">{m.body}</p>
+                                        <MessageBody body={m.body} className="text-sm text-[#171717] dark:text-white/90" />
                                         {m.knowledgeCitation && (
                                             <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200">
                                                 <BookOpenCheck className="h-3 w-3" />
@@ -77,7 +121,7 @@ export function ThreadView(props: {
                                             ? "rounded-bl-md bg-[#f5f5f5] dark:bg-white/10"
                                             : "rounded-br-md bg-[#171717] text-white dark:bg-white dark:text-black",
                                     )}>
-                                        <p className="whitespace-pre-wrap text-sm">{m.body}</p>
+                                        <MessageBody body={m.body} className="text-sm" />
                                     </div>
                                 )}
                                 <div className={cn("mt-1 flex items-center gap-1.5 text-[10px] text-[#a3a3a3]", guest ? "" : "justify-end")}>

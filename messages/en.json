@@ -2537,6 +2537,7 @@
         "noConversations": "No conversations yet",
         "selectConversation": "Select a conversation",
         "noMessages": "No messages in this conversation yet",
+        "photo": "Photo",
         "autoSent": "Auto-reply sent",
         "basedOn": "based on",
         "needsHuman": "needs a human",
@@ -2630,7 +2631,9 @@
             "greetingMorning": "Good morning, {name}",
             "greetingAfternoon": "Good afternoon, {name}",
             "greetingEvening": "Good evening, {name}",
-            "contextLine": "{pending} to review · {staying} staying · {arrivals} arriving today"
+            "contextLine": "{pending} to review · {staying} staying · {arrivals} arriving today",
+            "ctxStaying": "{count} staying",
+            "ctxArriving": "{count} arriving today"
         },
         "push": {
             "title": "Notifications on this device",

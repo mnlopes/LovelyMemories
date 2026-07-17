@@ -2528,6 +2528,7 @@
         "noConversations": "Ainda sem conversas",
         "selectConversation": "Seleciona uma conversa",
         "noMessages": "Ainda sem mensagens nesta conversa",
+        "photo": "Foto",
         "autoSent": "Resposta automática enviada",
         "basedOn": "baseado em",
         "needsHuman": "precisa de humano",
@@ -2621,7 +2622,9 @@
             "greetingMorning": "Bom dia, {name}",
             "greetingAfternoon": "Boa tarde, {name}",
             "greetingEvening": "Boa noite, {name}",
-            "contextLine": "{pending} por rever · {staying} em estadia · {arrivals} chegadas hoje"
+            "contextLine": "{pending} por rever · {staying} em estadia · {arrivals} chegadas hoje",
+            "ctxStaying": "{count} em estadia",
+            "ctxArriving": "{count} chegadas hoje"
         },
         "push": {
             "title": "Notificações neste dispositivo",

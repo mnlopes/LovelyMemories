@@ -1286,6 +1286,7 @@
         "noConversations": "אין שיחות עדיין",
         "selectConversation": "בחרו שיחה",
         "noMessages": "אין הודעות בשיחה זו עדיין",
+        "photo": "תמונה",
         "autoSent": "תשובה אוטומטית נשלחה",
         "basedOn": "מבוסס על",
         "needsHuman": "דורש טיפול אנושי",
@@ -1379,7 +1380,9 @@
             "greetingMorning": "Good morning, {name}",
             "greetingAfternoon": "Good afternoon, {name}",
             "greetingEvening": "Good evening, {name}",
-            "contextLine": "{pending} to review · {staying} staying · {arrivals} arriving today"
+            "contextLine": "{pending} to review · {staying} staying · {arrivals} arriving today",
+            "ctxStaying": "{count} staying",
+            "ctxArriving": "{count} arriving today"
         },
         "push": {
             "title": "Notifications on this device",

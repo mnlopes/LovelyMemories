@@ -31,9 +31,10 @@ function CohostPageInner() {
 
     return (
         <div className={cn("mx-auto p-4 md:p-6", activeTab === "inbox" ? "w-full max-w-none" : "container max-w-3xl")}>
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t("title")}</h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{t("subtitle")}</p>
+            <div className="mb-4 md:mb-6">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t("title")}</h1>
+                {/* Subtítulo redundante no mobile: a saudação + contexto já orientam. */}
+                <p className="hidden md:block text-gray-500 dark:text-gray-400 mt-1 text-sm">{t("subtitle")}</p>
             </div>
             <div className="flex items-center gap-1 p-1 bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 rounded-2xl w-full md:w-fit shadow-sm mb-6 overflow-x-auto no-scrollbar">
                 {tabs.map((tab) => (

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { PartyPopper, Check } from "lucide-react";
+import { PartyPopper, Check, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -97,14 +97,30 @@ export function DecisionFeed({ onOpenConversation, initialDecisionId }: { onOpen
         return t(key, { name: context.firstName });
     })();
 
+    // Linha de contexto sem contadores a zero (o "por rever" vive na pill dourada).
+    const contextParts = context
+        ? [
+            context.staying > 0 ? t("ctxStaying", { count: context.staying }) : null,
+            context.arrivalsToday > 0 ? t("ctxArriving", { count: context.arrivalsToday }) : null,
+        ].filter(Boolean)
+        : [];
+
     return (
         <div className="space-y-3">
             {context && (
-                <div className="mb-1">
-                    <p className="text-lg font-extrabold tracking-tight text-[#171717] dark:text-white">{greeting}</p>
-                    <p className="mt-0.5 text-sm text-[#737373] dark:text-white/60">
-                        {t("contextLine", { pending: context.pending, staying: context.staying, arrivals: context.arrivalsToday })}
-                    </p>
+                <div className="mb-1 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-xl font-extrabold tracking-tight text-[#171717] dark:text-white">{greeting}</p>
+                        {contextParts.length > 0 && (
+                            <p className="mt-0.5 text-sm text-[#737373] dark:text-white/60">{contextParts.join(" · ")}</p>
+                        )}
+                    </div>
+                    {context.pending > 0 && (
+                        <span className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#faf3e6] px-3 py-1 text-xs font-bold text-[#8a6a2f] dark:bg-[#c5a059]/15 dark:text-[#e0c088]">
+                            <Inbox className="size-3.5" />
+                            {t("pending", { count: context.pending })}
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -120,7 +136,6 @@ export function DecisionFeed({ onOpenConversation, initialDecisionId }: { onOpen
                 </div>
             ) : (
                 <>
-                    <p className="text-xs font-bold uppercase tracking-widest text-[#a3a3a3]">{t("pending", { count: cards.length })}</p>
                     {cards.map((c) => (
                         <DecisionCard key={c.rowId} card={c} onOpen={setSelected} />
                     ))}
