@@ -36,13 +36,14 @@ function CohostPageInner() {
                 {/* Subtítulo redundante no mobile: a saudação + contexto já orientam. */}
                 <p className="hidden md:block text-gray-500 dark:text-gray-400 mt-1 text-sm">{t("subtitle")}</p>
             </div>
-            <div className="flex items-center gap-1 p-1 bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 rounded-2xl w-full md:w-fit shadow-sm mb-6 overflow-x-auto no-scrollbar">
+            {/* Mobile: 3 terços iguais (ícone sobre texto). Desktop: pills inline w-fit. */}
+            <div className="flex items-stretch gap-1 p-1 bg-white dark:bg-white/5 border border-[#f5f5f5] dark:border-white/10 rounded-2xl w-full md:w-fit shadow-sm mb-6">
                 {tabs.map((tab) => (
                     <button
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={cn(
-                            "flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shrink-0",
+                            "flex flex-1 md:flex-none flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all",
                             activeTab === tab.key
                                 ? "bg-[#171717] dark:bg-white text-white dark:text-black shadow-lg"
                                 : "text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white",
