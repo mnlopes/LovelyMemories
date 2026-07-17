@@ -41,15 +41,14 @@ async function assertAdmin() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    // Rollout: super_admin apenas até o E2E estar validado pelo Marcelo;
-    // depois alargar a 'admin' (uma linha).
     if (!profile || !INBOX_ROLES.includes(profile.role)) {
         throw new Error('Not authorized');
     }
     return user;
 }
 
-const INBOX_ROLES = ['super_admin'];
+// Co-Host aberto a super_admin + admin (rollout validado 2026-07-17).
+const INBOX_ROLES = ['super_admin', 'admin'];
 
 // ── Estado do motor ───────────────────────────────────────────────────────────
 
@@ -929,7 +928,7 @@ export async function getKnowledgeForProperty(externalPropertyId: string): Promi
 
 /** Dados extra para o ContextPanel: factos (p/ cobertura) + se pode gerir memória. */
 export async function getPanelExtras(externalPropertyId: string): Promise<{ facts: { topic: string; status: string }[] }> {
-    await assertAdmin(); // super_admin apenas (INBOX_ROLES)
+    await assertAdmin(); // super_admin + admin (INBOX_ROLES)
     try {
         const admin = await getSupabaseAdmin();
         const { data } = await admin.from('ai_property_fact')

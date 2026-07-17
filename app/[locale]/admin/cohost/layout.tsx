@@ -4,7 +4,7 @@ export default async function CohostLayout({
     children, params,
 }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
     const { locale } = await params;
-    // Rollout: super_admin only (como o inbox). Alargar a admin = 1 linha aqui + sidebar.
-    await guardRoles(["super_admin"], locale);
+    // Co-Host aberto a super_admin + admin (rollout validado 2026-07-17).
+    await guardRoles(["super_admin", "admin"], locale);
     return <>{children}</>;
 }

@@ -55,7 +55,7 @@ export const AdminSidebar = () => {
     }, []);
 
     useEffect(() => {
-        if (role !== "super_admin") return;
+        if (role !== "super_admin" && role !== "admin") return;
         let alive = true;
         const load = () => { void getPendingDecisionCount().then((n) => { if (alive) setCohostPending(n); }).catch(() => {}); };
         load();
@@ -73,8 +73,8 @@ export const AdminSidebar = () => {
         {
             title: t('management'),
             items: [
-                // Only show Overview to Super Admins
-                ...(role === 'super_admin' ? [
+                // Overview: super_admin + admin (2026-07-17)
+                ...(role === 'super_admin' || role === 'admin' ? [
                     { icon: LayoutDashboard, label: t('overview'), path: "/admin" }
                 ] : []),
                 ...(hasAccess('properties') ? [{ icon: Hotel, label: t('properties'), path: "/admin/properties" }] : []),
@@ -102,7 +102,7 @@ export const AdminSidebar = () => {
                 title: "System",
                 items: [
                     ...(hasAccess('imports') || role === 'super_admin' || role === 'admin' ? [{ icon: FileUp, label: "Imports", path: "/admin/imports" }] : []),
-                    ...(role === 'super_admin' ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: cohostPending }] : []),
+                    ...(role === 'super_admin' || role === 'admin' ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: cohostPending }] : []),
                     { icon: Activity, label: "Activity", path: "/admin/activity" },
                     // Settings only for Super Admin
                     ...(role === 'super_admin' ? [
