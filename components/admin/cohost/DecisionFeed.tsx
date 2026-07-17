@@ -31,17 +31,20 @@ export function DecisionFeed({ onOpenConversation, initialDecisionId }: { onOpen
     const refresh = useCallback(async () => {
         try { setCards(await getDecisionFeed()); } catch { /* próximo tick */ }
         try { setCompleted(await getRecentCompleted()); } catch { /* fail-soft */ }
+        // Contexto (pill "N por rever" + contadores) tem de acompanhar cada refresh,
+        // senão o contador fica preso no valor inicial quando drafts entram/saem.
+        try { setContext(await getCohostContext()); } catch { /* mantém o anterior */ }
     }, []);
 
     useEffect(() => {
         void refresh();
-        getCohostContext().then(setContext).catch(() => { /* saudação sem contexto é aceitável */ });
         const id = setInterval(() => void refresh(), 30_000);
         const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
         document.addEventListener("visibilitychange", onVisible);
         const channel = supabase
             .channel("cohost-feed-live")
             .on("postgres_changes", { event: "*", schema: "public", table: "ai_message_log" }, () => void refresh())
+            .on("postgres_changes", { event: "*", schema: "public", table: "ai_conversation" }, () => void refresh())
             .subscribe();
         return () => {
             clearInterval(id);
