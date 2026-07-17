@@ -88,6 +88,28 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
         return () => ro.disconnect();
     }, []);
 
+    // Swipe horizontal no mobile: salta 7 dias (mantém as setas). Um pequeno
+    // "nudge" das linhas dá a sensação de transição sem remontar (não perde scroll).
+    const touchStart = useRef<{ x: number; y: number } | null>(null);
+    const [nudge, setNudge] = useState(0);
+    const onTouchStart = (e: React.TouchEvent) => {
+        if (!isMobile) return;
+        const t = e.touches[0];
+        touchStart.current = { x: t.clientX, y: t.clientY };
+    };
+    const onTouchEnd = (e: React.TouchEvent) => {
+        if (!isMobile || !touchStart.current) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStart.current.x;
+        const dy = t.clientY - touchStart.current.y;
+        touchStart.current = null;
+        // Só conta como swipe se for claramente horizontal (não confundir com scroll vertical).
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        if (dx < 0) { nextMonth(); setNudge(22); } else { prevMonth(); setNudge(-22); }
+        // Double rAF: garante que o offset inicial pinta antes de animar para 0.
+        requestAnimationFrame(() => requestAnimationFrame(() => setNudge(0)));
+    };
+
     const getPropData = (id: string) => {
         const prop = properties[id];
         if (!prop) return { id, title: id, city: '', mainImage: propertyImages?.[id] || '', is_multi_unit: false };
@@ -391,7 +413,7 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
             </div>
 
             {/* Main Calendar Area */}
-            <div className="flex-1 overflow-auto custom-scrollbar relative" ref={scrollContainerRef}>
+            <div className="flex-1 overflow-auto custom-scrollbar relative" ref={scrollContainerRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
                 <div className="inline-block min-w-full">
                     {/* Calendar Header Row */}
                     <div className="sticky top-0 z-[12] flex bg-[#fafafa] dark:bg-admin-dark-bg border-b border-admin-border dark:border-admin-dark-border h-[40px] md:h-[48px]">
@@ -429,7 +451,10 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                     </div>
 
                     {/* Property Rows */}
-                    <div className="divide-y divide-admin-border dark:divide-admin-dark-border">
+                    <div
+                        className="divide-y divide-admin-border dark:divide-admin-dark-border"
+                        style={isMobile ? { transform: `translateX(${nudge}px)`, transition: nudge === 0 ? "transform 200ms ease-out" : "none" } : undefined}
+                    >
                         {visiblePropertyIds.map((propId) => {
                             const propData = getPropData(propId);
                             // Duas bandas só nas linhas com preços (ligadas): barra 62px + rail 28px.
