@@ -129,7 +129,7 @@ export default function AdminOverview() {
                         {format(new Date(), 'EEEE, d MMM', { locale: dateLocale })}
                     </p>
                 </div>
-                {/* Desktop: tiles de estatística clicáveis (mobile: pills numeradas por baixo). */}
+                {/* Desktop: tiles de estatística — só informação, não clicáveis (mobile: pills por baixo). */}
                 {data && (
                     <div className="hidden md:flex gap-2.5 shrink-0">
                         {[
@@ -137,16 +137,16 @@ export default function AdminOverview() {
                             { n: data.counts.arrivalsToday, label: t("pillArriving"), numCls: "text-emerald-600 dark:text-emerald-400" },
                             { n: data.counts.departuresTomorrow, label: t("pillDeparting"), numCls: "text-amber-600 dark:text-amber-400" },
                         ].map((s, i) => (
-                            <Link key={i} href="/admin/reservations" className="bg-admin-surface border border-admin-border rounded-xl px-4 py-2.5 text-center min-w-[88px] hover:border-admin-text-secondary/40 transition-colors">
+                            <div key={i} className="bg-admin-surface border border-admin-border rounded-xl px-4 py-2.5 text-center min-w-[88px]">
                                 <p className={`text-xl font-bold leading-none ${s.numCls}`}>{s.n}</p>
                                 <p className="mt-1 text-[10px] font-semibold text-admin-text-secondary">{s.label}</p>
-                            </Link>
+                            </div>
                         ))}
                         {data.cohost !== null && (
-                            <Link href="/admin/cohost" className="bg-[#14161a] dark:bg-black border border-[#14161a] dark:border-white/10 rounded-xl px-4 py-2.5 text-center min-w-[88px] hover:opacity-90 transition-opacity">
+                            <div className="bg-[#14161a] dark:bg-black border border-[#14161a] dark:border-white/10 rounded-xl px-4 py-2.5 text-center min-w-[88px]">
                                 <p className="text-xl font-bold leading-none text-[#c5a059]">{data.counts.pending}</p>
                                 <p className="mt-1 text-[10px] font-semibold text-white/60">{t("tileToReview")}</p>
-                            </Link>
+                            </div>
                         )}
                     </div>
                 )}

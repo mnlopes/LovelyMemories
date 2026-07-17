@@ -485,7 +485,7 @@ export default function AdminReservationsPage() {
                     <p className="hidden md:block text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle')}</p>
                 </div>
                 <div className="flex gap-3 justify-between md:justify-end">
-                    {role === 'super_admin' && (
+                    {(role === 'super_admin' || role === 'admin') && (
                         <div className="flex items-center gap-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 transition-colors duration-300">
                             <span className="hidden md:inline pl-2 text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t('dataSource')}</span>
                             <button
@@ -773,7 +773,7 @@ export default function AdminReservationsPage() {
                     locale={locale}
                     blockedDates={calendarBlockedDates}
                     onRefresh={fetchData}
-                    canShowPrices={role === 'super_admin'}
+                    canShowPrices={role === 'super_admin' || role === 'admin'}
                 />
             ) : (
                 /* List View */

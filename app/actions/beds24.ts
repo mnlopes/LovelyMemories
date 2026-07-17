@@ -23,6 +23,19 @@ async function guard() {
     }
 }
 
+// Guard de LEITURA para o calendário das reservas (super_admin + admin). Usado só nas
+// pré-visualizações read-only (lente Beds24 + preços diários) — as ações de escrita do
+// painel Beds24 continuam super_admin-only via guard().
+async function guardRead() {
+    const role = await getCurrentUserRole();
+    if (role !== 'super_admin' && role !== 'admin') {
+        throw new Error('Não autorizado');
+    }
+    if (!isBeds24Enabled()) {
+        throw new Error('Beds24 desativado neste ambiente (sem BEDS24_REFRESH_TOKEN)');
+    }
+}
+
 // ---------- Leitura para o painel ----------
 
 export async function getBeds24Status() {
@@ -283,7 +296,7 @@ export type Beds24CalendarPreviewResult =
  */
 export async function getBeds24CalendarPreview(): Promise<Beds24CalendarPreviewResult> {
     try {
-        await guard();
+        await guardRead();
         const supabase = await getSupabaseAdmin();
         const { data: props, error: propsError } = await supabase
             .from('beds24_properties')
@@ -481,7 +494,7 @@ export type Beds24DailyPricesResult =
  */
 export async function getBeds24DailyPrices(startDate: string, endDate: string): Promise<Beds24DailyPricesResult> {
     try {
-        await guard();
+        await guardRead();
         const supabase = await getSupabaseAdmin();
         const { data: props, error } = await supabase
             .from('beds24_properties')

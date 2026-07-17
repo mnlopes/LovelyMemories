@@ -232,8 +232,6 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
             return acc;
         }, {} as { [key: string]: any[] });
 
-    const reservationsInMonth = Object.values(reservationsByProperty).flat();
-
     const visibleBlockedDates = blockedDates?.filter(b => {
         if (!visiblePropertyIds.includes(b.property_id)) return false;
         const start = new Date(b.start_date);
@@ -395,7 +393,6 @@ export function MultiCalendarView({ reservations, properties, propertyImages, lo
                             {t("prices")}
                         </button>
                     )}
-                    <span className="text-xs font-medium text-[#a3a3a3] bg-[#f5f5f5] dark:bg-admin-dark-bg px-3 py-1 rounded-full border border-admin-border hidden md:block">{t('reservationsCount', { count: reservationsInMonth.length })}</span>
                 </div>
 
                 <div className="hidden md:flex items-center justify-end gap-6 w-1/3">
