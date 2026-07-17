@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAdminNav } from "./AdminNavProvider";
+import { AdminThemePicker } from "./AdminThemePicker";
 import { getPendingDecisionCount } from "@/app/actions/ai-inbox";
 
 type NavItem = { icon: LucideIcon; label: string; path: string; badge?: number };
@@ -228,6 +229,9 @@ export const AdminSidebar = () => {
 
             {/* Footer Area */}
             <div className={`p-6 border-t border-admin-border ${isCollapsed ? 'px-2 items-center' : ''}`}>
+                {/* Theme Selector (mobile only; desktop lives in the header) */}
+                <AdminThemePicker surface="mobile" className="md:hidden mb-2 w-full justify-between" />
+
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}

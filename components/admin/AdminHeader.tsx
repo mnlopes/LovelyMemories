@@ -1,15 +1,13 @@
 "use client";
 
-import { Search, Bell, User, Sun, Moon, Sparkles, CloudMoon, Menu } from "lucide-react";
+import { User, Menu } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useAdminTheme } from "./AdminThemeProvider";
 import { useAdminNav } from "./AdminNavProvider";
+import { AdminThemePicker } from "./AdminThemePicker";
 import { NotificationsPopover } from "./NotificationsPopover";
-import { cn } from "@/lib/utils";
 
 export const AdminHeader = ({ user, profile }: any) => {
     const t = useTranslations('AdminHeader');
-    const { theme, setTheme } = useAdminTheme();
     const { setMobileOpen } = useAdminNav();
 
     return (
@@ -27,28 +25,7 @@ export const AdminHeader = ({ user, profile }: any) => {
             {/* Actions */}
             <div className="flex items-center gap-3 md:gap-8">
                 {/* Theme Selector (desktop only; mobile lives in the drawer) */}
-                <div className="hidden md:flex items-center gap-1.5 p-1.5 bg-admin-bg rounded-2xl border border-admin-border shadow-sm">
-                    {[
-                        { id: 'light', icon: Sun, label: 'Light', color: 'text-orange-500' },
-                        { id: 'creme', icon: Sparkles, label: 'Creme', color: 'text-[#8c734b]' },
-                        { id: 'soft-dark', icon: CloudMoon, label: 'Soft Dark', color: 'text-blue-400' },
-                        { id: 'dark', icon: Moon, label: 'Deep Dark', color: 'text-indigo-500' }
-                    ].map((t: any) => (
-                        <button
-                            key={t.id}
-                            onClick={() => setTheme(t.id)}
-                            className={cn(
-                                "p-2 rounded-xl transition-all duration-300",
-                                theme === t.id
-                                    ? "bg-admin-surface shadow-md scale-105 ring-1 ring-black/5 dark:ring-white/10"
-                                    : "text-admin-text-secondary hover:text-admin-text-primary hover:bg-admin-surface/50"
-                            )}
-                            title={t.label}
-                        >
-                            <t.icon className={cn("size-4.5 stroke-[1.5px]", theme === t.id ? t.color : "")} />
-                        </button>
-                    ))}
-                </div>
+                <AdminThemePicker surface="desktop" className="hidden md:flex" />
 
                 <NotificationsPopover lastReadAt={profile?.last_read_notifications_at || null} />
 

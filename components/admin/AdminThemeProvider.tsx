@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Toaster } from "sonner";
 
-type Theme = "light" | "creme" | "dark" | "soft-dark";
+export type Theme = "light" | "creme" | "dark" | "soft-dark" | "midnight";
 
 interface ThemeContextType {
     theme: Theme;
@@ -27,7 +27,7 @@ export const AdminThemeProvider = ({ children }: { children: React.ReactNode }) 
 
     useEffect(() => {
         // Handle Tailwind 'dark' class for variants
-        if (theme === "dark" || theme === "soft-dark") {
+        if (theme === "dark" || theme === "soft-dark" || theme === "midnight") {
             document.documentElement.classList.add("dark");
         } else {
             document.documentElement.classList.remove("dark");

@@ -109,6 +109,17 @@ html.dark[data-admin-theme="dark"] {
     --admin-accent: #c5a059;
 }
 
+/* 4. MIDNIGHT (Deep Blue) — oferecido só no seletor mobile */
+html[data-admin-theme="midnight"],
+html.dark[data-admin-theme="midnight"] {
+    --admin-bg: #0b1220;
+    --admin-surface: #131d31;
+    --admin-border: #24334d;
+    --admin-text-primary: #eef3fb;
+    --admin-text-secondary: #7f97ba;
+    --admin-accent: #c5a059;
+}
+
 .premium-glow-dark {
     transition: all 0.3s ease;
 }
