@@ -1,7 +1,7 @@
 // components/admin/cohost/DecisionFeed.tsx
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PartyPopper, Check } from "lucide-react";
@@ -17,7 +17,7 @@ type Card = Awaited<ReturnType<typeof getDecisionFeed>>[number];
 type CompletedItem = Awaited<ReturnType<typeof getRecentCompleted>>[number];
 type CohostContext = Awaited<ReturnType<typeof getCohostContext>>;
 
-export function DecisionFeed({ onOpenConversation }: { onOpenConversation?: (reservationId: string) => void }) {
+export function DecisionFeed({ onOpenConversation, initialDecisionId }: { onOpenConversation?: (reservationId: string) => void; initialDecisionId?: string | null }) {
     const t = useTranslations("AdminCohost.feed");
     const params = useParams();
     const locale = (params?.locale as string) || "en";
@@ -26,6 +26,7 @@ export function DecisionFeed({ onOpenConversation }: { onOpenConversation?: (res
     const [completed, setCompleted] = useState<CompletedItem[]>([]);
     const [context, setContext] = useState<CohostContext | null>(null);
     const [selected, setSelected] = useState<Card | null>(null);
+    const consumedDeepLink = useRef(false);
 
     const refresh = useCallback(async () => {
         try { setCards(await getDecisionFeed()); } catch { /* próximo tick */ }
@@ -48,6 +49,14 @@ export function DecisionFeed({ onOpenConversation }: { onOpenConversation?: (res
             void supabase.removeChannel(channel);
         };
     }, [refresh]);
+
+    // Deep-link de notificação: abre o cartão assim que o feed carrega (uma vez).
+    useEffect(() => {
+        if (consumedDeepLink.current || !initialDecisionId || cards === null) return;
+        consumedDeepLink.current = true;
+        const match = cards.find((c) => c.rowId === initialDecisionId);
+        if (match) setSelected(match);
+    }, [initialDecisionId, cards]);
 
     const approve = useCallback(async (rowId: string, reservationId: string, text: string) => {
         const updateRes = await updateDraft(rowId, text);

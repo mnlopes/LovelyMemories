@@ -3,13 +3,15 @@ import webpush from "web-push";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function notifyNewDecision(input: {
-    guestName: string | null; propertyName: string | null; preview: string;
+    guestName: string | null; propertyName: string | null; preview: string; rowId?: string | null;
 }): Promise<void> {
     try {
         const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         const priv = process.env.VAPID_PRIVATE_KEY;
         const title = `${input.guestName ?? "Guest"} · ${input.propertyName ?? "Co-Host"}`;
         const body = input.preview.slice(0, 120);
+        // Deep-link: abre o cartão desta decisão direto no feed.
+        const url = input.rowId ? `/en/admin/cohost?decision=${input.rowId}` : "/en/admin/cohost";
 
         // Só web push. Sem subscrições/chaves → não faz nada (sem fallback de email).
         if (pub && priv) {
@@ -22,7 +24,7 @@ export async function notifyNewDecision(input: {
                 try {
                     await webpush.sendNotification(
                         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-                        JSON.stringify({ title, body, url: "/en/admin/cohost" }),
+                        JSON.stringify({ title, body, url }),
                     );
                 } catch (e: unknown) {
                     const code = (e as { statusCode?: number }).statusCode;

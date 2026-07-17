@@ -14,8 +14,14 @@ self.addEventListener("notificationclick", (event) => {
     event.notification.close();
     const url = event.notification.data?.url || "/en/admin/cohost";
     event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+        // Reaproveita uma janela do Co-Host já aberta, mas navega-a para a decisão certa.
         for (const client of list) {
-            if (client.url.includes("/admin/cohost") && "focus" in client) return client.focus();
+            if (client.url.includes("/admin/cohost")) {
+                if ("navigate" in client) {
+                    return client.navigate(url).then((c) => (c || client).focus());
+                }
+                return client.focus();
+            }
         }
         return clients.openWindow(url);
     }));

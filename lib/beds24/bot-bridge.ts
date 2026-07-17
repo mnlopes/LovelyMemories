@@ -249,6 +249,7 @@ async function handleGuestMessage(
             guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
             propertyName: prop?.name ?? null,
             preview: msg.message!,
+            rowId: row.id,
         });
         return;
     }
@@ -280,5 +281,6 @@ async function handleGuestMessage(
         guestName: [booking?.firstName, booking?.lastName].filter(Boolean).join(" ") || null,
         propertyName: prop?.name ?? null,
         preview: msg.message!,
+        rowId: row.id,
     });
 }

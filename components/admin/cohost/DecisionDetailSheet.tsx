@@ -72,7 +72,10 @@ export function DecisionDetailSheet({ card, onClose, onApprove, onDismiss, onOpe
                         </div>
                     )}
                     <div className="rounded-2xl bg-[#fafafa] p-4 text-[13px] dark:bg-white/5">
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t("guestMessage")}</p>
+                        <div className="mb-1 flex items-baseline justify-between gap-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t("guestMessage")}</p>
+                            <p className="shrink-0 text-[10px] font-semibold text-[#a3a3a3]">{format(new Date(card.createdAt), "d MMM · HH:mm")}</p>
+                        </div>
                         <p className="whitespace-pre-wrap text-[#171717] dark:text-white/90">{card.incomingMessage}</p>
                     </div>
                     <div className="rounded-2xl border-2 border-dashed border-[#e5e5e5] p-4 dark:border-white/10">

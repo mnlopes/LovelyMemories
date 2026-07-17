@@ -15,7 +15,9 @@ type TabType = "decisions" | "inbox" | "settings";
 function CohostPageInner() {
     const t = useTranslations("AdminCohost");
     const searchParams = useSearchParams();
-    const initial = (searchParams.get("tab") as TabType) || "decisions";
+    const deepDecisionId = searchParams.get("decision");
+    // Deep-link de notificação (?decision=…) aterra sempre nas Decisões.
+    const initial = deepDecisionId ? "decisions" : ((searchParams.get("tab") as TabType) || "decisions");
     const [activeTab, setActiveTab] = useState<TabType>(
         ["decisions", "inbox", "settings"].includes(initial) ? initial : "decisions",
     );
@@ -51,7 +53,7 @@ function CohostPageInner() {
                 ))}
             </div>
             {activeTab === "decisions" ? (
-                <DecisionFeed onOpenConversation={(rid) => { setOpenReservationId(rid); setActiveTab("inbox"); }} />
+                <DecisionFeed initialDecisionId={deepDecisionId} onOpenConversation={(rid) => { setOpenReservationId(rid); setActiveTab("inbox"); }} />
             ) : activeTab === "inbox" ? (
                 <InboxShell openReservationId={openReservationId} />
             ) : (
