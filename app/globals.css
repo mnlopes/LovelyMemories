@@ -563,9 +563,16 @@ html,
     0%, 100% { background-color: rgba(197, 160, 89, 0.13); }
     50% { background-color: rgba(197, 160, 89, 0.28); }
 }
-.gap-heartbeat { animation: gap-heartbeat 2.1s ease-in-out infinite; }
+.gap-heartbeat { animation: gap-heartbeat 2.1s ease-in-out infinite; cursor: pointer; }
+/* Hover: heartbeat mais forte e rápido, para saber que se pode clicar */
+@keyframes gap-heartbeat-strong {
+    0%, 100% { background-color: rgba(197, 160, 89, 0.24); }
+    50% { background-color: rgba(197, 160, 89, 0.46); }
+}
+.gap-heartbeat:hover { animation: gap-heartbeat-strong 1s ease-in-out infinite; }
 @keyframes gap-heartbeat-icon {
     0%, 100% { opacity: 0.55; transform: scale(0.92); }
     50% { opacity: 1; transform: scale(1); }
 }
 .gap-heartbeat-icon { animation: gap-heartbeat-icon 2.1s ease-in-out infinite; }
+.gap-heartbeat:hover .gap-heartbeat-icon { animation-duration: 1s; }

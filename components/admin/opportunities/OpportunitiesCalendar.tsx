@@ -145,7 +145,7 @@ export function OpportunitiesCalendar({
             {visibleRows.length === 0 ? (
                 <div className="py-12 text-center text-sm text-admin-text-secondary">{t("emptyCalendar")}</div>
             ) : (
-                <div className="max-h-[420px] overflow-y-auto">
+                <div>
                     {visibleRows.map((row) => {
                         const rowGaps = gapsByProperty.get(row.propertyId) ?? [];
                         return (
