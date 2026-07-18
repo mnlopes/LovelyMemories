@@ -2696,6 +2696,8 @@
         "subtitle": "noites órfãs entre reservas · próximos 60 dias",
         "oneNight": "1 noite",
         "nNights": "{count} noites",
+        "unitNight": "noite",
+        "unitNights": "noites",
         "inDays": "em {count} dias",
         "inDaysOne": "em 1 dia",
         "nowGap": "agora",

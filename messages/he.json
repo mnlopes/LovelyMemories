@@ -1454,6 +1454,8 @@
         "subtitle": "orphan nights between bookings · next 60 days",
         "oneNight": "1 night",
         "nNights": "{count} nights",
+        "unitNight": "night",
+        "unitNights": "nights",
         "inDays": "in {count} days",
         "inDaysOne": "in 1 day",
         "nowGap": "now",

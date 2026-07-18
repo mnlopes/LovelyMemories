@@ -159,7 +159,7 @@ export function OpportunitiesCalendar({
                                 </div>
                                 <div className="flex-1 grid relative" style={{ gridTemplateColumns: `repeat(${VISIBLE_DAYS}, 1fr)` }}>
                                     {days.map((d, i) => (
-                                        <div key={i} className={`border-r border-admin-border/50 ${isSameDay(d, today) ? "bg-admin-bg/40" : ""}`} style={{ gridColumn: i + 1 }} />
+                                        <div key={i} className={`border-r border-admin-border/50 ${isSameDay(d, today) ? "bg-admin-bg/40" : ""}`} style={{ gridColumn: i + 1, gridRow: 1 }} />
                                     ))}
 
                                     {/* Barras de ocupação — mesmo visual dos outros calendários (clip-path + hatch) */}
@@ -173,6 +173,7 @@ export function OpportunitiesCalendar({
                                                 className={`self-center h-7 flex items-center px-2 z-[2] overflow-hidden ${airbnb ? "" : getReservationStatusColor("confirmed")}`}
                                                 style={{
                                                     gridColumn: `${p.col + 1} / span ${p.span}`,
+                                                    gridRow: 1,
                                                     clipPath: getBarClipPath(p.startsBefore, p.endsAfter),
                                                     ...(airbnb ? { background: AIRBNB_HATCH } : {}),
                                                 }}
@@ -200,7 +201,7 @@ export function OpportunitiesCalendar({
                                                 onClick={(e) => openPopover(g, e)}
                                                 title={t("legendGap")}
                                                 className="gap-heartbeat self-center h-7 flex items-center justify-center z-[3] overflow-hidden"
-                                                style={{ gridColumn: `${p.col + 1} / span ${p.span}`, clipPath: getBarClipPath(p.startsBefore, p.endsAfter), background: "rgba(197,160,89,.16)" }}
+                                                style={{ gridColumn: `${p.col + 1} / span ${p.span}`, gridRow: 1, clipPath: getBarClipPath(p.startsBefore, p.endsAfter), background: "rgba(197,160,89,.16)" }}
                                             >
                                                 <AlertTriangle className="gap-heartbeat-icon size-3.5 text-[#a9863f]" />
                                             </button>
@@ -247,15 +248,17 @@ export function OpportunitiesCalendar({
 function GapPopover({ item, x, y, locale, onClose }: { item: OpportunityItem; x: number; y: number; locale: string; onClose: () => void }) {
     const t = useTranslations("AdminOpportunities");
     const dateLocale = locale === "pt" ? pt : undefined;
-    const W = 250;
-    const flipX = typeof window !== "undefined" && x + W + 16 > window.innerWidth;
-    const left = flipX ? x - W : x;
+    const W = 250, H = 200;
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
+    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    const left = x + W + 16 > vw ? x - W : x;
+    const top = y + 12 + H > vh ? y - H - 12 : y + 12; // flip para cima perto do fundo
     const lastFreeNight = addDays(parseISO(item.gapEnd), -1);
 
     return (
         <div
             className="fixed z-50 w-[250px] rounded-xl border border-admin-border bg-admin-surface overflow-hidden shadow-xl"
-            style={{ left: Math.max(8, left), top: y + 12 }}
+            style={{ left: Math.max(8, left), top: Math.max(8, top) }}
             onClick={(e) => e.stopPropagation()}
         >
             <div className="bg-[#14161a] px-4 py-2.5">
@@ -265,7 +268,7 @@ function GapPopover({ item, x, y, locale, onClose }: { item: OpportunityItem; x:
             <div className="p-3.5">
                 <div className="flex items-baseline gap-1.5 mb-2">
                     <span className="text-xl font-bold text-[#a9863f]">{item.nights}</span>
-                    <span className="text-[12px] text-admin-text-secondary">{item.nights === 1 ? t("oneNight") : t("nNights", { count: item.nights })}</span>
+                    <span className="text-[12px] text-admin-text-secondary">{item.nights === 1 ? t("unitNight") : t("unitNights")}</span>
                 </div>
                 <div className="text-[11px] space-y-1">
                     <Line label={t("popFreeNights")} value={item.nights === 1
