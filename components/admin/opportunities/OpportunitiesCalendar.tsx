@@ -54,15 +54,20 @@ export function OpportunitiesCalendar({
 
     const visibleRows = selected ? rows.filter((r) => r.propertyId === selected.propertyId) : rows;
 
-    // Coloca um intervalo [start, end) na grelha visível; null se fora de vista.
+    const dayPct = 100 / VISIBLE_DAYS;
+
+    // Posiciona um intervalo [check-in, check-out) em % com offset de MEIO-DIA (igual aos
+    // outros calendários): check-in começa a meio do dia, check-out acaba a meio do dia.
+    // Assim os same-day turns encaixam ao centro e os gaps ficam entre as meias-barras.
     const place = (start: string, end: string) => {
         const s = differenceInCalendarDays(parseISO(start), parseISO(viewStartISO));
         const e = differenceInCalendarDays(parseISO(end), parseISO(viewStartISO));
-        const col = Math.max(0, s);
-        const colEnd = Math.min(VISIBLE_DAYS, e);
-        const span = colEnd - col;
-        if (span <= 0) return null;
-        return { col, span, startsBefore: s < 0, endsAfter: e > VISIBLE_DAYS };
+        if (e <= 0 || s >= VISIBLE_DAYS) return null; // fora de vista
+        const startsBefore = s < 0;
+        const endsAfter = e >= VISIBLE_DAYS;
+        const leftPct = startsBefore ? 0 : s * dayPct + dayPct / 2;
+        const rightPct = endsAfter ? 100 : e * dayPct + dayPct / 2;
+        return { leftPct, widthPct: Math.max(rightPct - leftPct, 0.5), startsBefore, endsAfter };
     };
 
     const gapsByProperty = useMemo(() => {
@@ -157,12 +162,15 @@ export function OpportunitiesCalendar({
                                         <p className="text-[9px] text-admin-text-secondary truncate">{row.city ?? "—"}</p>
                                     </div>
                                 </div>
-                                <div className="flex-1 grid relative" style={{ gridTemplateColumns: `repeat(${VISIBLE_DAYS}, 1fr)` }}>
-                                    {days.map((d, i) => (
-                                        <div key={i} className={`border-r border-admin-border/50 ${isSameDay(d, today) ? "bg-admin-bg/40" : ""}`} style={{ gridColumn: i + 1, gridRow: 1 }} />
-                                    ))}
+                                <div className="flex-1 relative">
+                                    {/* Fundo: colunas dos dias (bordas) */}
+                                    <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${VISIBLE_DAYS}, 1fr)` }}>
+                                        {days.map((d, i) => (
+                                            <div key={i} className={`border-r border-admin-border/50 ${isSameDay(d, today) ? "bg-admin-bg/40" : ""}`} />
+                                        ))}
+                                    </div>
 
-                                    {/* Barras de ocupação — mesmo visual dos outros calendários (clip-path + hatch) */}
+                                    {/* Barras de ocupação — offset de meio-dia + clip-path + hatch (igual aos outros calendários) */}
                                     {row.blocks.map((b, bi) => {
                                         const p = place(b.start, b.end);
                                         if (!p) return null;
@@ -170,10 +178,10 @@ export function OpportunitiesCalendar({
                                         return (
                                             <div
                                                 key={bi}
-                                                className={`self-center h-7 flex items-center px-2 z-[2] overflow-hidden ${airbnb ? "" : getReservationStatusColor("confirmed")}`}
+                                                className={`absolute top-1/2 -translate-y-1/2 h-7 flex items-center px-2 z-[2] overflow-hidden ${airbnb ? "" : getReservationStatusColor("confirmed")}`}
                                                 style={{
-                                                    gridColumn: `${p.col + 1} / span ${p.span}`,
-                                                    gridRow: 1,
+                                                    left: `${p.leftPct}%`,
+                                                    width: `${p.widthPct}%`,
                                                     clipPath: getBarClipPath(p.startsBefore, p.endsAfter),
                                                     ...(airbnb ? { background: AIRBNB_HATCH } : {}),
                                                 }}
@@ -190,8 +198,7 @@ export function OpportunitiesCalendar({
                                         );
                                     })}
 
-                                    {/* Noite órfã — mesma forma/altura das barras (clip-path + h-7, centrada),
-                                        preenchimento dourado leve a pulsar (heartbeat) + triângulo de alerta */}
+                                    {/* Noite órfã — meia-barra a meia-barra, mesma forma/altura, heartbeat + triângulo */}
                                     {rowGaps.map((g) => {
                                         const p = place(g.gapStart, g.gapEnd);
                                         if (!p) return null;
@@ -200,8 +207,8 @@ export function OpportunitiesCalendar({
                                                 key={g.id}
                                                 onClick={(e) => openPopover(g, e)}
                                                 title={t("legendGap")}
-                                                className="gap-heartbeat self-center h-7 flex items-center justify-center z-[3] overflow-hidden"
-                                                style={{ gridColumn: `${p.col + 1} / span ${p.span}`, gridRow: 1, clipPath: getBarClipPath(p.startsBefore, p.endsAfter), background: "rgba(197,160,89,.16)" }}
+                                                className="gap-heartbeat absolute top-1/2 -translate-y-1/2 h-7 flex items-center justify-center z-[3] overflow-hidden"
+                                                style={{ left: `${p.leftPct}%`, width: `${p.widthPct}%`, clipPath: getBarClipPath(p.startsBefore, p.endsAfter), background: "rgba(197,160,89,.16)" }}
                                             >
                                                 <AlertTriangle className="gap-heartbeat-icon size-3.5 text-[#a9863f]" />
                                             </button>
