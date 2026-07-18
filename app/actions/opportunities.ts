@@ -14,7 +14,9 @@ import { findGaps, type Interval } from '@/lib/opportunities';
  */
 
 const OPP_ROLES = ['super_admin', 'admin'];
-const MAX_GAP_NIGHTS = 3;
+// Teto de 14 noites: apanha gaps curtos E os mais longos (o selector 4+/5+ filtra),
+// mas exclui disponibilidade longa (semanas abertas) que não é uma "noite órfã".
+const MAX_GAP_NIGHTS = 14;
 
 async function assertAdmin() {
     const cookieStore = await cookies();

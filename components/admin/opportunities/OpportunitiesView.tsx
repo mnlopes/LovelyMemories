@@ -24,7 +24,7 @@ export function OpportunitiesView({
     const t = useTranslations("AdminOpportunities");
     const dateLocale = locale === "pt" ? pt : undefined;
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [minNights, setMinNights] = useState<1 | 2 | 3>(1);
+    const [minNights, setMinNights] = useState<1 | 2 | 3 | 4 | 5>(1);
     const cardsRef = useRef<HTMLDivElement>(null);
 
     // Filtro por tamanho mínimo do gap — client-side sobre os dados já carregados (instantâneo).
@@ -46,7 +46,7 @@ export function OpportunitiesView({
         <div className="flex items-center gap-2">
             <span className="text-[9.5px] font-bold uppercase tracking-wider text-admin-text-secondary">{t("minGapLabel")}</span>
             <div className="flex gap-0.5 bg-admin-bg border border-admin-border rounded-lg p-0.5">
-                {([1, 2, 3] as const).map((n) => (
+                {([1, 2, 3, 4, 5] as const).map((n) => (
                     <button
                         key={n}
                         onClick={() => setMinNights(n)}

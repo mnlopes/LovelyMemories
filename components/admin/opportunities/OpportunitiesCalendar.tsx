@@ -260,7 +260,6 @@ function GapPopover({ item, x, y, locale, onClose }: { item: OpportunityItem; x:
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const left = x + W + 16 > vw ? x - W : x;
     const top = y + 12 + H > vh ? y - H - 12 : y + 12; // flip para cima perto do fundo
-    const lastFreeNight = addDays(parseISO(item.gapEnd), -1);
 
     return (
         <div
@@ -278,9 +277,7 @@ function GapPopover({ item, x, y, locale, onClose }: { item: OpportunityItem; x:
                     <span className="text-[12px] text-admin-text-secondary">{item.nights === 1 ? t("unitNight") : t("unitNights")}</span>
                 </div>
                 <div className="text-[11px] space-y-1">
-                    <Line label={t("popFreeNights")} value={item.nights === 1
-                        ? format(parseISO(item.gapStart), "d MMM", { locale: dateLocale })
-                        : `${format(parseISO(item.gapStart), "d")}–${format(lastFreeNight, "d MMM", { locale: dateLocale })}`} />
+                    <Line label={t("popFreeNights")} value={`${format(parseISO(item.gapStart), "d MMM", { locale: dateLocale })} → ${format(parseISO(item.gapEnd), "d MMM", { locale: dateLocale })}`} />
                     <Line label={t("popOut")} value={format(parseISO(item.gapStart), "d MMM", { locale: dateLocale })} />
                     <Line label={t("popNextArrival")} value={format(parseISO(item.gapEnd), "d MMM", { locale: dateLocale })} />
                 </div>
