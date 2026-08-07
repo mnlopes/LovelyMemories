@@ -22,16 +22,4 @@ Disallow: /*/checkout
 # Internal search results (thin / duplicate)
 Disallow: /*/search
 
-# Pre-launch design iterations (not for indexing)
-Disallow: /*/v2
-Disallow: /*/v3
-Disallow: /*/v4
-Disallow: /*/v5
-Disallow: /*/v6
-Disallow: /*/v7
-Disallow: /*/v8
-Disallow: /*/v9
-Disallow: /*/v10
-Disallow: /*/v11
-
 Sitemap: https://www.lovelymemories.pt/sitemap.xml

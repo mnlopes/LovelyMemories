@@ -138,18 +138,13 @@ export const Footer = () => {
 
                     {/* Social Icons */}
                     <div className="flex items-center gap-8">
-                        <a href="http://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook" className="text-white hover:text-[#a39076] transition-colors">
+                        <a href="https://www.facebook.com/lovely.memories.pt" target="_blank" rel="noreferrer" aria-label="Facebook" className="text-white hover:text-[#a39076] transition-colors">
                             <Facebook size={22} strokeWidth={2} />
                         </a>
                         <a href="https://www.instagram.com/lovely_memories_pt/" target="_blank" rel="noreferrer" aria-label="Instagram" className="text-white hover:text-[#a39076] transition-colors">
                             <Instagram size={22} strokeWidth={2} />
                         </a>
-                        <a href="http://x.com" target="_blank" rel="noreferrer" aria-label="X" className="text-white hover:text-[#a39076] transition-colors">
-                            <svg viewBox="0 0 24 24" aria-hidden="true" className="w-5 h-5 fill-current">
-                                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932 6.064-6.932zm-1.294 19.497h2.039L6.482 2.395H4.293l13.314 18.255z" />
-                            </svg>
-                        </a>
-                        <a href="http://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="text-white hover:text-[#a39076] transition-colors">
+                        <a href="https://www.linkedin.com/company/lovely-memories-lda/" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="text-white hover:text-[#a39076] transition-colors">
                             <Linkedin size={22} strokeWidth={2} />
                         </a>
                     </div>

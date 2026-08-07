@@ -12,12 +12,15 @@ export const revalidate = 3600;
 
 // Public, indexable routes (path relative to /{locale}). Keep in sync with the
 // real marketing pages under app/[locale]/(main). Auth/admin/booking are excluded.
+// NOTE: no 'buildings' entry — only /buildings/[slug] exists, there is no listing
+// page, so declaring it here served Google three 404s (one per locale). Individual
+// building pages are still added by propertyEntries() below. Add it back if a
+// listing page is ever created.
 const STATIC_PATHS = [
   '',
   'about-us',
   'concierge',
   'properties',
-  'buildings',
   'contact',
   'blog',
   'join',

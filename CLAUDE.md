@@ -40,7 +40,8 @@ One-off maintenance/debug scripts live in `scripts/` and are run with `npx tsx s
 
 ## Gotchas
 
-- **Legacy/experimental clutter — do not touch or take as reference:** `legacy-archive/`, `temp-app/`, `scratch/`, `concierge/` (root), `app/page-v1.tsx`, the `v2`–`v11` folders under `(main)` (old homepage iterations), and the root-level `add_checkout_i18n*.js` / `tmp_get_*.js` / `replace.js` scripts.
+- **Legacy/experimental clutter — do not touch or take as reference:** `legacy-archive/`, `temp-app/`, `scratch/`, `concierge/` (root), `app/page-v1.tsx`, and the root-level `add_checkout_i18n*.js` / `tmp_get_*.js` / `replace.js` scripts.
+- The `v2`–`v11` homepage iterations under `(main)` (and their `HomeHeroV*` / city-animation components) were **deleted** — they shipped to production as indexable duplicates of the homepage. Recover any hero animation experiment from git history at `77b8c64` if it is ever needed again.
 - Host canonicalization (apex → www) is handled by Vercel domain config — never add a www/apex redirect in `next.config.ts` (it creates a redirect loop).
 - Security headers are set in `next.config.ts`; a strict CSP is intentionally deferred (needs allow-listing Stripe/GA/Supabase) — don't add one casually.
 - `next/image` remote hosts are allow-listed in `next.config.ts` (Supabase storage, unsplash, muscache); new image sources need an entry there.

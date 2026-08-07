@@ -18,7 +18,13 @@ export function SiteJsonLd() {
         image: `${SITE_URL}/opengraph-image.png`,
         email: 'achilleas@lovelymemories.pt',
         telephone: '+351932473600',
-        sameAs: ['https://www.instagram.com/lovely_memories_pt/'],
+        // Must stay byte-identical to the profile links in components/Footer.tsx —
+        // sameAs is how Google and LLMs resolve these profiles to this same entity.
+        sameAs: [
+          'https://www.instagram.com/lovely_memories_pt/',
+          'https://www.facebook.com/lovely.memories.pt',
+          'https://www.linkedin.com/company/lovely-memories-lda/',
+        ],
       },
       {
         '@type': 'WebSite',
