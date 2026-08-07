@@ -1,7 +1,9 @@
 # Lovely Memories — robots.txt
-# AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended…) are intentionally
-# allowed so the brand can be cited accurately by LLMs. See /llms.txt for context.
+# See /llms.txt for a factual brand summary written for AI models and agents.
 
+# ─────────────────────────────────────────────────────────────────────────────
+# All crawlers
+# ─────────────────────────────────────────────────────────────────────────────
 User-agent: *
 Allow: /
 
@@ -20,6 +22,53 @@ Disallow: /*/booking
 Disallow: /*/checkout
 
 # Internal search results (thin / duplicate)
+Disallow: /*/search
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI assistants, AI search and training crawlers — explicitly allowed so the
+# brand can be cited accurately by LLMs.
+#
+# IMPORTANT: a crawler obeys ONLY the most specific user-agent group that matches
+# its name; it does NOT inherit rules from the `*` group above. That is why every
+# Disallow below is repeated verbatim. If you edit the `*` rules, edit these too,
+# or these bots will be free to crawl the backoffice, the API and the checkout.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# OpenAI: GPTBot trains, OAI-SearchBot indexes for ChatGPT Search,
+# ChatGPT-User fetches a page live when a user asks about it.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+# Anthropic: ClaudeBot trains, Claude-SearchBot indexes, Claude-User fetches live.
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: anthropic-ai
+# Perplexity: PerplexityBot indexes, Perplexity-User fetches live.
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+# Google-Extended and Applebot-Extended are not crawlers — they are opt-out
+# tokens for Gemini / Apple Intelligence. Allowing them keeps us eligible.
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Amazonbot
+User-agent: Meta-ExternalAgent
+User-agent: MistralAI-User
+User-agent: cohere-ai
+# Common Crawl — feeds a large share of public training datasets.
+User-agent: CCBot
+Allow: /
+
+Disallow: /*/admin
+Disallow: /*/login
+Disallow: /*/set-password
+Disallow: /*/owner
+Disallow: /*/account
+Disallow: /admin
+Disallow: /login
+Disallow: /api/
+Disallow: /*/booking
+Disallow: /*/checkout
 Disallow: /*/search
 
 Sitemap: https://www.lovelymemories.pt/sitemap.xml
