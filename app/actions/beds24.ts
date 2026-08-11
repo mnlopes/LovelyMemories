@@ -36,6 +36,15 @@ async function guardRead() {
     }
 }
 
+/**
+ * Leitura da kill-switch para componentes cliente. Sem guard de role e nunca
+ * lança — serve só para a UI esconder tudo o que depende do Beds24 (toggle de
+ * fonte no calendário, rail de preços, ficha de detalhe, itens da sidebar).
+ */
+export async function getBeds24Availability(): Promise<boolean> {
+    return isBeds24Enabled();
+}
+
 // ---------- Leitura para o painel ----------
 
 export async function getBeds24Status() {

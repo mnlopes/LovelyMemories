@@ -6,6 +6,7 @@ import { format, addDays } from 'date-fns';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { buildCardFallback } from '@/lib/ai-card-meta';
 import { deriveStayStatus, derivePropertyToday, type StayStatus } from '@/lib/overview-status';
+import { isBeds24Enabled } from '@/lib/beds24/client';
 
 /**
  * Server action que alimenta a Overview fundida (/admin): chegadas/saídas reais
@@ -124,12 +125,18 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                 .eq('is_multi_unit', false),
             // Beds24: ligação property↔internal + reservas na janela → nome REAL do hóspede
             // para as chegadas que hoje só existem como blocos iCal do Airbnb (6 casas ligadas).
-            admin.from('beds24_properties').select('beds24_property_id, internal_property_id').not('internal_property_id', 'is', null),
-            admin.from('beds24_bookings')
-                .select('beds24_property_id, arrival, guest_first_name, guest_last_name, num_adult, num_child')
-                .in('status', ['confirmed', 'new'])
-                .gte('arrival', todayISO)
-                .lte('arrival', windowEndISO),
+            // Com o Beds24 desligado a chegada continua a aparecer (vem do bloco iCal),
+            // apenas sem nome de hóspede — degradação suave, nunca um ecrã vazio.
+            isBeds24Enabled()
+                ? admin.from('beds24_properties').select('beds24_property_id, internal_property_id').not('internal_property_id', 'is', null)
+                : Promise.resolve({ data: [] as { beds24_property_id: number; internal_property_id: string }[] }),
+            isBeds24Enabled()
+                ? admin.from('beds24_bookings')
+                    .select('beds24_property_id, arrival, guest_first_name, guest_last_name, num_adult, num_child')
+                    .in('status', ['confirmed', 'new'])
+                    .gte('arrival', todayISO)
+                    .lte('arrival', windowEndISO)
+                : Promise.resolve({ data: [] as { beds24_property_id: number; arrival: string; guest_first_name: string | null; guest_last_name: string | null; num_adult: number | null; num_child: number | null }[] }),
         ]);
 
         // Map (internal_property_id|arrival) → { name, guests } a partir do Beds24.
@@ -255,6 +262,15 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
         // por isso esta secção nunca deixa a action inteira falhar.
         let cohost: OverviewData['cohost'] = null;
         try {
+            // Beds24 desligado: o co-host não tem canal por onde responder, por
+            // isso a secção é genuinamente indisponível — sai pelo catch abaixo,
+            // que é o caminho já existente para isso. Com `cohost` a null a UI
+            // apaga de uma vez o tile "to review", o banner mobile, o rail
+            // lateral, a coluna CO-HOST e o filtro da tabela (tudo atrás de
+            // `data.cohost !== null`). Sem isto ficavam botões "Review draft"
+            // a apontar para uma rota que devolve 404.
+            if (!isBeds24Enabled()) throw new Error('co-host indisponível: Beds24 desligado');
+
             const dayAgoISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
             const [pendingRes, failedRes, staleRes, allDraftsRes] = await Promise.all([

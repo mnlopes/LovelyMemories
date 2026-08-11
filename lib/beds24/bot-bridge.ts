@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { beds24Request } from "@/lib/beds24/client";
+import { beds24Request, isBeds24Enabled } from "@/lib/beds24/client";
 import type { Beds24Booking, Beds24Message } from "@/lib/beds24/types";
 import { buildContext, type ThreadMessage } from "@/lib/ai-messaging";
 import { decide } from "@/lib/ai-decision";
@@ -18,6 +18,9 @@ type Supa = Awaited<ReturnType<typeof getSupabaseAdmin>>;
  */
 export async function processBotMessages(booking: Beds24Booking | null, messages: Beds24Message[]): Promise<void> {
     try {
+        // Beds24 desligado: não há canal por onde entrar nem sair mensagem.
+        if (!isBeds24Enabled()) return;
+
         const supabase = await getSupabaseAdmin();
         const bookingId = booking?.id ?? messages[0]?.bookingId;
         if (!bookingId) return;

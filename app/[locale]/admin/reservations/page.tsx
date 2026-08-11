@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { deleteReservation } from "@/app/actions/reservation";
-import { getBeds24CalendarPreview, type Beds24CalendarPreviewResult } from "@/app/actions/beds24";
+import { getBeds24CalendarPreview, getBeds24Availability, type Beds24CalendarPreviewResult } from "@/app/actions/beds24";
 import { deleteBlockedDate } from "@/app/actions/blocked-dates";
 import { updateReservationStatus, finishReservationEarly } from "@/app/actions/admin-reservation-actions";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
@@ -57,6 +57,9 @@ export default function AdminReservationsPage() {
     const [selectedBeds24Id, setSelectedBeds24Id] = useState<number | null>(null);
 
     // Preview Beds24 no calendário (super_admin; lente local, não persiste)
+    // Com a integração desligada (BEDS24_ENABLED=false) o toggle de fonte não
+    // aparece e o calendário fica só em iCal, que é a fonte real desde 2026-08-11.
+    const [beds24Available, setBeds24Available] = useState(false);
     const [beds24Preview, setBeds24Preview] = useState(false);
     const [beds24Data, setBeds24Data] = useState<Extract<Beds24CalendarPreviewResult, { ok: true }> | null>(null);
     const [beds24Loading, setBeds24Loading] = useState(false);
@@ -90,6 +93,13 @@ export default function AdminReservationsPage() {
             }
         };
         fetchRole();
+    }, []);
+
+    // Kill-switch do Beds24: decide se o toggle de fonte chega a existir.
+    useEffect(() => {
+        let alive = true;
+        void getBeds24Availability().then((ok) => { if (alive) setBeds24Available(ok); }).catch(() => {});
+        return () => { alive = false; };
     }, []);
 
     // Sorting State
@@ -485,7 +495,7 @@ export default function AdminReservationsPage() {
                     <p className="hidden md:block text-[#a3a3a3] mt-2 font-medium text-sm md:text-base">{t('subtitle')}</p>
                 </div>
                 <div className="flex gap-3 justify-between md:justify-end">
-                    {(role === 'super_admin' || role === 'admin') && (
+                    {(role === 'super_admin' || role === 'admin') && beds24Available && (
                         <div className="flex items-center gap-2 bg-white dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border rounded-lg p-1 transition-colors duration-300">
                             <span className="hidden md:inline pl-2 text-[9px] font-bold uppercase tracking-widest text-[#a3a3a3]">{t('dataSource')}</span>
                             <button
@@ -765,7 +775,9 @@ export default function AdminReservationsPage() {
             )}
 
             {view === 'calendar' ? (
-                /* Calendar View */
+                /* Calendar View — canShowPrices exige beds24Available porque o rail de
+                   preços da timeline lê só do Beds24: sem ele o botão "€ Preços" não
+                   teria de onde ir buscar nada. */
                 <MultiCalendarView
                     reservations={calendarReservations}
                     properties={propertiesMap}
@@ -773,7 +785,7 @@ export default function AdminReservationsPage() {
                     locale={locale}
                     blockedDates={calendarBlockedDates}
                     onRefresh={fetchData}
-                    canShowPrices={role === 'super_admin' || role === 'admin'}
+                    canShowPrices={(role === 'super_admin' || role === 'admin') && beds24Available}
                 />
             ) : (
                 /* List View */

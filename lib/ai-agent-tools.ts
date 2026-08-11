@@ -1,6 +1,7 @@
 import type { AgentTool } from "@/lib/ai-agent";
 import type { DraftContext } from "@/lib/ai-messaging";
 import { getRoomCalendar, summariseCalendar } from "@/lib/beds24/calendar";
+import { isBeds24Enabled } from "@/lib/beds24/client";
 import { loadPropertyFacts, formatKnowledgeWithCitations } from "@/lib/ai-knowledge";
 import { datesOverlapStay } from "@/lib/reservation-window";
 
@@ -24,7 +25,10 @@ export function buildAgentTools(ctx: DraftContext): AgentTool[] {
         },
     });
 
-    const roomId = ctx.property?.beds24RoomId ?? null;
+    // A tool de calendário só existe com o Beds24 ligado: é a única fonte de
+    // disponibilidade e preços. Desligado, o agente fica sem ela por desenho —
+    // preferimos que não saiba a que invente (ver reservation-aware agent).
+    const roomId = isBeds24Enabled() ? (ctx.property?.beds24RoomId ?? null) : null;
     if (roomId) {
         tools.push({
             name: "getCalendar",

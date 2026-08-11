@@ -117,7 +117,7 @@ export function PropertyCalendarTab({ propertyId, locale, canUseBeds24Lens }: { 
                     propertyImages={propertyImages}
                     blockedDates={calBlockedDates}
                     locale={locale}
-                    canShowPrices={true}
+                    canShowPrices={canUseBeds24Lens}
                     initialRange={31}
                     onRefresh={refresh}
                 />

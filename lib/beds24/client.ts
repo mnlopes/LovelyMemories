@@ -4,17 +4,26 @@ import type { Beds24ApiEnvelope, Beds24RequestOptions } from './types';
 const BASE_URL = 'https://beds24.com/api/v2';
 
 /**
- * Kill-switch: without BEDS24_REFRESH_TOKEN every Beds24 module is disabled.
- * In production the env var only exists in Vercel's Preview scope, so the
- * production deployment can never talk to Beds24 even if this code ships.
+ * Kill-switch da integração Beds24.
+ *
+ * BEDS24_ENABLED='false' desliga tudo, mesmo com o refresh token presente —
+ * é o interruptor usado desde 2026-08-11, quando o Beds24 foi desconectado do
+ * Airbnb a pedido dos owners. Desligar sem apagar a credencial é deliberado:
+ * permite religar para diagnóstico sem a ir buscar outra vez ao Beds24.
+ *
+ * Sem essa variável mantém-se o comportamento antigo: a presença do refresh
+ * token decide. Em produção ele só existia no scope Preview da Vercel.
+ *
+ * Ver docs/superpowers/specs/2026-08-11-beds24-shutdown-design.md
  */
 export function isBeds24Enabled(): boolean {
+    if (process.env.BEDS24_ENABLED === 'false') return false;
     return !!process.env.BEDS24_REFRESH_TOKEN;
 }
 
 function assertEnabled() {
     if (!isBeds24Enabled()) {
-        throw new Error('Beds24 is disabled: BEDS24_REFRESH_TOKEN is not set in this environment.');
+        throw new Error('Beds24 is disabled: BEDS24_ENABLED=false or BEDS24_REFRESH_TOKEN is not set.');
     }
 }
 

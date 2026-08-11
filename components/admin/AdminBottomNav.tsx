@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAdminNav } from "./AdminNavProvider";
 import { getPendingDecisionCount } from "@/app/actions/ai-inbox";
+import { getBeds24Availability } from "@/app/actions/beds24";
 
 /**
  * Barra de navegação inferior do admin no mobile (espelha o padrão do OwnerBottomNav).
@@ -22,6 +23,15 @@ export const AdminBottomNav = () => {
     const [role, setRole] = useState<string | null>(null);
     const [permissions, setPermissions] = useState<{ module_name: string; can_view: boolean }[]>([]);
     const [pending, setPending] = useState(0);
+    // Co-Host depende do canal Beds24 — ver AdminSidebar. Assume ligado até a
+    // leitura chegar, para o item não piscar na barra a cada navegação.
+    const [beds24Available, setBeds24Available] = useState(true);
+
+    useEffect(() => {
+        let alive = true;
+        void getBeds24Availability().then((ok) => { if (alive) setBeds24Available(ok); }).catch(() => {});
+        return () => { alive = false; };
+    }, []);
 
     useEffect(() => {
         const load = async () => {
@@ -40,19 +50,20 @@ export const AdminBottomNav = () => {
 
     useEffect(() => {
         if (role !== "super_admin" && role !== "admin") return;
+        if (!beds24Available) return;
         let alive = true;
         const load = () => { void getPendingDecisionCount().then((n) => { if (alive) setPending(n); }).catch(() => {}); };
         load();
         const id = setInterval(load, 60_000);
         return () => { alive = false; clearInterval(id); };
-    }, [role]);
+    }, [role, beds24Available]);
 
     const hasAccess = (moduleName: string) => role === "super_admin" || permissions.find((p) => p.module_name === moduleName)?.can_view || false;
 
     const items: { icon: LucideIcon; label: string; path: string; badge?: number }[] = [
         ...(role === "super_admin" || role === "admin" ? [{ icon: LayoutDashboard, label: t("overview"), path: "/admin" }] : []),
         ...(hasAccess("bookings") ? [{ icon: Calendar, label: t("bookings"), path: "/admin/reservations" }] : []),
-        ...(role === "super_admin" || role === "admin" ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: pending }] : []),
+        ...((role === "super_admin" || role === "admin") && beds24Available ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: pending }] : []),
         ...(hasAccess("properties") ? [{ icon: Hotel, label: t("properties"), path: "/admin/properties" }] : []),
     ];
 

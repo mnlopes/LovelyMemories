@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import PropertyEditorForm from "@/components/admin/properties/PropertyEditorForm";
 import { PropertyDetailTabs } from "@/components/admin/properties/PropertyDetailTabs";
 import { getCurrentUserRole } from "@/app/actions/user";
+import { isBeds24Enabled } from "@/lib/beds24/client";
 
 export default async function PropertyEditorPage({
     params,
@@ -79,7 +80,8 @@ export default async function PropertyEditorPage({
 
     const role = await getCurrentUserRole();
     // Lente Beds24/preços no calendário da propriedade: super_admin + admin (leitura only).
-    const canUseBeds24Lens = role === "super_admin" || role === "admin";
+    // Cai para false com a integração desligada — o calendário fica só em iCal.
+    const canUseBeds24Lens = (role === "super_admin" || role === "admin") && isBeds24Enabled();
 
     return (
         <PropertyDetailTabs

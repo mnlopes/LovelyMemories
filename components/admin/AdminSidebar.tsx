@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useAdminNav } from "./AdminNavProvider";
 import { AdminThemePicker } from "./AdminThemePicker";
 import { getPendingDecisionCount } from "@/app/actions/ai-inbox";
+import { getBeds24Availability } from "@/app/actions/beds24";
 
 type NavItem = { icon: LucideIcon; label: string; path: string; badge?: number };
 
@@ -21,6 +22,11 @@ export const AdminSidebar = () => {
     const [role, setRole] = useState<string | null>(null);
     const [permissions, setPermissions] = useState<{ module_name: string; can_view: boolean }[]>([]);
     const [cohostPending, setCohostPending] = useState(0);
+    // Co-Host depende do canal de mensagens do Beds24. Desligado (2026-08-11),
+    // o módulo não recebe nem envia nada — esconde-se em vez de ficar no menu
+    // a mostrar dados congelados. Assume-se ligado até a leitura chegar, para
+    // o item não piscar a cada navegação.
+    const [beds24Available, setBeds24Available] = useState(true);
 
     const checkActive = (path: string) => {
         const pathParts = pathname.split('/');
@@ -55,13 +61,20 @@ export const AdminSidebar = () => {
     }, []);
 
     useEffect(() => {
+        let alive = true;
+        void getBeds24Availability().then((ok) => { if (alive) setBeds24Available(ok); }).catch(() => {});
+        return () => { alive = false; };
+    }, []);
+
+    useEffect(() => {
         if (role !== "super_admin" && role !== "admin") return;
+        if (!beds24Available) return;
         let alive = true;
         const load = () => { void getPendingDecisionCount().then((n) => { if (alive) setCohostPending(n); }).catch(() => {}); };
         load();
         const id = setInterval(load, 60_000);
         return () => { alive = false; clearInterval(id); };
-    }, [role]);
+    }, [role, beds24Available]);
 
     const hasAccess = (moduleName: string) => {
         if (role === 'super_admin') return true;
@@ -102,7 +115,7 @@ export const AdminSidebar = () => {
                 title: "System",
                 items: [
                     ...(hasAccess('imports') || role === 'super_admin' || role === 'admin' ? [{ icon: FileUp, label: "Imports", path: "/admin/imports" }] : []),
-                    ...(role === 'super_admin' || role === 'admin' ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: cohostPending }] : []),
+                    ...((role === 'super_admin' || role === 'admin') && beds24Available ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: cohostPending }] : []),
                     { icon: Activity, label: "Activity", path: "/admin/activity" },
                     // Settings only for Super Admin
                     ...(role === 'super_admin' ? [
