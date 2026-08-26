@@ -60,11 +60,28 @@ export async function GET(
         // 2. Fetch Blocked Dates for this property
         const { data: blockedDates, error: bloError } = await supabaseAdmin
             .from('blocked_dates')
-            .select('id, start_date, end_date, reason, external_id')
+            .select('id, start_date, end_date, reason, external_id, source')
             .eq('property_id', propertyId);
 
         if (!bloError && blockedDates) {
-            blockedDates.forEach(bd => {
+            // Only export what ORIGINATES here: direct reservations (above) and manual
+            // blocks. Blocks imported from a channel are skipped — re-exporting them sent
+            // Airbnb its own events back, UIDs included (`…@airbnb.com`), which Airbnb then
+            // re-exports under a fresh UID; our next import stores that as a NEW block for
+            // the same dates, and the pair keeps breeding rows on every cycle.
+            //
+            // Filtering in JS (not in the query) because `source NOT IN (…)` drops rows with
+            // a NULL source, and a NULL there means a manual block — the exact thing we must
+            // keep exporting. Manual blocks default to 'system' (20260401184235_add_ical_support).
+            //
+            // NOTE: this also means a Booking.com block never reaches Airbnb through this
+            // feed. Harmless today — every property has exactly one feed, from Airbnb — but
+            // the day a second channel is connected, this must become per-channel (exclude
+            // only the requesting channel's own source) or the two channels will overbook.
+            const IMPORTED_SOURCES = ['airbnb_booking', 'booking_com'];
+            const ownBlocks = blockedDates.filter(bd => !IMPORTED_SOURCES.includes(bd.source));
+
+            ownBlocks.forEach(bd => {
                 calendar.createEvent({
                     start: new Date(bd.start_date),
                     end: new Date(bd.end_date),
