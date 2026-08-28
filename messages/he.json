@@ -39,6 +39,7 @@
         }
     },
     "AdminSidebar": {
+        "myAccount": "החשבון שלי",
         "management": "ניהול",
         "overview": "סקירה כללית",
         "properties": "נכסים",
@@ -52,6 +53,10 @@
         "signOut": "התנתק"
     },
     "AdminHeader": {
+        "accountMenu": "תפריט החשבון",
+        "myAccount": "החשבון שלי",
+        "changePassword": "שינוי סיסמה",
+        "signOut": "התנתקות",
         "searchPlaceholder": "חפש נכסים או אורחים...",
         "role": "מנהל מערכת"
     },
@@ -1598,6 +1603,72 @@
             "viewTimeline": "Timeline",
             "viewMonth": "Month",
             "viewYear": "Year"
+        }
+    },
+    "AdminUsers": {
+        "resetPassword": "איפוס סיסמה",
+        "passwordModal": {
+            "title": "איפוס סיסמה",
+            "description": "הגדר סיסמה חדשה עבור {name}. שתף אותה איתו — הוא יוכל לשנות אותה אחרי ההתחברות.",
+            "newPlaceholder": "סיסמה חדשה",
+            "confirmPlaceholder": "אישור סיסמה",
+            "ruleMin": "8+ תווים",
+            "ruleLetter": "אות אחת",
+            "ruleNumber": "ספרה אחת",
+            "ruleMatch": "תואם",
+            "ruleMismatch": "לא תואם",
+            "generate": "יצירת סיסמה חזקה",
+            "show": "הצגת הסיסמה",
+            "hide": "הסתרת הסיסמה",
+            "cancel": "ביטול",
+            "submit": "הגדרת סיסמה",
+            "success": "הסיסמה עודכנה",
+            "error": "הגדרת הסיסמה נכשלה",
+            "done": "הסיסמה הוגדרה",
+            "copy": "העתקת הסיסמה",
+            "copied": "הסיסמה הועתקה",
+            "shareHint": "שתף אותה בערוץ פרטי. עליו לשנות אותה אחרי ההתחברות.",
+            "finish": "סיום"
+        }
+    },
+    "AdminAccount": {
+        "details": {
+            "title": "הפרטים שלך",
+            "roleHint": "ההרשאה שלך נקבעת על ידי מנהל.",
+            "nameLabel": "שם מלא",
+            "namePlaceholder": "השם המלא שלך",
+            "emailLabel": "כתובת אימייל",
+            "emailPlaceholder": "name@lovelymemories.pt",
+            "emailWarning": "זו כתובת האימייל שאיתה אתה מתחבר. שינוי שלה משנה את פרטי הכניסה — ודא שאתה מקבל דואר בכתובת הזו.",
+            "phoneLabel": "מספר טלפון",
+            "phonePlaceholder": "+351 912 345 678",
+            "submit": "שמירת השינויים",
+            "success": "הפרטים עודכנו",
+            "genericError": "עדכון הפרטים נכשל"
+        },
+        "title": "החשבון שלי",
+        "description": "הפרטים שלך ואבטחת הכניסה.",
+        "loading": "טוען את הפרופיל שלך…",
+        "password": {
+            "title": "שינוי סיסמה",
+            "description": "אשר את הסיסמה הנוכחית ובחר סיסמה חדשה.",
+            "currentLabel": "סיסמה נוכחית",
+            "currentPlaceholder": "הסיסמה הנוכחית שלך",
+            "newLabel": "סיסמה חדשה",
+            "newPlaceholder": "סיסמה חדשה",
+            "confirmLabel": "אישור הסיסמה החדשה",
+            "confirmPlaceholder": "חזור על הסיסמה החדשה",
+            "ruleMin": "8+ תווים",
+            "ruleLetter": "אות אחת",
+            "ruleNumber": "ספרה אחת",
+            "ruleMatch": "תואם",
+            "ruleMismatch": "הסיסמאות אינן תואמות",
+            "show": "הצגת הסיסמה",
+            "hide": "הסתרת הסיסמה",
+            "submit": "שינוי סיסמה",
+            "success": "הסיסמה שונתה",
+            "genericError": "שינוי הסיסמה נכשל",
+            "auditNote": "השינוי נרשם ביומן הביקורת."
         }
     }
 }

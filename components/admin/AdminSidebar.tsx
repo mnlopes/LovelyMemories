@@ -1,7 +1,7 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, type LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, UserCircle, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -254,6 +254,17 @@ export const AdminSidebar = () => {
                     <LayoutGrid className="size-4" />
                     {!isCollapsed && <span>{isCollapsed ? "Expand" : "Collapse View"}</span>}
                 </button>
+
+                {/* A minha conta — no desktop vive no menu do avatar (header); aqui serve a gaveta mobile */}
+                <Link
+                    href="/admin/account"
+                    onClick={() => setMobileOpen(false)}
+                    className={`mt-2 w-full flex items-center transition-colors text-admin-text-secondary hover:text-admin-text-primary rounded-lg ${isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2 text-xs font-medium'}`}
+                    title={t('myAccount')}
+                >
+                    <UserCircle className="size-4" />
+                    {!isCollapsed && <span>{t('myAccount')}</span>}
+                </Link>
 
                 {/* Logout Button */}
                 <button

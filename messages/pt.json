@@ -5,6 +5,7 @@
         "close": "Fechar"
     },
     "AdminSidebar": {
+        "myAccount": "A minha conta",
         "management": "Gestão",
         "overview": "Visão Geral",
         "properties": "Propriedades",
@@ -75,6 +76,10 @@
         }
     },
     "AdminHeader": {
+        "accountMenu": "Menu da conta",
+        "myAccount": "A minha conta",
+        "changePassword": "Alterar password",
+        "signOut": "Terminar sessão",
         "searchPlaceholder": "Procurar propriedades ou hóspedes...",
         "role": "Administrador"
     },
@@ -350,6 +355,30 @@
         }
     },
     "AdminUsers": {
+        "resetPassword": "Repor password",
+        "passwordModal": {
+            "title": "Repor password",
+            "description": "Define uma nova password para {name}. Partilha-a — pode alterá-la depois de entrar.",
+            "newPlaceholder": "Nova password",
+            "confirmPlaceholder": "Confirmar password",
+            "ruleMin": "8+ caracteres",
+            "ruleLetter": "1 letra",
+            "ruleNumber": "1 número",
+            "ruleMatch": "coincide",
+            "ruleMismatch": "não coincide",
+            "generate": "Gerar password forte",
+            "show": "Mostrar password",
+            "hide": "Esconder password",
+            "cancel": "Cancelar",
+            "submit": "Definir password",
+            "success": "Password atualizada",
+            "error": "Falha ao definir password",
+            "done": "Password definida",
+            "copy": "Copiar password",
+            "copied": "Password copiada",
+            "shareHint": "Partilha-a por um canal privado. Deve alterá-la depois de entrar.",
+            "finish": "Concluir"
+        },
         "title": "Equipa & Acesso",
         "description": "Gerir perfis de utilizadores e regras de acesso hierárquico.",
         "inviteButton": "Convidar Membro",
@@ -2775,6 +2804,46 @@
             "house_rules": "Regras da casa",
             "area": "Zona",
             "general": "Geral"
+        }
+    },
+    "AdminAccount": {
+        "details": {
+            "title": "Os teus dados",
+            "roleHint": "O teu role é definido por um admin.",
+            "nameLabel": "Nome completo",
+            "namePlaceholder": "O teu nome completo",
+            "emailLabel": "Endereço de email",
+            "emailPlaceholder": "nome@lovelymemories.pt",
+            "emailWarning": "Este é o email com que entras na conta. Ao alterá-lo, alteras o teu login — garante que recebes correio nesse endereço.",
+            "phoneLabel": "Número de telefone",
+            "phonePlaceholder": "+351 912 345 678",
+            "submit": "Guardar alterações",
+            "success": "Dados atualizados",
+            "genericError": "Falha ao atualizar os teus dados"
+        },
+        "title": "A minha conta",
+        "description": "Os teus dados e a segurança do acesso.",
+        "loading": "A carregar o teu perfil…",
+        "password": {
+            "title": "Alterar password",
+            "description": "Confirma a password atual e escolhe uma nova.",
+            "currentLabel": "Password atual",
+            "currentPlaceholder": "A tua password atual",
+            "newLabel": "Nova password",
+            "newPlaceholder": "Nova password",
+            "confirmLabel": "Confirmar nova password",
+            "confirmPlaceholder": "Repete a nova password",
+            "ruleMin": "8+ caracteres",
+            "ruleLetter": "1 letra",
+            "ruleNumber": "1 número",
+            "ruleMatch": "coincide",
+            "ruleMismatch": "as passwords não coincidem",
+            "show": "Mostrar password",
+            "hide": "Esconder password",
+            "submit": "Alterar password",
+            "success": "Password alterada",
+            "genericError": "Falha ao alterar a password",
+            "auditNote": "Esta alteração fica registada no audit log."
         }
     }
 }

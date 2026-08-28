@@ -5,6 +5,7 @@
         "close": "Close"
     },
     "AdminSidebar": {
+        "myAccount": "My account",
         "management": "Management",
         "overview": "Overview",
         "properties": "Properties",
@@ -75,6 +76,10 @@
         }
     },
     "AdminHeader": {
+        "accountMenu": "Account menu",
+        "myAccount": "My account",
+        "changePassword": "Change password",
+        "signOut": "Sign out",
         "searchPlaceholder": "Find properties or guests...",
         "role": "Administrator"
     },
@@ -359,6 +364,30 @@
         }
     },
     "AdminUsers": {
+        "resetPassword": "Reset password",
+        "passwordModal": {
+            "title": "Reset password",
+            "description": "Set a new password for {name}. Share it with them — they can change it after logging in.",
+            "newPlaceholder": "New password",
+            "confirmPlaceholder": "Confirm password",
+            "ruleMin": "8+ chars",
+            "ruleLetter": "1 letter",
+            "ruleNumber": "1 number",
+            "ruleMatch": "match",
+            "ruleMismatch": "doesn't match",
+            "generate": "Generate a strong password",
+            "show": "Show password",
+            "hide": "Hide password",
+            "cancel": "Cancel",
+            "submit": "Set password",
+            "success": "Password updated",
+            "error": "Failed to set password",
+            "done": "Password set",
+            "copy": "Copy password",
+            "copied": "Password copied",
+            "shareHint": "Share it over a private channel. They should change it after logging in.",
+            "finish": "Done"
+        },
         "title": "Team & Access",
         "description": "Manage user profiles and hierarchical access roles.",
         "inviteButton": "Invite Member",
@@ -2784,6 +2813,46 @@
             "house_rules": "House rules",
             "area": "Area",
             "general": "General"
+        }
+    },
+    "AdminAccount": {
+        "details": {
+            "title": "Your details",
+            "roleHint": "Your role is set by an admin.",
+            "nameLabel": "Full name",
+            "namePlaceholder": "Your full name",
+            "emailLabel": "Email address",
+            "emailPlaceholder": "name@lovelymemories.pt",
+            "emailWarning": "This is the email you sign in with. Changing it changes your login — make sure you can receive mail there.",
+            "phoneLabel": "Phone number",
+            "phonePlaceholder": "+351 912 345 678",
+            "submit": "Save changes",
+            "success": "Details updated",
+            "genericError": "Failed to update your details"
+        },
+        "title": "My account",
+        "description": "Your details and sign-in security.",
+        "loading": "Loading your profile…",
+        "password": {
+            "title": "Change password",
+            "description": "Confirm your current password, then choose a new one.",
+            "currentLabel": "Current password",
+            "currentPlaceholder": "Your current password",
+            "newLabel": "New password",
+            "newPlaceholder": "New password",
+            "confirmLabel": "Confirm new password",
+            "confirmPlaceholder": "Repeat the new password",
+            "ruleMin": "8+ characters",
+            "ruleLetter": "1 letter",
+            "ruleNumber": "1 number",
+            "ruleMatch": "match",
+            "ruleMismatch": "passwords don't match",
+            "show": "Show password",
+            "hide": "Hide password",
+            "submit": "Change password",
+            "success": "Password changed",
+            "genericError": "Failed to change password",
+            "auditNote": "This change is recorded in the audit log."
         }
     }
 }

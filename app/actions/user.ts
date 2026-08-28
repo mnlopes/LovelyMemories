@@ -955,3 +955,231 @@ export async function getCurrentUserRole() {
 
     return profile?.role || null;
 }
+
+/**
+ * Change the password of the CURRENTLY authenticated user.
+ *
+ * Unlike updateUserPassword (used by the invite / recovery flow, where the user has no
+ * old password to prove), this one re-authenticates with the current password first, so an
+ * open session on an unattended machine is not enough to take over the account.
+ *
+ * The re-auth uses a throw-away client with no-op cookie handlers: signInWithPassword must
+ * verify the credentials WITHOUT rewriting the session cookies of the live request.
+ */
+export async function changeOwnPassword(
+    currentPassword: string,
+    newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const supabase = await getSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) return { success: false, error: 'Not authenticated' };
+
+        if (!currentPassword) return { success: false, error: 'Current password is required' };
+
+        // Same complexity rules enforced everywhere else in the app.
+        const isComplexityMet =
+            newPassword.length >= 8 && /\d/.test(newPassword) && /[a-zA-Z]/.test(newPassword);
+        if (!isComplexityMet) {
+            return { success: false, error: 'Password must be at least 8 characters and include a letter and a number' };
+        }
+
+        if (currentPassword === newPassword) {
+            return { success: false, error: 'The new password must be different from the current one' };
+        }
+
+        const verifier = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() { return []; },
+                    setAll() { },
+                },
+            }
+        );
+
+        const { error: reauthError } = await verifier.auth.signInWithPassword({
+            email: user.email,
+            password: currentPassword,
+        });
+        if (reauthError) {
+            return { success: false, error: 'Current password is incorrect' };
+        }
+        // scope: 'local' is deliberate. The default ('global') revokes EVERY refresh token
+        // of this user — including the live session making this request — so the caller
+        // would be signed out everywhere just for proving their current password. Local
+        // only drops the throw-away client's own (never persisted) session.
+        await verifier.auth.signOut({ scope: 'local' });
+
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) return { success: false, error: error.message };
+
+        try {
+            await logActivity(user.id, 'UPDATE', 'USER', user.id, { field: 'password', method: 'self_service' }, 'WARNING');
+        } catch (logErr) {
+            console.error('Failed to audit log password change:', logErr);
+        }
+
+        return { success: true };
+    } catch (err: any) {
+        console.error('SERVER ACTION ERROR [changeOwnPassword]:', err);
+        return { success: false, error: err?.message || 'Failed to change password' };
+    }
+}
+
+/**
+ * Set (reset) a TEAM MEMBER's password from the Team & Access page. Staff-only counterpart
+ * of setOwnerPassword — the owner path stays separate so each action has its own auditable
+ * target set.
+ *
+ * Hierarchy (mirrors updateUserRole / updateUserProfile and canManageTarget in the UI):
+ *   - super_admin  -> may reset any staff member except themselves
+ *   - admin        -> may reset admin / editor, never a super_admin, never themselves
+ *   - anyone else  -> denied
+ * Resetting your own password goes through changeOwnPassword (which demands the current one).
+ */
+export async function setTeamMemberPassword(
+    userId: string,
+    newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const supabase = await getSupabase();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) return { success: false, error: 'Not authenticated' };
+
+        if (currentUser.id === userId) {
+            return { success: false, error: 'Use your own account settings to change your password' };
+        }
+
+        const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
+        if (!currentProfile || (currentProfile.role !== 'super_admin' && currentProfile.role !== 'admin')) {
+            return { success: false, error: 'Not authorized to reset passwords' };
+        }
+
+        const isComplexityMet =
+            newPassword.length >= 8 && /\d/.test(newPassword) && /[a-zA-Z]/.test(newPassword);
+        if (!isComplexityMet) {
+            return { success: false, error: 'Password must be at least 8 characters and include a letter and a number' };
+        }
+
+        const adminSupabase = await getSupabaseAdmin();
+
+        const { data: target, error: targetError } = await adminSupabase
+            .from('profiles')
+            .select('role, email')
+            .eq('id', userId)
+            .single();
+        if (targetError || !target) return { success: false, error: 'User not found' };
+
+        const staffRoles = ['super_admin', 'admin', 'editor'];
+        if (!staffRoles.includes(target.role)) {
+            return { success: false, error: 'This user is not a team member' };
+        }
+        // An admin must never be able to take over a super_admin account.
+        if (currentProfile.role === 'admin' && target.role === 'super_admin') {
+            return { success: false, error: 'You do not have permission to reset a Super Admin password' };
+        }
+
+        const { error } = await adminSupabase.auth.admin.updateUserById(userId, {
+            password: newPassword,
+            email_confirm: true, // force-confirm so they can log in straight away
+        });
+        if (error) return { success: false, error: error.message };
+
+        await logActivity(
+            currentUser.id,
+            'UPDATE',
+            'USER',
+            userId,
+            { field: 'password', target_email: target.email, target_role: target.role, method: 'admin_set' },
+            'WARNING'
+        );
+
+        return { success: true };
+    } catch (err: any) {
+        console.error('SERVER ACTION ERROR [setTeamMemberPassword]:', err);
+        return { success: false, error: err?.message || 'Failed to set password' };
+    }
+}
+
+
+/**
+ * Update the CURRENTLY authenticated user's own details from /admin/account.
+ *
+ * updateUserProfile is the admin path (it requires admin/super_admin and targets someone
+ * else); this one lets any signed-in staff member fix their own name, phone and login
+ * email without going through an admin. It can only ever touch the caller's own row —
+ * there is no userId parameter to point somewhere else.
+ */
+export async function updateOwnProfile(data: { fullName: string; email: string; phone: string }): Promise<{ success: boolean; error?: string }> {
+    try {
+        const supabase = await getSupabase();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) return { success: false, error: 'Not authenticated' };
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', currentUser.id)
+            .single();
+        if (!profile) return { success: false, error: 'Profile not found' };
+
+        const fullName = data.fullName.trim();
+        const phone = data.phone.trim();
+        const email = data.email.trim().toLowerCase();
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return { success: false, error: 'Enter a valid email address' };
+        }
+
+        const adminSupabase = await getSupabaseAdmin();
+
+        const { error: profileError } = await adminSupabase
+            .from('profiles')
+            .update({
+                full_name: fullName,
+                phone,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentUser.id);
+        if (profileError) {
+            console.error('SERVER ACTION ERROR [updateOwnProfile - profile]:', profileError);
+            return { success: false, error: profileError.message };
+        }
+
+        const emailChanged = email !== (profile.email || '').toLowerCase();
+        if (emailChanged) {
+            const { error: authError } = await adminSupabase.auth.admin.updateUserById(currentUser.id, {
+                email,
+                user_metadata: { full_name: fullName }
+            });
+            if (authError) {
+                console.error('SERVER ACTION ERROR [updateOwnProfile - auth]:', authError);
+                return { success: false, error: authError.message };
+            }
+
+            const { error: syncError } = await adminSupabase.from('profiles').update({ email }).eq('id', currentUser.id);
+            if (syncError) console.error('SERVER ACTION ERROR [updateOwnProfile - email sync]:', syncError);
+        }
+
+        await logActivity(
+            currentUser.id,
+            'UPDATE',
+            'USER',
+            currentUser.id,
+            { field: 'profile', method: 'self_service', changes: { full_name: fullName, phone, email }, previous_email: profile.email },
+            emailChanged ? 'WARNING' : 'INFO'
+        );
+
+        revalidatePath('/[locale]/admin/account', 'page');
+        return { success: true };
+    } catch (err: any) {
+        console.error('SERVER ACTION ERROR [updateOwnProfile]:', err);
+        return { success: false, error: err?.message || 'Failed to update your details' };
+    }
+}

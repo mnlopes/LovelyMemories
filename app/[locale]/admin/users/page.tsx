@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Search, Mail, Loader2, UserPlus, MoreHorizontal, Phone, ShieldAlert } from "lucide-react";
-import { getProfiles, updateUserRole } from "@/app/actions/user";
+import { Users, Search, Mail, Loader2, UserPlus, MoreHorizontal, Phone, ShieldAlert, KeyRound, Eye, EyeOff, Copy, CheckCircle2 } from "lucide-react";
+import { getProfiles, updateUserRole, setTeamMemberPassword } from "@/app/actions/user";
 import { toast } from "sonner";
 import { Profile, AppRole } from "@/lib/types";
 import { InviteUserModal } from "@/components/admin/users/InviteUserModal";
@@ -28,6 +28,56 @@ export default function AdminUsersPage() {
     const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
     const [userForAction, setUserForAction] = useState<Profile | null>(null);
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+    // Reset-password modal state (mirrors the owners page flow)
+    const [pwTarget, setPwTarget] = useState<Profile | null>(null);
+    const [pwValue, setPwValue] = useState("");
+    const [pwConfirm, setPwConfirm] = useState("");
+    const [pwShow, setPwShow] = useState(false);
+    const [pwSaving, setPwSaving] = useState(false);
+    const [pwDone, setPwDone] = useState(false);
+    const [pwCopied, setPwCopied] = useState(false);
+
+    const pwHasMin = pwValue.length >= 8;
+    const pwHasLetter = /[a-zA-Z]/.test(pwValue);
+    const pwHasNum = /\d/.test(pwValue);
+    const pwValid = pwHasMin && pwHasLetter && pwHasNum && pwValue === pwConfirm;
+
+    const openPasswordModal = (profile: Profile) => {
+        setPwTarget(profile);
+        setPwValue("");
+        setPwConfirm("");
+        setPwShow(false);
+        setPwDone(false);
+        setPwCopied(false);
+    };
+
+    const generatePassword = () => {
+        const digits = Math.floor(1000 + Math.random() * 9000);
+        const suffix = Math.random().toString(36).slice(2, 6);
+        const pw = `Lovely-${digits}-${suffix}`;
+        setPwValue(pw);
+        setPwConfirm(pw);
+        setPwShow(true);
+    };
+
+    const handleSetPassword = async () => {
+        if (!pwTarget || !pwValid || pwSaving) return;
+        setPwSaving(true);
+        try {
+            const res = await setTeamMemberPassword(pwTarget.id, pwValue);
+            if (res?.success) {
+                setPwDone(true);
+                toast.success(t('passwordModal.success'));
+            } else {
+                toast.error(res?.error || t('passwordModal.error'));
+            }
+        } catch (err: any) {
+            toast.error(err?.message || t('passwordModal.error'));
+        } finally {
+            setPwSaving(false);
+        }
+    };
 
     const fetchProfiles = async () => {
         try {
@@ -265,6 +315,16 @@ export default function AdminUsersPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => {
+                                                                openPasswordModal(profile);
+                                                                setActiveMenuId(null);
+                                                            }}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg transition-colors"
+                                                        >
+                                                            <KeyRound className="size-4" />
+                                                            {t('resetPassword')}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
                                                                 setUserForAction(profile);
                                                                 setIsDeleteModalOpen(true);
                                                                 setActiveMenuId(null);
@@ -345,6 +405,9 @@ export default function AdminUsersPage() {
                             <button onClick={() => { setUserForAction(profile); setIsEditModalOpen(true); setActiveMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg rounded-xl flex items-center gap-3">
                                 <Pencil className="size-5" />{t('editMember')}
                             </button>
+                            <button onClick={() => { openPasswordModal(profile); setActiveMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-medium text-[#171717] dark:text-admin-dark-text-primary hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg rounded-xl flex items-center gap-3">
+                                <KeyRound className="size-5" />{t('resetPassword')}
+                            </button>
                             <button onClick={() => { setUserForAction(profile); setIsDeleteModalOpen(true); setActiveMenuId(null); }} className="w-full text-left px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-3">
                                 <Trash2 className="size-5" />{t('deleteMember')}
                             </button>
@@ -383,10 +446,126 @@ export default function AdminUsersPage() {
                 userToEdit={userForAction}
             />
 
-            <RolesPermissionsModal 
+            <RolesPermissionsModal
                 isOpen={isRolesModalOpen}
                 onClose={() => setIsRolesModalOpen(false)}
             />
+
+            {/* Reset password modal */}
+            {pwTarget && (
+                <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="absolute inset-0 bg-black/50" onClick={() => setPwTarget(null)} />
+                    <div className="relative w-full max-w-md bg-white dark:bg-admin-dark-surface rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3">
+                            <KeyRound className="size-5 text-[#171717] dark:text-admin-dark-text-primary" />
+                            <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">{t('passwordModal.title')}</h3>
+                        </div>
+                        <p className="mt-2 text-sm text-[#a3a3a3] leading-relaxed">
+                            {t('passwordModal.description', { name: pwTarget.full_name || pwTarget.email || '' })}
+                        </p>
+
+                        {pwDone ? (
+                            <div className="mt-5 space-y-4">
+                                <div className="flex items-center gap-2 text-sm font-bold text-emerald-600">
+                                    <CheckCircle2 className="size-5" />
+                                    {t('passwordModal.done')}
+                                </div>
+                                <div className="flex items-center gap-2 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#f5f5f5] dark:border-admin-dark-border rounded-xl px-4 py-3">
+                                    <code className="flex-1 text-sm font-mono text-[#171717] dark:text-admin-dark-text-primary break-all">{pwValue}</code>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(pwValue);
+                                            setPwCopied(true);
+                                            toast.success(t('passwordModal.copied'));
+                                        }}
+                                        aria-label={t('passwordModal.copy')}
+                                        className="text-[#a3a3a3] hover:text-[#171717] dark:hover:text-white transition-colors shrink-0"
+                                    >
+                                        {pwCopied ? <CheckCircle2 className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-[#a3a3a3] leading-relaxed">{t('passwordModal.shareHint')}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => setPwTarget(null)}
+                                    className="w-full px-4 py-2.5 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-[#171717] text-sm font-bold hover:opacity-90 transition-opacity"
+                                >
+                                    {t('passwordModal.finish')}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="mt-5 space-y-4">
+                                <div className="relative">
+                                    <input
+                                        type={pwShow ? 'text' : 'password'}
+                                        value={pwValue}
+                                        onChange={(e) => setPwValue(e.target.value)}
+                                        placeholder={t('passwordModal.newPlaceholder')}
+                                        autoComplete="new-password"
+                                        className="w-full bg-white dark:bg-admin-dark-bg border border-gray-200 dark:border-admin-dark-border rounded-xl pl-4 pr-11 py-3 text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none dark:text-admin-dark-text-primary"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setPwShow(!pwShow)}
+                                        aria-label={pwShow ? t('passwordModal.hide') : t('passwordModal.show')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#171717] dark:hover:text-white transition-colors"
+                                    >
+                                        {pwShow ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                    </button>
+                                </div>
+                                <input
+                                    type={pwShow ? 'text' : 'password'}
+                                    value={pwConfirm}
+                                    onChange={(e) => setPwConfirm(e.target.value)}
+                                    placeholder={t('passwordModal.confirmPlaceholder')}
+                                    autoComplete="new-password"
+                                    className="w-full bg-white dark:bg-admin-dark-bg border border-gray-200 dark:border-admin-dark-border rounded-xl px-4 py-3 text-sm focus:border-[#171717] dark:focus:border-white transition-all outline-none dark:text-admin-dark-text-primary"
+                                />
+
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                                    <span className={pwHasMin ? 'text-emerald-600' : 'text-gray-400'}>{t('passwordModal.ruleMin')}</span>
+                                    <span className={pwHasLetter ? 'text-emerald-600' : 'text-gray-400'}>{t('passwordModal.ruleLetter')}</span>
+                                    <span className={pwHasNum ? 'text-emerald-600' : 'text-gray-400'}>{t('passwordModal.ruleNumber')}</span>
+                                    {pwConfirm.length > 0 && (
+                                        <span className={pwValue === pwConfirm ? 'text-emerald-600' : 'text-red-500'}>
+                                            {pwValue === pwConfirm ? t('passwordModal.ruleMatch') : t('passwordModal.ruleMismatch')}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={generatePassword}
+                                    className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary hover:underline"
+                                >
+                                    {t('passwordModal.generate')}
+                                </button>
+
+                                <div className="flex gap-3 pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPwTarget(null)}
+                                        disabled={pwSaving}
+                                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-admin-dark-border text-sm font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-admin-dark-bg transition-colors disabled:opacity-50"
+                                    >
+                                        {t('passwordModal.cancel')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSetPassword}
+                                        disabled={!pwValid || pwSaving}
+                                        className="flex-[2] px-4 py-2.5 rounded-xl bg-[#171717] dark:bg-white text-white dark:text-[#171717] text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {pwSaving && <Loader2 className="size-4 animate-spin" />}
+                                        {t('passwordModal.submit')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
