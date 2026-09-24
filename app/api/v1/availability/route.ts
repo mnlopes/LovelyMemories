@@ -16,7 +16,9 @@ import type { ErrorResponse, ResponseStatus } from '@/lib/partner-api/types';
 
 export const dynamic = 'force-dynamic';
 
-const BASE_HEADERS = { 'Cache-Control': 'no-store' };
+// Explicit charset: some clients (e.g. Windows PowerShell 5.1) fall back to Latin-1
+// without it and mangle accents and curly quotes in names and descriptions.
+const BASE_HEADERS = { 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8' };
 
 function json(body: unknown, status: number, extraHeaders: Record<string, string> = {}) {
     return NextResponse.json(body, { status, headers: { ...BASE_HEADERS, ...extraHeaders } });
