@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:security": "npx -y tsx scripts/test-security.ts"
+    "test:security": "npx -y tsx scripts/test-security.ts",
+    "test:partner-api": "npx -y tsx --test lib/partner-api/__tests__/*.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
