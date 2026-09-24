@@ -2893,7 +2893,7 @@
             "search": "Procurar casa ou cidade",
             "hint": "Desligadas por defeito. Liga só casas com calendário iCal confirmado.",
             "guests": "{count} hóspedes",
-            "icalError": "iCal com erro",
+            "icalError": "iCal com erro · escondida dos parceiros",
             "enabledToast": "{name} está visível para parceiros",
             "disabledToast": "{name} foi escondida dos parceiros",
             "empty": "Nenhuma casa corresponde à pesquisa."

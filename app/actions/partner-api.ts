@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getLocalizedStr } from '@/lib/data-utils';
 import { generateApiKey, hashApiKey, displayPrefix } from '@/lib/partner-api/keys';
+import { effectiveCity } from '@/lib/partner-api/destinations';
 import { toNumber } from '@/lib/partner-api/serialize';
 import { logActivity } from './audit';
 
@@ -103,21 +104,32 @@ export async function listPartnerKeys(): Promise<ActionResult<PartnerKeyListItem
     if (!(await requireSuperAdmin())) return FORBIDDEN;
     try {
         const db = await getSupabaseAdmin();
-        const [keysRes, reqRes] = await Promise.all([
-            db.from('partner_api_keys')
-                .select('id, partner_name, ref_slug, key_prefix, created_at, last_used_at, revoked_at')
-                .order('created_at', { ascending: false }),
-            db.from('partner_api_requests').select('key_id').gt('created_at', since24h()),
-        ]);
-        if (keysRes.error) throw new Error(keysRes.error.message);
-        if (reqRes.error) throw new Error(reqRes.error.message);
+        const { data: keys, error: keysError } = await db
+            .from('partner_api_keys')
+            .select('id, partner_name, ref_slug, key_prefix, created_at, last_used_at, revoked_at')
+            .order('created_at', { ascending: false });
+        if (keysError) throw new Error(keysError.message);
 
+        // A plain `select('key_id')` over all recent requests is silently capped at 1000 rows
+        // by PostgREST, which undercounts busy keys. Count per key instead (head-only, exact).
+        const since = since24h();
+        const countResults = await Promise.all(
+            (keys ?? []).map(k =>
+                db.from('partner_api_requests')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('key_id', k.id)
+                    .gt('created_at', since),
+            ),
+        );
         const counts = new Map<string, number>();
-        for (const r of reqRes.data ?? []) counts.set(r.key_id, (counts.get(r.key_id) ?? 0) + 1);
+        countResults.forEach((res, i) => {
+            if (res.error) throw new Error(res.error.message);
+            counts.set(keys![i].id, res.count ?? 0);
+        });
 
         return {
             success: true,
-            data: (keysRes.data ?? []).map(k => ({
+            data: (keys ?? []).map(k => ({
                 id: k.id,
                 partnerName: k.partner_name,
                 refSlug: k.ref_slug,
@@ -198,10 +210,24 @@ export async function listPartnerProperties(): Promise<ActionResult<PartnerPrope
     if (!(await requireSuperAdmin())) return FORBIDDEN;
     try {
         const rows = await loadBookableProperties();
+
+        // Units may leave `city` blank and inherit it from their parent building —
+        // loadBookableProperties only returns leaves, so fetch the parents' city too.
+        const parentIdsNeeded = Array.from(new Set(
+            rows.filter(p => !getLocalizedStr(p.city, 'en').trim() && p.parent_id).map(p => p.parent_id as string),
+        ));
+        let parentCityById = new Map<string, unknown>();
+        if (parentIdsNeeded.length > 0) {
+            const db = await getSupabaseAdmin();
+            const { data: parents, error } = await db.from('properties').select('id, city').in('id', parentIdsNeeded);
+            if (error) throw new Error(error.message);
+            parentCityById = new Map(((parents ?? []) as { id: string; city: unknown }[]).map(p => [p.id, p.city]));
+        }
+
         const items = rows.map(p => ({
             id: p.id,
             name: getLocalizedStr(p.title, 'en').trim() || p.slug,
-            city: getLocalizedStr(p.city, 'en').trim(),
+            city: effectiveCity(p.city, p.parent_id ? parentCityById.get(p.parent_id) : undefined),
             maxGuests: toNumber(p.max_guests),
             enabled: p.partner_api_enabled === true,
             icalFailed: p.sync_status === 'failed',

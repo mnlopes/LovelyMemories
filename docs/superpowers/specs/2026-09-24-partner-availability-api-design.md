@@ -133,7 +133,11 @@ A tabela vive em `lib/partner-api/destinations.ts`. Um destino novo é uma linha
 
 ### 5.4 Seleção de casas
 
-Candidatas: `is_active = true`, `status <> 'hidden'`, `partner_api_enabled = true`, **unidade reservável** (`parent_id` não nulo, ou `is_multi_unit = false`; os contentores de edifício nunca entram), `city` numa das cidades do destino, `max_guests >= guests`.
+Candidatas: `is_active = true`, `status <> 'hidden'`, `partner_api_enabled = true`, `sync_status` diferente de `'failed'` (ver abaixo), **unidade reservável** (`parent_id` não nulo, ou `is_multi_unit = false`; os contentores de edifício nunca entram), `city` **efetiva** numa das cidades do destino, `max_guests >= guests`.
+
+**Cidade efetiva (fallback ao edifício-mãe):** uma unidade pode não ter `city` própria (ex.: `the-meadow` tem `city = null`, o edifício-mãe tem `city = "Porto"`). `effectiveCity(ownCity, parentCity)` (`lib/partner-api/destinations.ts`) devolve a cidade própria, localizada em inglês e sem espaços, se não for vazia; senão a do edifício-mãe, nas mesmas condições; senão `''`. `search.ts` carrega só as casas-mãe realmente necessárias (`parent_id` das linhas com cidade própria vazia) com o mesmo cliente anon, e usa a cidade efetiva tanto para o filtro de destino como no campo `city` da resposta.
+
+**Exclusão por falha de sincronização iCal:** decisão de produto do owner — uma casa cujo `sync_status = 'failed'` não aparece para parceiros (disponibilidade não confiável). Um `.neq('sync_status', 'failed')` simples excluiria também as linhas com `sync_status IS NULL` (nunca sincronizadas), o que não é a intenção; a query usa `.or('sync_status.is.null,sync_status.neq.failed')`. `sync_status` nunca é devolvido na resposta.
 
 Excluídas **silenciosamente** (sem erro):
 - Indisponível nas datas: `property_id` devolvido por `get_unavailable_property_ids(check_in, check_out)`, que junta blocked_dates (incluindo os importados por iCal), reservas não canceladas e locks ativos.

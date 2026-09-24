@@ -1718,7 +1718,7 @@
             "search": "חפש נכס או עיר",
             "hint": "כבוי כברירת מחדל. הפעל רק נכסים עם לוח iCal מאומת.",
             "guests": "{count} אורחים",
-            "icalError": "שגיאת iCal",
+            "icalError": "שגיאת iCal · מוסתר משותפים",
             "enabledToast": "{name} גלוי כעת לשותפים",
             "disabledToast": "{name} מוסתר מהשותפים",
             "empty": "אין נכסים שתואמים לחיפוש."

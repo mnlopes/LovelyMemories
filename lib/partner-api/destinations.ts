@@ -25,7 +25,7 @@ export const VALID_DESTINATION_NAMES = DESTINATIONS.map(d => d.name);
 export function normalizeText(input: string): string {
     return input
         .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
+        .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
         .replace(/\s+/g, ' ')
         .trim();
@@ -42,4 +42,15 @@ export function cityMatches(propertyCity: unknown, cities: string[]): boolean {
     const city = normalizeText(getLocalizedStr(propertyCity, 'en'));
     if (!city) return false;
     return cities.some(c => normalizeText(c) === city);
+}
+
+/**
+ * A unit's own `city` wins; units may leave it blank and inherit the parent
+ * building's city (e.g. `the-meadow` has `city = null`, parent has `city = "Porto"`).
+ * Returns '' when neither side has a usable value.
+ */
+export function effectiveCity(ownCity: unknown, parentCity: unknown): string {
+    const own = getLocalizedStr(ownCity, 'en').trim();
+    if (own) return own;
+    return getLocalizedStr(parentCity, 'en').trim();
 }

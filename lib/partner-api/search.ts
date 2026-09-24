@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { cityMatches } from './destinations';
+import { getLocalizedStr } from '@/lib/data-utils';
+import { cityMatches, effectiveCity } from './destinations';
 import {
     computeStayPrice, PRICING_RULES_COLUMNS, CUSTOM_PRICING_COLUMNS,
     type PricingRulesRow, type CustomPricingRow,
@@ -23,18 +24,48 @@ export async function searchAvailableProperties(
     refSlug: string,
 ): Promise<PartnerProperty[]> {
     // 1. Allow-listed, active, public properties (same visibility filter as the site search).
+    // Owners asked that properties with a currently-failing iCal sync be hidden from partners
+    // (stale/unreliable availability); `.neq` alone would also drop NULL sync_status rows
+    // (properties that were never synced), so this needs an explicit `is null OR <> 'failed'`.
     const { data: rows, error: propsError } = await db
         .from('properties')
         .select(PROPERTY_COLUMNS)
         .eq('is_active', true)
         .neq('status', 'hidden')
-        .eq('partner_api_enabled', true);
+        .eq('partner_api_enabled', true)
+        .or('sync_status.is.null,sync_status.neq.failed');
     if (propsError) throw new Error(`properties query failed: ${propsError.message}`);
 
+    const rowsTyped = (rows ?? []) as unknown as PropertyRow[];
+
+    // 1b. Units may leave `city` blank and inherit it from their parent building
+    // (e.g. `the-meadow` has city = null, its parent has city = "Porto"). Load only
+    // the parents actually needed, with the same anon client.
+    const ownCity = (p: PropertyRow) => getLocalizedStr(p.city, 'en').trim();
+    const parentIdsNeeded = Array.from(new Set(
+        rowsTyped
+            .filter(p => !ownCity(p) && p.parent_id)
+            .map(p => p.parent_id as string),
+    ));
+    let parentCityById = new Map<string, unknown>();
+    if (parentIdsNeeded.length > 0) {
+        const { data: parents, error: parentsError } = await db
+            .from('properties')
+            .select('id, city')
+            .in('id', parentIdsNeeded);
+        if (parentsError) throw new Error(`parent properties query failed: ${parentsError.message}`);
+        parentCityById = new Map(
+            ((parents ?? []) as { id: string; city: unknown }[]).map(p => [p.id, p.city]),
+        );
+    }
+    const effectiveCityById = new Map(
+        rowsTyped.map(p => [p.id, effectiveCity(p.city, p.parent_id ? parentCityById.get(p.parent_id) : undefined)]),
+    );
+
     // 2. Bookable leaves only (units, or standalone houses), in the destination, with capacity.
-    const candidates = ((rows ?? []) as unknown as PropertyRow[]).filter(p =>
+    const candidates = rowsTyped.filter(p =>
         (p.parent_id !== null || !p.is_multi_unit)
-        && cityMatches(p.city, req.cities)
+        && cityMatches(effectiveCityById.get(p.id), req.cities)
         && toNumber(p.max_guests) >= req.guests,
     );
     if (candidates.length === 0) return [];
@@ -50,6 +81,9 @@ export async function searchAvailableProperties(
     if (available.length === 0) return [];
 
     // 4. Prices, batch-loaded. The custom_pricing filter matches calculateReservationPrice's exactly.
+    // NOTE: PostgREST caps unpaginated selects at 1000 rows by default. custom_pricing is empty
+    // today, so this can't silently truncate yet — revisit (paginate or narrow the date filter
+    // further) if seasonal pricing grows past that.
     const ids = available.map(p => p.id);
     const [rulesRes, customRes] = await Promise.all([
         db.from('pricing_rules').select(PRICING_RULES_COLUMNS).in('property_id', ids),
@@ -75,7 +109,9 @@ export async function searchAvailableProperties(
             guests: req.guests,
         });
         if ('error' in price) continue;
-        results.push(serializeProperty(row, price, req, refSlug));
+        // `city` here is the effective (own-or-parent) city; still an internal row, not a
+        // response object — serializeProperty stays the sole whitelist boundary.
+        results.push(serializeProperty({ ...row, city: effectiveCityById.get(row.id) ?? '' }, price, req, refSlug));
     }
 
     // 6. Cheapest first, id as a stable tie-breaker.

@@ -41,7 +41,7 @@ export default function AdminPartnersPage() {
         setLoading(false);
     }, [t]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount, same pattern as other admin pages
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data load on mount
     useEffect(() => { load(); }, [load]);
 
     const filtered = useMemo(() => {
