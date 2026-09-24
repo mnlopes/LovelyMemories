@@ -230,9 +230,14 @@ Todas as respostas: `Content-Type: application/json`, `Cache-Control: no-store`,
   - `listPartnerKeys()`: prefixo, parceiro, ref, criada em, último uso, revogada, pedidos nas últimas 24h. **Nunca o hash.**
   - `createPartnerKey({ partnerName, refSlug })`: devolve a chave completa **uma única vez**.
   - `revokePartnerKey(id)`: define `revoked_at`.
-  - `listPartnerProperties()`: casas reserváveis ativas com `partner_api_enabled`.
+  - `listPartnerProperties()`: casas reserváveis ativas com `partner_api_enabled`, `city`, `max_guests` e `sync_status`.
   - `setPartnerPropertyEnabled(id, enabled)`.
-- **UI:** dois blocos, *API keys* e *Properties exposed to partners*, com o padrão visual das outras páginas do backoffice. A criação de chave abre um diálogo com a chave, um botão de copiar e o aviso "não voltará a ser mostrada". Revogar pede confirmação.
+  - `getPartnerApiSummary()`: pedidos nas últimas 24h (todas as chaves), nº de chaves ativas, casas expostas / total de casas reserváveis ativas, e se o kill-switch `PARTNER_API_ENABLED` está ligado.
+- **UI** (mockup aprovado em 2026-09-24), com o padrão visual das outras páginas do backoffice:
+  - Cabeçalho com o estado da API ("API ativa" / "API desligada", conforme o kill-switch).
+  - **Resumo:** 3 números, *Pedidos 24h*, *Chaves ativas* e *Casas expostas (X de Y)*.
+  - **API keys:** tabela com parceiro + ref, prefixo mascarado, último uso (relativo), pedidos 24h e ação *Revogar*. As revogadas ficam visíveis, esbatidas e com o badge "Revogada".
+  - **Casas expostas a parceiros:** pesquisa por nome/cidade e uma linha por casa (nome · cidade · lotação) com interruptor. As casas com `sync_status = 'failed'` mostram o badge **"iCal com erro"** (aviso, não bloqueia o interruptor), para evitar expor por engano uma casa com o calendário errado. A criação de chave abre um diálogo com a chave, um botão de copiar e o aviso "não voltará a ser mostrada". Revogar pede confirmação.
 - As ações de criar, revogar e ligar/desligar são registadas com `logActivity` (`app/actions/audit.ts`), tal como as outras ações de admin. Nunca se regista a chave nem o hash, só o prefixo.
 - **i18n:** strings novas em `messages/{en,pt,he}.json` com paridade de chaves.
 
