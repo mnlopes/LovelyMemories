@@ -24,6 +24,9 @@ export interface CalculatePriceParams {
 /**
  * Calcula o custo total de uma reserva com base nas regras da propriedade.
  * Esta função deve ser usada tanto no frontend (exibição) quanto no backend (verificação).
+ *
+ * ESPELHADA em lib/partner-api/pricing.ts (API de parceiros). Se mudares esta
+ * fórmula, atualiza o espelho e corre: npx tsx scripts/check-partner-api-price-parity.ts
  */
 export async function calculateReservationPrice({
     propertyId,
