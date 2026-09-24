@@ -23,7 +23,7 @@ const ALLOWED_KEYS: Record<string, string[]> = {
     property: ['id', 'name', 'description', 'city', 'area_m2', 'max_guests', 'bedrooms', 'bathrooms', 'total_price',
         'nightly_price_average', 'currency', 'main_image', 'images', 'amenities', 'booking_url'],
 };
-const FORBIDDEN_VALUE = /@|ical|\.ics|hospitable/i;
+const FORBIDDEN_VALUE = /\bical\b|\.ics\b|hospitable|[\w.+-]+@[\w-]+\.[a-z]{2,}/i;
 
 let failures = 0;
 function check(name: string, cond: boolean, detail = '') {
@@ -99,34 +99,37 @@ async function main() {
             check(`400 ${name}`, res.status === 400 && json?.status === 'INVALID_REQUEST' && json?.error?.code === code, `got ${res.status} ${JSON.stringify(json)}`);
         }
 
-        // Success
-        const { res, json } = await call(valid, key);
-        check('200 SUCCESS', res.status === 200 && json?.status === 'SUCCESS', `got ${res.status}`);
-        check('Cache-Control: no-store', res.headers.get('cache-control') === 'no-store');
-        check('no CORS header', res.headers.get('access-control-allow-origin') === null);
-        check('search echoes normalized destination', json?.search?.destination === 'Porto');
-        const props = (json?.properties ?? []) as any[];
-        console.log(`   ${props.length} properties returned`);
-        if (props.length === 0) {
-            console.warn('⚠️  No properties returned — turn on at least one Porto property in /admin/partners to test the property shape.');
-        }
-        for (const p of props) {
-            check(`property ${p.id} booking_url`, typeof p.booking_url === 'string'
-                && p.booking_url.startsWith('https://www.lovelymemories.pt/en/properties/')
-                && p.booking_url.includes(`from=${valid.check_in}`) && p.booking_url.includes(`to=${valid.check_out}`)
-                && p.booking_url.includes('adults=2') && p.booking_url.includes('ref=smoke-test'));
-            check(`property ${p.id} numeric prices`, typeof p.total_price === 'number' && typeof p.nightly_price_average === 'number' && p.total_price > 0);
-            check(`property ${p.id} capacity`, p.max_guests >= valid.guests);
-        }
-        const sorted = props.every((p, i) => i === 0 || props[i - 1].total_price <= p.total_price);
-        check('sorted by total_price', sorted);
+        // Success — exercise every known destination, not just Porto.
+        const destinations = ['Porto', 'Gaia', 'Algarve', 'Mykonos'];
+        for (const destination of destinations) {
+            const { res, json } = await call({ ...valid, destination }, key);
+            check(`200 SUCCESS (${destination})`, res.status === 200 && json?.status === 'SUCCESS', `got ${res.status} ${JSON.stringify(json)}`);
+            check(`Cache-Control: no-store (${destination})`, res.headers.get('cache-control') === 'no-store');
+            check(`no CORS header (${destination})`, res.headers.get('access-control-allow-origin') === null);
+            check(`search echoes normalized destination (${destination})`, json?.search?.destination === destination);
+            const props = (json?.properties ?? []) as any[];
+            console.log(`   ${destination}: ${props.length} properties returned`);
+            if (props.length === 0) {
+                console.warn(`⚠️  No properties returned for ${destination} — turn on at least one property there in /admin/partners to test the property shape.`);
+            }
+            for (const p of props) {
+                check(`property ${p.id} booking_url`, typeof p.booking_url === 'string'
+                    && p.booking_url.startsWith('https://www.lovelymemories.pt/en/properties/')
+                    && p.booking_url.includes(`from=${valid.check_in}`) && p.booking_url.includes(`to=${valid.check_out}`)
+                    && p.booking_url.includes('adults=2') && p.booking_url.includes('ref=smoke-test'));
+                check(`property ${p.id} numeric prices`, typeof p.total_price === 'number' && typeof p.nightly_price_average === 'number' && p.total_price > 0);
+                check(`property ${p.id} capacity`, p.max_guests >= valid.guests);
+            }
+            const sorted = props.every((p, i) => i === 0 || props[i - 1].total_price <= p.total_price);
+            check(`sorted by total_price (${destination})`, sorted);
 
-        // Leak scan over the whole body
-        const problems: string[] = [];
-        scanForLeaks(json, 'root', '$', problems);
-        check('anti-leak: only contract fields, no forbidden values', problems.length === 0, problems.join('; '));
+            // Leak scan over the whole body
+            const problems: string[] = [];
+            scanForLeaks(json, 'root', '$', problems);
+            check(`anti-leak: only contract fields, no forbidden values (${destination})`, problems.length === 0, problems.join('; '));
+        }
 
-        // Rate limit: ~12 requests already logged; fire until 429 or 70 total.
+        // Rate limit: ~16 requests already logged (auth + validation + 4 destinations); fire until 429 or 70 more.
         let got429 = false;
         for (let i = 0; i < 70 && !got429; i++) {
             const r = await call({ ...valid, destination: 'Lisbon' }, key);
