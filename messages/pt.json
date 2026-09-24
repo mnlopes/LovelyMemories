@@ -2845,5 +2845,59 @@
             "genericError": "Falha ao alterar a password",
             "auditNote": "Esta alteração fica registada no audit log."
         }
+    },
+    "AdminPartners": {
+        "title": "API de parceiros",
+        "description": "Acesso read-only de parceiros à disponibilidade e preços",
+        "loading": "A carregar…",
+        "apiOn": "API ativa",
+        "apiOff": "API desligada",
+        "summary": {
+            "requests24h": "Pedidos (24h)",
+            "activeKeys": "Chaves ativas",
+            "exposed": "Casas expostas",
+            "of": "de {total}"
+        },
+        "keys": {
+            "title": "Chaves de API",
+            "new": "Nova chave",
+            "partner": "Parceiro",
+            "key": "Chave",
+            "lastUsed": "Último uso",
+            "requests24h": "24h",
+            "never": "Nunca",
+            "revoke": "Revogar",
+            "revoked": "Revogada",
+            "revokeConfirm": "Revogar a chave de {partner}? Os pedidos com ela deixam de funcionar de imediato.",
+            "revokedToast": "Chave revogada",
+            "empty": "Ainda não há chaves. Cria uma para dar acesso a um parceiro."
+        },
+        "create": {
+            "title": "Nova chave de API",
+            "partnerName": "Nome do parceiro",
+            "partnerNamePlaceholder": "Kitsiva",
+            "refSlug": "Ref de reserva",
+            "refSlugHint": "Acrescentado aos links de reserva como ref=… (minúsculas, números, hífens)",
+            "refSlugPlaceholder": "kitsiva",
+            "cancel": "Cancelar",
+            "submit": "Criar chave",
+            "createdTitle": "Chave criada para {partner}",
+            "createdHint": "Copia agora. Esta chave não volta a ser mostrada.",
+            "copy": "Copiar",
+            "copied": "Copiada",
+            "secureWarning": "Envia por canal seguro. O parceiro guarda-a nos secrets do servidor.",
+            "done": "Já copiei"
+        },
+        "properties": {
+            "title": "Casas expostas a parceiros",
+            "search": "Procurar casa ou cidade",
+            "hint": "Desligadas por defeito. Liga só casas com calendário iCal confirmado.",
+            "guests": "{count} hóspedes",
+            "icalError": "iCal com erro",
+            "enabledToast": "{name} está visível para parceiros",
+            "disabledToast": "{name} foi escondida dos parceiros",
+            "empty": "Nenhuma casa corresponde à pesquisa."
+        },
+        "genericError": "Algo correu mal. Tenta de novo."
     }
 }

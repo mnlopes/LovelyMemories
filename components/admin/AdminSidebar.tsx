@@ -1,7 +1,7 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, UserCircle, type LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, UserCircle, Plug, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -117,8 +117,9 @@ export const AdminSidebar = () => {
                     ...(hasAccess('imports') || role === 'super_admin' || role === 'admin' ? [{ icon: FileUp, label: "Imports", path: "/admin/imports" }] : []),
                     ...((role === 'super_admin' || role === 'admin') && beds24Available ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: cohostPending }] : []),
                     { icon: Activity, label: "Activity", path: "/admin/activity" },
-                    // Settings only for Super Admin
+                    // Settings and Partners API only for Super Admin (mirrors the guards in their layout.tsx)
                     ...(role === 'super_admin' ? [
+                        { icon: Plug, label: "Partners API", path: "/admin/partners" },
                         { icon: Settings, label: "Settings", path: "/admin/settings" }
                     ] : [])
                 ]

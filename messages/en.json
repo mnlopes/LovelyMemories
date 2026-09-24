@@ -2854,5 +2854,59 @@
             "genericError": "Failed to change password",
             "auditNote": "This change is recorded in the audit log."
         }
+    },
+    "AdminPartners": {
+        "title": "Partners API",
+        "description": "Read-only partner access to availability and prices",
+        "loading": "Loading…",
+        "apiOn": "API on",
+        "apiOff": "API off",
+        "summary": {
+            "requests24h": "Requests (24h)",
+            "activeKeys": "Active keys",
+            "exposed": "Exposed properties",
+            "of": "of {total}"
+        },
+        "keys": {
+            "title": "API keys",
+            "new": "New key",
+            "partner": "Partner",
+            "key": "Key",
+            "lastUsed": "Last used",
+            "requests24h": "24h",
+            "never": "Never",
+            "revoke": "Revoke",
+            "revoked": "Revoked",
+            "revokeConfirm": "Revoke the key for {partner}? Requests with it will stop working immediately.",
+            "revokedToast": "Key revoked",
+            "empty": "No keys yet. Create one to give a partner access."
+        },
+        "create": {
+            "title": "New API key",
+            "partnerName": "Partner name",
+            "partnerNamePlaceholder": "Kitsiva",
+            "refSlug": "Booking ref",
+            "refSlugHint": "Added to booking links as ref=… (lowercase, numbers, hyphens)",
+            "refSlugPlaceholder": "kitsiva",
+            "cancel": "Cancel",
+            "submit": "Create key",
+            "createdTitle": "Key created for {partner}",
+            "createdHint": "Copy it now. This key won't be shown again.",
+            "copy": "Copy",
+            "copied": "Copied",
+            "secureWarning": "Send it through a secure channel. The partner keeps it in their server's secrets.",
+            "done": "I've copied it"
+        },
+        "properties": {
+            "title": "Properties exposed to partners",
+            "search": "Search property or city",
+            "hint": "Off by default. Only turn on properties with a confirmed iCal calendar.",
+            "guests": "{count} guests",
+            "icalError": "iCal error",
+            "enabledToast": "{name} is now visible to partners",
+            "disabledToast": "{name} is hidden from partners",
+            "empty": "No properties match your search."
+        },
+        "genericError": "Something went wrong. Try again."
     }
 }

@@ -1670,5 +1670,59 @@
             "genericError": "שינוי הסיסמה נכשל",
             "auditNote": "השינוי נרשם ביומן הביקורת."
         }
+    },
+    "AdminPartners": {
+        "title": "API לשותפים",
+        "description": "גישת קריאה בלבד לשותפים לזמינות ומחירים",
+        "loading": "טוען…",
+        "apiOn": "ה-API פעיל",
+        "apiOff": "ה-API כבוי",
+        "summary": {
+            "requests24h": "בקשות (24 שעות)",
+            "activeKeys": "מפתחות פעילים",
+            "exposed": "נכסים חשופים",
+            "of": "מתוך {total}"
+        },
+        "keys": {
+            "title": "מפתחות API",
+            "new": "מפתח חדש",
+            "partner": "שותף",
+            "key": "מפתח",
+            "lastUsed": "שימוש אחרון",
+            "requests24h": "24 ש׳",
+            "never": "אף פעם",
+            "revoke": "בטל",
+            "revoked": "בוטל",
+            "revokeConfirm": "לבטל את המפתח של {partner}? בקשות איתו יפסיקו לעבוד מיד.",
+            "revokedToast": "המפתח בוטל",
+            "empty": "אין עדיין מפתחות. צור מפתח כדי לתת גישה לשותף."
+        },
+        "create": {
+            "title": "מפתח API חדש",
+            "partnerName": "שם השותף",
+            "partnerNamePlaceholder": "Kitsiva",
+            "refSlug": "מזהה הזמנה (ref)",
+            "refSlugHint": "נוסף לקישורי ההזמנה כ-ref=… (אותיות קטנות, מספרים, מקפים)",
+            "refSlugPlaceholder": "kitsiva",
+            "cancel": "ביטול",
+            "submit": "צור מפתח",
+            "createdTitle": "נוצר מפתח עבור {partner}",
+            "createdHint": "העתק עכשיו. המפתח לא יוצג שוב.",
+            "copy": "העתק",
+            "copied": "הועתק",
+            "secureWarning": "שלח בערוץ מאובטח. השותף שומר אותו בסודות של השרת.",
+            "done": "העתקתי"
+        },
+        "properties": {
+            "title": "נכסים חשופים לשותפים",
+            "search": "חפש נכס או עיר",
+            "hint": "כבוי כברירת מחדל. הפעל רק נכסים עם לוח iCal מאומת.",
+            "guests": "{count} אורחים",
+            "icalError": "שגיאת iCal",
+            "enabledToast": "{name} גלוי כעת לשותפים",
+            "disabledToast": "{name} מוסתר מהשותפים",
+            "empty": "אין נכסים שתואמים לחיפוש."
+        },
+        "genericError": "משהו השתבש. נסה שוב."
     }
 }
