@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  title: Lovely Memories Partner Availability API
+  version: 1.0.0
+  description: |
+    Read-only, server-to-server API returning Lovely Memories properties available
+    for given dates, with the real direct-booking price and a direct booking URL.
+    Keep the Bearer token on your server; never expose it to browsers or apps.
+servers:
+  - url: https://www.lovelymemories.pt
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/availability:
+    post:
+      operationId: searchAvailability
+      summary: Available properties for dates, guests and destination
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AvailabilityRequest' }
+            example: { check_in: '2026-10-10', check_out: '2026-10-14', guests: 4, destination: Porto }
+      responses:
+        '200':
+          description: Search succeeded. `properties` is empty when nothing is available.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example: { status: INVALID_REQUEST, error: { code: INVALID_DATES, message: check_out must be after check_in } }
+        '401':
+          description: Missing, invalid or revoked token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '405':
+          description: Method not allowed (use POST)
+          headers:
+            Allow: { schema: { type: string, const: POST } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '429':
+          description: Rate limit exceeded (60 requests/minute per key)
+          headers:
+            Retry-After: { schema: { type: integer }, description: Seconds to wait }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '503':
+          description: Temporary error or API disabled — retry later
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: 'Token format: lm_live_ followed by 32 alphanumeric characters'
+  schemas:
+    AvailabilityRequest:
+      type: object
+      required: [check_in, check_out, guests, destination]
+      properties:
+        check_in:
+          type: string
+          format: date
+          description: YYYY-MM-DD. From tomorrow (Europe/Lisbon), at most 18 months ahead.
+        check_out:
+          type: string
+          format: date
+          description: YYYY-MM-DD. After check_in; stay of at most 30 nights.
+        guests:
+          type: integer
+          minimum: 1
+          maximum: 16
+        destination:
+          type: string
+          description: 'Porto (also Oporto; includes Gaia), Gaia (also Vila Nova de Gaia, VN Gaia), Algarve, Mykonos (also Mikonos). Case and accents ignored.'
+    SuccessResponse:
+      type: object
+      required: [status, search, currency, properties]
+      properties:
+        status: { type: string, const: SUCCESS }
+        search:
+          type: object
+          required: [check_in, check_out, guests, destination]
+          properties:
+            check_in: { type: string, format: date }
+            check_out: { type: string, format: date }
+            guests: { type: integer }
+            destination: { type: string, description: Canonical destination name }
+        currency: { type: string, const: EUR }
+        properties:
+          type: array
+          description: Only actually available properties, cheapest first.
+          items: { $ref: '#/components/schemas/Property' }
+    Property:
+      type: object
+      required: [id, name, description, city, area_m2, max_guests, bedrooms, bathrooms, total_price, nightly_price_average, currency, main_image, images, amenities, booking_url]
+      properties:
+        id: { type: string, format: uuid, description: Stable property id }
+        name: { type: string }
+        description: { type: string, description: 'Plain text, up to ~300 characters' }
+        city: { type: string }
+        area_m2: { type: [number, 'null'], description: Size in square metres }
+        max_guests: { type: integer }
+        bedrooms: { type: number }
+        bathrooms: { type: number }
+        total_price:
+          type: number
+          description: Full direct-booking price for the stay (nights with seasonal prices and discounts + cleaning fee + tourist tax; all guests as adults). Excludes optional extras and coupons.
+        nightly_price_average:
+          type: number
+          description: Accommodation after discount divided by nights. Excludes cleaning fee and tax.
+        currency: { type: string, const: EUR }
+        main_image: { type: [string, 'null'], format: uri }
+        images: { type: array, maxItems: 10, items: { type: string, format: uri } }
+        amenities: { type: array, maxItems: 30, items: { type: string } }
+        booking_url:
+          type: string
+          format: uri
+          description: Property page with dates and guests pre-filled. Price and availability are re-checked at checkout.
+    ErrorResponse:
+      type: object
+      required: [status, error]
+      properties:
+        status:
+          type: string
+          enum: [INVALID_REQUEST, UNAUTHORIZED, RATE_LIMITED, METHOD_NOT_ALLOWED, ERROR]
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [INVALID_BODY, INVALID_DATES, CHECK_IN_TOO_SOON, DATES_TOO_FAR, STAY_TOO_LONG, INVALID_GUESTS, UNKNOWN_DESTINATION, UNAUTHORIZED, RATE_LIMITED, METHOD_NOT_ALLOWED, AVAILABILITY_UNAVAILABLE, SERVICE_DISABLED]
+            message: { type: string }
