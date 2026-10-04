@@ -15,7 +15,13 @@ interface BlockedDatesListProps {
 export function BlockedDatesList({ blockedDates, isLoading, onDelete }: BlockedDatesListProps) {
     const t = useTranslations('PropertyEditor');
 
-    if (isLoading && blockedDates.length === 0) {
+    // "Active" = still running or upcoming, soonest first (past blocks are history, not actionable).
+    const todayISO = format(new Date(), 'yyyy-MM-dd');
+    const activeBlocks = blockedDates
+        .filter((b) => b.end_date.slice(0, 10) > todayISO)
+        .sort((a, b) => a.start_date.localeCompare(b.start_date) || a.end_date.localeCompare(b.end_date));
+
+    if (isLoading && activeBlocks.length === 0) {
         return (
             <div className="text-center py-8 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed dark:border-white/10 text-sm flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -24,7 +30,7 @@ export function BlockedDatesList({ blockedDates, isLoading, onDelete }: BlockedD
         );
     }
 
-    if (blockedDates.length === 0) {
+    if (activeBlocks.length === 0) {
         return (
             <div className="text-center py-8 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed dark:border-white/10 text-sm">
                 {t('pricing.noBlocksFound')}
@@ -34,7 +40,7 @@ export function BlockedDatesList({ blockedDates, isLoading, onDelete }: BlockedD
 
     return (
         <div className="space-y-3">
-            {blockedDates.map((block) => (
+            {activeBlocks.map((block) => (
                 <div key={block.id} className="flex items-center justify-between p-4 bg-white dark:bg-admin-dark-surface border border-gray-100 dark:border-white/10 rounded-xl shadow-sm hover:border-gray-200 dark:hover:border-white/20 transition-colors">
                     <div className="space-y-1">
                         <p className="text-sm font-bold text-navy-900 dark:text-white">
