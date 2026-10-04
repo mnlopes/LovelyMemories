@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { CheckCircle2, X, Loader2, ArrowRight, UploadCloud } from "lucide-react";
+import { CheckCircle2, X, Loader2, ArrowRight, UploadCloud, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { submitAirbnbCSV } from "@/app/actions/airbnb-import";
 import Papa from "papaparse";
@@ -23,6 +23,7 @@ export default function ImportUploadZone() {
 
     const [detectedMonth, setDetectedMonth] = useState<number | null>(null);
     const [detectedYear, setDetectedYear] = useState<number | null>(null);
+    const [importIssue, setImportIssue] = useState<{ error: string; details: string[] } | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isSubmittingRef = useRef(false);
@@ -127,6 +128,7 @@ export default function ImportUploadZone() {
         isSubmittingRef.current = true;
 
         setIsUploading(true);
+        setImportIssue(null);
         const formData = new FormData();
         formData.append("file", file);
         formData.append("propertyId", selectedPropertyId);
@@ -135,13 +137,19 @@ export default function ImportUploadZone() {
 
         try {
             const res = await submitAirbnbCSV(formData);
-            
+
             if (res.success) {
                 toast.success(`Successfully imported ${res.imported} reservations!`);
+                if (res.warnings?.length) {
+                    toast.warning(`${res.warnings.length} aviso(s) neste ficheiro`, {
+                        description: <div className="whitespace-pre-line">{res.warnings.join("\n")}</div>,
+                        duration: 20000,
+                    });
+                }
                 clearPreview();
                 router.refresh(); // refresh history table
             } else {
-                toast.error(res.error || "Failed to import CSV");
+                setImportIssue({ error: res.error || "Failed to import CSV", details: res.details || [] });
             }
         } catch (error: any) {
             toast.error(error.message || "An unexpected error occurred");
@@ -152,6 +160,7 @@ export default function ImportUploadZone() {
     };
 
     const clearPreview = () => {
+        setImportIssue(null);
         setFile(null);
         setPreviewData([]);
         setDetectedPeriod("");
@@ -280,6 +289,22 @@ export default function ImportUploadZone() {
                                     + {previewData.length - 50} more records
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {importIssue && (
+                        <div role="alert" className="mb-6 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4">
+                            <div className="flex items-start gap-2">
+                                <AlertTriangle className="size-4 mt-0.5 shrink-0 text-red-600" />
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold text-red-700 dark:text-red-400">{importIssue.error}</p>
+                                    {importIssue.details.length > 0 && (
+                                        <ul className="mt-2 max-h-48 overflow-y-auto space-y-1 text-xs text-red-700/90 dark:text-red-300 list-disc pl-4">
+                                            {importIssue.details.map((d, i) => <li key={i} className="break-words">{d}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
 

@@ -46,7 +46,7 @@ export default function UndoImportButton({ batchId }: { batchId: string }) {
                 onClose={() => setIsModalOpen(false)}
                 type="warning"
                 title="Desfazer Importação?"
-                message="Tens a certeza que queres desfazer esta importação? Isto irá remover todos os registos financeiros associados a este lote."
+                message="Tens a certeza que queres desfazer esta importação? As reservas criadas por este lote são apagadas; reservas que já existiam antes perdem apenas os dados financeiros."
                 actionLabel="Sim, Desfazer"
                 onAction={handleUndo}
             />
