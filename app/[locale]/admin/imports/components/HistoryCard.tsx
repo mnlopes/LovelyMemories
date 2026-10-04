@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Home, Calendar, CheckCircle2, Clock, ChevronDown, Loader2 } from "lucide-react";
+import { Home, Calendar, ChevronDown, Loader2 } from "lucide-react";
 import UndoImportButton from "./UndoImportButton";
+import ImportStatusBadge from "./ImportStatusBadge";
 import { getBatchReservations } from "@/app/actions/airbnb-import";
 import { cn } from "@/lib/utils";
 
@@ -61,15 +62,7 @@ export default function HistoryCard({ item, locale }: { item: any; locale: strin
                     ) : (
                         <span className="text-[#a3a3a3] text-xs italic">Not specified</span>
                     )}
-                    <span className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border",
-                        item.status === "completed"
-                            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20"
-                            : "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20"
-                    )}>
-                        {item.status === "completed" ? <CheckCircle2 className="size-3" /> : <Clock className="size-3 animate-spin" />}
-                        {item.status}
-                    </span>
+                    <ImportStatusBadge item={item} compact />
                     <span className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary ml-auto">{item.total_records} rec.</span>
                 </div>
             </button>

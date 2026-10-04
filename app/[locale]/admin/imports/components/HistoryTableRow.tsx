@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Home, Calendar, CheckCircle2, Clock, ChevronDown, Loader2 } from "lucide-react";
+import { Home, Calendar, ChevronDown, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import UndoImportButton from "./UndoImportButton";
+import ImportStatusBadge from "./ImportStatusBadge";
 import { getBatchReservations } from "@/app/actions/airbnb-import";
 import { cn } from "@/lib/utils";
 
@@ -93,15 +94,7 @@ export default function HistoryTableRow({ item, locale }: HistoryTableRowProps) 
                     {item.total_records}
                 </td>
                 <td className="px-6 py-4">
-                    <span className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm border",
-                        item.status === 'completed' 
-                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' 
-                            : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
-                    )}>
-                        {item.status === 'completed' ? <CheckCircle2 className="size-3.5" /> : <Clock className="size-3.5 animate-spin" />}
-                        {item.status}
-                    </span>
+                    <ImportStatusBadge item={item} />
                 </td>
                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <UndoImportButton batchId={item.id} />

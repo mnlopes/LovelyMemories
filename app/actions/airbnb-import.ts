@@ -178,7 +178,7 @@ export async function submitAirbnbCSV(formData: FormData): Promise<AirbnbImportR
             currency: s.currency
         }));
 
-        // 9. Bulk Upsert — on failure remove the batch so it never lingers as "processing"
+        // 9. Bulk Upsert — on failure mark the batch "failed" so the history tells the team to re-import
         const { error: upsertError } = await supabase
             .from("reservations")
             .upsert(reservationPayloads, {
@@ -187,7 +187,8 @@ export async function submitAirbnbCSV(formData: FormData): Promise<AirbnbImportR
             });
 
         if (upsertError) {
-            await supabase.from("import_history").delete().eq("id", batch.id);
+            await supabase.from("import_history").update({ status: 'failed' }).eq("id", batch.id);
+            revalidatePath("/[locale]/admin/imports", "page");
             throw new Error(`Falha ao gravar as reservas: ${upsertError.message}`);
         }
 
