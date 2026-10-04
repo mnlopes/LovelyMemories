@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { format, addDays } from 'date-fns';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { findGaps, type Interval } from '@/lib/opportunities';
+import { isNonGuestBlock } from '@/lib/overview-status';
 
 /**
  * Server action da feature Opportunities: varre a ocupação de todas as casas nos
@@ -77,7 +78,7 @@ export interface OpportunityRow {
     title: string;
     city: string | null;
     image: string | null;
-    blocks: { start: string; end: string; kind: 'reservation' | 'airbnb' }[];
+    blocks: { start: string; end: string; kind: 'reservation' | 'airbnb' | 'blocked' }[];
 }
 
 export interface OpportunitiesData {
@@ -109,9 +110,10 @@ export async function getOpportunities(locale: string = 'en', windowDays: number
                 .in('status', ['confirmed', 'checked-in'])
                 .gte('check_out', todayISO)
                 .lte('check_in', windowEndISO),
+            // Inclui os bloqueios manuais (system): datas fechadas não são noites vendáveis.
             admin.from('blocked_dates')
                 .select('property_id, start_date, end_date, source')
-                .eq('source', 'airbnb_booking')
+                .in('source', ['airbnb_booking', 'system'])
                 .gte('end_date', todayISO)
                 .lte('start_date', windowEndISO),
             admin.from('properties')
@@ -132,8 +134,8 @@ export async function getOpportunities(locale: string = 'en', windowDays: number
 
         // Ocupação por casa (mesma fonte que o calendário na vista iCal: reservas + blocos Airbnb).
         const occupancyByProperty: Record<string, Interval[]> = {};
-        const blocksByProperty = new Map<string, { start: string; end: string; kind: 'reservation' | 'airbnb' }[]>();
-        const push = (propertyId: string, start: string, end: string, kind: 'reservation' | 'airbnb') => {
+        const blocksByProperty = new Map<string, { start: string; end: string; kind: 'reservation' | 'airbnb' | 'blocked' }[]>();
+        const push = (propertyId: string, start: string, end: string, kind: 'reservation' | 'airbnb' | 'blocked') => {
             (occupancyByProperty[propertyId] ??= []).push({ start, end });
             const list = blocksByProperty.get(propertyId) ?? [];
             list.push({ start, end, kind });
@@ -143,7 +145,7 @@ export async function getOpportunities(locale: string = 'en', windowDays: number
             push(r.property_id as string, r.check_in as string, r.check_out as string, 'reservation');
         }
         for (const b of blockedRes.data ?? []) {
-            push(b.property_id as string, b.start_date as string, b.end_date as string, 'airbnb');
+            push(b.property_id as string, b.start_date as string, b.end_date as string, isNonGuestBlock(b) ? 'blocked' : 'airbnb');
         }
 
         const gaps = findGaps(occupancyByProperty, { fromISO: todayISO, toISO: windowEndISO, maxGapNights: MAX_GAP_NIGHTS });

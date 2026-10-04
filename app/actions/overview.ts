@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { format, addDays } from 'date-fns';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { buildCardFallback } from '@/lib/ai-card-meta';
-import { deriveStayStatus, derivePropertyToday, type StayStatus } from '@/lib/overview-status';
+import { deriveStayStatus, derivePropertyToday, isNonGuestBlock, type StayStatus, type PropertyToday } from '@/lib/overview-status';
 import { isBeds24Enabled } from '@/lib/beds24/client';
 
 /**
@@ -47,7 +47,7 @@ type OverviewData = {
     counts: { staying: number; arrivalsToday: number; departuresTomorrow: number; pending: number };
     cohost: { pending: { rowId: string; title: string; guestName: string | null; message: string; propertyCode: string | null; createdAt: string }[]; alert: { kind: 'send_failed' | 'stale_draft'; label: string } | null } | null;
     stays: { guestName: string; propertyTitle: string; propertyImage: string | null; checkIn: string; checkOut: string; guests: number | null; status: 'arrives_today' | 'departs_tomorrow' | 'staying' | 'arrives_soon'; source: 'direct' | 'airbnb'; sameDayTurn: boolean }[];
-    properties: { id: string; title: string; city: string | null; image: string | null; today: 'occupied' | 'arrives_today' | 'free'; nextArrival: string | null; guestInHouse: { name: string; checkOut: string } | null; pendingCount: number }[];
+    properties: { id: string; title: string; city: string | null; image: string | null; today: PropertyToday; nextArrival: string | null; guestInHouse: { name: string; checkOut: string } | null; pendingCount: number }[];
 };
 
 // Estrutura vazia mas válida — usada em qualquer falha (o contrato é nunca lançar).
@@ -114,9 +114,11 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                 .in('status', ['confirmed', 'checked-in'])
                 .gte('check_out', todayISO)
                 .lte('check_in', windowEndISO),
+            // airbnb_booking = feed iCal do Airbnb (estadias);
+            // system = bloqueios manuais do backoffice. Os não-hóspede só contam para o estado "blocked".
             admin.from('blocked_dates')
                 .select('id, property_id, start_date, end_date, source')
-                .eq('source', 'airbnb_booking')
+                .in('source', ['airbnb_booking', 'system'])
                 .gte('end_date', todayISO)
                 .lte('start_date', windowEndISO),
             admin.from('properties')
@@ -173,7 +175,15 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             source: 'direct',
         }));
 
-        const blockedStays: RawStay[] = (blockedRes.data ?? []).map((b) => {
+        const blockRows = blockedRes.data ?? [];
+        const nonGuestBlocks = new Map<string, { check_in: string; check_out: string }[]>();
+        for (const b of blockRows.filter((b) => isNonGuestBlock(b))) {
+            const list = nonGuestBlocks.get(b.property_id as string) ?? [];
+            list.push({ check_in: b.start_date as string, check_out: b.end_date as string });
+            nonGuestBlocks.set(b.property_id as string, list);
+        }
+
+        const blockedStays: RawStay[] = blockRows.filter((b) => !isNonGuestBlock(b)).map((b) => {
             // Enriquecer com o nome real do Beds24 quando a data de chegada coincide (6 casas ligadas);
             // senão fica sem nome (o cartão mostra a propriedade + etiqueta "Airbnb").
             const b24 = b24ByPropDay.get(`${b.property_id as string}|${b.start_date as string}`);
@@ -250,7 +260,7 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
                 title: prop.title,
                 city: prop.city,
                 image: prop.image,
-                today: derivePropertyToday(propStays.map((s) => ({ check_in: s.checkIn, check_out: s.checkOut })), todayISO),
+                today: derivePropertyToday(propStays.map((s) => ({ check_in: s.checkIn, check_out: s.checkOut })), todayISO, nonGuestBlocks.get(p.id as string)),
                 nextArrival: upcoming[0]?.checkIn ?? null,
                 guestInHouse: inHouse ? { name: inHouse.guestName, checkOut: inHouse.checkOut } : null,
                 pendingCount: 0, // preenchido abaixo (secção co-host), best-effort

@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Link } from "@/i18n/routing";
 import { getOverviewData } from "@/app/actions/overview";
+import type { PropertyToday } from "@/lib/overview-status";
 import { getOpportunities, type OpportunitiesData } from "@/app/actions/opportunities";
 import { dismissDraft } from "@/app/actions/ai-inbox";
 import { OpportunitiesView } from "@/components/admin/opportunities/OpportunitiesView";
@@ -101,9 +102,10 @@ export default function AdminOverview() {
         }
     };
 
-    const stTodayLabel = (today: 'occupied' | 'arrives_today' | 'free') => {
+    const stTodayLabel = (today: PropertyToday) => {
         if (today === 'occupied') return { label: t("stOccupied"), cls: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20" };
         if (today === 'arrives_today') return { label: t("stArrivesToday"), cls: "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20" };
+        if (today === 'blocked') return { label: t("stBlocked"), cls: "bg-slate-100 dark:bg-slate-500/15 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-500/25" };
         return { label: t("stFree"), cls: "bg-admin-bg text-admin-text-secondary border border-admin-border" };
     };
 
@@ -123,7 +125,7 @@ export default function AdminOverview() {
                     : p.pendingCount > 0
     );
     // FREE em dourado no desktop (destaca as noites vendáveis — âmbar já é o "arrives today").
-    const tonightChip = (today: 'occupied' | 'arrives_today' | 'free') =>
+    const tonightChip = (today: PropertyToday) =>
         today === 'free'
             ? { label: t("stFree"), cls: "bg-[#c5a059]/10 text-[#a9863f] dark:text-[#c5a059] border border-[#c5a059]/25" }
             : stTodayLabel(today);

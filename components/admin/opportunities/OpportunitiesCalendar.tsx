@@ -6,7 +6,7 @@ import { format, parseISO, addDays, differenceInCalendarDays, isSameDay } from "
 import { pt } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, X, AlertTriangle } from "lucide-react";
 import { Link } from "@/i18n/routing";
-import { getBarClipPath, AIRBNB_HATCH, ChannelBadge, getReservationStatusColor } from "@/components/admin/reservations/calendar-bar-visuals";
+import { getBarClipPath, AIRBNB_HATCH, BLOCK_HATCH, ChannelBadge, getReservationStatusColor } from "@/components/admin/reservations/calendar-bar-visuals";
 import type { OpportunityItem, OpportunityRow } from "@/app/actions/opportunities";
 
 const VISIBLE_DAYS = 14;
@@ -175,18 +175,22 @@ export function OpportunitiesCalendar({
                                         const p = place(b.start, b.end);
                                         if (!p) return null;
                                         const airbnb = b.kind === "airbnb";
+                                        const blocked = b.kind === "blocked";
                                         return (
                                             <div
                                                 key={bi}
-                                                className={`absolute top-1/2 -translate-y-1/2 h-7 flex items-center px-2 z-[2] overflow-hidden ${airbnb ? "" : getReservationStatusColor("confirmed")}`}
+                                                className={`absolute top-1/2 -translate-y-1/2 h-7 flex items-center px-2 z-[2] overflow-hidden ${airbnb || blocked ? "" : getReservationStatusColor("confirmed")}`}
                                                 style={{
                                                     left: `${p.leftPct}%`,
                                                     width: `${p.widthPct}%`,
                                                     clipPath: getBarClipPath(p.startsBefore, p.endsAfter),
                                                     ...(airbnb ? { background: AIRBNB_HATCH } : {}),
+                                                    ...(blocked ? { background: BLOCK_HATCH } : {}),
                                                 }}
                                             >
-                                                {airbnb ? (
+                                                {blocked ? (
+                                                    <span className="text-[10px] font-bold text-slate-600 truncate leading-none">{t("blocked")}</span>
+                                                ) : airbnb ? (
                                                     <div className="flex items-center gap-1.5 overflow-hidden">
                                                         <ChannelBadge kind="airbnb-box" />
                                                         <span className="text-[10px] font-bold text-rose-800 dark:text-rose-200 truncate">Airbnb</span>
@@ -232,6 +236,10 @@ export function OpportunitiesCalendar({
                 <span className="inline-flex items-center gap-1.5">
                     <span className="w-5 h-3 inline-block" style={{ background: AIRBNB_HATCH, clipPath: getBarClipPath(false, false) }} />
                     {t("legendBooked")}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                    <span className="w-5 h-3 inline-block" style={{ background: BLOCK_HATCH, clipPath: getBarClipPath(false, false) }} />
+                    {t("blocked")}
                 </span>
             </div>
 
