@@ -2,9 +2,10 @@ import { createHash, randomBytes } from 'crypto';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 /**
- * Owner-portal invite tokens.
+ * Invite tokens — used for EVERY invite (owners and team members alike), despite the historical
+ * "owner" naming of the table and helpers. Nothing here depends on the invitee's role.
  *
- * These are OUR single-use tokens (stored hashed in `owner_invites`), not Supabase tokens.
+ * These are OUR tokens (stored hashed in `owner_invites`), not Supabase tokens.
  * They let the invite email stay valid for as long as we want — independent of Supabase's
  * 24h OTP cap — because the actual Supabase session is only minted at redemption time
  * (see redeemInviteToken in app/actions/auth.ts).

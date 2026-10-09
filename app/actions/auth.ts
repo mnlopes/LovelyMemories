@@ -142,8 +142,8 @@ export async function confirmAuthLink(formData: FormData) {
 }
 
 /**
- * Redeem one of OUR long-lived owner-portal invite tokens (see lib/invite-tokens.ts) AFTER the
- * user explicitly clicks "Continue" on the /confirm interstitial.
+ * Redeem one of OUR long-lived invite tokens (see lib/invite-tokens.ts) AFTER the user explicitly
+ * clicks "Continue" on the /confirm interstitial. Role-agnostic: used for owner AND team invites.
  *
  * This is what lets an invite stay valid for weeks while Supabase's own OTP/link expiry stays
  * capped at 24h: the email carries our token, and only here — at the moment of the click — do we

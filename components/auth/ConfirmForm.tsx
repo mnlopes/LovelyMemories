@@ -16,7 +16,9 @@ function SubmitButton({ label }: { label: string }) {
                 <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
                 <>
-                    {label}
+                    {/* <span>, not a bare text node: browser translators replace text nodes and
+                        React removing one on the spinner swap would crash the page. */}
+                    <span>{label}</span>
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </>
             )}
@@ -37,7 +39,7 @@ export function ConfirmForm({
     next: string;
     label: string;
 }) {
-    // Two link kinds share this interstitial: our long-lived owner-invite token (redeemInviteToken)
+    // Two link kinds share this interstitial: our long-lived invite token (redeemInviteToken)
     // and Supabase's own token_hash used by password recovery (confirmAuthLink). Both only verify on
     // this explicit submit, so email prefetchers never consume them.
     const isInvite = !!inviteToken;

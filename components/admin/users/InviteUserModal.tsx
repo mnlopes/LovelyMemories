@@ -26,6 +26,8 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
     const [role, setRole] = useState<AppRole>(initialRole);
     const [loading, setLoading] = useState(false);
     const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+    // Why a link is on screen: the admin asked for it ('requested') or our email failed to send.
+    const [linkReason, setLinkReason] = useState<'requested' | 'email_failed'>('requested');
     const [fullName, setFullName] = useState("");
     const [phone, setPhone] = useState("");
     const [copied, setCopied] = useState(false);
@@ -51,7 +53,8 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
 
             if (result.actionLink) {
                 setGeneratedLink(result.actionLink);
-                toast.info(t('emailLimitReached'));
+                setLinkReason('email_failed');
+                toast.warning(t('emailFailed'));
             } else {
                 toast.success(nt('inviteSuccess', { email }));
                 setEmail("");
@@ -103,11 +106,19 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
 
                     {generatedLink ? (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl">
-                                <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
-                                    {t('emailLimitReached')}
-                                </p>
-                            </div>
+                            {linkReason === 'email_failed' ? (
+                                <div className="p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl">
+                                    <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
+                                        {t('emailFailed')}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl">
+                                    <p className="text-sm text-emerald-800 dark:text-emerald-400 font-medium">
+                                        {t('linkReady')}
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="relative group">
                                 <textarea
@@ -190,29 +201,27 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                                 </div>
                             )}
 
-                            {/* Invite Language (Specific for Owners) */}
-                            {role === 'owner' && (
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
-                                        {uiLocale === 'en' ? 'Invite language' : 'Idioma do convite'}
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {(['pt', 'en'] as const).map((lng) => (
-                                            <button
-                                                key={lng}
-                                                type="button"
-                                                onClick={() => setInviteLocale(lng)}
-                                                className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${inviteLocale === lng
-                                                    ? "bg-[#171717] dark:bg-white border-transparent text-white dark:text-black shadow-lg"
-                                                    : "bg-[#fafafa] dark:bg-admin-dark-bg border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary hover:border-gray-300"
-                                                    }`}
-                                            >
-                                                {lng === 'pt' ? 'Português' : 'English'}
-                                            </button>
-                                        ))}
-                                    </div>
+                            {/* Invite Language — sets the email's language and the locale of the invite link */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary uppercase tracking-widest pl-1">
+                                    {t('inviteLanguage')}
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {(['pt', 'en'] as const).map((lng) => (
+                                        <button
+                                            key={lng}
+                                            type="button"
+                                            onClick={() => setInviteLocale(lng)}
+                                            className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${inviteLocale === lng
+                                                ? "bg-[#171717] dark:bg-white border-transparent text-white dark:text-black shadow-lg"
+                                                : "bg-[#fafafa] dark:bg-admin-dark-bg border-[#f5f5f5] dark:border-admin-dark-border text-[#171717] dark:text-admin-dark-text-primary hover:border-gray-300"
+                                                }`}
+                                        >
+                                            {lng === 'pt' ? 'Português' : 'English'}
+                                        </button>
+                                    ))}
                                 </div>
-                            )}
+                            </div>
 
                             {/* Role Selection */}
                             <div className="space-y-2">
@@ -260,7 +269,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                                         ) : (
                                             <>
                                                 <UserPlus className="size-4" />
-                                                {t('sendInvite')}
+                                                <span>{t('sendInvite')}</span>
                                             </>
                                         )}
                                     </button>
@@ -275,6 +284,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                                                 const result = await inviteUser(email, role, { skipEmail: true, fullName, phone, locale: inviteLocale });
                                             if (result.actionLink) {
                                                 setGeneratedLink(result.actionLink);
+                                                setLinkReason('requested');
                                                 toast.success(nt('linkGenerated'));
                                             }
                                         } catch (error: any) {
@@ -285,7 +295,7 @@ export const InviteUserModal = ({ isOpen, onClose, onSuccess, currentUserRole, i
                                     }}
                                     className="w-full px-5 py-3 rounded-xl border border-dashed border-amber-300 dark:border-amber-500/30 bg-amber-50/30 dark:bg-amber-500/5 text-amber-700 dark:text-amber-400 text-xs font-bold hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
-                                    {loading ? <Loader2 className="size-3 animate-spin" /> : t('generateLink')}
+                                    {loading ? <Loader2 className="size-3 animate-spin" /> : <span>{t('generateLink')}</span>}
                                 </button>
                             </div>
                         </form>

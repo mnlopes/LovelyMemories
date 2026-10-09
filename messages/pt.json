@@ -406,13 +406,15 @@
             "nameLabel": "Nome do Proprietário",
             "phoneLabel": "Contacto (Opcional)",
             "description": "Enviar um convite para se juntar à equipa.",
-            "emailLimitReached": "Limite de emails do Supabase atingido. Por favor, copie este link e envie-o manualmente para o utilizador:",
+            "linkReady": "Link de convite pronto. Partilhe-o com o convidado (ex.: WhatsApp) — é válido durante 30 dias e pode ser aberto mais do que uma vez.",
+            "emailFailed": "Não foi possível enviar o email de convite. Copie este link e envie-o manualmente ao convidado (válido durante 30 dias):",
+            "inviteLanguage": "Idioma do convite",
             "done": "Concluído",
             "emailLabel": "Endereço de Email",
             "roleLabel": "Regra de Acesso Inicial",
             "sendInvite": "Enviar Convite",
             "cancel": "Cancelar",
-            "generateLink": "Gerar Link de Convite Direto (Pular Email)",
+            "generateLink": "Gerar link de convite (sem enviar email)",
             "roles": {
                 "super_admin": "Super Admin",
                 "admin": "Admin",
@@ -475,7 +477,7 @@
             "fetchError": "Erro ao carregar perfis: {error}",
             "inviteSuccess": "Convite enviado para {email}",
             "inviteError": "Erro ao enviar convite: {error}",
-            "linkGenerated": "Limite de emails atingido. Link gerado manualmente.",
+            "linkGenerated": "Link de convite gerado.",
             "copySuccess": "Link copiado para a área de transferência!"
         }
     },

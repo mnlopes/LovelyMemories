@@ -254,7 +254,14 @@ export async function updateUserRole(userId: string, newRole: string) {
 }
 
 /**
- * Invite a new user via email
+ * Invite a new user (owner or team member).
+ *
+ * Every role goes through the same flow: we create the auth user via generateLink (WITHOUT sending
+ * Supabase's email and WITHOUT ever exposing its single-use, <=24h action_link), assign the role
+ * server-side, then hand out OUR invite token (lib/invite-tokens.ts — 30-day validity, reusable,
+ * redeemed only on an explicit click at the /confirm interstitial, so link previews such as
+ * WhatsApp's or email scanners can't burn it). The token is either emailed (branded, via Resend)
+ * or — with skipEmail — returned as `actionLink` for the admin to share directly.
  */
 export async function inviteUser(email: string, role: string, options?: { skipEmail?: boolean; fullName?: string; phone?: string; locale?: string }) {
     const isAuthorized = await checkRole(['super_admin', 'admin']);
@@ -263,10 +270,10 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
     }
 
     const supabase = await getSupabase();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
 
     // Safety check: only super_admin can invite another super_admin
     if (role === 'super_admin') {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
         const { data: currentProfile } = await supabase
             .from('profiles')
             .select('role')
@@ -281,7 +288,7 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
     // Now use the ADMIN client for the actual invite
     const adminSupabase = await getSupabaseAdmin();
 
-    // Determine the base URL for redirection
+    // Determine the base URL for the invite link
     const getBaseUrl = () => {
         // Priority 1: User defined site URL
         if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
@@ -298,146 +305,87 @@ export async function inviteUser(email: string, role: string, options?: { skipEm
         return 'http://localhost:3000';
     };
     const baseUrl = getBaseUrl();
-    
-    // Include the email in the redirect URL for the set-password page to identify the invitee
-    const redirectTo = `${baseUrl}/api/auth/confirm?next=/set-password&email=${encodeURIComponent(email)}`;
-    
-    console.log(`[Invite] Generating invite for ${email} with redirectTo: ${redirectTo}`);
-    console.log(`[Invite] Env Check - NEXT_PUBLIC_SITE_URL: ${process.env.NEXT_PUBLIC_SITE_URL}, VERCEL_URL: ${process.env.VERCEL_URL}`);
+    const inviteLocale = options?.locale === 'en' ? 'en' : 'pt';
 
-    let user = null;
-    let actionLink = null;
+    // Creates the auth user. The returned action_link is deliberately discarded: it's single-use,
+    // expires in <=24h, dies when a link preview pre-loads it, and returns the session in a URL
+    // fragment our PKCE client can't consume.
+    const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
+        type: 'invite',
+        email: email,
+        options: {
+            data: { initial_role: role, full_name: options?.fullName, phone: options?.phone }
+        }
+    });
 
-    try {
-        // If skipEmail is requested (user clicked "Generate Link Only"), we go straight to generateLink
-        if (options?.skipEmail) {
-            const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
-                type: 'invite',
-                email: email,
-                options: {
-                    data: { 
-                        initial_role: role,
-                        full_name: options?.fullName,
-                        phone: options?.phone
-                    },
-                    redirectTo: redirectTo
-                }
-            });
+    if (linkError) throw linkError;
 
-            if (linkError) throw linkError;
+    const user = linkData.user;
 
-            user = linkData.user;
-            actionLink = linkData.properties.action_link;
-        } else if (role === 'owner') {
-            // Owners receive a branded Lovely Memories invite (not Supabase's default template).
-            // We still create the auth user via generateLink (so the role can be assigned and a
-            // session minted later), but we DON'T email Supabase's token — it expires in <=24h.
-            const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
-                type: 'invite',
-                email: email,
-                options: {
-                    data: { initial_role: role, full_name: options?.fullName, phone: options?.phone },
-                    redirectTo: redirectTo
-                }
-            });
+    // SECURITY: Server-authoritative role assignment.
+    // The DB trigger (handle_new_user) intentionally defaults every new profile to 'user'
+    // and does NOT trust client-supplied user_metadata.initial_role (that would allow
+    // self-signup privilege escalation). The role is therefore set here, after the invite
+    // created the auth user, using the service-role client which has already verified the
+    // caller is an admin/super_admin above.
+    if (user?.id) {
+        const { error: roleError } = await adminSupabase
+            .from('profiles')
+            .update({ role, full_name: options?.fullName, phone: options?.phone })
+            .eq('id', user.id);
+        if (roleError) {
+            console.error('SERVER ACTION ERROR [Invite Role Assignment]:', roleError);
+        }
+    }
 
-            if (linkError) throw linkError;
+    const { createOwnerInvite, buildOwnerInviteLink } = await import('@/lib/invite-tokens');
+    const rawToken = await createOwnerInvite({ email, userId: user?.id, createdBy: currentUser?.id });
+    const inviteLink = buildOwnerInviteLink(baseUrl, inviteLocale, rawToken, email);
 
-            user = linkData.user;
-            const inviteLocale = options?.locale === 'en' ? 'en' : 'pt';
-            // Long-lived, single-use link: the email carries OUR token (30-day validity we control
-            // — see lib/invite-tokens.ts), redeemed via the scanner-safe /confirm interstitial.
-            // Decouples the link's lifetime from Supabase's 24h OTP cap (see redeemInviteToken).
-            const { createOwnerInvite, buildOwnerInviteLink } = await import('@/lib/invite-tokens');
-            const rawToken = await createOwnerInvite({ email, userId: user?.id });
-            const inviteLink = buildOwnerInviteLink(baseUrl, inviteLocale, rawToken, email);
+    let actionLink: string | null = null;
+    let emailSent = false;
 
-            const { sendEmail } = await import('@/lib/email');
-            const { ownerInviteEmail } = await import('@/lib/email-templates');
+    if (options?.skipEmail) {
+        // "Generate link" button: the admin shares OUR link directly (WhatsApp, etc.).
+        actionLink = inviteLink;
+    } else {
+        const { sendEmail } = await import('@/lib/email');
+        const { ownerInviteEmail, teamInviteEmail } = await import('@/lib/email-templates');
+        const emailData = { fullName: options?.fullName, link: inviteLink, email };
 
-            const emailResult = await sendEmail({
+        const emailResult = role === 'owner'
+            ? await sendEmail({
                 to: email,
                 subject: inviteLocale === 'en'
                     ? 'Welcome to the Lovely Memories Owner Portal'
                     : 'Bem-vindo ao Portal de Proprietário | Lovely Memories',
-                html: ownerInviteEmail({ fullName: options?.fullName, link: inviteLink, email }, inviteLocale)
+                html: ownerInviteEmail(emailData, inviteLocale)
+            })
+            : await sendEmail({
+                to: email,
+                subject: inviteLocale === 'en'
+                    ? 'You have been invited to the Lovely Memories team'
+                    : 'Convite para a equipa | Lovely Memories',
+                html: teamInviteEmail({ ...emailData, role }, inviteLocale)
             });
 
-            // If our branded email failed to send, surface the link so the admin can share it manually.
-            if (!emailResult.success) actionLink = inviteLink;
-        } else {
-            // Normal flow: try to send email first
-            const { data, error } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
-                data: { 
-                    initial_role: role,
-                    full_name: options?.fullName,
-                    phone: options?.phone
-                },
-                redirectTo: redirectTo
-            });
+        emailSent = emailResult.success;
+        // If our branded email failed to send, surface the link so the admin can share it manually.
+        if (!emailSent) actionLink = inviteLink;
+    }
 
-            if (error) {
-                // If rate limited, fallback to just generating the link instead
-                if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
-                    const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
-                        type: 'invite',
-                        email: email,
-                        options: {
-                            data: { 
-                                initial_role: role,
-                                full_name: options?.fullName,
-                                phone: options?.phone
-                            },
-                            redirectTo: redirectTo
-                        }
-                    });
-
-                    if (linkError) throw linkError;
-
-                    user = linkData.user;
-                    actionLink = linkData.properties.action_link;
-                } else {
-                    throw error;
-                }
-            } else {
-                user = data.user;
-            }
-        }
-
-        // SECURITY: Server-authoritative role assignment.
-        // The DB trigger (handle_new_user) intentionally defaults every new profile to 'user'
-        // and does NOT trust client-supplied user_metadata.initial_role (that would allow
-        // self-signup privilege escalation). The role is therefore set here, after the invite
-        // created the auth user, using the service-role client which has already verified the
-        // caller is an admin/super_admin above.
-        if (user?.id) {
-            const { error: roleError } = await adminSupabase
-                .from('profiles')
-                .update({ role, full_name: options?.fullName, phone: options?.phone })
-                .eq('id', user.id);
-            if (roleError) {
-                console.error('SERVER ACTION ERROR [Invite Role Assignment]:', roleError);
-            }
-        }
-
-        // Get actor ID for logging
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser) {
-            await logActivity(
-                currentUser.id,
-                'INVITE',
-                'USER',
-                user?.id || 'pending',
-                { email, role, fullName: options?.fullName, phone: options?.phone, skipEmail: options?.skipEmail }
-            );
-        }
-
-    } catch (err: any) {
-        throw err;
+    if (currentUser) {
+        await logActivity(
+            currentUser.id,
+            'INVITE',
+            'USER',
+            user?.id || 'pending',
+            { email, role, fullName: options?.fullName, phone: options?.phone, skipEmail: options?.skipEmail, locale: inviteLocale, emailSent }
+        );
     }
 
     revalidatePath('/[locale]/admin/users', 'page');
-    return { success: true, user, actionLink };
+    return { success: true, user, actionLink, emailSent };
 }
 
 /**

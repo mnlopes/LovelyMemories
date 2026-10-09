@@ -415,13 +415,15 @@
             "nameLabel": "Owner Name",
             "phoneLabel": "Contact (Optional)",
             "description": "Send an invitation to join the team.",
-            "emailLimitReached": "Supabase email limit reached. Please copy this link and send it manually to the user:",
+            "linkReady": "Invite link ready. Share it with the invitee (e.g. WhatsApp) — it stays valid for 30 days and can be opened more than once.",
+            "emailFailed": "The invite email could not be sent. Copy this link and send it to the invitee manually (valid for 30 days):",
+            "inviteLanguage": "Invite language",
             "done": "Done",
             "emailLabel": "Email Address",
             "roleLabel": "Initial Access Role",
             "sendInvite": "Send Invite",
             "cancel": "Cancel",
-            "generateLink": "Generate Direct Invite Link (Skip Email)",
+            "generateLink": "Generate invite link (don't send email)",
             "roles": {
                 "super_admin": "Super Admin",
                 "admin": "Admin",
@@ -484,7 +486,7 @@
             "fetchError": "Error fetching profiles: {error}",
             "inviteSuccess": "Invitation sent to {email}",
             "inviteError": "Failed to send invitation: {error}",
-            "linkGenerated": "Email limit exceeded. Link generated manually.",
+            "linkGenerated": "Invite link generated.",
             "copySuccess": "Link copied to clipboard!"
         }
     },

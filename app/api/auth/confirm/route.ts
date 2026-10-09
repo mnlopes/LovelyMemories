@@ -11,10 +11,14 @@ export async function GET(request: NextRequest) {
     const next = searchParams.get('next') ?? '/set-password'
     const email = searchParams.get('email')
 
-    // For i18n support, we should ensure the next path has a locale prefix
-    // If next doesn't start with a locale, we prepend the default one (e.g. /en)
+    // For i18n support, we should ensure the next path has a locale prefix.
+    // If next doesn't start with one, use the visitor's next-intl locale cookie (a PT user must not
+    // land on the English page — that triggers Chrome's translator, which crashes React pages),
+    // falling back to the default locale.
     const hasLocale = routing.locales.some((loc: string) => next.startsWith(`/${loc}/`))
-    const localeNext = hasLocale ? next : `/en${next.startsWith('/') ? '' : '/'}${next}`
+    const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value
+    const fallbackLocale = routing.locales.some((loc: string) => loc === cookieLocale) ? cookieLocale : routing.defaultLocale
+    const localeNext = hasLocale ? next : `/${fallbackLocale}${next.startsWith('/') ? '' : '/'}${next}`
 
     const redirectTo = request.nextUrl.clone()
     redirectTo.pathname = localeNext

@@ -340,7 +340,63 @@ export const ownerInviteEmail = (data: { fullName?: string; link: string; email?
     `;
 };
 
-export const bookingGuestCancellationEmail = (data: any, locale: string = 'pt') => {
+export const teamInviteEmail = (data: { fullName?: string; link: string; email?: string; role: string }, locale: string = 'pt') => {
+    const isEn = locale === 'en';
+
+    const roleLabels: Record<string, string> = isEn
+        ? { super_admin: "Super Admin", admin: "Administrator", editor: "Editor" }
+        : { super_admin: "Super Admin", admin: "Administrador", editor: "Editor" };
+    const roleLabel = escapeHtml(roleLabels[data.role] ?? data.role);
+
+    const c = {
+        subtitle: isEn ? "Team Backoffice" : "Backoffice da Equipa",
+        greeting: isEn ? "Hello" : "Olá",
+        intro: isEn
+            ? `You've been invited to join the <strong style="color:#B08D4A;">Lovely Memories</strong> team backoffice as <strong>${roleLabel}</strong>.`
+            : `Foi convidado(a) para se juntar ao backoffice da equipa <strong style="color:#B08D4A;">Lovely Memories</strong> como <strong>${roleLabel}</strong>.`,
+        instruction: isEn
+            ? `Click the button below to choose your password and sign in. The link stays valid for 30 days.`
+            : `Clique no botão abaixo para definir a sua palavra-passe e entrar. O link é válido durante 30 dias.`,
+        cta: isEn ? "Set up your account" : "Criar conta e aceder",
+        fallback: isEn ? "If the button doesn't work, copy and paste this link into your browser:" : "Se o botão não funcionar, copie e cole este link no navegador:",
+        ignore: isEn ? "This invitation is personal to you. If you weren't expecting it, you can safely ignore this email." : "Este convite é pessoal. Se não estava à espera, pode ignorar este email com segurança.",
+        footer: isEn ? "Welcome aboard," : "Bem-vindo(a) a bordo,",
+        team: isEn ? "Lovely Memories Team" : "Equipa Lovely Memories"
+    };
+
+    const name = data.fullName ? ` ${escapeHtml(data.fullName)}` : "";
+
+    return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #0A1128; padding: 40px; text-align: center;">
+            <h1 style="color: #B08D4A; margin: 0; font-size: 28px; letter-spacing: 2px;">LOVELY MEMORIES</h1>
+            <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">${c.subtitle}</h2>
+        </div>
+        <div style="padding: 40px; color: #333; line-height: 1.6;">
+            <p>${c.greeting}<strong>${name}</strong>,</p>
+            <p>${c.intro}</p>
+            <p>${c.instruction}</p>
+
+            <div style="text-align: center; margin: 36px 0;">
+                <a href="${data.link}" style="display: inline-block; background-color: #B08D4A; color: #0A1128; text-decoration: none; font-weight: bold; font-size: 15px; padding: 16px 40px; border-radius: 9999px; letter-spacing: 0.5px;">${c.cta}</a>
+            </div>
+
+            <p style="font-size: 12px; color: #999; margin: 4px 0;">${c.fallback}</p>
+            <p style="font-size: 12px; word-break: break-all; margin: 4px 0;"><a href="${data.link}" style="color: #B08D4A;">${data.link}</a></p>
+
+            <p style="font-size: 12px; color: #b8b8b8; margin-top: 24px;">${c.ignore}</p>
+
+            <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
+                ${c.footer}<br/>
+                <strong>${c.team}</strong><br/>
+                <span style="font-style: italic;">Creating moments that last.</span>
+            </p>
+        </div>
+    </div>
+    `;
+};
+
+export const bookingGuestCancellationEmail =(data: any, locale: string = 'pt') => {
     const isEn = locale === 'en';
 
     // Match the backoffice display (e.g. €1,246.00). Falsy/NaN totals hide the refund block.
