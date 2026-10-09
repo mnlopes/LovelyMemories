@@ -7,6 +7,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { buildCardFallback } from '@/lib/ai-card-meta';
 import { deriveStayStatus, derivePropertyToday, isNonGuestBlock, type StayStatus, type PropertyToday } from '@/lib/overview-status';
 import { isBeds24Enabled } from '@/lib/beds24/client';
+import { checkPermission } from './permissions';
 
 /**
  * Server action que alimenta a Overview fundida (/admin): chegadas/saídas reais
@@ -14,8 +15,9 @@ import { isBeds24Enabled } from '@/lib/beds24/client';
  * nunca lança — em erro devolve uma estrutura vazia (mas válida).
  */
 
-// Overview aberto a super_admin + admin (2026-07-17).
-const OVERVIEW_ROLES = ['super_admin', 'admin'];
+// Acesso à Overview segue a matriz Roles & Permissions (módulo "overview", 2026-10-09).
+// A secção co-host continua só para super_admin + admin — é um módulo à parte (/admin/cohost).
+const COHOST_ROLES = ['super_admin', 'admin'];
 
 async function assertAdmin() {
     const cookieStore = await cookies();
@@ -34,7 +36,7 @@ async function assertAdmin() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const { data: profile } = await supabase.from('profiles').select('role, full_name').eq('id', user.id).single();
-    if (!profile || !OVERVIEW_ROLES.includes(profile.role)) {
+    if (!profile || !(await checkPermission('overview', 'can_view'))) {
         throw new Error('Not authorized');
     }
     return { user, profile };
@@ -280,6 +282,8 @@ export async function getOverviewData(locale: string = 'en'): Promise<OverviewDa
             // `data.cohost !== null`). Sem isto ficavam botões "Review draft"
             // a apontar para uma rota que devolve 404.
             if (!isBeds24Enabled()) throw new Error('co-host indisponível: Beds24 desligado');
+            // Roles com Overview mas sem Co-Host (ex.: editor) não veem a fila de drafts.
+            if (!COHOST_ROLES.includes(profile.role)) throw new Error('co-host indisponível para este role');
 
             const dayAgoISO = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 

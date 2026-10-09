@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useAdminNav } from "./AdminNavProvider";
 import { getPendingDecisionCount } from "@/app/actions/ai-inbox";
 import { getBeds24Availability } from "@/app/actions/beds24";
+import { defaultPermission } from "@/lib/permission-defaults";
 
 /**
  * Barra de navegação inferior do admin no mobile (espelha o padrão do OwnerBottomNav).
@@ -58,10 +59,14 @@ export const AdminBottomNav = () => {
         return () => { alive = false; clearInterval(id); };
     }, [role, beds24Available]);
 
-    const hasAccess = (moduleName: string) => role === "super_admin" || permissions.find((p) => p.module_name === moduleName)?.can_view || false;
+    const hasAccess = (moduleName: string) => {
+        if (role === "super_admin") return true;
+        const p = permissions.find((p) => p.module_name === moduleName);
+        return p ? p.can_view : defaultPermission(role, moduleName).can_view;
+    };
 
     const items: { icon: LucideIcon; label: string; path: string; badge?: number }[] = [
-        ...(role === "super_admin" || role === "admin" ? [{ icon: LayoutDashboard, label: t("overview"), path: "/admin" }] : []),
+        ...(hasAccess("overview") ? [{ icon: LayoutDashboard, label: t("overview"), path: "/admin" }] : []),
         ...(hasAccess("bookings") ? [{ icon: Calendar, label: t("bookings"), path: "/admin/reservations" }] : []),
         ...((role === "super_admin" || role === "admin") && beds24Available ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: pending }] : []),
         ...(hasAccess("properties") ? [{ icon: Hotel, label: t("properties"), path: "/admin/properties" }] : []),

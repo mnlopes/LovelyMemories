@@ -6,6 +6,7 @@ import { format, addDays } from 'date-fns';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { findGaps, type Interval } from '@/lib/opportunities';
 import { isNonGuestBlock } from '@/lib/overview-status';
+import { checkPermission } from './permissions';
 
 /**
  * Server action da feature Opportunities: varre a ocupação de todas as casas nos
@@ -14,7 +15,7 @@ import { isNonGuestBlock } from '@/lib/overview-status';
  * Nunca lança — em erro devolve estrutura vazia (contrato como o getOverviewData).
  */
 
-const OPP_ROLES = ['super_admin', 'admin'];
+// Opportunities é um modo da Overview: mesmo acesso (módulo "overview" na matriz).
 // Teto de 14 noites: apanha gaps curtos E os mais longos (o selector 4+/5+ filtra),
 // mas exclui disponibilidade longa (semanas abertas) que não é uma "noite órfã".
 const MAX_GAP_NIGHTS = 14;
@@ -36,7 +37,7 @@ async function assertAdmin() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (!profile || !OPP_ROLES.includes(profile.role)) throw new Error('Not authorized');
+    if (!profile || !(await checkPermission('overview', 'can_view'))) throw new Error('Not authorized');
     return user;
 }
 

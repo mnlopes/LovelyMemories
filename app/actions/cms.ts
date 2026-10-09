@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { Faq, CmsPageSection } from "@/lib/types";
+import { checkPermission } from "./permissions";
 
 async function getSupabase() {
     const cookieStore = await cookies();
@@ -26,6 +27,13 @@ async function getSupabase() {
     );
 }
 
+// Escrita no CMS exige "Edit" no módulo Content da matriz Roles & Permissions
+// (super_admin passa sempre). A RLS das tabelas continua a ser a segunda barreira.
+async function denyWithoutContentEdit() {
+    if (await checkPermission("content", "can_edit")) return null;
+    return { success: false as const, error: "Not authorized to edit content" };
+}
+
 // --- Instagram / Social Wall Actions ---
 
 export async function getInstagramPosts() {
@@ -43,6 +51,8 @@ export async function getInstagramPosts() {
 }
 
 export async function fetchAndStoreInstagramImage(order: number, url: string) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     try {
@@ -162,6 +172,8 @@ export async function fetchAndStoreInstagramImage(order: number, url: string) {
 }
 
 export async function upsertInstagramPost(data: Record<string, unknown>) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     // Use upsert to handle both new and existing slots
@@ -183,6 +195,8 @@ export async function upsertInstagramPost(data: Record<string, unknown>) {
 // --- Blog Actions ---
 
 export async function upsertBlogPost(data: Record<string, unknown>) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const { data: result, error } = await supabase
@@ -221,6 +235,8 @@ export async function getBlogPosts(locale?: string) {
 }
 
 export async function deleteBlogPost(id: string) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const { error } = await supabase
@@ -235,6 +251,8 @@ export async function deleteBlogPost(id: string) {
 }
 
 export async function toggleBlogPostStatus(id: string, isPublished: boolean) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const { error } = await supabase
@@ -275,6 +293,8 @@ export async function getFaqs(locale?: string) {
 }
 
 export async function upsertFaq(data: Faq) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const { data: result, error } = await supabase
@@ -293,6 +313,8 @@ export async function upsertFaq(data: Faq) {
 }
 
 export async function deleteFaq(id: string) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const { error } = await supabase
@@ -307,6 +329,8 @@ export async function deleteFaq(id: string) {
 }
 
 export async function reorderFaqs(faqs: Faq[]) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const payloads = faqs.map(faq => ({
@@ -353,6 +377,8 @@ export async function getPageSections(pageSlug: string, locale?: string) {
 }
 
 export async function upsertPageSection(data: CmsPageSection) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const { data: result, error } = await supabase
@@ -374,6 +400,8 @@ export async function upsertPageSection(data: CmsPageSection) {
 }
 
 export async function deletePageSection(id: string) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
     
     const { error } = await supabase
@@ -391,6 +419,8 @@ export async function deletePageSection(id: string) {
 }
 
 export async function reorderPageSections(sections: CmsPageSection[]) {
+    const denied = await denyWithoutContentEdit();
+    if (denied) return denied;
     const supabase = await getSupabase();
 
     const payloads = sections.map(section => ({

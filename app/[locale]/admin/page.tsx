@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Link } from "@/i18n/routing";
 import { getOverviewData } from "@/app/actions/overview";
+import { checkPermission } from "@/app/actions/permissions";
 import type { PropertyToday } from "@/lib/overview-status";
 import { getOpportunities, type OpportunitiesData } from "@/app/actions/opportunities";
 import { dismissDraft } from "@/app/actions/ai-inbox";
@@ -50,13 +51,10 @@ export default function AdminOverview() {
                 return;
             }
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
+            // Segue a matriz Roles & Permissions (módulo "overview"); super_admin passa sempre.
+            const allowed = await checkPermission('overview', 'can_view');
 
-            if (profile?.role !== 'super_admin' && profile?.role !== 'admin') {
+            if (!allowed) {
                 const loc = window.location.pathname.split('/')[1] || 'en';
                 router.push(`/${loc}/admin/properties`);
             } else {

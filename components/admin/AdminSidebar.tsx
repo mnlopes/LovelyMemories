@@ -12,6 +12,7 @@ import { useAdminNav } from "./AdminNavProvider";
 import { AdminThemePicker } from "./AdminThemePicker";
 import { getPendingDecisionCount } from "@/app/actions/ai-inbox";
 import { getBeds24Availability } from "@/app/actions/beds24";
+import { defaultPermission } from "@/lib/permission-defaults";
 
 type NavItem = { icon: LucideIcon; label: string; path: string; badge?: number };
 
@@ -79,24 +80,23 @@ export const AdminSidebar = () => {
     const hasAccess = (moduleName: string) => {
         if (role === 'super_admin') return true;
         const p = permissions.find(p => p.module_name === moduleName);
-        return p?.can_view || false;
+        // Sem linha na matriz → default do módulo (o mesmo que checkPermission aplica no servidor).
+        return p ? p.can_view : defaultPermission(role, moduleName).can_view;
     };
 
     const menuSections: { title: string; items: NavItem[] }[] = [
         {
             title: t('management'),
             items: [
-                // Overview: super_admin + admin (2026-07-17)
-                ...(role === 'super_admin' || role === 'admin' ? [
-                    { icon: LayoutDashboard, label: t('overview'), path: "/admin" }
-                ] : []),
+                // Overview e Content seguem a matriz Roles & Permissions (2026-10-09)
+                ...(hasAccess('overview') ? [{ icon: LayoutDashboard, label: t('overview'), path: "/admin" }] : []),
                 ...(hasAccess('properties') ? [{ icon: Hotel, label: t('properties'), path: "/admin/properties" }] : []),
                 ...(hasAccess('bookings') ? [{ icon: Calendar, label: t('bookings'), path: "/admin/reservations" }] : []),
                 ...(hasAccess('team') ? [{ icon: Users, label: t('tenants'), path: "/admin/users" }] : []),
                 ...(hasAccess('owners') ? [{ icon: KeyRound, label: t('owners'), path: "/admin/owners" }] : []),
                 ...(hasAccess('coupons') ? [{ icon: Ticket, label: t('coupons'), path: "/admin/coupons" }] : []),
                 ...(hasAccess('concierge') ? [{ icon: ConciergeBell, label: t('concierge'), path: "/admin/concierge" }] : []),
-                ...(hasAccess('content') || role === 'super_admin' || role === 'admin' ? [{ icon: LayoutGrid, label: t('content'), path: "/admin/content" }] : []),
+                ...(hasAccess('content') ? [{ icon: LayoutGrid, label: t('content'), path: "/admin/content" }] : []),
             ]
         },
         // Only show Reports to Super Admins

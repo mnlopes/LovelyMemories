@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { RolePermission, AppRole } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUserRole } from './user';
+import { MATRIX_ROLES, PERMISSION_MODULES, defaultPermission } from '@/lib/permission-defaults';
 
 /**
  * Fetch all role permissions for the matrix UI.
@@ -60,6 +61,55 @@ export async function updateRolePermission(
 }
 
 /**
+ * Set one permission toggle by (role, module), creating the row if it doesn't exist yet
+ * (modules added to the matrix after the initial seed, e.g. overview/content).
+ * Restricted to super_admin and admin. Returns the stored row.
+ */
+export async function setRolePermission(
+    roleName: string,
+    moduleName: string,
+    field: 'can_view' | 'can_edit',
+    value: boolean
+): Promise<RolePermission> {
+    const role = await getCurrentUserRole();
+    if (role !== 'super_admin' && role !== 'admin') {
+        throw new Error('Not authorized to update permissions');
+    }
+    if (!(MATRIX_ROLES as readonly string[]).includes(roleName) || !PERMISSION_MODULES.some(m => m.id === moduleName)) {
+        throw new Error('Unknown role or module');
+    }
+    if (field !== 'can_view' && field !== 'can_edit') {
+        throw new Error('Unknown permission field');
+    }
+
+    const supabase = await getSupabaseAdmin();
+    const { data: existing } = await supabase
+        .from('role_permissions')
+        .select('can_view, can_edit')
+        .eq('role_name', roleName)
+        .eq('module_name', moduleName)
+        .maybeSingle();
+
+    const current = existing ?? defaultPermission(roleName, moduleName);
+    const { data, error } = await supabase
+        .from('role_permissions')
+        .upsert(
+            { role_name: roleName, module_name: moduleName, can_view: current.can_view, can_edit: current.can_edit, [field]: value },
+            { onConflict: 'role_name,module_name' }
+        )
+        .select('*')
+        .single();
+
+    if (error || !data) {
+        console.error('Error setting permission', error);
+        throw new Error('Failed to update permission');
+    }
+
+    revalidatePath('/', 'layout');
+    return data as RolePermission;
+}
+
+/**
  * Helper function to check if the current user has access to a specific module.
  * Used for protecting routes and UI actions.
  */
@@ -77,9 +127,10 @@ export async function checkPermission(moduleName: string, action: 'can_view' | '
         .select('can_view, can_edit')
         .eq('role_name', role)
         .eq('module_name', moduleName)
-        .single();
+        .maybeSingle();
 
-    if (!permission) return false;
+    // No row yet (module added to the matrix after the seed) → the module's default.
+    const effective = permission ?? defaultPermission(role, moduleName);
 
-    return action === 'can_edit' ? permission.can_edit : permission.can_view;
+    return action === 'can_edit' ? effective.can_edit : effective.can_view;
 }

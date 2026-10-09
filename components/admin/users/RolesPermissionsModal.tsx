@@ -4,22 +4,13 @@ import { useState, useEffect } from 'react';
 import { X, ShieldAlert, Loader2, Check, X as XIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { RolePermission, AppRole } from '@/lib/types';
-import { getRolePermissions, updateRolePermission } from '@/app/actions/permissions';
+import { getRolePermissions, setRolePermission } from '@/app/actions/permissions';
+import { PERMISSION_MODULES as MODULES, defaultPermission } from '@/lib/permission-defaults';
 
 interface RolesPermissionsModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
-
-const MODULES = [
-    { id: 'properties', label: 'Properties Management' },
-    { id: 'bookings', label: 'Bookings Management' },
-    { id: 'owners', label: 'Property Owners' },
-    { id: 'concierge', label: 'Concierge Management' },
-    { id: 'coupons', label: 'Coupons Management' },
-    { id: 'imports', label: 'Airbnb Imports' },
-    { id: 'team', label: 'Team & Access' },
-];
 
 const ROLES: { id: AppRole, label: string, color: string, description: string }[] = [
     { 
@@ -65,15 +56,21 @@ export function RolesPermissionsModal({ isOpen, onClose }: RolesPermissionsModal
         }
     };
 
+    // Keyed by role+module (not row id): modules added after the seed may not have a row yet,
+    // and setRolePermission creates it on the first toggle.
     const handleToggle = async (perm: RolePermission, field: 'can_view' | 'can_edit', val: boolean) => {
         setToggling(`${perm.id}-${field}`);
-        
+        const isRow = (p: RolePermission) => p.role_name === perm.role_name && p.module_name === perm.module_name;
+
         // Optimistic update
         const previousPermissions = [...permissions];
-        setPermissions(prev => prev.map(p => p.id === perm.id ? { ...p, [field]: val } : p));
-        
+        setPermissions(prev => prev.some(isRow)
+            ? prev.map(p => isRow(p) ? { ...p, [field]: val } : p)
+            : [...prev, { ...perm, [field]: val }]);
+
         try {
-            await updateRolePermission(perm.id, field, val);
+            const saved = await setRolePermission(perm.role_name, perm.module_name, field, val);
+            setPermissions(prev => prev.map(p => isRow(p) ? saved : p));
             toast.success('Permission updated');
         } catch (error: any) {
             // Revert on error
@@ -164,8 +161,15 @@ export function RolesPermissionsModal({ isOpen, onClose }: RolesPermissionsModal
                                                         </span>
                                                     </td>
                                                     {ROLES.map(role => {
-                                                        const perm = permissions.find(p => p.role_name === role.id && p.module_name === module.id);
-                                                        if (!perm) return <td key={role.id} className="border-l border-[#f5f5f5] dark:border-admin-dark-border"></td>;
+                                                        // No row yet → show the module's default (what the guards apply too).
+                                                        const perm: RolePermission = permissions.find(p => p.role_name === role.id && p.module_name === module.id) ?? {
+                                                            id: `default-${role.id}-${module.id}`,
+                                                            role_name: role.id,
+                                                            module_name: module.id,
+                                                            ...defaultPermission(role.id, module.id),
+                                                            created_at: '',
+                                                            updated_at: '',
+                                                        };
 
                                                         return (
                                                             <td key={role.id} className="px-2 py-4 border-l border-[#f5f5f5] dark:border-admin-dark-border">
@@ -193,6 +197,7 @@ export function RolesPermissionsModal({ isOpen, onClose }: RolesPermissionsModal
                                                                     </label>
 
                                                                     {/* Edit Toggle */}
+                                                                    {!module.viewOnly && (
                                                                     <label className="flex flex-col items-center gap-1.5 cursor-pointer opacity-90 hover:opacity-100">
                                                                         <span className="text-[9px] font-bold uppercase tracking-wider text-[#a3a3a3]">Edit</span>
                                                                         <div 
@@ -212,6 +217,7 @@ export function RolesPermissionsModal({ isOpen, onClose }: RolesPermissionsModal
                                                                             )}
                                                                         </div>
                                                                     </label>
+                                                                    )}
 
                                                                 </div>
                                                             </td>
