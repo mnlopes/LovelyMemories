@@ -29,15 +29,20 @@ export async function GET(request: Request) {
         // We use a batch size of 70 to handle 200 properties in a 3-minute cycle
         const result = await syncOverduePropertiesICal(70, intervalInMinutes);
 
-        // 3. Update global informational timestamp in settings
-        await supabase
-            .from('system_settings')
-            .upsert({
-                key: 'ical_last_sync_at',
-                value: now.toISOString(),
-                updated_at: now.toISOString(),
-                description: `Global robot run (Batch Size: ${result.success ? (result as any).batchSizeUsed : 0})`
-            });
+        // 3. Update global informational timestamp in settings — only when this run actually
+        // synced something. Most runs (cron fires every minute, interval is several minutes)
+        // find nothing overdue; writing the timestamp on those was pure API/log noise.
+        const batchSizeUsed = result.success ? Number((result as any).batchSizeUsed) || 0 : 0;
+        if (batchSizeUsed > 0) {
+            await supabase
+                .from('system_settings')
+                .upsert({
+                    key: 'ical_last_sync_at',
+                    value: now.toISOString(),
+                    updated_at: now.toISOString(),
+                    description: `Global robot run (Batch Size: ${batchSizeUsed})`
+                });
+        }
 
         return NextResponse.json({ 
             success: result.success, 

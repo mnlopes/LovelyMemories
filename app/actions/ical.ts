@@ -76,30 +76,56 @@ function parseIcalDate(dateStr: string) {
     return new Date(Date.UTC(y, m, d));
 }
 
+type SyncProperty = { id: string; title: string | { en?: string }; ical_import_urls: string[] | null };
+type SyncOptions = {
+    /** Row already loaded by the batch query — skips re-reading the property. */
+    property?: SyncProperty;
+    /** The batch robot revalidates once per run instead of once per property. */
+    revalidate?: boolean;
+};
+
+/** Date-only (YYYY-MM-DD): blocked_dates.start_date/end_date are DATE columns. */
+const dateOnly = (v: string | null | undefined) => (v || '').slice(0, 10);
+
 /**
  * Synchronizes property blocked dates from an iCal URL.
+ * Server action (manual sync from the backoffice) — always re-reads the property itself.
  */
 export async function syncPropertyICal(propertyId: string) {
+    return syncPropertyICalInternal(propertyId);
+}
+
+// Not exported: a "use server" export is callable from the browser, and `opts.property`
+// must never be client-supplied (it carries the iCal URLs that get fetched).
+async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = {}) {
+    const shouldRevalidate = opts.revalidate !== false;
     console.log(`[iCal Sync] Starting sync for property: ${propertyId}`);
-    
+
     try {
         const supabase = await getSupabaseAdmin();
 
-        // 1. Fetch Property iCal URLs
-        const { data: property, error: propertyError } = await supabase
-            .from('properties')
-            .select('id, title, ical_import_urls')
-            .eq('id', propertyId)
-            .single();
+        // 1. Fetch Property iCal URLs (unless the batch query already loaded them)
+        let property: SyncProperty | null = opts.property ?? null;
+        if (!property) {
+            const { data, error: propertyError } = await supabase
+                .from('properties')
+                .select('id, title, ical_import_urls')
+                .eq('id', propertyId)
+                .single();
 
-        if (propertyError || !property) {
-            return { success: false, error: 'Property not found', propertyId };
+            if (propertyError || !data) {
+                return { success: false, error: 'Property not found', propertyId };
+            }
+            property = data as SyncProperty;
         }
 
         const propertyTitle = typeof property.title === 'object' ? property.title.en : property.title;
         const urls: string[] = property.ical_import_urls || [];
         let newEventsCount = 0;
-        
+        // True when blocked_dates was actually written (insert/update/delete) — drives
+        // revalidation, so an unchanged feed no longer purges the whole site cache.
+        let blocksChanged = false;
+
         if (urls.length === 0) {
             return { success: true, message: 'No iCal URLs to sync', propertyTitle };
         }
@@ -175,7 +201,7 @@ export async function syncPropertyICal(propertyId: string) {
             // 1. Fetch existing external blocks to handle Start Date Preservation and Cleanup
             const { data: existingBlocks } = await supabase
                 .from('blocked_dates')
-                .select('id, external_id, start_date, end_date, property_id')
+                .select('id, external_id, start_date, end_date, property_id, reason, source')
                 .eq('property_id', propertyId)
                 .in('source', ['airbnb_booking', 'booking_com']);
 
@@ -230,15 +256,29 @@ export async function syncPropertyICal(propertyId: string) {
                 };
             });
 
-            // 3. Perform UPSERT or manual update
-            if (blocksToUpsert.length > 0) {
+            // 3. Perform UPSERT or manual update — only for blocks that are new or changed.
+            // Re-writing every block on every run (every few minutes, 24/7) was the bulk of
+            // the Supabase API traffic / log ingestion and needless row churn on a Nano DB.
+            // Matching is by UID only: a shifted UID is a new row (the old one is removed by
+            // the cleanup below), exactly as before.
+            const changedBlocks = blocksToUpsert.filter(block => {
+                const current = existingMap.get(block.external_id);
+                return !current
+                    || dateOnly(current.start_date) !== dateOnly(block.start_date)
+                    || dateOnly(current.end_date) !== dateOnly(block.end_date)
+                    || (current.reason ?? null) !== (block.reason ?? null)
+                    || (current.source ?? null) !== (block.source ?? null);
+            });
+
+            if (changedBlocks.length > 0) {
+                blocksChanged = true;
                 const { error: upsertError } = await supabase
                     .from('blocked_dates')
-                    .upsert(blocksToUpsert, { onConflict: 'property_id,external_id' });
-                
+                    .upsert(changedBlocks, { onConflict: 'property_id,external_id' });
+
                 if (upsertError) {
                     console.warn('[iCal Sync] Automatic Upsert failed, falling back to manual update:', upsertError.message);
-                    for (const block of blocksToUpsert) {
+                    for (const block of changedBlocks) {
                         try {
                             const existing = existingMap.get(block.external_id);
                             if (existing) {
@@ -275,6 +315,7 @@ export async function syncPropertyICal(propertyId: string) {
 
                 if (uidsToDelete.length > 0) {
                     console.log(`[iCal Sync] Deleting ${uidsToDelete.length} defunct/overlapping blocks`);
+                    blocksChanged = true;
                     await supabase
                         .from('blocked_dates')
                         .delete()
@@ -299,7 +340,7 @@ export async function syncPropertyICal(propertyId: string) {
                     last_sync_error: errorMsg
                 })
                 .eq('id', propertyId);
-            revalidatePath('/', 'layout');
+            if (shouldRevalidate) revalidatePath('/', 'layout');
             return { success: false, error: errorMsg, propertyId };
         }
 
@@ -315,13 +356,14 @@ export async function syncPropertyICal(propertyId: string) {
             })
             .eq('id', propertyId);
 
-        revalidatePath('/', 'layout');
-        
-        return { 
-            success: true, 
-            newEvents: newEventsCount, 
+        if (shouldRevalidate) revalidatePath('/', 'layout');
+
+        return {
+            success: true,
+            newEvents: newEventsCount,
             totalFound: totalEventsFound,
-            propertyTitle 
+            blocksChanged,
+            propertyTitle
         };
     } catch (e: any) {
         console.error('Global error in syncPropertyICal:', e.message);
@@ -415,7 +457,7 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
         // Order by last_sync_at ASC to get the ones that have been waiting the longest
         const { data: properties, error } = await supabase
             .from('properties')
-            .select('id, title, last_sync_at')
+            .select('id, title, last_sync_at, ical_import_urls')
             .eq('is_active', true)
             .not('ical_import_urls', 'eq', '[]')
             .or(`last_sync_at.is.null,last_sync_at.lte.${cutoff.toISOString()}`)
@@ -434,6 +476,7 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
         console.log(`[iCal Robot] Syncing ${properties.length} overdue properties... (Cutoff: ${cutoff.toISOString()})`);
 
         let totalNewEvents = 0;
+        let anyBlocksChanged = false;
         let results: any[] = [];
         let failures: any[] = [];
 
@@ -441,19 +484,25 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
         const SUB_BATCH_SIZE = 5;
         for (let i = 0; i < properties.length; i += SUB_BATCH_SIZE) {
             const batch = properties.slice(i, i + SUB_BATCH_SIZE);
-            const batchPromises = batch.map(prop => syncPropertyICal(prop.id));
+            // Reuse the row we just loaded (no per-property re-read) and defer revalidation.
+            const batchPromises = batch.map(prop => syncPropertyICalInternal(prop.id, { property: prop, revalidate: false }));
             const batchResults = await Promise.all(batchPromises);
 
             batchResults.forEach((res, index) => {
                 const prop = batch[index];
                 if (res.success) {
                     totalNewEvents += (res.newEvents || 0);
+                    if ('blocksChanged' in res && res.blocksChanged) anyBlocksChanged = true;
                 } else {
                     failures.push({ id: prop.id, title: prop.title, error: (res as any).error });
                 }
                 results.push({ id: prop.id, title: prop.title, ...res });
             });
         }
+
+        // One cache revalidation per run, and only when availability actually changed
+        // (previously: one full-site revalidatePath per property, every run).
+        if (anyBlocksChanged) revalidatePath('/', 'layout');
 
         return {
             success: true,
