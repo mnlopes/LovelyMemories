@@ -164,7 +164,7 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
                                 agent={{
                                     name: "Lovely Memories",
                                     role: "Concierge",
-                                    image: "https://lovely-memories.pt/logo.png",
+                                    image: "/icon-512.png",
                                 }}
                             />
                         </div>

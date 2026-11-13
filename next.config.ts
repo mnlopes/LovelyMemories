@@ -20,10 +20,6 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'lovely-memories.pt',
-      },
-      {
-        protocol: 'https',
         hostname: '*.muscache.com',
       },
     ],

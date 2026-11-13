@@ -36,7 +36,7 @@ One-off maintenance/debug scripts live in `scripts/` and are run with `npx tsx s
 
 **Supabase clients:** `lib/supabase.ts` exports the browser client and `getSupabaseAdmin()` (service-role, for privileged server-side ops — audit logging, user management). Migrations are timestamped SQL files in `supabase/migrations/` and are applied **manually** in the hosted Supabase dashboard — creating the file does not apply it; say so explicitly when you add one. There are no generated DB types (`supabase/types.ts` is empty).
 
-**iCal sync is two-way:** imports external calendars (Airbnb/Booking) via `node-ical` on the cron, writing blocked dates; exports each property's calendar via `ical-generator` at `/api/ical/[propertyId]`. Sync failures must surface in the admin backoffice (admin/imports).
+**iCal sync is two-way:** imports external calendars (Airbnb/Booking) on the cron with a hand-written parser (`parseIcalManual` in `app/actions/ical.ts`; `node-ical` was removed because it crashed under Turbopack), writing blocked dates; exports each property's calendar via `ical-generator` at `/api/ical/[propertyId]`. Sync failures must surface in the admin backoffice (admin/imports).
 
 ## Gotchas
 
