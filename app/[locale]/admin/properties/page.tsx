@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { StatusModal } from "@/components/admin/ui/StatusModal";
 import { syncPropertyICal } from "@/app/actions/ical";
+import { useVisibleInterval } from "@/lib/use-visible-interval";
 import { toast } from "sonner";
 import ImportAirbnbModal from "@/components/admin/properties/ImportAirbnbModal";
 import { PropertyListCard } from "@/components/admin/properties/PropertyListCard";
@@ -73,23 +74,22 @@ export default function AdminProperties() {
             setIsLoading(false);
         }
         fetchData();
-
-        // Background Polling for sync statuses (every 60 seconds)
-        const pollInterval = setInterval(async () => {
-            const { data } = await supabase
-                .from('properties')
-                .select('id, last_sync_at, sync_status, last_sync_error');
-            
-            if (data) {
-                setProperties(prev => prev.map(p => {
-                    const update = data.find(d => d.id === p.id);
-                    return update ? { ...p, ...update } : p;
-                }));
-            }
-        }, 60000); // 1 minute
-
-        return () => clearInterval(pollInterval);
     }, []);
+
+    // Background polling for sync statuses: every minute, paused while the tab is hidden.
+    useVisibleInterval(() => {
+        void supabase
+            .from('properties')
+            .select('id, last_sync_at, sync_status, last_sync_error')
+            .then(({ data }) => {
+                if (data) {
+                    setProperties(prev => prev.map(p => {
+                        const update = data.find(d => d.id === p.id);
+                        return update ? { ...p, ...update } : p;
+                    }));
+                }
+            });
+    }, 60_000);
 
     // Close menu on outside click
     useEffect(() => {

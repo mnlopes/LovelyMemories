@@ -38,7 +38,8 @@ export function DecisionFeed({ onOpenConversation, initialDecisionId }: { onOpen
 
     useEffect(() => {
         void refresh();
-        const id = setInterval(() => void refresh(), 30_000);
+        // Fallback poll; skipped while the tab is hidden (refreshes on return, below).
+        const id = setInterval(() => { if (!document.hidden) void refresh(); }, 30_000);
         const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
         document.addEventListener("visibilitychange", onVisible);
         const channel = supabase

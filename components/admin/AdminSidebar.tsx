@@ -12,6 +12,7 @@ import { useAdminNav } from "./AdminNavProvider";
 import { AdminThemePicker } from "./AdminThemePicker";
 import { getPendingDecisionCount } from "@/app/actions/ai-inbox";
 import { getBeds24Availability } from "@/app/actions/beds24";
+import { useVisibleInterval } from "@/lib/use-visible-interval";
 import { defaultPermission } from "@/lib/permission-defaults";
 
 type NavItem = { icon: LucideIcon; label: string; path: string; badge?: number };
@@ -67,15 +68,17 @@ export const AdminSidebar = () => {
         return () => { alive = false; };
     }, []);
 
+    // Co-Host badge: load once, then every minute while the tab is visible.
+    const canPollCohost = (role === "super_admin" || role === "admin") && beds24Available;
     useEffect(() => {
-        if (role !== "super_admin" && role !== "admin") return;
-        if (!beds24Available) return;
+        if (!canPollCohost) return;
         let alive = true;
-        const load = () => { void getPendingDecisionCount().then((n) => { if (alive) setCohostPending(n); }).catch(() => {}); };
-        load();
-        const id = setInterval(load, 60_000);
-        return () => { alive = false; clearInterval(id); };
-    }, [role, beds24Available]);
+        void getPendingDecisionCount().then((n) => { if (alive) setCohostPending(n); }).catch(() => {});
+        return () => { alive = false; };
+    }, [canPollCohost]);
+    useVisibleInterval(() => {
+        void getPendingDecisionCount().then(setCohostPending).catch(() => {});
+    }, 60_000, canPollCohost);
 
     const hasAccess = (moduleName: string) => {
         if (role === 'super_admin') return true;

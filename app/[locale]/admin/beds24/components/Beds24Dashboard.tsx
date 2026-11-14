@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "@/i18n/routing";
+import { useVisibleInterval } from "@/lib/use-visible-interval";
 import {
     runBeds24PollNow, importOwnedListings, connectCobaia, importExistingBookings,
     sendBeds24Message, createTestBooking, cancelTestBooking, getCalendarPreview,
@@ -59,12 +60,10 @@ export default function Beds24Dashboard(props: {
     const [preview, setPreview] = useState<{ name: string; calendar: AnyRow[] } | null>(null);
     const [testBookingId, setTestBookingId] = useState<number | null>(null);
 
-    // Live view: re-fetch server data every 30s so webhook-ingested rows show up
-    // without manual reload. Reads our own DB only — zero Beds24 API credits.
-    useEffect(() => {
-        const id = setInterval(() => router.refresh(), 30_000);
-        return () => clearInterval(id);
-    }, [router]);
+    // Live view: re-fetch server data every minute so webhook-ingested rows show up
+    // without manual reload. Reads our own DB only — zero Beds24 API credits. Paused while
+    // the tab is hidden (every request is a Supabase log line).
+    useVisibleInterval(() => router.refresh(), 60_000);
 
     const run = (label: string, fn: () => Promise<unknown>) => {
         setFeedback(null);

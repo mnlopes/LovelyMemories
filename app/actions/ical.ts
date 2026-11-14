@@ -2,7 +2,7 @@
 
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
-import { feedsForSync, propertyIdsWithFeeds, recordFeedRead, type SyncFeed } from '@/lib/ical-feeds';
+import { allFeedsForSync, feedsForSync, recordFeedRead, recordFeedReadsOk, type SyncFeed } from '@/lib/ical-feeds';
 import { messageForOutcome, outcomeForStatus, type FeedOutcome } from '@/lib/ical-feed-url';
 import { PROPERTY_EDITORS, requireRole } from '@/lib/auth/require-role';
 
@@ -82,15 +82,110 @@ function parseIcalDate(dateStr: string) {
 // The iCal links live in public.property_ical_feeds (service role only — they are secrets).
 // `feeds` is loaded server-side by the batch callers; never accept it from the browser.
 type SyncProperty = { id: string; title: string | { en?: string }; feeds?: SyncFeed[] };
+
+type ExternalBlock = {
+    id: string;
+    external_id: string | null;
+    start_date: string;
+    end_date: string;
+    property_id: string;
+    reason: string | null;
+    source: string | null;
+};
+
+/**
+ * Status writes collected during a batch run and flushed once at the end (flushRun).
+ *
+ * Every Supabase request is one log line, and this robot runs around the clock: writing the
+ * feed result and the property status per property, every run, was most of the project's
+ * log ingestion (Free plan: 1 GB/month). Collected, a run writes them in ~2 requests.
+ */
+type RunCollector = {
+    feeds: { feedId: string; outcome: FeedOutcome; error: string | null }[];
+    properties: { propertyId: string; status: 'success' | 'failed'; error: string | null }[];
+};
+
 type SyncOptions = {
     /** Row (and feeds) already loaded by the batch query — skips re-reading them. */
     property?: SyncProperty;
     /** The batch robot revalidates once per run instead of once per property. */
     revalidate?: boolean;
+    /** This property's imported blocks, loaded once for the whole batch (fetchExternalBlocks). */
+    existingBlocks?: ExternalBlock[];
+    /** When set, status writes are collected for flushRun instead of written one by one. */
+    collector?: RunCollector;
 };
 
 /** Date-only (YYYY-MM-DD): blocked_dates.start_date/end_date are DATE columns. */
 const dateOnly = (v: string | null | undefined) => (v || '').slice(0, 10);
+
+const BLOCK_COLUMNS = 'id, external_id, start_date, end_date, property_id, reason, source';
+const PAGE = 1000; // PostgREST returns at most 1000 rows per request; page explicitly.
+
+/** Imported (Airbnb/Booking) blocks of several properties, in as few requests as possible. */
+async function fetchExternalBlocks(
+    supabase: Awaited<ReturnType<typeof getSupabaseAdmin>>,
+    propertyIds: string[],
+): Promise<Map<string, ExternalBlock[]>> {
+    const byProperty = new Map<string, ExternalBlock[]>();
+    if (propertyIds.length === 0) return byProperty;
+    for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+            .from('blocked_dates')
+            .select(BLOCK_COLUMNS)
+            .in('property_id', propertyIds)
+            .in('source', ['airbnb_booking', 'booking_com'])
+            .order('id', { ascending: true })
+            .range(from, from + PAGE - 1);
+        if (error) throw new Error(`Could not load imported blocks: ${error.message}`);
+        for (const b of (data ?? []) as ExternalBlock[]) {
+            const list = byProperty.get(b.property_id) ?? [];
+            list.push(b);
+            byProperty.set(b.property_id, list);
+        }
+        if (!data || data.length < PAGE) break;
+    }
+    return byProperty;
+}
+
+/** Writes (or collects) a property's sync status. `error` must already be link-free. */
+async function writePropertyStatus(
+    supabase: Awaited<ReturnType<typeof getSupabaseAdmin>>,
+    propertyId: string,
+    status: 'success' | 'failed',
+    error: string | null,
+    collector?: RunCollector,
+) {
+    if (collector) {
+        collector.properties.push({ propertyId, status, error });
+        return;
+    }
+    await supabase
+        .from('properties')
+        .update({ last_sync_at: new Date().toISOString(), sync_status: status, last_sync_error: error })
+        .eq('id', propertyId);
+}
+
+/** Flushes a batch run's statuses: one request for all OK feeds, one for all successful properties. */
+async function flushRun(supabase: Awaited<ReturnType<typeof getSupabaseAdmin>>, collector: RunCollector) {
+    const okFeeds = collector.feeds.filter(f => f.outcome === 'ok').map(f => f.feedId);
+    await recordFeedReadsOk(okFeeds);
+    for (const f of collector.feeds.filter(f => f.outcome !== 'ok')) {
+        await recordFeedRead(f.feedId, f.outcome, f.error);
+    }
+
+    const okProperties = collector.properties.filter(p => p.status === 'success').map(p => p.propertyId);
+    if (okProperties.length > 0) {
+        const { error } = await supabase
+            .from('properties')
+            .update({ last_sync_at: new Date().toISOString(), sync_status: 'success', last_sync_error: null })
+            .in('id', okProperties);
+        if (error) console.error('[iCal Robot] Could not record sync status:', error.message);
+    }
+    for (const p of collector.properties.filter(p => p.status === 'failed')) {
+        await writePropertyStatus(supabase, p.propertyId, 'failed', p.error);
+    }
+}
 
 /**
  * Synchronizes property blocked dates from an iCal URL.
@@ -209,7 +304,8 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
             }
 
             if (feedError) urlErrors.push(feedError);
-            await recordFeedRead(feed.id, outcome, feedError);
+            if (opts.collector) opts.collector.feeds.push({ feedId: feed.id, outcome, error: feedError });
+            else await recordFeedRead(feed.id, outcome, feedError);
         }
         const failedFeeds = feeds.length - successfulFetches;
  
@@ -217,12 +313,11 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
         console.log(`[iCal Sync] Mirroring ${uniqueEvents.length} unique events for ${propertyTitle}`);
 
         if (successfulFetches > 0) {
-            // 1. Fetch existing external blocks to handle Start Date Preservation and Cleanup
-            const { data: existingBlocks } = await supabase
-                .from('blocked_dates')
-                .select('id, external_id, start_date, end_date, property_id, reason, source')
-                .eq('property_id', propertyId)
-                .in('source', ['airbnb_booking', 'booking_com']);
+            // 1. Existing external blocks (Start Date Preservation and Cleanup). The batch robot
+            // loads every property's blocks in one paged query and passes them in.
+            const existingBlocks: ExternalBlock[] = opts.existingBlocks
+                ?? (await fetchExternalBlocks(supabase, [propertyId])).get(propertyId)
+                ?? [];
 
             const existingMap = new Map();
             const existingEndMap = new Map(); // Fallback for shifting UIDs
@@ -358,14 +453,7 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
             // fires, instead of returning silently and leaving a stale "success".
             console.warn(`[iCal Sync] Sync failed for ${propertyTitle}: no URL returned an iCal feed.`);
             const errorMsg = (urlErrors.join(' | ') || 'Could not fetch any iCal URLs').slice(0, 500);
-            await supabase
-                .from('properties')
-                .update({
-                    last_sync_at: new Date().toISOString(),
-                    sync_status: 'failed',
-                    last_sync_error: errorMsg
-                })
-                .eq('id', propertyId);
+            await writePropertyStatus(supabase, propertyId, 'failed', errorMsg, opts.collector);
             if (shouldRevalidate) revalidatePath('/', 'layout');
             return { success: false, error: errorMsg, propertyId };
         }
@@ -373,14 +461,13 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
         // 5. Update Property Sync Status. A partial failure (one of several URLs bad) is
         // still reported as 'failed' so the admin alert fires — the good URLs were imported.
         const hasUrlErrors = urlErrors.length > 0;
-        await supabase
-            .from('properties')
-            .update({
-                last_sync_at: new Date().toISOString(),
-                sync_status: hasUrlErrors ? 'failed' : 'success',
-                last_sync_error: hasUrlErrors ? urlErrors.join(' | ').slice(0, 500) : null
-            })
-            .eq('id', propertyId);
+        await writePropertyStatus(
+            supabase,
+            propertyId,
+            hasUrlErrors ? 'failed' : 'success',
+            hasUrlErrors ? urlErrors.join(' | ').slice(0, 500) : null,
+            opts.collector,
+        );
 
         if (shouldRevalidate) revalidatePath('/', 'layout');
 
@@ -437,10 +524,14 @@ export async function syncAllPropertiesICal() {
             return { success: false, error: error?.message || 'No active properties found' };
         }
 
-        // Load every property's feeds in one query (private table, service role).
-        const feedsByProperty = await feedsForSync(properties.map(p => p.id));
+        // Load every property's feeds and imported blocks once (few requests, not one per property).
+        const ids = properties.map(p => p.id);
+        const feedsByProperty = await feedsForSync(ids);
+        const blocksByProperty = await fetchExternalBlocks(supabase, ids);
+        const collector: RunCollector = { feeds: [], properties: [] };
 
         let totalNewEvents = 0;
+        let anyBlocksChanged = false;
         let results: any[] = [];
         let failures: any[] = [];
         const BATCH_SIZE = 10;
@@ -450,6 +541,9 @@ export async function syncAllPropertiesICal() {
             const batch = properties.slice(i, i + BATCH_SIZE);
             const batchPromises = batch.map(prop => syncPropertyICalInternal(prop.id, {
                 property: { id: prop.id, title: prop.title, feeds: feedsByProperty.get(prop.id) ?? [] },
+                existingBlocks: blocksByProperty.get(prop.id) ?? [],
+                collector,
+                revalidate: false,
             }));
             const batchResults = await Promise.all(batchPromises);
 
@@ -457,6 +551,7 @@ export async function syncAllPropertiesICal() {
                 const prop = batch[index];
                 if (res.success) {
                     totalNewEvents += (res.newEvents || 0);
+                    if ('blocksChanged' in res && res.blocksChanged) anyBlocksChanged = true;
                 } else {
                     failures.push({ id: prop.id, title: prop.title, error: (res as any).error });
                 }
@@ -464,7 +559,10 @@ export async function syncAllPropertiesICal() {
             });
         }
 
-        return { 
+        await flushRun(supabase, collector);
+        if (anyBlocksChanged) revalidatePath('/', 'layout');
+
+        return {
             success: true, 
             totalNewEvents, 
             propertiesSynced: properties.length - failures.length,
@@ -494,7 +592,9 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
         // 2. Have at least one iCal feed (private table property_ical_feeds)
         // 3. Haven't been synced since the cutoff OR have never been synced (null)
         // Order by last_sync_at ASC to get the ones that have been waiting the longest
-        const idsWithFeeds = await propertyIdsWithFeeds();
+        // All feeds in one query (a few dozen rows): gives the ids AND the URLs for this run.
+        const feedsByProperty = await allFeedsForSync();
+        const idsWithFeeds = Array.from(feedsByProperty.keys());
         if (idsWithFeeds.length === 0) {
             return { success: true, message: 'No properties with iCal feeds', count: 0 };
         }
@@ -518,8 +618,10 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
 
         console.log(`[iCal Robot] Syncing ${properties.length} overdue properties... (Cutoff: ${cutoff.toISOString()})`);
 
-        // The feeds of this batch, in one query.
-        const feedsByProperty = await feedsForSync(properties.map(p => p.id));
+        // The imported blocks of this whole batch in one paged query, and one collector so the
+        // run writes its statuses in ~2 requests (flushRun) instead of 2–3 per property.
+        const blocksByProperty = await fetchExternalBlocks(supabase, properties.map(p => p.id));
+        const collector: RunCollector = { feeds: [], properties: [] };
 
         let totalNewEvents = 0;
         let anyBlocksChanged = false;
@@ -533,6 +635,8 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
             // Reuse the rows we just loaded (no per-property re-read) and defer revalidation.
             const batchPromises = batch.map(prop => syncPropertyICalInternal(prop.id, {
                 property: { id: prop.id, title: prop.title, feeds: feedsByProperty.get(prop.id) ?? [] },
+                existingBlocks: blocksByProperty.get(prop.id) ?? [],
+                collector,
                 revalidate: false,
             }));
             const batchResults = await Promise.all(batchPromises);
@@ -548,6 +652,8 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
                 results.push({ id: prop.id, title: prop.title, ...res });
             });
         }
+
+        await flushRun(supabase, collector);
 
         // One cache revalidation per run, and only when availability actually changed
         // (previously: one full-site revalidatePath per property, every run).

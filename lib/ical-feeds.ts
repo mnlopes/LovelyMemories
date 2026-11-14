@@ -59,12 +59,21 @@ export async function feedsForSync(propertyIds: string[]): Promise<Map<string, S
     return byProperty;
 }
 
-/** Ids of the properties that have at least one feed. */
-export async function propertyIdsWithFeeds(): Promise<string[]> {
+/** Every feed, keyed by property id — one query for the robot's whole run. Contains the real URLs. */
+export async function allFeedsForSync(): Promise<Map<string, SyncFeed[]>> {
+    const byProperty = new Map<string, SyncFeed[]>();
     const supabase = await getSupabaseAdmin();
-    const { data, error } = await supabase.from('property_ical_feeds').select('property_id');
+    const { data, error } = await supabase
+        .from('property_ical_feeds')
+        .select('id, property_id, import_url, created_at')
+        .order('created_at', { ascending: true });
     if (error) throw new Error(`Could not load iCal feeds: ${error.message}`);
-    return Array.from(new Set(((data ?? []) as { property_id: string }[]).map((r) => r.property_id)));
+    for (const row of (data ?? []) as FeedRow[]) {
+        const list = byProperty.get(row.property_id) ?? [];
+        list.push({ id: row.id, propertyId: row.property_id, url: row.import_url, label: feedLabel(row.import_url, list.length) });
+        byProperty.set(row.property_id, list);
+    }
+    return byProperty;
 }
 
 /** Number of feeds per property id (for the settings dashboard). */
@@ -89,6 +98,18 @@ export async function recordFeedRead(feedId: string, outcome: FeedOutcome, error
     if (outcome === 'ok') patch.last_ok_at = now;
     const { error: updateError } = await supabase.from('property_ical_feeds').update(patch).eq('id', feedId);
     if (updateError) console.error('[iCal feeds] Could not record read for feed', feedId, updateError.message);
+}
+
+/** Marks many feeds as read OK in a single request (the robot's whole run). */
+export async function recordFeedReadsOk(feedIds: string[]): Promise<void> {
+    if (feedIds.length === 0) return;
+    const supabase = await getSupabaseAdmin();
+    const now = new Date().toISOString();
+    const { error } = await supabase
+        .from('property_ical_feeds')
+        .update({ last_read_at: now, last_ok_at: now, last_outcome: 'ok', last_error: null })
+        .in('id', feedIds);
+    if (error) console.error('[iCal feeds] Could not record reads:', error.message);
 }
 
 /** Masked feeds for the backoffice. Never returns the URL. Caller checks authorisation. */

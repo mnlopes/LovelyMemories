@@ -15,6 +15,7 @@ import { TrafficTimeline } from "@/components/admin/TrafficTimeline";
 import { useState, useEffect } from "react";
 import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight, Zap, Link2Off, AlertTriangle } from "lucide-react";
 import { syncAllPropertiesICal } from "@/app/actions/ical";
+import { useVisibleInterval } from "@/lib/use-visible-interval";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -71,25 +72,16 @@ export default function SettingsPage() {
 
     // ... (AUTH EFFECT - Skipped for brevity in replacement if unchanged, but included if needed) ...
 
-    // Auto-refresh logic (Polling)
-    useEffect(() => {
-        if (isAuthorized && isLive && activeTab === 'analytics') {
-            const interval = setInterval(() => {
-                loadAnalytics();
-            }, 5000); // Poll every 5 seconds
-            return () => clearInterval(interval);
-        }
-    }, [isAuthorized, isLive, activeTab, timeRange, showAdminLogs]);
+    // Polling. It used to run every 5 s (analytics: 5 s AND 15 s at once in live mode), around
+    // the clock while a tab stayed open — every request is a Supabase log line. Now: once a
+    // minute for analytics, every 30 s for the iCal status, and paused while the tab is hidden.
+    useVisibleInterval(() => loadAnalytics(), 60_000, !!isAuthorized && isLive && activeTab === 'analytics');
+    useVisibleInterval(() => loadPropertySyncData(), 30_000, !!isAuthorized && activeTab === 'ical');
 
-    // Polling for iCal tab
+    // iCal tab: load once when it opens (the interval above keeps it fresh).
     useEffect(() => {
         if (isAuthorized && activeTab === 'ical') {
             loadPropertySyncData();
-            const interval = setInterval(() => {
-                loadPropertySyncData();
-            }, 5000); // Poll every 5 seconds
-
-            return () => clearInterval(interval);
         }
     }, [isAuthorized, activeTab]);
 
@@ -348,13 +340,10 @@ export default function SettingsPage() {
         toast.success("Copied to clipboard");
     };
 
+    // Analytics: load when the tab, range or filters change (live refresh: see useVisibleInterval above).
     useEffect(() => {
         if (activeTab === 'analytics' && isAuthorized) {
             loadAnalytics();
-            if (isLive) {
-                const interval = setInterval(() => loadAnalytics(), 15000); // 15s when live
-                return () => clearInterval(interval);
-            }
         }
     }, [activeTab, isAuthorized, timeRange, isLive, showAdminLogs]);
 

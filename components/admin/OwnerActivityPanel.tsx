@@ -60,7 +60,8 @@ export function OwnerActivityPanel() {
     useEffect(() => {
         load();
         // Keep the online dots honest without hammering the server.
-        const id = setInterval(() => load(true), 60_000);
+        // Skipped while the tab is hidden.
+        const id = setInterval(() => { if (!document.hidden) load(true); }, 60_000);
         return () => clearInterval(id);
     }, [load]);
 

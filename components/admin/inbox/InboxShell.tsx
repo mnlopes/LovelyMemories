@@ -42,7 +42,8 @@ export function InboxShell({ openReservationId }: { openReservationId?: string |
     useEffect(() => {
         void refresh();
         // Polling 30s = fallback (o browser atrasa timers de tabs em background).
-        const id = setInterval(() => void refresh(), 30_000);
+        // Skipped while the tab is hidden (it refreshes on return, below).
+        const id = setInterval(() => { if (!document.hidden) void refresh(); }, 30_000);
         // Refresh imediato ao voltar à tab — cobre o caso "respondi noutra janela".
         const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
         document.addEventListener("visibilitychange", onVisible);

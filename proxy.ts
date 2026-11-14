@@ -3,22 +3,57 @@ import { routing } from './i18n/routing';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+// Every Supabase request is a log line (Free plan: 1 GB of log ingestion a month), and this
+// proxy runs on every page request. So: prefetches skip Supabase entirely, visitors without a
+// session skip the auth lookup, the maintenance flag is cached for a minute per instance, and
+// bots / local development are not written to visitor_logs.
+
+/** Maintenance flag, cached per server instance. Turning maintenance on applies within ~1 minute. */
+let maintenanceCache: { value: boolean; at: number } | null = null;
+const MAINTENANCE_TTL_MS = 60_000;
+
+/** Crawlers, link previewers, uptime monitors and scripts — not visitors. */
+const BOT_UA = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|embedly|quora link preview|whatsapp|telegrambot|discordbot|preview|monitor|uptime|pingdom|lighthouse|headless|curl|wget|python-requests|python-urllib|axios|node-fetch|go-http-client|okhttp|java\//i;
+
+async function isMaintenanceOn(supabaseUrl: string, serviceKey: string): Promise<boolean> {
+    const now = Date.now();
+    if (maintenanceCache && now - maintenanceCache.at < MAINTENANCE_TTL_MS) return maintenanceCache.value;
+    const res = await fetch(`${supabaseUrl}/rest/v1/system_settings?key=eq.maintenance_mode&select=value`, {
+        headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` },
+        cache: 'no-store'
+    }).catch(() => null);
+    if (!res?.ok) return maintenanceCache?.value ?? false; // keep the last known value on a blip
+    const data = await res.json().catch(() => null);
+    maintenanceCache = { value: data?.[0]?.value === true, at: now };
+    return maintenanceCache.value;
+}
+
 export default async function proxy(request: NextRequest, event: NextFetchEvent) {
-    const startTime = Date.now();
     const { pathname } = request.nextUrl;
 
     // 1. Skip assets/API early
     const isAsset = pathname.includes('.') || pathname.startsWith('/_next');
     const isApi = pathname.startsWith('/api');
-    const isPrefetch = request.headers.get('purpose') === 'prefetch' || request.headers.get('x-middleware-prefetch') === '1';
 
-    if (isAsset || isApi || isPrefetch) {
+    if (isAsset || isApi) {
         return NextResponse.next();
     }
+
+    // App Router prefetches send `Next-Router-Prefetch: 1` (the old `purpose` /
+    // `x-middleware-prefetch` checks never matched them). A prefetch is not a visit: it still
+    // goes through next-intl, but skips the session refresh, the maintenance check and the log.
+    const isPrefetch = request.headers.get('next-router-prefetch') === '1'
+        || request.headers.get('purpose') === 'prefetch'
+        || (request.headers.get('sec-purpose') || '').includes('prefetch')
+        || request.headers.get('x-middleware-prefetch') === '1';
 
     // 2. Setup Response with next-intl (Early creation to attach cookies)
     let response = createMiddleware(routing)(request);
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+
+    if (isPrefetch) {
+        return response;
+    }
 
     // 3. Setup Auth & Sync Cookies
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -28,8 +63,12 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
     let userRole = 'visitor';
     let userId: string | undefined = undefined;
 
+    // Supabase keeps the session in `sb-<ref>-auth-token` cookies (possibly chunked .0/.1).
+    // No such cookie = anonymous visitor: nothing to refresh, no auth request to make.
+    const hasSessionCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'));
+
     try {
-        if (supabaseUrl && supabaseAnonKey) {
+        if (supabaseUrl && supabaseAnonKey && hasSessionCookie) {
             const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
                 cookies: {
                     getAll() { return request.cookies.getAll() },
@@ -78,8 +117,13 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
         const pathParts = pathname.split('/');
         const localeContext = routing.locales.includes(pathParts[1] as any) ? pathParts[1] : routing.defaultLocale;
 
+        // Not visitors: crawlers/monitors/scripts, and local development (which made up ~22%
+        // of visitor_logs, mixed into the real analytics).
+        const isLocalHost = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(host);
+        const shouldLog = !BOT_UA.test(userAgent) && !isLocalHost;
+
         // Logging PROMISE (WaitUntil)
-        const logPromise = fetch(`${supabaseUrl}/rest/v1/visitor_logs`, {
+        const logPromise = !shouldLog ? Promise.resolve() : fetch(`${supabaseUrl}/rest/v1/visitor_logs`, {
             method: 'POST',
             headers: {
                 'apikey': serviceKey,
@@ -105,17 +149,9 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
         // Maintenance Mode Check
         const isMaintenancePage = pathname.includes('/maintenance');
         if (!isMaintenancePage && !isAdminPath) {
-            const mtnRes = await fetch(`${supabaseUrl}/rest/v1/system_settings?key=eq.maintenance_mode&select=value`, {
-                headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` },
-                cache: 'no-store'
-            }).catch(() => null);
-
-            if (mtnRes?.ok) {
-                const mtnData = await mtnRes.json();
-                if (mtnData?.[0]?.value === true && !(userRole === 'admin' || userRole === 'super_admin')) {
-                    response = NextResponse.redirect(new URL(`/${localeContext}/maintenance`, request.url), 307);
-                    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
-                }
+            if (await isMaintenanceOn(supabaseUrl, serviceKey) && !(userRole === 'admin' || userRole === 'super_admin')) {
+                response = NextResponse.redirect(new URL(`/${localeContext}/maintenance`, request.url), 307);
+                response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
             }
         }
 

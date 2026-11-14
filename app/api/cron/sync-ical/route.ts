@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { syncOverduePropertiesICal } from '@/app/actions/ical';
 
-// Vercel Cron will hit this endpoint automatically.
-// We run every 1 minute to spread the load across 200+ properties.
+// Vercel Cron hits this endpoint every 5 minutes (vercel.json). It used to run every minute;
+// with ~40 properties that was ~1,440 runs a day, and every Supabase request is a log line
+// (Free plan: 1 GB of log ingestion a month). A run now writes its statuses in a few batched
+// requests, and each property is still re-read every `ical_sync_interval` minutes, rounded up
+// to the next 5-minute run.
 export async function GET(request: Request) {
     try {
         // SECURITY: fail closed. If CRON_SECRET is not configured, reject all requests
