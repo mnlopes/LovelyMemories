@@ -1,22 +1,17 @@
-import { useFormContext, useFieldArray } from "react-hook-form";
-import { Plus, Trash2, Link, Copy, Check, FileUp } from "lucide-react";
+import { useFormContext } from "react-hook-form";
+import { Link, Copy, Check, FileUp } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import IcalFeedsManager from "./IcalFeedsManager";
 
 interface SyncTabProps {
     propertyId?: string;
 }
 
 export default function SyncTab({ propertyId }: SyncTabProps) {
-    const { register, control, watch, formState: { errors } } = useFormContext();
+    const { register } = useFormContext();
     const t = useTranslations('PropertyEditor');
     const [copied, setCopied] = useState(false);
-
-    // Provide a valid default field array implementation for ical urls
-    const { fields, append, remove } = useFieldArray({
-        control,
-        name: "ical_import_urls" as any, // assuming type any for unmapped form type
-    });
 
     // Handle Copy logic
     const exportUrl = propertyId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/api/ical/${propertyId}.ics` : '';
@@ -81,40 +76,13 @@ export default function SyncTab({ propertyId }: SyncTabProps) {
                         {t('sync.importDesc')}
                     </p>
 
-                    <div className="space-y-4">
-                        {fields.map((field, index) => (
-                            <div key={field.id} className="flex items-start gap-3">
-                                <div className="flex-1">
-                                    <input
-                                        {...register(`ical_import_urls.${index}` as any)}
-                                        placeholder="https://www.airbnb.pt/calendar/ical/... ou https://ical.booking.com/v1/export/..."
-                                        className="w-full bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border p-3 rounded-xl text-sm text-[#171717] dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-mono"
-                                    />
-                                    {(errors as any)?.ical_import_urls?.[index] && (
-                                        <p className="mt-2 text-xs text-red-500 font-medium">
-                                            {(errors as any).ical_import_urls[index]?.message}
-                                        </p>
-                                    )}
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => remove(index)}
-                                    className="p-3 text-[#a3a3a3] hover:text-red-500 bg-[#fafafa] dark:bg-admin-dark-bg border border-[#eaeaea] dark:border-admin-dark-border hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-200 transition-colors rounded-xl shrink-0"
-                                >
-                                    <Trash2 className="size-4" />
-                                </button>
-                            </div>
-                        ))}
-
-                        <button
-                            type="button"
-                            onClick={() => append("")}
-                            className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-[#171717] dark:text-admin-dark-text-primary bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border hover:bg-[#fafafa] dark:hover:bg-admin-dark-bg rounded-xl transition-colors"
-                        >
-                            <Plus className="size-4" />
-                            {t('sync.addIcal')}
-                        </button>
-                    </div>
+                    {propertyId ? (
+                        <IcalFeedsManager propertyId={propertyId} />
+                    ) : (
+                        <div className="p-4 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-medium border border-amber-200 dark:border-amber-500/30">
+                            {t('sync.saveFirst')}
+                        </div>
+                    )}
                 </div>
 
                 {/* CSV IMPORT MAPPING */}

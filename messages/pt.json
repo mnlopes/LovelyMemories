@@ -2345,7 +2345,15 @@
             "addIcal": "Adicionar novo URL iCal",
             "csvMappingTitle": "Mapeamento CSV (Airbnb Payouts)",
             "csvMappingDesc": "Para importar os relatórios financeiros do Airbnb em formato CSV, insira aqui o nome exato desta propriedade conforme aparece na coluna \"Listing\" do Excel do Airbnb (ex: \"The Luminous Loft\").",
-            "airbnbListingName": "Nome da Propriedade no Airbnb (Listing Name)"
+            "airbnbListingName": "Nome da Propriedade no Airbnb (Listing Name)",
+            "feedsPrivacy": "Por segurança, os links guardados aparecem mascarados e nunca saem do servidor. Para mudar um link, remova-o e adicione o novo. As alterações aqui são guardadas de imediato.",
+            "feedEmpty": "Ainda não há nenhum calendário ligado.",
+            "feedRemove": "Remover",
+            "feedRemoveConfirm": "Remover este link de calendário? As datas deste calendário deixam de ser sincronizadas.",
+            "feedLastOk": "Última leitura bem-sucedida: {date}",
+            "feedNeverRead": "Ainda não foi lido. O robô de sincronização lê-o dentro de poucos minutos.",
+            "feedFailed": "A última leitura falhou",
+            "feedLoading": "A carregar…"
         },
         "hierarchy": {
             "buildingUnits": "Unidades do Edifício",

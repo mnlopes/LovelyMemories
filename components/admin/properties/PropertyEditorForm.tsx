@@ -140,7 +140,6 @@ export default function PropertyEditorForm({ initialData, isEditing, mode }: Pro
             is_multi_unit: initialData?.is_multi_unit ?? (mode === 'building'),
             parent_id: initialData?.parent_id ?? null,
             type: initialData?.type ?? 'apartment',
-            ical_import_urls: initialData?.ical_import_urls ?? [],
             airbnb_listing_name: initialData?.airbnb_listing_name ?? null,
 
             // Extra Flags

@@ -2,6 +2,9 @@
 
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
+import { feedsForSync, propertyIdsWithFeeds, recordFeedRead, type SyncFeed } from '@/lib/ical-feeds';
+import { messageForOutcome, outcomeForStatus, type FeedOutcome } from '@/lib/ical-feed-url';
+import { PROPERTY_EDITORS, requireRole } from '@/lib/auth/require-role';
 
 /**
  * Manual ICS Parser for Airbnb/Standard Calendars
@@ -76,9 +79,11 @@ function parseIcalDate(dateStr: string) {
     return new Date(Date.UTC(y, m, d));
 }
 
-type SyncProperty = { id: string; title: string | { en?: string }; ical_import_urls: string[] | null };
+// The iCal links live in public.property_ical_feeds (service role only — they are secrets).
+// `feeds` is loaded server-side by the batch callers; never accept it from the browser.
+type SyncProperty = { id: string; title: string | { en?: string }; feeds?: SyncFeed[] };
 type SyncOptions = {
-    /** Row already loaded by the batch query — skips re-reading the property. */
+    /** Row (and feeds) already loaded by the batch query — skips re-reading them. */
     property?: SyncProperty;
     /** The batch robot revalidates once per run instead of once per property. */
     revalidate?: boolean;
@@ -92,11 +97,18 @@ const dateOnly = (v: string | null | undefined) => (v || '').slice(0, 10);
  * Server action (manual sync from the backoffice) — always re-reads the property itself.
  */
 export async function syncPropertyICal(propertyId: string) {
+    // A "use server" export is a public POST endpoint: check the caller first.
+    try {
+        await requireRole(PROPERTY_EDITORS);
+    } catch {
+        // Same shape as the internal failure results, so callers keep their narrowing.
+        return { success: false, error: 'Not authorized', propertyId } as Awaited<ReturnType<typeof syncPropertyICalInternal>>;
+    }
     return syncPropertyICalInternal(propertyId);
 }
 
 // Not exported: a "use server" export is callable from the browser, and `opts.property`
-// must never be client-supplied (it carries the iCal URLs that get fetched).
+// must never be client-supplied (it carries the iCal feeds, i.e. the URLs that get fetched).
 async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = {}) {
     const shouldRevalidate = opts.revalidate !== false;
     console.log(`[iCal Sync] Starting sync for property: ${propertyId}`);
@@ -104,12 +116,12 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
     try {
         const supabase = await getSupabaseAdmin();
 
-        // 1. Fetch Property iCal URLs (unless the batch query already loaded them)
+        // 1. Fetch the property (unless the batch query already loaded it)
         let property: SyncProperty | null = opts.property ?? null;
         if (!property) {
             const { data, error: propertyError } = await supabase
                 .from('properties')
-                .select('id, title, ical_import_urls')
+                .select('id, title')
                 .eq('id', propertyId)
                 .single();
 
@@ -120,27 +132,32 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
         }
 
         const propertyTitle = typeof property.title === 'object' ? property.title.en : property.title;
-        const urls: string[] = property.ical_import_urls || [];
+        // The feeds (private table). Only labels ("Feed 1 (airbnb.com)") go to logs and to
+        // the error message the backoffice shows — never the URL, which is a credential.
+        const feeds: SyncFeed[] = property.feeds ?? (await feedsForSync([propertyId])).get(propertyId) ?? [];
         let newEventsCount = 0;
         // True when blocked_dates was actually written (insert/update/delete) — drives
         // revalidation, so an unchanged feed no longer purges the whole site cache.
         let blocksChanged = false;
 
-        if (urls.length === 0) {
+        if (feeds.length === 0) {
             return { success: true, message: 'No iCal URLs to sync', propertyTitle };
         }
 
         const uniqueEventsMap = new Map();
         let totalEventsFound = 0;
         let successfulFetches = 0;
-        // Per-URL problems surfaced to the backoffice (red sync icon + tooltip in the
+        // Per-feed problems surfaced to the backoffice (red sync icon + tooltip in the
         // properties list). Without this, a wrong URL failed silently forever.
         const urlErrors: string[] = [];
 
-        // Process each URL and collect all events
-        for (const url of urls) {
+        // Process each feed and collect all events
+        for (const feed of feeds) {
+            const url = feed.url;
+            let outcome: FeedOutcome = 'ok';
+            let feedError: string | null = null;
             try {
-                console.log(`[iCal Sync] Fetching URL for ${propertyTitle}: ${url.substring(0, 50)}...`);
+                console.log(`[iCal Sync] Fetching ${feed.label} for ${propertyTitle}`);
 
                 const response = await fetch(url, {
                     headers: {
@@ -151,48 +168,50 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
                 });
 
                 if (!response.ok) {
-                    console.error(`[iCal Sync] Fetch failed for ${url.substring(0, 30)}: ${response.status}`);
-                    urlErrors.push(`HTTP ${response.status} fetching ${url.substring(0, 60)}`);
-                    continue;
-                }
+                    console.error(`[iCal Sync] ${feed.label} answered HTTP ${response.status}`);
+                    outcome = outcomeForStatus(response.status);
+                    feedError = messageForOutcome(feed.label, outcome, `HTTP ${response.status}`);
+                } else {
+                    const icsContent = await response.text();
 
-                const icsContent = await response.text();
+                    // INTEGRITY: a wrong URL (e.g. the Airbnb LISTING page pasted instead of its
+                    // iCal export) returns HTTP 200 with HTML. Parsing HTML yields 0 events, which
+                    // used to count as a *successful* sync — the admin saw "success" while nothing
+                    // was ever imported (real overbooking risk). Reject non-iCal content loudly.
+                    if (!icsContent.toUpperCase().includes('BEGIN:VCALENDAR')) {
+                        outcome = 'not_a_calendar';
+                        feedError = messageForOutcome(feed.label, outcome);
+                    } else {
+                        const vevents = parseIcalManual(icsContent);
 
-                // INTEGRITY: a wrong URL (e.g. the Airbnb LISTING page pasted instead of its
-                // iCal export) returns HTTP 200 with HTML. Parsing HTML yields 0 events, which
-                // used to count as a *successful* sync — the admin saw "success" while nothing
-                // was ever imported (real overbooking risk). Reject non-iCal content loudly.
-                if (!icsContent.toUpperCase().includes('BEGIN:VCALENDAR')) {
-                    const hint = /airbnb\.[a-z.]+\/rooms\//i.test(url)
-                        ? 'This is the Airbnb listing PAGE, not its calendar. In Airbnb: Calendar → Availability → Connect to another website → copy the .ics link.'
-                        : 'URL did not return an iCal (.ics) feed.';
-                    urlErrors.push(`Not an iCal feed: ${url.substring(0, 60)}… ${hint}`);
-                    continue;
-                }
+                        // Determine source for this feed
+                        const lowUrl = url.toLowerCase();
+                        const source = lowUrl.includes('booking.com') ? 'booking_com' : 'airbnb_booking';
 
-                const vevents = parseIcalManual(icsContent);
- 
-                // Determine source for this URL
-                const lowUrl = url.toLowerCase();
-                const source = lowUrl.includes('booking.com') ? 'booking_com' : 'airbnb_booking';
-                
-                // Add to unique map (latest URL wins for same UID if applicable)
-                for (const event of vevents) {
-                    if (event.uid) {
-                        console.log(`[iCal Sync Debug] Parsed event: ${event.uid} | Start: ${event.dtstart.toISOString()} | End: ${event.dtend.toISOString()} | Summary: ${event.summary}`);
-                        uniqueEventsMap.set(event.uid, { ...event, source });
+                        // Add to unique map (latest feed wins for same UID if applicable)
+                        for (const event of vevents) {
+                            if (event.uid) {
+                                uniqueEventsMap.set(event.uid, { ...event, source });
+                            }
+                        }
+
+                        totalEventsFound += vevents.length;
+                        successfulFetches++;
+
+                        console.log(`[iCal Sync] Parsed ${vevents.length} events from ${feed.label} (${source})`);
                     }
                 }
- 
-                totalEventsFound += vevents.length;
-                successfulFetches++;
-                
-                console.log(`[iCal Sync] Parsed ${vevents.length} events from ${url.substring(0, 30)} (${source})`);
             } catch (urlError: any) {
-                console.error(`[iCal Sync] Error processing URL:`, urlError);
-                urlErrors.push(`Error fetching ${url.substring(0, 60)}: ${urlError?.message || 'unknown error'}`);
+                console.error(`[iCal Sync] Error reading ${feed.label}:`, urlError?.message || urlError);
+                outcome = 'unreachable';
+                // Some fetch errors echo the URL; keep only the error type.
+                feedError = messageForOutcome(feed.label, outcome, urlError?.name || 'network error');
             }
+
+            if (feedError) urlErrors.push(feedError);
+            await recordFeedRead(feed.id, outcome, feedError);
         }
+        const failedFeeds = feeds.length - successfulFetches;
  
         const uniqueEvents = Array.from(uniqueEventsMap.values());
         console.log(`[iCal Sync] Mirroring ${uniqueEvents.length} unique events for ${propertyTitle}`);
@@ -303,7 +322,12 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
             // until the next successful sync re-adds them. We err on the side of keeping blocks:
             // worst case a genuinely-cleared calendar leaves stale blocks (a lost booking, removable
             // in the backoffice) instead of causing a double booking.
-            if (uniqueEvents.length > 0) {
+            //
+            // And only when EVERY feed was read: the events of a feed that failed are missing
+            // from `uniqueEvents`, so its blocks would look "cancelled" and be deleted, opening
+            // those dates on the site (audit 2026-11-13, L-5). If one feed fails we keep all
+            // blocks until a run where every feed reads cleanly.
+            if (uniqueEvents.length > 0 && failedFeeds === 0) {
                 const currentUids = new Set(uniqueEvents.map(e => e.uid));
                 const uidsToDelete = existingBlocks?.filter(b => {
                     const isStillInFeed = currentUids.has(b.external_id);
@@ -321,13 +345,15 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
                         .delete()
                         .in('id', uidsToDelete);
                 }
+            } else if (failedFeeds > 0) {
+                console.warn(`[iCal Sync] ${failedFeeds} feed(s) failed for ${propertyTitle} — skipping cleanup so the failed feed's blocks are kept.`);
             } else {
                 console.warn(`[iCal Sync] Feed returned 0 events for ${propertyTitle} — skipping cleanup to avoid wiping blocks on a transient empty feed.`);
             }
 
             newEventsCount = uniqueEvents.length;
-        } else if (urls.length > 0) {
-            // No URL produced a usable feed. Mark the property as failed so the existing
+        } else {
+            // No feed produced a usable calendar. Mark the property as failed so the existing
             // backoffice alert (red sync icon + "CRITICAL ERROR" tooltip + failed counter)
             // fires, instead of returning silently and leaving a stale "success".
             console.warn(`[iCal Sync] Sync failed for ${propertyTitle}: no URL returned an iCal feed.`);
@@ -366,8 +392,10 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
             propertyTitle
         };
     } catch (e: any) {
-        console.error('Global error in syncPropertyICal:', e.message);
-        
+        // properties.last_sync_error is publicly readable: never let a link into it.
+        const safeMessage = String(e?.message || 'Sync failed').replace(/https?:\/\/\S+/gi, '[link]').slice(0, 300);
+        console.error('Global error in syncPropertyICal:', safeMessage);
+
         // Update Property Sync Status (Failure)
         try {
             const supabase = await getSupabaseAdmin();
@@ -376,14 +404,14 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
                 .update({
                     last_sync_at: new Date().toISOString(),
                     sync_status: 'failed',
-                    last_sync_error: e.message
+                    last_sync_error: safeMessage
                 })
                 .eq('id', propertyId);
         } catch (updateError) {
             console.error('Failed to update sync status on error:', updateError);
         }
 
-        return { success: false, error: e.message, propertyId };
+        return { success: false, error: safeMessage, propertyId };
     }
 }
 
@@ -392,6 +420,12 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
  * Used by the "Robot" or manual global sync.
  */
 export async function syncAllPropertiesICal() {
+    // A "use server" export is a public POST endpoint: check the caller first.
+    try {
+        await requireRole(['super_admin', 'admin']);
+    } catch {
+        return { success: false, error: 'Not authorized' };
+    }
     try {
         const supabase = await getSupabaseAdmin();
         const { data: properties, error } = await supabase
@@ -403,6 +437,9 @@ export async function syncAllPropertiesICal() {
             return { success: false, error: error?.message || 'No active properties found' };
         }
 
+        // Load every property's feeds in one query (private table, service role).
+        const feedsByProperty = await feedsForSync(properties.map(p => p.id));
+
         let totalNewEvents = 0;
         let results: any[] = [];
         let failures: any[] = [];
@@ -411,7 +448,9 @@ export async function syncAllPropertiesICal() {
         // Process properties in batches to balance speed and resource usage
         for (let i = 0; i < properties.length; i += BATCH_SIZE) {
             const batch = properties.slice(i, i + BATCH_SIZE);
-            const batchPromises = batch.map(prop => syncPropertyICal(prop.id));
+            const batchPromises = batch.map(prop => syncPropertyICalInternal(prop.id, {
+                property: { id: prop.id, title: prop.title, feeds: feedsByProperty.get(prop.id) ?? [] },
+            }));
             const batchResults = await Promise.all(batchPromises);
 
             batchResults.forEach((res, index) => {
@@ -452,14 +491,18 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
 
         // Find properties that:
         // 1. Are active
-        // 2. Have ical urls
+        // 2. Have at least one iCal feed (private table property_ical_feeds)
         // 3. Haven't been synced since the cutoff OR have never been synced (null)
         // Order by last_sync_at ASC to get the ones that have been waiting the longest
+        const idsWithFeeds = await propertyIdsWithFeeds();
+        if (idsWithFeeds.length === 0) {
+            return { success: true, message: 'No properties with iCal feeds', count: 0 };
+        }
         const { data: properties, error } = await supabase
             .from('properties')
-            .select('id, title, last_sync_at, ical_import_urls')
+            .select('id, title, last_sync_at')
             .eq('is_active', true)
-            .not('ical_import_urls', 'eq', '[]')
+            .in('id', idsWithFeeds)
             .or(`last_sync_at.is.null,last_sync_at.lte.${cutoff.toISOString()}`)
             .order('last_sync_at', { ascending: true, nullsFirst: true })
             .limit(batchSize);
@@ -475,6 +518,9 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
 
         console.log(`[iCal Robot] Syncing ${properties.length} overdue properties... (Cutoff: ${cutoff.toISOString()})`);
 
+        // The feeds of this batch, in one query.
+        const feedsByProperty = await feedsForSync(properties.map(p => p.id));
+
         let totalNewEvents = 0;
         let anyBlocksChanged = false;
         let results: any[] = [];
@@ -484,8 +530,11 @@ export async function syncOverduePropertiesICal(batchSize: number = 70, interval
         const SUB_BATCH_SIZE = 5;
         for (let i = 0; i < properties.length; i += SUB_BATCH_SIZE) {
             const batch = properties.slice(i, i + SUB_BATCH_SIZE);
-            // Reuse the row we just loaded (no per-property re-read) and defer revalidation.
-            const batchPromises = batch.map(prop => syncPropertyICalInternal(prop.id, { property: prop, revalidate: false }));
+            // Reuse the rows we just loaded (no per-property re-read) and defer revalidation.
+            const batchPromises = batch.map(prop => syncPropertyICalInternal(prop.id, {
+                property: { id: prop.id, title: prop.title, feeds: feedsByProperty.get(prop.id) ?? [] },
+                revalidate: false,
+            }));
             const batchResults = await Promise.all(batchPromises);
 
             batchResults.forEach((res, index) => {

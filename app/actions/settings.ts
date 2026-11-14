@@ -690,10 +690,16 @@ export async function getPropertySyncStatuses() {
 
     const { data, error } = await serverSupabase
         .from('properties')
-        .select('id, title, last_sync_at, sync_status, last_sync_error, is_active, ical_import_urls')
+        .select('id, title, last_sync_at, sync_status, last_sync_error, is_active')
         .order('last_sync_at', { ascending: false, nullsFirst: false });
 
     if (error) throw error;
 
-    return { success: true, properties: data };
+    // The links themselves are private (property_ical_feeds, service role only): the
+    // dashboard only needs how many each property has.
+    const { feedCounts } = await import('@/lib/ical-feeds');
+    const counts = await feedCounts();
+    const properties = (data ?? []).map(p => ({ ...p, feed_count: counts.get(p.id) ?? 0 }));
+
+    return { success: true, properties };
 }

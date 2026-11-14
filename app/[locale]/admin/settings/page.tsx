@@ -1150,7 +1150,7 @@ export default function SettingsPage() {
                                 <h4 className="font-bold text-xs uppercase tracking-widest text-[#737373]">Missing Links</h4>
                             </div>
                             <p className="text-4xl font-black text-amber-500 tracking-tighter">
-                                {propertySyncData.filter(p => !p.ical_import_urls || p.ical_import_urls.length === 0).length}
+                                {propertySyncData.filter(p => !p.feed_count).length}
                             </p>
                         </div>
                     </div>
@@ -1191,7 +1191,7 @@ export default function SettingsPage() {
                                                         </span>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className="text-[10px] text-[#a3a3a3] font-mono uppercase">ID: {property.id.substring(0, 8)}</span>
-                                                            {(!property.ical_import_urls || property.ical_import_urls.length === 0) && (
+                                                            {!property.feed_count && (
                                                                 <>
                                                                     <span className="text-[#a3a3a3] text-[10px]">•</span>
                                                                     <span className="flex items-center gap-1 text-[9px] font-black text-rose-500 uppercase tracking-widest">
@@ -1209,7 +1209,7 @@ export default function SettingsPage() {
                                                         <span className="text-sm text-[#171717] dark:text-white font-medium">
                                                             {lastSync ? lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : 'Never'}
                                                         </span>
-                                                        {isOverdue && property.is_active && property.ical_import_urls?.length > 0 && (
+                                                        {isOverdue && property.is_active && property.feed_count > 0 && (
                                                             <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-tighter animate-pulse border border-amber-500/20">
                                                                 In Queue
                                                             </span>

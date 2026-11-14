@@ -114,8 +114,8 @@ export async function upsertProperty(data: PropertyFormData) {
         has_transfer: validatedData.has_transfer,
         transfer_price: validatedData.transfer_price,
 
-        // iCal Settings
-        ical_import_urls: validatedData.ical_import_urls,
+        // iCal import links are NOT saved here: they are secrets in property_ical_feeds,
+        // managed by app/actions/ical-feeds.ts (Sync tab).
         airbnb_listing_name: validatedData.airbnb_listing_name,
     };
 

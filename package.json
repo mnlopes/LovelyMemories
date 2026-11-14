@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test:security": "npx -y tsx scripts/test-security.ts",
-    "test:partner-api": "npx -y tsx --test lib/partner-api/__tests__/*.test.ts"
+    "test:partner-api": "npx -y tsx --test lib/partner-api/__tests__/*.test.ts",
+    "test:ical": "npx -y tsx --test lib/__tests__/*.test.ts",
+    "check:exposure": "npx -y tsx scripts/check-public-exposure.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

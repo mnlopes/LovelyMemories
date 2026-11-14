@@ -343,11 +343,11 @@ export async function scrapeAirbnbListing(url: string): Promise<{ success: boole
             status: 'active',
             type: 'apartment',
             slug: titleSection.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-            // Do NOT pre-fill ical_import_urls with the listing URL: it is a webpage, not an
-            // iCal feed, so the sync would silently import nothing (this caused 32 properties
-            // to have broken calendar sync). The admin must paste the .ics export link from
-            // Airbnb: Calendar → Availability → Connect to another website.
-            ical_import_urls: []
+            // Do NOT pre-fill an iCal feed with the listing URL: it is a webpage, not an iCal
+            // feed, so the sync would silently import nothing (this caused 32 properties to
+            // have broken calendar sync). The admin adds the .ics export link from Airbnb
+            // (Calendar → Availability → Connect to another website) in the Sync tab, which
+            // stores it in the private property_ical_feeds table.
         };
 
         return { success: true, data: result };
