@@ -33,7 +33,7 @@
 - [x] ~~`lib/push.ts`: trocar para `import * as webpush`~~ — **revertido.** Na web-push 3 (CJS) o namespace import devolve `setVapidDetails` / `sendNotification` como `undefined` (testado com tsx). Fica o default import; ver a Fase 3.
 - [x] Bumps menores sem risco (coluna "Wanted"): tailwindcss / @tailwindcss/postcss 4.3.5, date-fns, react-hook-form, recharts, lenis, papaparse, tailwind-merge, sonner, react-icons, jspdf-autotable. **Não mexer ainda em `@supabase/*` nem `stripe`** (ficam para a Fase 2).
 - [ ] Verificação: `tsc --noEmit`, `npm run build`, `npm run test:partner-api`, `npm audit` (objetivo: 0 críticas, 0 altas) e depois a checklist de testes (abaixo).
-- [ ] Deploy em Preview → checklist → produção → vigiar os logs da Vercel durante 24h.
+- [x] Deploy: o Preview falhou porque o ambiente Preview da Vercel não tem `STRIPE_SECRET_KEY` (já falhava antes, nas mockups de 27/10). A instalação, a compilação e o TypeScript passaram na Vercel. Merge para `main` (`4fb375d`) a 2026-11-13, 15:19. Verificado em produção: 54/54 páginas a 200, cron do iCal a correr, 0 erros de sincronização.
 
 ## Fase 2 — Atualizações que exigem código (~1–1,5 dias, em 3 deploys)
 
