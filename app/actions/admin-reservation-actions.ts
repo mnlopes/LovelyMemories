@@ -1,8 +1,9 @@
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { logActivity } from "./audit";
+import { logActivity } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
+import { requireRole, ADMINS } from "@/lib/auth/require-role";
 
 /**
  * Build and send the guest-facing "Reservation Cancelled" email for a reservation row.
@@ -182,6 +183,10 @@ export async function finishReservationEarly(
 
     const { data: { user } } = await serverSupabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
+
+    // Shortens a stay and frees nights with the service role: same roles as
+    // updateReservationStatus (owners and editors must not reach this).
+    await requireRole(ADMINS);
 
     const adminSupabase = await getSupabaseAdmin();
     const todayStr = new Date().toISOString().split('T')[0];

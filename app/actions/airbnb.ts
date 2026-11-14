@@ -6,23 +6,36 @@ import {
     SUGGESTED_CATEGORIES, 
     DEFAULT_ICONS 
 } from "../../lib/amenityConstants";
+import { requireRole, PROPERTY_EDITORS } from "@/lib/auth/require-role";
+
+/** airbnb.com, www.airbnb.pt, airbnb.co.uk, airbnb.com.br… */
+const AIRBNB_HOST = /(^|\.)airbnb\.[a-z]{2,3}(\.[a-z]{2})?$/i;
 
 /**
  * Scrapes an Airbnb listing and returns data mapped to PropertyFormData
  * Using forced English locale to match the system's primary language requirement.
+ *
+ * This makes the server fetch a URL, so it is limited to property editors and to Airbnb
+ * hosts over https (otherwise anyone could use it to reach arbitrary addresses — SSRF).
  */
 export async function scrapeAirbnbListing(url: string): Promise<{ success: boolean; data?: Partial<PropertyFormData>; error?: string }> {
     try {
+        await requireRole(PROPERTY_EDITORS);
+
         // 1. Normalize and Fetch
         let targetUrlStr = url;
+        let targetUrl: URL;
         try {
-            const targetUrl = new URL(url);
-            // Force English locale
-            targetUrl.searchParams.set('locale', 'en'); 
-            targetUrlStr = targetUrl.toString();
+            targetUrl = new URL(url);
         } catch (e) {
             throw new Error("Invalid URL provided.");
         }
+        if (targetUrl.protocol !== 'https:' || !AIRBNB_HOST.test(targetUrl.hostname)) {
+            throw new Error("Please use the full Airbnb listing link (https://www.airbnb.com/rooms/…).");
+        }
+        // Force English locale
+        targetUrl.searchParams.set('locale', 'en');
+        targetUrlStr = targetUrl.toString();
         
         const response = await fetch(targetUrlStr, {
             headers: {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { requireRole, SUPER_ADMIN_ONLY } from "@/lib/auth/require-role";
 
 /**
  * Fetch a system setting by key.
@@ -103,6 +104,11 @@ export async function updateSystemSetting(key: string, value: any) {
  * Check if Resend API key is valid and working.
  */
 export async function checkResendStatus() {
+    try {
+        await requireRole(SUPER_ADMIN_ONLY);
+    } catch {
+        return { success: false, error: "Not authorized" };
+    }
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
         return { success: false, error: "RESEND_API_KEY not found in environment" };
@@ -144,6 +150,7 @@ export async function checkResendStatus() {
  */
 export async function flushGlobalCache() {
     try {
+        await requireRole(SUPER_ADMIN_ONLY);
         // Revalidate the entire site structure
         revalidatePath("/", "layout");
         return { success: true, message: "Global cache revalidated successfully" };
@@ -162,6 +169,8 @@ export async function checkDatabaseStatus() {
     const cookieStore = await cookies();
 
     try {
+        await requireRole(SUPER_ADMIN_ONLY);
+
         const serverSupabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

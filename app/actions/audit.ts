@@ -1,45 +1,6 @@
 "use server";
 
-import { getSupabaseAdmin } from "@/lib/supabase";
-
-type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'STATUS_CHANGE' | 'INVITE';
-type AuditResource = 'PROPERTY' | 'RESERVATION' | 'USER' | 'SETTINGS' | 'AUTH';
-type Severity = 'INFO' | 'WARNING' | 'CRITICAL';
-
-/**
- * Logs an activity to the audit_logs table.
- * Uses Service Role to ensure logs are always written regardless of user RLS.
- */
-export async function logActivity(
-    actorId: string | null,
-    action: AuditAction,
-    resource: AuditResource,
-    resourceId: string | null = null,
-    details: any = null,
-    severity: Severity = 'INFO'
-) {
-    try {
-        const adminSupabase = await getSupabaseAdmin();
-
-        const { error } = await adminSupabase
-            .from('audit_logs')
-            .insert({
-                actor_id: actorId,
-                action_type: action,
-                resource_type: resource,
-                resource_id: resourceId,
-                details: details,
-                severity: severity
-            });
-
-        if (error) {
-            console.error("AUDIT LOG ERROR: Failed to write log:", error);
-        }
-    } catch (err) {
-        console.error("AUDIT LOG EXCEPTION:", err);
-        // We do not throw here to prevent breaking the main user flow if logging fails
-    }
-}
+// logActivity lives in lib/audit-log.ts (server-only): see the note there.
 
 /**
  * Validates uuid to prevent invalid input syntax errors

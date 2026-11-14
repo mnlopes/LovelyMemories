@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { PropertyFormData, propertySchema } from "@/components/admin/properties/PropertyFormSchema";
-import { logActivity } from "./audit";
+import { logActivity } from "@/lib/audit-log";
 
 /**
  * Creates or updates a property in the database.
@@ -506,6 +506,14 @@ export async function getAvailableProperties(currentOwnerId?: string) {
 }
 
 export async function getPropertiesOptions() {
+    // Service-role read of every property (drafts included) for the Airbnb CSV import:
+    // same roles as the import itself (submitAirbnbCSV in app/actions/airbnb-import.ts).
+    const { requireRole, ADMINS } = await import('@/lib/auth/require-role');
+    try {
+        await requireRole(ADMINS);
+    } catch {
+        return [];
+    }
     const { getSupabaseAdmin } = await import('@/lib/supabase');
     const adminSupabase = await getSupabaseAdmin();
 

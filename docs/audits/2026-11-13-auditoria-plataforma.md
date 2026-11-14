@@ -32,7 +32,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 |---|---|---|
 | S-1 — tabela `profiles` pública | ✅ **Corrigido** a 13/11 (migração `20261113150000`) | Com a chave pública, leitura, alteração e apagamento são recusados; login de um proprietário testado em produção |
 | S-2 — links do Airbnb públicos | ✅ **Corrigido** a 14/11 (migrações `20261114100000` + `20261114100100`; tabela privada `property_ical_feeds`) | `npm run check:exposure` sem falhas; cron de produção a ler as 37 casas pela tabela nova, 0 erros. **Falta, do lado do cliente:** gerar links novos no Airbnb |
-| S-3 — ações sem permissões | 🟡 **Parcial**: `syncPropertyICal` e `syncAllPropertiesICal` já verificam a função de quem chama | Falta: `translateAllProperties`, `translatePropertyFields`, `translateText`, `scrapeAirbnbListing`, `flushGlobalCache`, `finishReservationEarly` |
+| S-3 — ações sem permissões | ✅ **Corrigido** a 14/11. Todas as ações da lista verificam a função de quem chama; `scrapeAirbnbListing` só aceita links https do Airbnb. Também: `getPropertiesOptions`, `checkResendStatus` e `checkDatabaseStatus`. `logActivity` e o robô do iCal estavam **expostos** (ver S-3) e passaram para módulos `server-only` (`lib/audit-log.ts`, `lib/ical-sync.ts`) | Build local de produção, chamadas sem sessão: todas recusadas, sem chamadas à IA nem sincronizações. No manifesto do build, as 166 ações expostas foram revistas uma a uma. **Não testado localmente:** o caminho com sessão de admin (precisa de login) |
 | L-5 — limpeza do iCal apaga bloqueios de um feed falhado | ✅ **Corrigido** a 14/11: só limpa quando todos os links foram lidos | Código revisto e testado em produção |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
@@ -89,8 +89,11 @@ Confirmei que estas não têm nenhuma verificação no código:
 | `finishReservationEarly` (`admin-reservation-actions.ts:161`) | Qualquer utilizador autenticado, incluindo proprietários, pode encurtar qualquer reserva e libertar noites |
 
 - **Exposição:** não aparecem nos ficheiros JS públicos, só nos do admin, mas um ID de ação é um endpoint POST público.
-- `finalizeBooking` e `logActivity` estão exportadas sem verificação; hoje nenhum componente as importa, mas isso é frágil.
-- **Correção:** um helper `requireRole()` no topo de cada ação, e as funções internas passam para módulos `server-only`.
+- ~~`finalizeBooking` e `logActivity` estão exportadas sem verificação; hoje nenhum componente as importa, mas isso é frágil.~~ **Corrigido a 14/11:** estava errado. Quando um componente cliente importa **uma** função de um ficheiro `'use server'`, o Next expõe **todas** as funções desse ficheiro. Confirmado no manifesto do build (`.next/server/server-reference-manifest.json`):
+  - `logActivity` estava exposta, porque `audit.ts` é importado por `ActivityTimeline` e `NotificationsPopover`. Qualquer pessoa podia escrever no registo de atividade com a service role, com qualquer autor, detalhe e gravidade, incluindo alertas `CRITICAL` nas notificações do admin. Passou para `lib/audit-log.ts`.
+  - `syncOverduePropertiesICal`, a ronda do robô, estava exposta, porque `ical.ts` é importado pelas páginas de propriedades e de settings. Qualquer pessoa podia disparar rondas de sincronização. O motor passou para `lib/ical-sync.ts`, e o robô só é acessível pelo cron, que exige `CRON_SECRET`.
+  - `finalizeBooking` faz parte do fluxo público de reserva e fica para S-4.
+- **Correção aplicada:** `requireRole()` (`lib/auth/require-role.ts`) no topo de cada ação, e as funções internas em módulos `server-only`. Regra nova no CLAUDE.md.
 
 **S-4. Reserva pública abusável ✅ (parcialmente)**
 - `processReservation` (`app/actions/reservation.ts:73`) é chamada pelo checkout público. A única proteção é um honeypot, sem limite de pedidos.
@@ -109,6 +112,11 @@ Confirmei que estas não têm nenhuma verificação no código:
   - Qualquer utilizador autenticado pode alterar `concierge_services`.
 - **S-6. XSS no blog:** `blog/[slug]/page.tsx:141` faz `parse(post.content)` sem sanitização, e as tags `<script>` são renderizadas no servidor. Um editor pode roubar a sessão de um admin. **Correção:** DOMPurify / sanitize-html.
 - **S-7. Links de convite:** valem 30 dias e nunca são revogados depois de definida a password (`app/actions/auth.ts:159-245`).
+- **S-14. Qualquer pessoa pode escrever em `visitor_logs`** (encontrado a 14/11):
+  - A política `"Anyone can insert visitor logs"` (`20260205125000_visitor_analytics.sql`) dá `INSERT` `to public` com `with check (true)`. Com a chave pública dá para inserir visitas falsas, estragar as estatísticas e fazer crescer a base de dados, que no plano Free tem 500 MB.
+  - O proxy escreve com a service role, por isso a política não faz falta.
+  - **Correção:** uma migração que apaga a política e revoga `INSERT` a `anon`/`authenticated`.
+  - Ainda por confirmar no dashboard: o `check:exposure` só testa leituras.
 
 ### Baixo
 - **S-8.** A referência Stripe usa só os primeiros 8 caracteres do ID do PaymentIntent. Uma colisão descartaria um pagamento em silêncio.
@@ -262,7 +270,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 **Onda 0 — urgente (esta semana)**
 1. S-1: política da tabela `profiles` (migração SQL, aplicada à mão no dashboard da Supabase, verificada a seguir com a chave pública).
 2. S-2: colunas privadas de `properties`, e depois o cliente regenera os links de exportação no Airbnb.
-3. S-3: `requireRole()` em todas as ações do admin.
+3. S-3: `requireRole()` em todas as ações do admin. ✅ Feito a 14/11.
 4. L-1: email certo para pagamentos com Link.
 5. S-4: escapar os templates de reserva, gerar a referência no servidor e limitar pedidos.
 6. SEO-4: definir `NEXT_PUBLIC_GA_ID` na Vercel (o cliente fornece o ID).

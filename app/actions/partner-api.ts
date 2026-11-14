@@ -7,7 +7,7 @@ import { getLocalizedStr } from '@/lib/data-utils';
 import { generateApiKey, hashApiKey, displayPrefix } from '@/lib/partner-api/keys';
 import { effectiveCity } from '@/lib/partner-api/destinations';
 import { toNumber } from '@/lib/partner-api/serialize';
-import { logActivity } from './audit';
+import { logActivity } from '@/lib/audit-log';
 
 /**
  * Admin actions for /admin/partners. Server actions are callable directly,

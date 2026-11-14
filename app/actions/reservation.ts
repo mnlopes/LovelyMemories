@@ -326,7 +326,7 @@ export async function finalizeBooking({
 
     // 7. Log Activity
     try {
-        const { logActivity } = await import("./audit");
+        const { logActivity } = await import("@/lib/audit-log");
         if (insertedRes) {
             await logActivity(
                 null, 
@@ -459,7 +459,7 @@ export async function deleteReservation(id: string) {
     }
 
     // 3. Log Activity
-    const { logActivity } = await import("./audit");
+    const { logActivity } = await import("@/lib/audit-log");
     await logActivity(
         user.id,
         'DELETE',

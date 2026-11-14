@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { Sparkles, Loader2, Globe, Edit3, Check, User } from "lucide-react";
 import { toast } from "sonner";
 import { PropertyFormData } from "./PropertyFormSchema";
-import { translatePropertyFields } from "@/app/actions/translate";
 import { getOwners } from "@/app/actions/user";
 
 interface SettingsTabProps {

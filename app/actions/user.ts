@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { logActivity } from './audit';
+import { logActivity } from '@/lib/audit-log';
 
 /**
  * Get a Supabase server client for internal use

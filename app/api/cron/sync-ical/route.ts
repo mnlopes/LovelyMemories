@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { syncOverduePropertiesICal } from '@/app/actions/ical';
+import { syncOverduePropertiesICal } from '@/lib/ical-sync';
 
 // Vercel Cron hits this endpoint every 5 minutes (vercel.json). It used to run every minute;
 // with ~40 properties that was ~1,440 runs a day, and every Supabase request is a log line

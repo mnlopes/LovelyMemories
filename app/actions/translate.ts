@@ -3,10 +3,28 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
+import { requireRole, PROPERTY_EDITORS, SUPER_ADMIN_ONLY } from "@/lib/auth/require-role";
 
 type AIProvider = 'gemini' | 'openai';
 
+// The exported functions are server actions, i.e. public POST endpoints: each checks the
+// caller's role first (calling them spends AI credits, and translateAllProperties rewrites
+// every property with the service role). The internal versions below do the work without
+// re-checking, so a batch run doesn't repeat the role lookup for every field.
+
+/** Translate one text (backoffice: concierge services). Staff only. */
 export async function translateText(content: string, targetLang: string, apiKey?: string, provider: AIProvider = 'gemini') {
+    await requireRole(PROPERTY_EDITORS);
+    return translateTextInternal(content, targetLang, apiKey, provider);
+}
+
+/** Translate a property's fields into the other languages. Property editors only. */
+export async function translatePropertyFields(data: Parameters<typeof translatePropertyFieldsInternal>[0], sourceLang: string = 'en', apiKey?: string, provider: AIProvider = 'gemini', force: boolean = false) {
+    await requireRole(PROPERTY_EDITORS);
+    return translatePropertyFieldsInternal(data, sourceLang, apiKey, provider, force);
+}
+
+async function translateTextInternal(content: string, targetLang: string, apiKey?: string, provider: AIProvider = 'gemini') {
     if (!content) return content;
 
     // Fallback to env vars if no key passed
@@ -104,7 +122,7 @@ export async function translateText(content: string, targetLang: string, apiKey?
     }
 }
 
-export async function translatePropertyFields(data: any, sourceLang: string = 'en', apiKey?: string, provider: AIProvider = 'gemini', force: boolean = false) {
+async function translatePropertyFieldsInternal(data: any, sourceLang: string = 'en', apiKey?: string, provider: AIProvider = 'gemini', force: boolean = false) {
     const targets = ['en', 'pt', 'he'].filter(l => l !== sourceLang);
     const translatedData = { ...data };
     let changesCount = 0;
@@ -141,7 +159,7 @@ export async function translatePropertyFields(data: any, sourceLang: string = 'e
             // Translate if missing OR if forced
             if (force || !newField[lang] || newField[lang].trim() === '' || newField[lang] === '[object Object]') {
                 try {
-                    const translated = await translateText(sourceText, lang, apiKey, provider);
+                    const translated = await translateTextInternal(sourceText, lang, apiKey, provider);
                     if (translated && translated !== newField[lang]) {
                         newField[lang] = translated;
                         fieldChanged = true;
@@ -237,8 +255,11 @@ export async function translatePropertyFields(data: any, sourceLang: string = 'e
     return { data: translatedData, changes: changesCount };
 }
 
+/** Translate every property (Settings page, super admin only). */
 export async function translateAllProperties(apiKey?: string, provider: AIProvider = 'gemini', force: boolean = false) {
     try {
+        await requireRole(SUPER_ADMIN_ONLY);
+
         // Use Service Role Key to bypass RLS for this batch operation
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -263,7 +284,7 @@ export async function translateAllProperties(apiKey?: string, provider: AIProvid
         for (const property of properties) {
             try {
                 // Translate
-                const { data: translated, changes } = await translatePropertyFields(property, 'en', apiKey, provider, force);
+                const { data: translated, changes } = await translatePropertyFieldsInternal(property, 'en', apiKey, provider, force);
 
                 if (changes > 0) {
                     // Save
