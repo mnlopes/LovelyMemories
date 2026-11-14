@@ -31,8 +31,8 @@ export const adminLeadEmail = (data: any) => `
             <p><strong>Typology:</strong> ${escapeHtml(data.typology)}</p>
             <p><strong>Extra Perks:</strong> ${escapeHtml(data.perks)}</p>
             <p><strong>Location:</strong> ${escapeHtml(data.location)}</p>
-            ${data.plan ? `<p><strong>Selected Plan:</strong> ${data.plan.toUpperCase()}</p>` : ''}
-            ${data.numProperties ? `<p><strong>Number of Properties:</strong> ${data.numProperties}</p>` : ''}
+            ${data.plan ? `<p><strong>Selected Plan:</strong> ${escapeHtml(String(data.plan).toUpperCase())}</p>` : ''}
+            ${data.numProperties ? `<p><strong>Number of Properties:</strong> ${escapeHtml(data.numProperties)}</p>` : ''}
         </div>
         
         <p style="font-size: 12px; color: #999;">Este email foi enviado automaticamente pelo formulário do Revenue Report da pagina Owner.</p>
@@ -64,7 +64,7 @@ export const adminContactEmail = (data: any) => `
 export const bookingAdminEmail = (data: any) => `
 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
     <div style="background-color: #0A1128; padding: 30px; text-align: center;">
-        <h2 style="color: #B08D4A; margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px;">✨ Nova Reserva: ${data.reference_id}</h2>
+        <h2 style="color: #B08D4A; margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px;">✨ Nova Reserva: ${escapeHtml(data.reference_id)}</h2>
     </div>
     <div style="padding: 30px; color: #333; line-height: 1.6;">
         <h3 style="color: #0A1128; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 20px;">Detalhes do Cliente</h3>
@@ -74,7 +74,7 @@ export const bookingAdminEmail = (data: any) => `
         
         <h3 style="color: #0A1128; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px;">Detalhes da Reserva</h3>
         <p style="margin: 5px 0;"><strong>Propriedade:</strong> ${escapeHtml(data.property_title)}</p>
-        <p style="margin: 5px 0;"><strong>Datas:</strong> ${data.check_in} a ${data.check_out}</p>
+        <p style="margin: 5px 0;"><strong>Datas:</strong> ${escapeHtml(data.check_in)} a ${escapeHtml(data.check_out)}</p>
         <p style="margin: 5px 0;"><strong>Hóspedes:</strong> ${data.adults} adultos, ${data.children} crianças, ${data.infants} bebés</p>
         ${data.extra_guests && data.extra_guests.length > 0 ? `<p style="margin: 5px 0;"><strong>Hóspedes Adicionais:</strong> ${escapeHtml(data.extra_guests.join(', '))}</p>` : ''}
         ${data.arrival_time ? `<p style="margin: 5px 0;"><strong>Hora de Chegada Estimada:</strong> ${escapeHtml(data.arrival_time)}</p>` : ''}
@@ -90,7 +90,7 @@ export const bookingAdminEmail = (data: any) => `
             </table>
         </div>
 
-        <p style="margin: 5px 0;"><strong>Método de Pagamento:</strong> ${data.payment_method === 'wire' ? 'Transferência Bancária' : data.payment_method}</p>
+        <p style="margin: 5px 0;"><strong>Método de Pagamento:</strong> ${data.payment_method === 'wire' ? 'Transferência Bancária' : escapeHtml(data.payment_method)}</p>
         
         ${data.billing_address ? `
         <h3 style="color: #0A1128; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px;">Dados de Faturação</h3>
@@ -143,7 +143,7 @@ export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') 
         </div>
         <div style="padding: 40px; color: #333; line-height: 1.6;">
             <p>${content.greeting} <strong>${escapeHtml(data.guest_name)}</strong>,</p>
-            <p>${content.reception} <strong style="color: #B08D4A;">${data.property_title}</strong>.</p>
+            <p>${content.reception} <strong style="color: #B08D4A;">${escapeHtml(data.property_title)}</strong>.</p>
             
             <div style="border: 1px solid #B08D4A; border-radius: 16px; padding: 30px; margin: 30px 0; background-color: #fdfaf5;">
                 <h3 style="margin-top: 0; color: #0A1128; font-size: 18px;">${content.nextStepsTitle}</h3>
@@ -152,19 +152,19 @@ export const bookingGuestConfirmationEmail = (data: any, locale: string = 'pt') 
                     <p style="margin: 5px 0; font-size: 14px;"><strong>IBAN:</strong> PT50 0007 0000 0849 4629 1132 3</p>
                     <p style="margin: 5px 0; font-size: 14px;"><strong>SWIFT/BIC:</strong> BESC PTPL</p>
                     <p style="margin: 5px 0; font-size: 14px;"><strong>${isEn ? 'Amount' : 'Valor'}:</strong> €${data.total_price}</p>
-                    <p style="margin: 5px 0; font-size: 14px;"><strong>${isEn ? 'Reference' : 'Referência'}:</strong> ${data.reference_id}</p>
+                    <p style="margin: 5px 0; font-size: 14px;"><strong>${isEn ? 'Reference' : 'Referência'}:</strong> ${escapeHtml(data.reference_id)}</p>
                 </div>
                 <p style="font-size: 12px; color: #8a6d3b; margin-top: 10px;">${content.proofText} <a href="mailto:joao@lovelymemories.pt" style="color: #B08D4A; text-decoration: none; font-weight: bold;">joao@lovelymemories.pt</a></p>
             </div>
 
             <h3 style="color: #0A1128; margin-bottom: 15px;">${content.stayDetails}</h3>
             <table style="width: 100%; font-size: 14px;">
-                <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${data.property_title}</td></tr>
-                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
-                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${escapeHtml(data.property_title)}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${escapeHtml(data.check_in)}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${escapeHtml(data.check_out)}</td></tr>
                 <tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${data.adults} ${content.adults}, ${data.children} ${content.children}, ${data.infants} ${content.infants}</td></tr>
-                ${data.extra_guests && data.extra_guests.length > 0 ? `<tr><td style="padding: 5px 0; color: #999;">${content.extraGuests}:</td><td style="padding: 5px 0;">${data.extra_guests.join(', ')}</td></tr>` : ''}
-                ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
+                ${data.extra_guests && data.extra_guests.length > 0 ? `<tr><td style="padding: 5px 0; color: #999;">${content.extraGuests}:</td><td style="padding: 5px 0;">${escapeHtml(data.extra_guests.join(', '))}</td></tr>` : ''}
+                ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${escapeHtml(data.arrival_time)}</td></tr>` : ''}
             </table>
             
             <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
@@ -184,7 +184,7 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
         title: isEn ? "Payment Confirmed!" : "Pagamento Confirmado!",
         greeting: isEn ? "Hello" : "Olá",
         confirmation: isEn ? `We confirm that your payment of <strong style="color: #B08D4A;">€${data.total_price}</strong> has been successfully processed.` : `Confirmamos que o seu pagamento de <strong style="color: #B08D4A;">€${data.total_price}</strong> foi processado com sucesso.`,
-        guaranteed: isEn ? `Your reservation for the property <strong style="color: #B08D4A;">${data.property_title}</strong> is now guaranteed and confirmed! ✨` : `A sua reserva para a propriedade <strong style="color: #B08D4A;">${data.property_title}</strong> está agora garantida e confirmada! ✨`,
+        guaranteed: isEn ? `Your reservation for the property <strong style="color: #B08D4A;">${escapeHtml(data.property_title)}</strong> is now guaranteed and confirmed! ✨` : `A sua reserva para a propriedade <strong style="color: #B08D4A;">${escapeHtml(data.property_title)}</strong> está agora garantida e confirmada! ✨`,
         reference: isEn ? "Booking Reference" : "Referência da Reserva",
         stayDetails: isEn ? "Stay Details" : "Detalhes da Estada",
         property: isEn ? "Property" : "Imóvel",
@@ -210,17 +210,17 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
             <p>${content.guaranteed}</p>
             
             <div style="border: 1px solid #2d8653; border-radius: 16px; padding: 25px; margin: 30px 0; background-color: #f6fdf9; text-align: center;">
-                <p style="margin: 0; color: #2d8653; font-weight: bold; font-size: 16px;">${content.reference}: ${data.reference_id}</p>
+                <p style="margin: 0; color: #2d8653; font-weight: bold; font-size: 16px;">${content.reference}: ${escapeHtml(data.reference_id)}</p>
             </div>
 
             <h3 style="color: #0A1128; margin-bottom: 15px;">${content.stayDetails}</h3>
             <table style="width: 100%; font-size: 14px;">
-                <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${data.property_title}</td></tr>
-                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
-                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${escapeHtml(data.property_title)}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${escapeHtml(data.check_in)}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${escapeHtml(data.check_out)}</td></tr>
                 <tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${data.adults} ${content.adults}, ${data.children} ${content.children}, ${data.infants} ${content.infants}</td></tr>
-                ${data.extra_guests && data.extra_guests.length > 0 ? `<tr><td style="padding: 5px 0; color: #999;">${content.extraGuests}:</td><td style="padding: 5px 0;">${data.extra_guests.join(', ')}</td></tr>` : ''}
-                ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${data.arrival_time}</td></tr>` : ''}
+                ${data.extra_guests && data.extra_guests.length > 0 ? `<tr><td style="padding: 5px 0; color: #999;">${content.extraGuests}:</td><td style="padding: 5px 0;">${escapeHtml(data.extra_guests.join(', '))}</td></tr>` : ''}
+                ${data.arrival_time ? `<tr><td style="padding: 5px 0; color: #999;">${content.arrival}:</td><td style="padding: 5px 0;">${escapeHtml(data.arrival_time)}</td></tr>` : ''}
             </table>
 
             <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
@@ -462,8 +462,8 @@ export const bookingGuestCancellationEmail =(data: any, locale: string = 'pt') =
             <h3 style="color: #0A1128; margin-bottom: 15px;">${content.stayDetails}</h3>
             <table style="width: 100%; font-size: 14px;">
                 <tr><td style="padding: 5px 0; color: #999;">${content.property}:</td><td style="padding: 5px 0; font-weight: bold;">${escapeHtml(data.property_title)}</td></tr>
-                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${data.check_in}</td></tr>
-                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${data.check_out}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-in:</td><td style="padding: 5px 0;">${escapeHtml(data.check_in)}</td></tr>
+                <tr><td style="padding: 5px 0; color: #999;">Check-out:</td><td style="padding: 5px 0;">${escapeHtml(data.check_out)}</td></tr>
                 ${guestLine ? `<tr><td style="padding: 5px 0; color: #999;">${content.guests}:</td><td style="padding: 5px 0;">${guestLine}</td></tr>` : ''}
             </table>
 

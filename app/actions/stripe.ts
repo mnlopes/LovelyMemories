@@ -247,7 +247,7 @@ export async function confirmStripePaymentIntent(paymentIntentId: string) {
     }
 
     // 2. Reconstruct ReservationData (matches webhook logic)
-    const { finalizeBooking } = await import("@/app/actions/reservation");
+    const { finalizeBooking } = await import("@/lib/booking-finalize");
     
     const resData: ReservationData = {
       fullName: metadata.fn,

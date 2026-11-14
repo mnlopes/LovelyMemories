@@ -1485,6 +1485,7 @@
         "errorAlreadyBooked": "Infelizmente, estas datas acabaram de ser reservadas. Por favor, escolha outro período.",
         "errorGeneric": "Ocorreu um erro ao processar a sua reserva. Por favor, tente novamente.",
         "errorServer": "Erro de ligação ao servidor. Verifique a sua internet.",
+        "errorTooManyBookings": "Demasiadas reservas por transferência neste momento. Pague com cartão ou contacte-nos através de info@lovelymemories.pt.",
         "step1": {
             "title": "Informação de Contacto",
             "subtitle": "Indique os seus dados para iniciar a reserva.",

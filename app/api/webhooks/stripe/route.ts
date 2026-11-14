@@ -1,7 +1,8 @@
 
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { finalizeBooking, ReservationData } from '@/app/actions/reservation';
+import { finalizeBooking } from '@/lib/booking-finalize';
+import type { ReservationData } from '@/app/actions/reservation';
 import { getPropertyBySlug } from '@/lib/services';
 import Stripe from 'stripe';
 

@@ -1494,6 +1494,7 @@
         "errorAlreadyBooked": "Unfortunately, these dates have just been booked. Please choose another period.",
         "errorGeneric": "An error occurred while processing your booking. Please try again.",
         "errorServer": "Server connection error. Please check your internet.",
+        "errorTooManyBookings": "Too many bookings by bank transfer right now. Please pay by card, or contact us at info@lovelymemories.pt.",
         "step1": {
             "title": "Contact Information",
             "subtitle": "Provide your details to start the booking.",

@@ -36,6 +36,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | L-1 — email errado para pagamentos com Link | ✅ **Corrigido** a 14/11: o email ao hóspede escolhe o modelo "pago" para qualquer método que não seja `wire` (`card`, `link`, e `stripe` quando a Stripe não diz o tipo) | A linha real de `reservation.ts` avaliada para os 4 métodos, sem base de dados nem emails: antes só `card` recebia "pago", agora `card`/`link`/`stripe` recebem "pago" e `wire` os dados da transferência. Não foi feito um pagamento real (produção) |
 | L-5 — limpeza do iCal apaga bloqueios de um feed falhado | ✅ **Corrigido** a 14/11: só limpa quando todos os links foram lidos | Código revisto e testado em produção |
 | S-14 — qualquer pessoa escreve em `visitor_logs` | ✅ **Corrigido** a 14/11 (migração `20261114180000`): política pública de INSERT apagada e INSERT revogado a `anon`/`authenticated` | No dashboard: `anon`/`authenticated` sem INSERT, `service_role` com INSERT, só a política de leitura dos admins. Com a chave pública, a inserção dá `42501 permission denied` (antes passava). O proxy continua a gravar visitas (visita real às 23:33). `check:exposure` sem falhas |
+| S-4 — reserva pública abusável | ✅ **Corrigido** a 14/11: `finalizeBooking` deixou de ser público (`lib/booking-finalize.ts`); campos escapados nos emails; referência só no formato do site; limites de 3/email/dia, 5/hora e 15/dia no site para transferências | Manifesto do build sem `finalizeBooking`; templates com HTML injetado: 0 tags passam (antes 3–6); referência e limites testados localmente. Sem captcha; expiração das transferências fica no L-8 |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -94,7 +95,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - ~~`finalizeBooking` e `logActivity` estão exportadas sem verificação; hoje nenhum componente as importa, mas isso é frágil.~~ **Corrigido a 14/11:** estava errado. Quando um componente cliente importa **uma** função de um ficheiro `'use server'`, o Next expõe **todas** as funções desse ficheiro. Confirmado no manifesto do build (`.next/server/server-reference-manifest.json`):
   - `logActivity` estava exposta, porque `audit.ts` é importado por `ActivityTimeline` e `NotificationsPopover`. Qualquer pessoa podia escrever no registo de atividade com a service role, com qualquer autor, detalhe e gravidade, incluindo alertas `CRITICAL` nas notificações do admin. Passou para `lib/audit-log.ts`.
   - `syncOverduePropertiesICal`, a ronda do robô, estava exposta, porque `ical.ts` é importado pelas páginas de propriedades e de settings. Qualquer pessoa podia disparar rondas de sincronização. O motor passou para `lib/ical-sync.ts`, e o robô só é acessível pelo cron, que exige `CRON_SECRET`.
-  - `finalizeBooking` faz parte do fluxo público de reserva e fica para S-4.
+  - `finalizeBooking` também estava exposta (o checkout importa `reservation.ts`): ver S-4, corrigido a 14/11.
 - **Correção aplicada:** `requireRole()` (`lib/auth/require-role.ts`) no topo de cada ação, e as funções internas em módulos `server-only`. Regra nova no CLAUDE.md.
 
 **S-4. Reserva pública abusável ✅ (parcialmente)**
@@ -107,6 +108,13 @@ Confirmei que estas não têm nenhuma verificação no código:
   - Limitar pedidos por IP e por email.
   - Expirar reservas por transferência não pagas.
   - Opcionalmente, um captcha.
+- **Mais grave, encontrado a 14/11:** `finalizeBooking` era um endpoint público, porque o checkout importa `reservation.ts` e o Next expõe todas as funções do ficheiro (confirmado no manifesto do build). Grava com a service role e confia em tudo o que recebe: qualquer pessoa podia criar uma reserva **"confirmada" sem pagar**, sem verificar disponibilidade, com qualquer preço, e o servidor enviava o email de "pagamento confirmado".
+- **Estado:** ✅ corrigido a 14/11, menos o captcha e a expiração das transferências (L-8):
+  - `finalizeBooking` passou para `lib/booking-finalize.ts` (`server-only`). No manifesto, `reservation.ts` só expõe `processReservation` e `deleteReservation`.
+  - Todos os campos vindos do hóspede são escapados nos emails de reserva (referência, datas, hóspedes adicionais, hora de chegada, método de pagamento, nome da casa), e também `plan`/`numProperties` no email de leads. Testado com HTML injetado: antes passavam 3 a 6 tags por email, agora 0.
+  - Referência: em vez de a gerar sempre no servidor, aceita-se o código do checkout só se tiver o formato exato do site (6 caracteres do alfabeto de `lib/booking-session.ts`), porque o checkout mostra `LM-<código>` nos dados da transferência **antes** de o hóspede confirmar. Qualquer outro valor é substituído por um código do servidor (`lib/wire-booking-guards.ts`).
+  - Limites, contados na tabela `reservations` (valem entre instâncias da Vercel): 3 transferências por email em 24 h, 5 por hora e 15 por dia no site todo. O limite por IP ficou de fora: precisava de uma coluna nova, e o limite do site todo trava melhor um script que mude de IP. Até 14/11 nunca tinha havido uma reserva por transferência (as 6 do site foram cartão/Link), por isso os limites não tocam em hóspedes reais. Ao atingir um limite, o hóspede vê `Checkout.errorTooManyBookings` (pagar com cartão ou contactar), e o cartão continua a funcionar.
+  - Não testado com uma reserva real (produção: gravaria e enviaria emails). Testados localmente os templates, a referência e os limites (com uma base de dados simulada e uma leitura real só de `SELECT`).
 
 ### Médio
 - **S-5. Políticas da BD mais largas do que a app:**
@@ -122,7 +130,7 @@ Confirmei que estas não têm nenhuma verificação no código:
   - **Estado:** ✅ corrigido a 14/11, migração `20261114180000_visitor_logs_no_public_insert.sql` aplicada no SQL Editor. A inserção com a chave pública dá agora `42501 permission denied`, e o proxy continua a gravar visitas.
 
 ### Baixo
-- **S-8.** A referência Stripe usa só os primeiros 8 caracteres do ID do PaymentIntent. Uma colisão descartaria um pagamento em silêncio.
+- **S-8.** A referência Stripe usa só os primeiros 8 caracteres do ID do PaymentIntent. Uma colisão descartaria um pagamento em silêncio. Nota de 14/11: os 8 caracteres têm pouca variação na prática (as referências reais são todas `LM-3U????ED`), por isso o risco é maior do que parece.
 - **S-9.** Qualquer pessoa pode libertar o bloqueio de 15 minutos de outra (`locked_dates.session_id` é público).
 - **S-10.** Não há limite de tentativas de login nem MFA.
 - **S-11.** O limite do formulário de contacto depende só de um cookie, e o log guarda o pedido completo, com email e telefone.
@@ -276,7 +284,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 2. S-2: colunas privadas de `properties`, e depois o cliente regenera os links de exportação no Airbnb.
 3. S-3: `requireRole()` em todas as ações do admin. ✅ Feito a 14/11.
 4. L-1: email certo para pagamentos com Link. ✅ Feito a 14/11.
-5. S-4: escapar os templates de reserva, gerar a referência no servidor e limitar pedidos.
+5. S-4: escapar os templates de reserva, gerar a referência no servidor e limitar pedidos. ✅ Feito a 14/11 (e `finalizeBooking` deixou de ser público). Sem captcha; expiração fica no L-8.
 6. SEO-4: definir `NEXT_PUBLIC_GA_ID` na Vercel (o cliente fornece o ID).
 
 **Onda 1 — integridade das reservas**

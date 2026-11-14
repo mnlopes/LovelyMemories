@@ -607,6 +607,7 @@
         }
     },
     "Checkout": {
+        "errorTooManyBookings": "יש כרגע יותר מדי הזמנות בהעברה בנקאית. אפשר לשלם בכרטיס אשראי או לפנות אלינו בכתובת info@lovelymemories.pt.",
         "header": {
             "back": "חזרה",
             "cancel": "ביטול",
