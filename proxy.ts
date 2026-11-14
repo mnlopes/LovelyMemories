@@ -39,21 +39,22 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
         return NextResponse.next();
     }
 
-    // App Router prefetches send `Next-Router-Prefetch: 1` (the old `purpose` /
-    // `x-middleware-prefetch` checks never matched them). A prefetch is not a visit: it still
-    // goes through next-intl, but skips the session refresh, the maintenance check and the log.
-    const isPrefetch = request.headers.get('next-router-prefetch') === '1'
-        || request.headers.get('purpose') === 'prefetch'
-        || (request.headers.get('sec-purpose') || '').includes('prefetch')
-        || request.headers.get('x-middleware-prefetch') === '1';
+    // Client-side RSC fetches — next/link prefetches AND in-app navigations — carry `next-url`.
+    // Next strips the prefetch markers (`Next-Router-Prefetch`, `RSC`, `?_rsc`) before this proxy
+    // runs, so the two cannot be told apart here (verified 2026-11-14). One homepage view fired
+    // 14 of these prefetches, and each was logged as a "visit" plus 1–2 Supabase requests.
+    // Browser-level prefetches (<link rel=prefetch>, speculation rules) say so in Sec-Purpose.
+    // Neither is a page view: they still go through next-intl (it sets the locale header the
+    // server components read) and keep the session fresh, but skip the role lookup, the
+    // maintenance check and visitor_logs. visitor_logs therefore counts full page loads.
+    const isClientFetch = request.headers.has('next-url');
+    const isBrowserPrefetch = request.headers.get('purpose') === 'prefetch'
+        || (request.headers.get('sec-purpose') || '').includes('prefetch');
+    const isPageView = !isClientFetch && !isBrowserPrefetch;
 
     // 2. Setup Response with next-intl (Early creation to attach cookies)
     let response = createMiddleware(routing)(request);
     response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
-
-    if (isPrefetch) {
-        return response;
-    }
 
     // 3. Setup Auth & Sync Cookies
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -79,6 +80,14 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
                 },
             });
 
+            if (!isPageView) {
+                // Only keep the session cookie fresh (no network call unless the access token
+                // expired). Server components can't write cookies, so the refresh must happen
+                // here or a long client-side session would reuse a spent refresh token.
+                await supabase.auth.getSession();
+                return response;
+            }
+
             // This refreshed the token if necessary
             const { data: { user } } = await supabase.auth.getUser();
 
@@ -96,6 +105,11 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
         }
     } catch (authErr) {
         console.error("[Proxy] Auth Error:", authErr);
+    }
+
+    // Prefetches and in-app navigations: no maintenance check, no visitor log (see above).
+    if (!isPageView) {
+        return response;
     }
 
     // 4. Maintenance Check & Logging
