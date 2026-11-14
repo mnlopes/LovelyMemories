@@ -38,6 +38,10 @@ One-off maintenance/debug scripts live in `scripts/` and are run with `npx tsx s
 
 **iCal sync is two-way:** imports external calendars (Airbnb/Booking) on the cron with a hand-written parser (`parseIcalManual` in `app/actions/ical.ts`; `node-ical` was removed because it crashed under Turbopack), writing blocked dates; exports each property's calendar via `ical-generator` at `/api/ical/[propertyId]`. Sync failures must surface in the admin backoffice (admin/imports).
 
+**iCal import links are secrets** (the `?s=`/`?t=` token opens the channel's calendar, reservation codes and guest phone digits included). They live in `property_ical_feeds` — RLS on, no policy and no grant for anon/authenticated, so only the service role reaches it — and are read only through `lib/ical-feeds.ts` (`server-only`). The full URL goes only to the fetcher; the backoffice gets `maskFeedUrl`, logs and errors get `feedLabel` (`lib/ical-feed-url.ts`). Never add them back to `properties`, never log them, never return them to the browser.
+
+**Database exposure check:** after any change to RLS policies, grants or columns, run `npm run check:exposure` (read-only, anon key only). It must report no FAIL. Server actions are public POST endpoints: start each privileged one with `requireRole()` from `lib/auth/require-role.ts`.
+
 ## Gotchas
 
 - **Legacy/experimental clutter — do not touch or take as reference:** `legacy-archive/`, `temp-app/`, `scratch/`, `concierge/` (root), `app/page-v1.tsx`, and the root-level `add_checkout_i18n*.js` / `tmp_get_*.js` / `replace.js` scripts.

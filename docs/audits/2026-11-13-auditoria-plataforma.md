@@ -26,6 +26,17 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 
 ---
 
+## Estado das correções (atualizado a 14/11/2026)
+
+| Achado | Estado | Como foi verificado |
+|---|---|---|
+| S-1 — tabela `profiles` pública | ✅ **Corrigido** a 13/11 (migração `20261113150000`) | Com a chave pública, leitura, alteração e apagamento são recusados; login de um proprietário testado em produção |
+| S-2 — links do Airbnb públicos | ✅ **Corrigido** a 14/11 (migrações `20261114100000` + `20261114100100`; tabela privada `property_ical_feeds`) | `npm run check:exposure` sem falhas; cron de produção a ler as 37 casas pela tabela nova, 0 erros. **Falta, do lado do cliente:** gerar links novos no Airbnb |
+| S-3 — ações sem permissões | 🟡 **Parcial**: `syncPropertyICal` e `syncAllPropertiesICal` já verificam a função de quem chama | Falta: `translateAllProperties`, `translatePropertyFields`, `translateText`, `scrapeAirbnbListing`, `flushGlobalCache`, `finishReservationEarly` |
+| L-5 — limpeza do iCal apaga bloqueios de um feed falhado | ✅ **Corrigido** a 14/11: só limpa quando todos os links foram lidos | Código revisto e testado em produção |
+
+Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
+
 ## Top 10 — o que corrigir primeiro
 
 | # | Problema | Área | Gravidade |
