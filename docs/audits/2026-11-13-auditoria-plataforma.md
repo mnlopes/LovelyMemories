@@ -35,6 +35,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | S-3 — ações sem permissões | ✅ **Corrigido** a 14/11. Todas as ações da lista verificam a função de quem chama; `scrapeAirbnbListing` só aceita links https do Airbnb. Também: `getPropertiesOptions`, `checkResendStatus` e `checkDatabaseStatus`. `logActivity` e o robô do iCal estavam **expostos** (ver S-3) e passaram para módulos `server-only` (`lib/audit-log.ts`, `lib/ical-sync.ts`) | Build local de produção, chamadas sem sessão: todas recusadas, sem chamadas à IA nem sincronizações. No manifesto do build, as 166 ações expostas foram revistas uma a uma. **Não testado localmente:** o caminho com sessão de admin (precisa de login) |
 | L-1 — email errado para pagamentos com Link | ✅ **Corrigido** a 14/11: o email ao hóspede escolhe o modelo "pago" para qualquer método que não seja `wire` (`card`, `link`, e `stripe` quando a Stripe não diz o tipo) | A linha real de `reservation.ts` avaliada para os 4 métodos, sem base de dados nem emails: antes só `card` recebia "pago", agora `card`/`link`/`stripe` recebem "pago" e `wire` os dados da transferência. Não foi feito um pagamento real (produção) |
 | L-5 — limpeza do iCal apaga bloqueios de um feed falhado | ✅ **Corrigido** a 14/11: só limpa quando todos os links foram lidos | Código revisto e testado em produção |
+| S-14 — qualquer pessoa escreve em `visitor_logs` | ✅ **Corrigido** a 14/11 (migração `20261114180000`): política pública de INSERT apagada e INSERT revogado a `anon`/`authenticated` | No dashboard: `anon`/`authenticated` sem INSERT, `service_role` com INSERT, só a política de leitura dos admins. Com a chave pública, a inserção dá `42501 permission denied` (antes passava). O proxy continua a gravar visitas (visita real às 23:33). `check:exposure` sem falhas |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -117,7 +118,8 @@ Confirmei que estas não têm nenhuma verificação no código:
   - A política `"Anyone can insert visitor logs"` (`20260205125000_visitor_analytics.sql`) dá `INSERT` `to public` com `with check (true)`. Com a chave pública dá para inserir visitas falsas, estragar as estatísticas e fazer crescer a base de dados, que no plano Free tem 500 MB.
   - O proxy escreve com a service role, por isso a política não faz falta.
   - **Correção:** uma migração que apaga a política e revoga `INSERT` a `anon`/`authenticated`.
-  - Ainda por confirmar no dashboard: o `check:exposure` só testa leituras.
+  - **Confirmado em produção a 14/11:** com a chave pública, uma inserção feita para falhar passou pela política e só parou na regra NOT NULL de `path` (nada foi gravado). Nos últimos 30 dias não há sinais de visitas falsas: todas têm os campos que o proxy preenche, e os outros hosts são `localhost` de desenvolvimento.
+  - **Estado:** ✅ corrigido a 14/11, migração `20261114180000_visitor_logs_no_public_insert.sql` aplicada no SQL Editor. A inserção com a chave pública dá agora `42501 permission denied`, e o proxy continua a gravar visitas.
 
 ### Baixo
 - **S-8.** A referência Stripe usa só os primeiros 8 caracteres do ID do PaymentIntent. Uma colisão descartaria um pagamento em silêncio.
