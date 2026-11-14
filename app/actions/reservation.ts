@@ -383,8 +383,12 @@ export async function finalizeBooking({
             replyTo: data.email
         });
 
-        // Determine which email to send to Guest
-        const guestHtml = data.paymentMethod === 'card' 
+        // Determine which email to send to Guest.
+        // Only wire transfers are unpaid here (processReservation accepts nothing else).
+        // Stripe payments arrive as the Stripe type ('card', 'link', or 'stripe' when the
+        // lookup fails): all of them are already paid and must get the "paid" email,
+        // never the bank-transfer instructions.
+        const guestHtml = data.paymentMethod !== 'wire'
             ? bookingGuestPaidEmail(emailData, data.locale) 
             : bookingGuestConfirmationEmail(emailData, data.locale);
 

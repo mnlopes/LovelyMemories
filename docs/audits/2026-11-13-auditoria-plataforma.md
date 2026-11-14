@@ -33,6 +33,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | S-1 — tabela `profiles` pública | ✅ **Corrigido** a 13/11 (migração `20261113150000`) | Com a chave pública, leitura, alteração e apagamento são recusados; login de um proprietário testado em produção |
 | S-2 — links do Airbnb públicos | ✅ **Corrigido** a 14/11 (migrações `20261114100000` + `20261114100100`; tabela privada `property_ical_feeds`) | `npm run check:exposure` sem falhas; cron de produção a ler as 37 casas pela tabela nova, 0 erros. **Falta, do lado do cliente:** gerar links novos no Airbnb |
 | S-3 — ações sem permissões | ✅ **Corrigido** a 14/11. Todas as ações da lista verificam a função de quem chama; `scrapeAirbnbListing` só aceita links https do Airbnb. Também: `getPropertiesOptions`, `checkResendStatus` e `checkDatabaseStatus`. `logActivity` e o robô do iCal estavam **expostos** (ver S-3) e passaram para módulos `server-only` (`lib/audit-log.ts`, `lib/ical-sync.ts`) | Build local de produção, chamadas sem sessão: todas recusadas, sem chamadas à IA nem sincronizações. No manifesto do build, as 166 ações expostas foram revistas uma a uma. **Não testado localmente:** o caminho com sessão de admin (precisa de login) |
+| L-1 — email errado para pagamentos com Link | ✅ **Corrigido** a 14/11: o email ao hóspede escolhe o modelo "pago" para qualquer método que não seja `wire` (`card`, `link`, e `stripe` quando a Stripe não diz o tipo) | A linha real de `reservation.ts` avaliada para os 4 métodos, sem base de dados nem emails: antes só `card` recebia "pago", agora `card`/`link`/`stripe` recebem "pago" e `wire` os dados da transferência. Não foi feito um pagamento real (produção) |
 | L-5 — limpeza do iCal apaga bloqueios de um feed falhado | ✅ **Corrigido** a 14/11: só limpa quando todos os links foram lidos | Código revisto e testado em produção |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
@@ -143,6 +144,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **Onde:** `app/actions/reservation.ts:387-389` envia o email de "pago" só quando `paymentMethod === 'card'`. Um pagamento com Link fica guardado como `'link'`.
 - **Em produção:** há 2 reservas pagas com Link. A de **12/10/2026** está confirmada, e esse hóspede recebeu o email com os dados para transferência depois de já ter pago.
 - **Correção:** enviar o email de "pago" sempre que o método não for `'wire'`.
+- **Estado:** ✅ corrigido a 14/11 em `reservation.ts` (`paymentMethod !== 'wire'`). Também cobre o caso `stripe`, que os dois caminhos da Stripe usam quando não conseguem ler o tipo de pagamento.
 
 **L-2. Valor cobrado diferente do mostrado**
 - **Onde:** `checkout/page.tsx:586` só cria o PaymentIntent uma vez, e o `clientSecret` nunca é reposto.
@@ -271,7 +273,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 1. S-1: política da tabela `profiles` (migração SQL, aplicada à mão no dashboard da Supabase, verificada a seguir com a chave pública).
 2. S-2: colunas privadas de `properties`, e depois o cliente regenera os links de exportação no Airbnb.
 3. S-3: `requireRole()` em todas as ações do admin. ✅ Feito a 14/11.
-4. L-1: email certo para pagamentos com Link.
+4. L-1: email certo para pagamentos com Link. ✅ Feito a 14/11.
 5. S-4: escapar os templates de reserva, gerar a referência no servidor e limitar pedidos.
 6. SEO-4: definir `NEXT_PUBLIC_GA_ID` na Vercel (o cliente fornece o ID).
 
