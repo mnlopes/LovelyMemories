@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { Faq, CmsPageSection } from "@/lib/types";
 import { checkPermission } from "./permissions";
+import { sanitizeBlogHtml } from "@/lib/sanitize-blog-html";
 
 async function getSupabase() {
     const cookieStore = await cookies();
@@ -203,6 +204,8 @@ export async function upsertBlogPost(data: Record<string, unknown>) {
         .from('blog_posts')
         .upsert({
             ...data,
+            // S-6: stored HTML is shown to everyone, admins included; never store it raw.
+            ...(typeof data.content === 'string' ? { content: sanitizeBlogHtml(data.content) } : {}),
             updated_at: new Date().toISOString(),
         })
         .select()
@@ -231,7 +234,9 @@ export async function getBlogPosts(locale?: string) {
         console.error("Error fetching blog posts:", error);
         return [];
     }
-    return data || [];
+    // S-6: the backoffice editor puts this into innerHTML, where <img onerror=...> runs. Rows
+    // saved before sanitize-on-save existed are cleaned here too.
+    return (data || []).map((post) => ({ ...post, content: sanitizeBlogHtml(post.content) }));
 }
 
 export async function deleteBlogPost(id: string) {

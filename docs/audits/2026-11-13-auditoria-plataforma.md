@@ -40,6 +40,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | L-2 — valor cobrado diferente do mostrado | ✅ **Corrigido** a 15/11: o checkout cria um PaymentIntent novo sempre que o cupão ou os dados mudam, e nunca mostra um antigo | Testado no checkout local com as chaves de **teste** da Stripe (sem pagar, sem reservas): Cartão no passo 3 criou o PaymentIntent 1 (email A); voltar ao passo 3 sem mudanças não criou outro; mudar o email no passo 1 e voltar criou o PaymentIntent 2 com o email B, e é esse que o formulário usa. Bloqueio de 15 min em datas de 2027 libertado no fim; 0 reservas criadas. `tsc`, build, lint igual |
 | L-3 — reserva dupla | ✅ **Corrigido** a 15/11: verificação final antes de gravar; pago em datas ocupadas fica "Em revisão" com alerta à equipa; regra `EXCLUDE` `reservations_no_overlap` aplicada (migração `20261115090000`, depois do deploy do código) | Regra confirmada no SQL Editor; site, leituras de reservas e `check:exposure` OK depois da regra. 10 cenários simulados + leituras reais; `tsc`, build, lint igual. Nenhuma reserva criada |
 | L-4 — dados perdidos nos pagamentos com cartão | ✅ **Corrigido** a 15/11: telefone com indicativo e nomes dos outros hóspedes passam pela metadata da Stripe | PaymentIntent de teste com `+44 …` e o nome do 2.º hóspede; pack/unpack testado (vazios, 20 máx., limite de 500 caracteres, dados estragados); `tsc`, build, lint igual. Nenhuma reserva criada |
+| S-6 — XSS no blog | ✅ **Corrigido** a 15/11: HTML dos posts limpo ao gravar, ao carregar para o editor e ao mostrar (`lib/sanitize-blog-html.ts`) | Os 4 posts reais renderizados antes/depois: texto idêntico, mesmas tags/classes/estilos/links/SVG; 14 ataques conhecidos neutralizados; post aberto no browser local; `tsc`, build, lint igual; 0 vulnerabilidades nas dependências de produção |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -124,6 +125,7 @@ Confirmei que estas não têm nenhuma verificação no código:
   - Os editores têm `FOR ALL` em `reservations` e nos posts do blog e do Instagram.
   - Qualquer utilizador autenticado pode alterar `concierge_services`.
 - **S-6. XSS no blog:** `blog/[slug]/page.tsx:141` faz `parse(post.content)` sem sanitização, e as tags `<script>` são renderizadas no servidor. Um editor pode roubar a sessão de um admin. **Correção:** DOMPurify / sanitize-html.
+  - **Estado:** ✅ corrigido a 15/11. Havia dois sítios: a página pública (`parse(post.content)`) e o editor do backoffice (`innerHTML = post.content`, onde um `<img onerror>` corre ao abrir o post). `lib/sanitize-blog-html.ts` (`sanitize-html` 2.18.1, versão fixa) limpa o HTML ao gravar (`upsertBlogPost`), ao carregar para o editor (`getBlogPosts`) e ao mostrar. Mantém o que dá aspeto (classes, estilos, `data-*`, ícones SVG) e retira o que executa (`<script>`, `<style>`, iframes, formulários, `on*`, links `javascript:`/`data:`). Os 4 posts publicados ficam com o mesmo texto e a mesma estrutura (só sai o `contenteditable` colado de outro editor, que deixava editar o texto na página).
 - **S-7. Links de convite:** valem 30 dias e nunca são revogados depois de definida a password (`app/actions/auth.ts:159-245`).
 - **S-14. Qualquer pessoa pode escrever em `visitor_logs`** (encontrado a 14/11):
   - A política `"Anyone can insert visitor logs"` (`20260205125000_visitor_analytics.sql`) dá `INSERT` `to public` com `with check (true)`. Com a chave pública dá para inserir visitas falsas, estragar as estatísticas e fazer crescer a base de dados, que no plano Free tem 500 MB.
@@ -186,6 +188,7 @@ Confirmei que estas não têm nenhuma verificação no código:
   - a receita é bruta, com taxa turística e extras incluídos.
 - **L-7.** Na exportação mensal do proprietário (`owner-export.ts`), as reservas canceladas contam, e uma estadia que atravessa dois meses aparece inteira nos dois.
 - **L-8.** As reservas por transferência ficam `pending` para sempre, a bloquear datas.
+  - **Decisão (15/11):** fica como está, por decisão do cliente. Não há prazo nem expiração automática; as transferências pendentes continuam a ser aprovadas ou rejeitadas à mão no backoffice. (Até 15/11 nunca houve uma reserva por transferência; o limite do S-4 trava o volume de reservas falsas.)
 - **L-9.** A taxa turística é cobrada a crianças dos 2 aos 16 anos. É preciso confirmar com o regulamento municipal, que normalmente isenta as crianças.
 - **L-10.** É possível passar uma reserva de "cancelada" para "confirmada" sem verificar a disponibilidade. ✅ Corrigido a 15/11 com o L-3 (o backoffice recusa reativar por cima de datas ocupadas, e a regra da BD também).
 
@@ -302,8 +305,8 @@ Confirmei que estas não têm nenhuma verificação no código:
 - L-2: PaymentIntent desatualizado.
 - L-3: verificar de novo no fim e restrição na BD.
 - L-4: dados perdidos nos pagamentos com cartão.
-- L-8: expirar transferências não pagas.
-- S-6: sanitizar o blog.
+- ~~L-8: expirar transferências não pagas.~~ Fica como está (decisão do cliente, 15/11).
+- S-6: sanitizar o blog. ✅ Feito a 15/11.
 - S-7: revogar convites.
 - L-6 e L-7: números dos proprietários.
 

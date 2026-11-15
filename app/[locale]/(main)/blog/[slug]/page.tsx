@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import parse from "html-react-parser";
+import { sanitizeBlogHtml } from "@/lib/sanitize-blog-html";
 import { Calendar, ArrowLeft, User } from "lucide-react";
 import Link from "next/link";
 import { supabase as anonSupabase } from "@/lib/supabase";
@@ -138,7 +139,8 @@ export default async function BlogPostPage({
 
                     {/* RICH TEXT CONTENT */}
                     <div className="blog-content">
-                        {parse(post.content || "")}
+                        {/* S-6: never render stored HTML as-is (lib/sanitize-blog-html.ts). */}
+                        {parse(sanitizeBlogHtml(post.content))}
                     </div>
 
                     {/* SHARED STYLE FOR RICH TEXT */}
