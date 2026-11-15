@@ -41,9 +41,11 @@ export default async function BlogPage({
         }
     );
 
+    // Only what the cards show (BlogContent / BlogPostCard). With select('*') the full HTML of
+    // every post travelled to the browser in the page data (~346 KB of a 378 KB page) unused.
     const { data: posts } = await supabase
         .from('blog_posts')
-        .select('*')
+        .select('id, title, excerpt, created_at, image_url, slug, author_name, author_image_url')
         .eq('locale', locale)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
