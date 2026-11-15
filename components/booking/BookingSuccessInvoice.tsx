@@ -32,6 +32,8 @@ interface BookingSuccessInvoiceProps {
     transferTotal: number;
     appliedCoupon?: any;
     couponDiscount: number;
+    /** L-3: paid, but the dates turned out to be taken; the team will contact the guest. */
+    inReview?: boolean;
 }
 
 export function BookingSuccessInvoice({
@@ -55,7 +57,8 @@ export function BookingSuccessInvoice({
     breakfastTotal,
     transferTotal,
     appliedCoupon,
-    couponDiscount
+    couponDiscount,
+    inReview = false
 }: BookingSuccessInvoiceProps) {
 
     const handleDownloadPDF = async () => {
@@ -134,8 +137,8 @@ export function BookingSuccessInvoice({
                     <div className="w-16 h-16 bg-[#2d8653] text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl shadow-[#2d8653]/20">
                         <CheckCircle2 className="w-8 h-8" />
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-bold font-montserrat text-navy-950 mb-1">{t('success.title')}</h1>
-                    <p className="text-navy-900/60 text-base">{t('success.subtitle', { email: formData.email })}</p>
+                    <h1 className="text-2xl md:text-3xl font-bold font-montserrat text-navy-950 mb-1">{inReview ? t('success.reviewTitle') : t('success.title')}</h1>
+                    <p className="text-navy-900/60 text-base">{inReview ? t('success.reviewSubtitle') : t('success.subtitle', { email: formData.email })}</p>
                 </div>
 
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">

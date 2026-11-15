@@ -52,7 +52,10 @@ export default function BookingConfirmationPage({ params }: { params: Promise<{ 
                     breakfastTotal: parseFloat(res.metadata.bt || '0'),
                     transferTotal: parseFloat(res.metadata.tt || '0'),
                     couponDiscount: parseFloat(res.metadata.cd || '0'),
-                    appliedCoupon: res.metadata.cc ? { code: res.metadata.cc } : undefined
+                    appliedCoupon: res.metadata.cc ? { code: res.metadata.cc } : undefined,
+                    // L-3: paid, but the dates turned out to be taken (only known once the
+                    // webhook has saved the reservation).
+                    inReview: !!res.inReview
                 });
             }
             setLoading(false);

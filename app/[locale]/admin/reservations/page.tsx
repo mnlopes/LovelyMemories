@@ -379,7 +379,9 @@ export default function AdminReservationsPage() {
                     const { data: { user } } = await supabase.auth.getUser();
                     if (!user) throw new Error("Não autenticado");
 
-                    await updateReservationStatus(id, newStatus);
+                    const result = await updateReservationStatus(id, newStatus);
+                    // Dates already taken (L-3 / L-10): show the action's own message.
+                    if ('error' in result) throw new Error(result.error);
                     toast.success(newStatus === 'confirmed' ? t('modals.successApprove') : t('modals.successReject'), { id: toastId });
                     setModalConfig(prev => ({ ...prev, isOpen: false }));
                     fetchData();
@@ -1003,7 +1005,7 @@ export default function AdminReservationsPage() {
                                                         </button>
                                                     )}
 
-                                                    {reservation.status === 'pending' && !reservation.is_manual_block && (
+                                                    {(reservation.status === 'pending' || reservation.status === 'needs_review') && !reservation.is_manual_block && (
                                                         <>
                                                             <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
                                                             <button
@@ -1105,7 +1107,7 @@ export default function AdminReservationsPage() {
                                     <History className="size-5" />{t('actions.viewHistory')}
                                 </button>
                             )}
-                            {reservation.status === 'pending' && !reservation.is_manual_block && (
+                            {(reservation.status === 'pending' || reservation.status === 'needs_review') && !reservation.is_manual_block && (
                                 <>
                                     <button onClick={() => handleStatusUpdate(reservation.id, 'confirmed')} className="w-full text-left px-4 py-3 text-sm font-medium text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl flex items-center gap-3">
                                         <Check className="size-5" />{t('actions.approve')}

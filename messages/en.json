@@ -176,6 +176,7 @@
         },
         "status": {
             "pending": "Pending",
+            "needs_review": "In review",
             "confirmed": "Confirmed",
             "cancelled": "Cancelled",
             "completed": "Completed",
@@ -1575,6 +1576,8 @@
         "success": {
             "title": "Booking Confirmed!",
             "subtitle": "You'll receive a confirmation email shortly.",
+            "reviewTitle": "Payment received",
+            "reviewSubtitle": "We are confirming the availability of these dates and our team will contact you shortly by email. Your payment is safe.",
             "refLabel": "Booking Reference",
             "downloadPdf": "Download Confirmation PDF",
             "emailInfo": "A copy of your invoice has been sent to your email.",

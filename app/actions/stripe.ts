@@ -339,13 +339,28 @@ export async function getPaymentIntentDetails(paymentIntentId: string) {
 
         const property = await getPropertyBySlug(paymentIntent.metadata.ps);
 
+        // L-3: was this paid booking saved for review (dates already taken)? Same reference
+        // as the webhook / confirmStripePaymentIntent. Unknown until the webhook has run.
+        let inReview = false;
+        try {
+            const { getSupabaseAdmin } = await import("@/lib/supabase");
+            const { REVIEW_STATUS } = await import("@/lib/booking-conflict");
+            const admin = await getSupabaseAdmin();
+            const ref = `LM-${paymentIntentId.split('_')[1].toUpperCase().substring(0, 8)}`;
+            const { data: row } = await admin.from('reservations').select('status').eq('reference_id', ref).maybeSingle();
+            inReview = row?.status === REVIEW_STATUS;
+        } catch (reviewErr) {
+            console.warn("Could not read the reservation status:", reviewErr);
+        }
+
         return {
             success: true,
             metadata: paymentIntent.metadata,
             amount: paymentIntent.amount,
             status: paymentIntent.status,
             paymentMethod: actualPaymentMethod,
-            property: property
+            property: property,
+            inReview
         };
     } catch(err: any) {
         return { success: false, error: err.message };

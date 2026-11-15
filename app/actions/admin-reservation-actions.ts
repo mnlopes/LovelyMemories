@@ -101,6 +101,22 @@ export async function updateReservationStatus(
         throw new Error("Reserva não encontrada.");
     }
 
+    // 2b. L-3 / L-10: confirming (a request or a paid booking "Em revisão") or reactivating a
+    // cancelled one must not land on dates that are already taken. Returned, not thrown:
+    // Next hides thrown server-action messages in production and the team must see why.
+    const occupiedMessage = (what: string) =>
+        `Estas datas já estão ocupadas (${what}). Resolva o conflito antes de confirmar: cancele a outra reserva ou o bloqueio, ou escolha outra casa.`;
+    if (newStatus !== 'cancelled' && current.status !== newStatus) {
+        const { findStayConflict } = await import('@/lib/booking-conflict');
+        const conflict = await findStayConflict(adminSupabase, current.property_id, current.check_in, current.check_out, id);
+        if (conflict) {
+            const what = conflict.kind === 'block'
+                ? `bloqueio ${conflict.checkIn} a ${conflict.checkOut}`
+                : `reserva ${conflict.label ?? ''} ${conflict.checkIn} a ${conflict.checkOut}`.replace(/\s+/g, ' ');
+            return { success: false as const, error: occupiedMessage(what) };
+        }
+    }
+
     // 3. Perform the update
     const { error: updateError } = await adminSupabase
         .from('reservations')
@@ -109,6 +125,10 @@ export async function updateReservationStatus(
 
     if (updateError) {
         console.error("Error updating reservation status:", updateError);
+        // Database rule reservations_no_overlap (another active reservation on these dates).
+        if (updateError.code === '23P01') {
+            return { success: false as const, error: occupiedMessage('outra reserva ativa') };
+        }
         throw new Error("Erro ao atualizar o estado da reserva.");
     }
 
@@ -137,7 +157,8 @@ export async function updateReservationStatus(
     // must never roll back the cancellation.
     if (
         newStatus === 'cancelled' &&
-        current.status === 'confirmed' &&
+        // needs_review (L-3) is a paid booking too: its guest must hear about the cancellation.
+        (current.status === 'confirmed' || current.status === 'needs_review') &&
         !current.is_manual_block &&
         !current.is_airbnb &&
         current.guest_email

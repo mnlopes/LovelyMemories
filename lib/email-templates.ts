@@ -233,6 +233,71 @@ export const bookingGuestPaidEmail = (data: any, locale: string = 'pt') => {
     `;
 };
 
+/**
+ * L-3: paid booking whose dates turned out to be taken (status needs_review). Sent to the
+ * team instead of the "new booking" email: same details, with the conflict on top.
+ */
+export const bookingReviewAdminEmail = (
+    data: Record<string, unknown>,
+    conflict: { kind: 'reservation' | 'block'; id: string; checkIn: string; checkOut: string; label: string | null },
+) => {
+    const what = conflict.kind === 'block' ? 'um bloqueio (Airbnb/Booking ou manual)' : 'outra reserva ativa';
+    const detail = conflict.id
+        ? `${escapeHtml(conflict.label || conflict.id)}: ${escapeHtml(conflict.checkIn)} a ${escapeHtml(conflict.checkOut)}`
+        : 'gravada ao mesmo tempo (regra da base de dados)';
+    return `
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto 16px auto; border: 2px solid #b91c1c; border-radius: 12px; padding: 20px; background: #fef2f2; color: #7f1d1d; line-height: 1.6;">
+    <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 16px;">⚠️ Reserva PAGA em datas já ocupadas</p>
+    <p style="margin: 0 0 8px 0;">O hóspede pagou, mas estas datas já tinham ${what}: <strong>${detail}</strong>.</p>
+    <p style="margin: 0 0 8px 0;">A reserva ficou no backoffice com o estado <strong>Em revisão</strong>, fora do calendário exportado. O hóspede recebeu um email a dizer que o pagamento chegou e que estamos a confirmar as datas.</p>
+    <p style="margin: 0;"><strong>A decidir pela equipa:</strong> outra casa, outras datas ou reembolso (no painel da Stripe). Depois, confirme ou cancele a reserva no backoffice.</p>
+</div>
+${bookingAdminEmail(data)}`;
+};
+
+/**
+ * L-3: guest email for a paid booking whose dates turned out to be taken. Says the payment
+ * arrived and the dates are being confirmed; never "booking confirmed".
+ */
+export const bookingGuestReviewEmail = (data: Record<string, unknown>, locale: string = 'pt') => {
+    const isEn = locale === 'en';
+    const c = {
+        title: isEn ? "Payment received" : "Pagamento recebido",
+        greeting: isEn ? "Hello" : "Olá",
+        received: isEn
+            ? `We have received your payment of <strong style="color: #B08D4A;">€${data.total_price}</strong> for <strong style="color: #B08D4A;">${escapeHtml(data.property_title)}</strong>.`
+            : `Recebemos o seu pagamento de <strong style="color: #B08D4A;">€${data.total_price}</strong> para <strong style="color: #B08D4A;">${escapeHtml(data.property_title)}</strong>.`,
+        checking: isEn
+            ? "We are confirming the availability of these dates and our team will contact you shortly by email. Your payment is safe."
+            : "Estamos a confirmar a disponibilidade destas datas e a nossa equipa vai contactá-lo em breve por email. O seu pagamento está seguro.",
+        reference: isEn ? "Reference" : "Referência",
+        dates: isEn ? "Dates" : "Datas",
+        questions: isEn ? "Questions? Write to" : "Dúvidas? Escreva para",
+        team: isEn ? "Lovely Memories Team" : "Equipa Lovely Memories",
+    };
+    return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+        <div style="background-color: #0A1128; padding: 40px; text-align: center;">
+            <h1 style="color: #B08D4A; margin: 0; font-size: 28px; letter-spacing: 2px;">LOVELY MEMORIES</h1>
+            <h2 style="color: #fff; font-weight: 300; margin-top: 10px; font-size: 18px;">${c.title}</h2>
+        </div>
+        <div style="padding: 40px; color: #333; line-height: 1.6;">
+            <p>${c.greeting} <strong>${escapeHtml(data.guest_name)}</strong>,</p>
+            <p>${c.received}</p>
+            <p>${c.checking}</p>
+            <div style="border: 1px solid #f0e6d2; border-radius: 16px; padding: 20px; margin: 30px 0; background-color: #fdfaf5;">
+                <p style="margin: 0 0 6px 0;"><strong>${c.reference}:</strong> ${escapeHtml(data.reference_id)}</p>
+                <p style="margin: 0;"><strong>${c.dates}:</strong> ${escapeHtml(data.check_in)} → ${escapeHtml(data.check_out)}</p>
+            </div>
+            <p>${c.questions} <a href="mailto:info@lovelymemories.pt" style="color: #B08D4A; font-weight: bold; text-decoration: none;">info@lovelymemories.pt</a>.</p>
+            <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
+                <strong>${c.team}</strong>
+            </p>
+        </div>
+    </div>
+    `;
+};
+
 export const passwordResetEmail = (data: { fullName?: string; link: string; email?: string }, locale: string = 'pt') => {
     const isEn = locale === 'en';
 

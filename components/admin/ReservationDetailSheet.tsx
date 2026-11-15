@@ -69,7 +69,12 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
 
         setIsUpdating(true);
         try {
-            await updateReservationStatus(reservation.id, newStatus);
+            const result = await updateReservationStatus(reservation.id, newStatus);
+            // Dates already taken (L-3 / L-10): show the action's own message.
+            if ('error' in result) {
+                toast.error(result.error);
+                return;
+            }
             toast.success(newStatus === 'confirmed' ? t('successApprove') : t('successReject'));
             if (onRefresh) onRefresh();
             onClose();
@@ -463,7 +468,7 @@ export function ReservationDetailSheet({ reservation, onClose, onRefresh }: Rese
 
                 {/* Footer Controls */}
                 <div className="p-6 border-t border-gray-100 dark:border-white/10 bg-white dark:bg-admin-dark-surface space-y-3">
-                    {reservation.status === 'pending' && !confirmingStatus && (
+                    {(reservation.status === 'pending' || reservation.status === 'needs_review') && !confirmingStatus && (
                         <div className="grid grid-cols-2 gap-3 mb-3">
                             <button
                                 onClick={() => handleStatusUpdate('confirmed')}

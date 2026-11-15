@@ -57,6 +57,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
     const [reservationRef, setReservationRef] = useState("");
+    // L-3: paid, but the dates turned out to be taken; the team will contact the guest.
+    const [inReview, setInReview] = useState(false);
     const [error, setError] = useState("");
     const [bookingData, setBookingData] = useState<BookingSessionData | null>(null);
     const [property, setProperty] = useState<any | null>(null);
@@ -124,6 +126,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
             if (result.success && 'ref' in result && result.ref) {
                 console.log("Stripe booking finalized successfully. Ref:", result.ref);
                 setReservationRef(result.ref);
+                setInReview('inReview' in result && !!result.inReview);
                 setIsFinished(true);
             } else {
                 console.error("Failed to finalize booking manually:", result.error);
@@ -784,6 +787,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                 transferTotal={transferTotal}
                 appliedCoupon={appliedCoupon}
                 couponDiscount={couponDiscount}
+                inReview={inReview}
             />
         );
     }

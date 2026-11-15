@@ -2,6 +2,7 @@ import 'server-only';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { getPropertyBySlug } from '@/lib/services';
 import type { ReservationData } from '@/app/actions/reservation';
+import { findStayConflict, REVIEW_STATUS, OVERLAP_ERROR_CODE, type StayConflict } from '@/lib/booking-conflict';
 
 // Lives here, not in app/actions/reservation.ts: every export of a "use server" file becomes a
 // public endpoint once a client component imports that file (the checkout imports
@@ -71,22 +72,66 @@ export async function finalizeBooking({
 
     const adminSupabase = await getSupabaseAdmin();
 
+    // The same booking, already saved by the other path (Stripe webhook + browser confirm).
+    // inReview tells the browser which success message to show.
+    const alreadySaved = async () => {
+        const { data: row } = await adminSupabase
+            .from('reservations')
+            .select('id, status')
+            .eq('reference_id', referenceId)
+            .maybeSingle();
+        return row ? { success: true, ref: referenceId, warning: "Reservation already exists.", inReview: row.status === REVIEW_STATUS } : null;
+    };
+
     // Prevent Duplicates from concurrent Webhooks & Client requests
-    const { data: existing } = await adminSupabase
-        .from('reservations')
-        .select('id')
-        .eq('reference_id', referenceId)
-        .single();
-    if (existing) {
+    const duplicate = await alreadySaved();
+    if (duplicate) {
         console.log(`Duplicate insertion caught for reference: ${referenceId}`);
-        return { success: true, ref: referenceId, warning: "Reservation already exists." };
+        return duplicate;
     }
 
-    const { data: insertedRes, error: dbError } = await adminSupabase
+    // L-3: last availability check right before saving (see lib/booking-conflict.ts).
+    // Wire transfers are not paid yet, so a conflict simply refuses the booking. Stripe
+    // payments are already taken: the reservation is saved as REVIEW_STATUS instead, the team
+    // is alerted and the guest is told the dates are being confirmed. Never lose a payment.
+    const isPaid = data.paymentMethod !== 'wire';
+    let conflict: StayConflict | null = null;
+    try {
+        conflict = await findStayConflict(adminSupabase, propertyId, data.checkIn, data.checkOut);
+    } catch (checkErr) {
+        console.error('finalizeBooking: final availability check failed:', checkErr);
+        // Unpaid: refuse. Paid: carry on, the database rule still refuses an overlap.
+        if (!isPaid) return { success: false, error: "errorGeneric", warning: undefined, ref: undefined };
+    }
+    if (conflict && !isPaid) {
+        return { success: false, error: "errorAlreadyBooked", warning: undefined, ref: undefined };
+    }
+    if (conflict) {
+        console.error(`finalizeBooking: paid booking ${referenceId} overlaps ${conflict.kind} ${conflict.id}; saved for review.`);
+        reservationData.status = REVIEW_STATUS;
+    }
+
+    const insertReservation = () => adminSupabase
         .from('reservations')
         .insert(reservationData)
         .select('id')
         .single();
+
+    let { data: insertedRes, error: dbError } = await insertReservation();
+
+    // Database rule reservations_no_overlap: another active reservation was saved for these
+    // dates between the check above and this insert.
+    if (dbError?.code === OVERLAP_ERROR_CODE) {
+        const same = await alreadySaved();
+        if (same) return same; // our own booking, saved by the other Stripe path
+        if (!isPaid) {
+            return { success: false, error: "errorAlreadyBooked", warning: undefined, ref: undefined };
+        }
+        console.error(`finalizeBooking: paid booking ${referenceId} hit reservations_no_overlap; saved for review.`);
+        reservationData.status = REVIEW_STATUS;
+        conflict = conflict ?? { kind: 'reservation', id: '', checkIn: data.checkIn, checkOut: data.checkOut, label: null };
+        ({ data: insertedRes, error: dbError } = await insertReservation());
+    }
 
     if (dbError) {
         console.error('CRITICAL: Database Error saving reservation:', JSON.stringify(dbError, null, 2));
@@ -94,7 +139,7 @@ export async function finalizeBooking({
         // already created this reservation. Treat as a benign duplicate, not an error.
         if (dbError.code === '23505') {
             console.log(`Duplicate insertion caught via unique constraint for reference: ${referenceId}`);
-            return { success: true, ref: referenceId, warning: "Reservation already exists." };
+            return (await alreadySaved()) ?? { success: true, ref: referenceId, warning: "Reservation already exists." };
         }
         if (dbError.code === '42703') {
             return {
@@ -119,12 +164,16 @@ export async function finalizeBooking({
                 'RESERVATION',
                 insertedRes.id,
                 {
-                    title: `Nova reserva: ${data.fullName}`,
+                    title: conflict
+                        ? `Reserva paga EM REVISÃO (datas ocupadas): ${data.fullName}`
+                        : `Nova reserva: ${data.fullName}`,
                     guest_name: data.fullName,
                     email: data.email,
                     property: data.propertySlug,
-                    ref: referenceId
-                }
+                    ref: referenceId,
+                    ...(conflict ? { conflict_with: `${conflict.kind} ${conflict.label ?? conflict.id}` } : {})
+                },
+                conflict ? 'WARNING' : 'INFO'
             );
         }
     } catch (logErr) {
@@ -160,6 +209,28 @@ export async function finalizeBooking({
             coupon_discount_amount: data.couponDiscount || 0
         };
 
+        const isEn = data.locale === 'en';
+
+        if (conflict) {
+            // L-3: paid, but the dates are taken. Alert the team; tell the guest the payment
+            // arrived and the dates are being confirmed (never "booking confirmed").
+            const { bookingReviewAdminEmail, bookingGuestReviewEmail } = await import("@/lib/email-templates");
+            await sendEmail({
+                to: "info@lovelymemories.pt",
+                subject: `⚠️ CONFLITO: reserva paga em datas ocupadas [Ref: ${referenceId}] - ${data.propertySlug}`,
+                html: bookingReviewAdminEmail(emailData, conflict),
+                replyTo: data.email
+            });
+            await sendEmail({
+                to: data.email,
+                subject: isEn
+                    ? `Lovely Memories | Payment received [Ref: ${referenceId}]`
+                    : `Lovely Memories | Pagamento recebido [Ref: ${referenceId}]`,
+                html: bookingGuestReviewEmail(emailData, data.locale)
+            });
+            return { success: true, ref: referenceId, warning: undefined, inReview: true };
+        }
+
         // Notify Admin
         await sendEmail({
             to: "info@lovelymemories.pt",
@@ -178,7 +249,6 @@ export async function finalizeBooking({
             : bookingGuestConfirmationEmail(emailData, data.locale);
 
         // Confirm to Guest
-        const isEn = data.locale === 'en';
         await sendEmail({
             to: data.email,
             subject: isEn 
@@ -194,6 +264,7 @@ export async function finalizeBooking({
     return {
         success: true,
         ref: referenceId,
-        warning
+        warning,
+        inReview: !!conflict
     };
 }

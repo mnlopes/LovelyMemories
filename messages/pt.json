@@ -177,6 +177,7 @@
         },
         "status": {
             "pending": "Pendente",
+            "needs_review": "Em revisão",
             "confirmed": "Confirmada",
             "cancelled": "Cancelada",
             "completed": "Concluída",
@@ -1566,6 +1567,8 @@
         "success": {
             "title": "Reserva Confirmada!",
             "subtitle": "Receberá um email de confirmação em breve.",
+            "reviewTitle": "Pagamento recebido",
+            "reviewSubtitle": "Estamos a confirmar a disponibilidade destas datas e a nossa equipa vai contactá-lo em breve por email. O seu pagamento está seguro.",
             "refLabel": "Referência da Reserva",
             "downloadPdf": "Descarregar PDF de Confirmação",
             "emailInfo": "Uma cópia da sua fatura foi enviada para o seu email.",
