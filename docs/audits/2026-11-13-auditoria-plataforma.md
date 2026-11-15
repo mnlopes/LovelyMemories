@@ -37,6 +37,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | L-5 — limpeza do iCal apaga bloqueios de um feed falhado | ✅ **Corrigido** a 14/11: só limpa quando todos os links foram lidos | Código revisto e testado em produção |
 | S-14 — qualquer pessoa escreve em `visitor_logs` | ✅ **Corrigido** a 14/11 (migração `20261114180000`): política pública de INSERT apagada e INSERT revogado a `anon`/`authenticated` | No dashboard: `anon`/`authenticated` sem INSERT, `service_role` com INSERT, só a política de leitura dos admins. Com a chave pública, a inserção dá `42501 permission denied` (antes passava). O proxy continua a gravar visitas (visita real às 23:33). `check:exposure` sem falhas |
 | S-4 — reserva pública abusável | ✅ **Corrigido** a 14/11: `finalizeBooking` deixou de ser público (`lib/booking-finalize.ts`); campos escapados nos emails; referência só no formato do site; limites de 3/email/dia, 5/hora e 15/dia no site para transferências | Manifesto do build sem `finalizeBooking`; templates com HTML injetado: 0 tags passam (antes 3–6); referência e limites testados localmente. Sem captcha; expiração das transferências fica no L-8 |
+| L-2 — valor cobrado diferente do mostrado | ✅ **Corrigido** a 15/11: o checkout cria um PaymentIntent novo sempre que o cupão ou os dados mudam, e nunca mostra um antigo | Testado no checkout local com as chaves de **teste** da Stripe (sem pagar, sem reservas): Cartão no passo 3 criou o PaymentIntent 1 (email A); voltar ao passo 3 sem mudanças não criou outro; mudar o email no passo 1 e voltar criou o PaymentIntent 2 com o email B, e é esse que o formulário usa. Bloqueio de 15 min em datas de 2027 libertado no fim; 0 reservas criadas. `tsc`, build, lint igual |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -160,6 +161,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **Onde:** `checkout/page.tsx:586` só cria o PaymentIntent uma vez, e o `clientSecret` nunca é reposto.
 - **Cenário:** o hóspede escolhe Cartão (€1.000), volta atrás, aplica um cupão de 10% e vê €930, mas é cobrado €1.000 e a reserva fica guardada sem o cupão.
 - **Correção:** repor o `clientSecret` (ou atualizar o PaymentIntent) sempre que o cupão, os extras ou os dados mudem.
+- **Estado:** ✅ corrigido a 15/11 em `checkout/page.tsx`. O PaymentIntent fica associado a uma chave com tudo o que `createPaymentIntent` usa (cupão, dados do hóspede, faturação, datas, hóspedes, extras, idioma). Um PaymentIntent de outra chave nunca é mostrado, e ao voltar ao passo 3 com Cartão escolhido cria-se um novo. Se a criação falhar, o antigo é descartado. Não houve mudança no servidor.
 
 **L-3. Reserva dupla possível**
 - `finalizeBooking` não volta a verificar a disponibilidade, e a BD não tem uma restrição contra sobreposições.

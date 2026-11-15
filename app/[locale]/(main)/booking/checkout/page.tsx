@@ -64,6 +64,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [zipError, setZipError] = useState<string>("");
     const [clientSecret, setClientSecret] = useState<string | null>(null);
+    // paymentIntentKey (see below) at the moment clientSecret was created.
+    const [clientSecretKey, setClientSecretKey] = useState<string | null>(null);
     const [isInitializingStripe, setIsInitializingStripe] = useState(false);
     const [isStripeValid, setIsStripeValid] = useState(false);
     const [bookingStatus, setBookingStatus] = useState<"idle" | "processing" | "confirming">("idle");
@@ -550,6 +552,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const nextStep = () => {
         if (validateStep(step)) {
             setStep(prev => Math.min(prev + 1, 3));
+            // L-2: coming from step 2 (coupon / guest data may have changed) with card already
+            // chosen: the old PaymentIntent no longer matches, so create one for the current data.
+            if (step === 2 && formData.paymentMethod === 'card' && !activeClientSecret && !isInitializingStripe) {
+                initStripePayment();
+            }
             if (typeof window !== 'undefined' && window.innerWidth < 1024) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
@@ -580,49 +587,79 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         setIsValidatingCoupon(false);
     };
 
+    // L-2 (audit 2026-11-13): everything createPaymentIntent turns into the amount charged or
+    // into the reservation it saves. The PaymentIntent used to be created once, so going back
+    // to step 2 and applying a coupon (or changing the guest's data) showed the new total but
+    // charged the old one and saved the old data. A PaymentIntent created for another key is
+    // stale: it is never shown, and a new one is created for the current data.
+    const paymentIntentKey = JSON.stringify([
+        appliedCoupon?.code || "",
+        formData.fullName, formData.email, formData.phone, formData.arrivalTime,
+        showBilling, formData.address, formData.city, formData.zip, formData.country, formData.vat,
+        bookingData?.slug, bookingData?.checkIn, bookingData?.checkOut,
+        bookingData?.adults, bookingData?.children, bookingData?.infants,
+        !!selectedExtras?.breakfast, selectedExtras?.breakfastDays,
+        !!selectedExtras?.transfer, selectedExtras?.transferType,
+        locale,
+    ]);
+    const activeClientSecret = clientSecret && clientSecretKey === paymentIntentKey ? clientSecret : null;
+
+    const initStripePayment = async () => {
+        const keyAtRequest = paymentIntentKey;
+        setIsInitializingStripe(true);
+        setIsStripeValid(false);
+        try {
+            const res = await createPaymentIntent({
+                ...formData,
+                propertySlug: bookingData!.slug,
+                checkIn: bookingData!.checkIn,
+                checkOut: bookingData!.checkOut,
+                adults: bookingData!.adults,
+                children: bookingData!.children || 0,
+                infants: bookingData!.infants || 0,
+                // Extras: só a seleção — o servidor recalcula os valores a cobrar.
+                breakfastSelected: !!selectedExtras?.breakfast,
+                breakfastDays: selectedExtras?.breakfastDays,
+                transferSelected: !!selectedExtras?.transfer,
+                transferType: selectedExtras?.transferType,
+                couponCode: appliedCoupon?.code || "",
+                couponDiscount: couponDiscount || 0,
+                isBillingActive: showBilling,
+                sessionId: sessionId,
+                locale: locale,
+            });
+
+            if (res.success && res.clientSecret) {
+                setClientSecret(res.clientSecret);
+                // If the data changed while this request ran, the key no longer matches and
+                // this intent is never shown (see activeClientSecret).
+                setClientSecretKey(keyAtRequest);
+                // Se o Stripe carregou, significa que passamos a validação de datas.
+                // Podemos limpar erros de bloqueio que possam ter ficado "presos".
+                if (error?.includes("temporariamente") || error?.includes("temporarily")) {
+                    setError("");
+                }
+            } else {
+                // Never keep an older PaymentIntent around: it would charge an old amount.
+                setClientSecret(null);
+                setClientSecretKey(null);
+                setError(translateError(res.error || "Erro ao inicializar pagamento."));
+                toast.error("Erro ao inicializar Stripe.");
+            }
+        } catch (err) {
+            console.error(err);
+            setClientSecret(null);
+            setClientSecretKey(null);
+            setError("Erro de rede ao inicializar Stripe.");
+        } finally {
+            setIsInitializingStripe(false);
+        }
+    };
+
     const handleSelectPaymentMethod = async (method: string) => {
         setFormData(prev => ({ ...prev, paymentMethod: method }));
-        
-        if (method === 'card' && !clientSecret) {
-            setIsInitializingStripe(true);
-            try {
-                const res = await createPaymentIntent({
-                    ...formData,
-                    propertySlug: bookingData!.slug,
-                    checkIn: bookingData!.checkIn,
-                    checkOut: bookingData!.checkOut,
-                    adults: bookingData!.adults,
-                    children: bookingData!.children || 0,
-                    infants: bookingData!.infants || 0,
-                    // Extras: só a seleção — o servidor recalcula os valores a cobrar.
-                    breakfastSelected: !!selectedExtras?.breakfast,
-                    breakfastDays: selectedExtras?.breakfastDays,
-                    transferSelected: !!selectedExtras?.transfer,
-                    transferType: selectedExtras?.transferType,
-                    couponCode: appliedCoupon?.code || "",
-                    couponDiscount: couponDiscount || 0,
-                    isBillingActive: showBilling,
-                    sessionId: sessionId,
-                    locale: locale,
-                });
-
-                if (res.success && res.clientSecret) {
-                    setClientSecret(res.clientSecret);
-                    // Se o Stripe carregou, significa que passamos a validação de datas.
-                    // Podemos limpar erros de bloqueio que possam ter ficado "presos".
-                    if (error?.includes("temporariamente") || error?.includes("temporarily")) {
-                        setError("");
-                    }
-                } else {
-                    setError(translateError(res.error || "Erro ao inicializar pagamento."));
-                    toast.error("Erro ao inicializar Stripe.");
-                }
-            } catch (err) {
-                console.error(err);
-                setError("Erro de rede ao inicializar Stripe.");
-            } finally {
-                setIsInitializingStripe(false);
-            }
+        if (method === 'card' && !activeClientSecret && !isInitializingStripe) {
+            await initStripePayment();
         }
     };
 
@@ -1526,7 +1563,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                         <Loader2 className="w-8 h-8 animate-spin text-navy-950" />
                                                         <p className="text-sm font-medium text-navy-900/60">{t('step3.initializing') || "Initializing secure checkout..."}</p>
                                                     </div>
-                                                ) : clientSecret ? (
+                                                ) : activeClientSecret ? (
                                                     <>
                                                         {/* Secure Header */}
                                                         <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
@@ -1542,9 +1579,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
                                                             </div>
                                                         </div>
                                                     <Elements
+                                                        key={activeClientSecret}
                                                         stripe={stripePromise}
                                                         options={{
-                                                            clientSecret,
+                                                            clientSecret: activeClientSecret,
                                                             appearance: {
                                                                 theme: 'stripe',
                                                                 variables: {
