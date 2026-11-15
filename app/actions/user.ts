@@ -504,6 +504,10 @@ export async function setOwnerPassword(ownerId: string, newPassword: string): Pr
         });
         if (error) return { success: false, error: error.message };
 
+        // S-7: the owner has a password now; an old invite email must not log anyone in.
+        const { revokeInvites } = await import('@/lib/invite-tokens');
+        await revokeInvites({ userId: ownerId, email: target.email });
+
         await logActivity(
             currentUser.id,
             'UPDATE',
@@ -600,6 +604,12 @@ export async function updateUserPassword(password: string) {
     });
 
     if (error) throw error;
+
+    // S-7: the account has a password now, so its invite links stop logging anyone in.
+    if (user) {
+        const { revokeInvites } = await import('@/lib/invite-tokens');
+        await revokeInvites({ userId: user.id, email: user.email });
+    }
 
     // 2. Safety Fallback: Sync name/phone from invite metadata if missing.
     // SECURITY: We deliberately do NOT elevate the role from user_metadata here.
@@ -963,6 +973,10 @@ export async function changeOwnPassword(
         const { error } = await supabase.auth.updateUser({ password: newPassword });
         if (error) return { success: false, error: error.message };
 
+        // S-7: a password exists, so no invite link may log in as this account any more.
+        const { revokeInvites } = await import('@/lib/invite-tokens');
+        await revokeInvites({ userId: user.id, email: user.email });
+
         try {
             await logActivity(user.id, 'UPDATE', 'USER', user.id, { field: 'password', method: 'self_service' }, 'WARNING');
         } catch (logErr) {
@@ -1038,6 +1052,10 @@ export async function setTeamMemberPassword(
             email_confirm: true, // force-confirm so they can log in straight away
         });
         if (error) return { success: false, error: error.message };
+
+        // S-7: they have a password now; an old invite email must not log anyone in.
+        const { revokeInvites } = await import('@/lib/invite-tokens');
+        await revokeInvites({ userId, email: target.email });
 
         await logActivity(
             currentUser.id,

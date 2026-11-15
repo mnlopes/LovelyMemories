@@ -41,6 +41,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | L-3 — reserva dupla | ✅ **Corrigido** a 15/11: verificação final antes de gravar; pago em datas ocupadas fica "Em revisão" com alerta à equipa; regra `EXCLUDE` `reservations_no_overlap` aplicada (migração `20261115090000`, depois do deploy do código) | Regra confirmada no SQL Editor; site, leituras de reservas e `check:exposure` OK depois da regra. 10 cenários simulados + leituras reais; `tsc`, build, lint igual. Nenhuma reserva criada |
 | L-4 — dados perdidos nos pagamentos com cartão | ✅ **Corrigido** a 15/11: telefone com indicativo e nomes dos outros hóspedes passam pela metadata da Stripe | PaymentIntent de teste com `+44 …` e o nome do 2.º hóspede; pack/unpack testado (vazios, 20 máx., limite de 500 caracteres, dados estragados); `tsc`, build, lint igual. Nenhuma reserva criada |
 | S-6 — XSS no blog | ✅ **Corrigido** a 15/11: HTML dos posts limpo ao gravar, ao carregar para o editor e ao mostrar (`lib/sanitize-blog-html.ts`) | Os 4 posts reais renderizados antes/depois: texto idêntico, mesmas tags/classes/estilos/links/SVG; 14 ataques conhecidos neutralizados; post aberto no browser local; `tsc`, build, lint igual; 0 vulnerabilidades nas dependências de produção |
+| S-7 — links de convite | ✅ **Corrigido** a 15/11: o convite deixa de funcionar quando a password é definida ou quando é enviado um convite novo; até lá, 30 dias e tentativas ilimitadas | 8 cenários com tabela simulada (reutilizável antes, invalidado ao reenviar e ao definir a password, email sem maiúsculas e sem coringas, nada apagado, falha da BD não bloqueia a password); `tsc`, build, lint igual. Nenhuma conta real tocada |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -127,6 +128,8 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **S-6. XSS no blog:** `blog/[slug]/page.tsx:141` faz `parse(post.content)` sem sanitização, e as tags `<script>` são renderizadas no servidor. Um editor pode roubar a sessão de um admin. **Correção:** DOMPurify / sanitize-html.
   - **Estado:** ✅ corrigido a 15/11. Havia dois sítios: a página pública (`parse(post.content)`) e o editor do backoffice (`innerHTML = post.content`, onde um `<img onerror>` corre ao abrir o post). `lib/sanitize-blog-html.ts` (`sanitize-html` 2.18.1, versão fixa) limpa o HTML ao gravar (`upsertBlogPost`), ao carregar para o editor (`getBlogPosts`) e ao mostrar. Mantém o que dá aspeto (classes, estilos, `data-*`, ícones SVG) e retira o que executa (`<script>`, `<style>`, iframes, formulários, `on*`, links `javascript:`/`data:`). Os 4 posts publicados ficam com o mesmo texto e a mesma estrutura (só sai o `contenteditable` colado de outro editor, que deixava editar o texto na página).
 - **S-7. Links de convite:** valem 30 dias e nunca são revogados depois de definida a password (`app/actions/auth.ts:159-245`).
+  - **Estado:** ✅ corrigido a 15/11. Cada uso de um convite inicia sessão sem password, e o link servia 30 dias, quantas vezes se quisesse, mesmo depois de a password estar definida. Agora `revokeInvites` (`lib/invite-tokens.ts`, agora `server-only`) termina os convites da pessoa (passa `expires_at` para agora; nada é apagado) quando a password é definida (página set-password, mudança própria, admin define a password do proprietário ou da equipa) e quando é enviado um convite novo. Até lá fica igual: 30 dias e tentativas ilimitadas, para não voltar o problema antigo dos links que expiravam em horas (resolvido a 29/06 e 09/10).
+  - Nota: os links que "expiravam ao fim de umas horas" eram os convites antigos, que usavam o link da Supabase; desde 29/06 há 29 convites enviados, 17 usados e 12 expirados aos 30 dias sem uso. O único link curto que resta é o de "esqueci-me da password" (token da Supabase; validade definida no painel em Authentication → Email → Email OTP Expiration).
 - **S-14. Qualquer pessoa pode escrever em `visitor_logs`** (encontrado a 14/11):
   - A política `"Anyone can insert visitor logs"` (`20260205125000_visitor_analytics.sql`) dá `INSERT` `to public` com `with check (true)`. Com a chave pública dá para inserir visitas falsas, estragar as estatísticas e fazer crescer a base de dados, que no plano Free tem 500 MB.
   - O proxy escreve com a service role, por isso a política não faz falta.
@@ -307,7 +310,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - L-4: dados perdidos nos pagamentos com cartão.
 - ~~L-8: expirar transferências não pagas.~~ Fica como está (decisão do cliente, 15/11).
 - S-6: sanitizar o blog. ✅ Feito a 15/11.
-- S-7: revogar convites.
+- S-7: revogar convites. ✅ Feito a 15/11.
 - L-6 e L-7: números dos proprietários.
 
 **Onda 2 — SEO**

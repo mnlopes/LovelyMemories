@@ -154,7 +154,9 @@ export async function confirmAuthLink(formData: FormData) {
  * Reliability over strictness: the token stays valid for its full lifetime (30 days) and can
  * be redeemed repeatedly. Owners therefore get unlimited retries — a double-click, a closed tab,
  * or a re-click of the email never locks them out. `used_at` is recorded for auditing only; it
- * does NOT gate redemption. Expiry is the only thing that ends the link.
+ * does NOT gate redemption. Expiry ends the link — and since S-7 the expiry is moved to "now"
+ * as soon as the account gets a password or a newer invite is sent (revokeInvites in
+ * lib/invite-tokens.ts), because each redemption logs the holder in without a password.
  */
 export async function redeemInviteToken(formData: FormData) {
     const rawToken = formData.get('invite') as string | null
