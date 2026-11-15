@@ -728,6 +728,13 @@
         "termsConditions": "Termos e Condições"
     },
     "PageMeta": {
+        "propertyBookDirect": "Reserve diretamente com a Lovely Memories.",
+        "propertyFallback": "Estadia de luxo em {city} — reserve diretamente com a Lovely Memories.",
+        "propertyFallbackNoCity": "Estadia de luxo — reserve diretamente com a Lovely Memories.",
+        "privacyTitle": "Política de Privacidade",
+        "privacyDesc": "Como a Lovely Memories recolhe, usa e protege os seus dados pessoais quando reserva ou nos contacta.",
+        "termsTitle": "Termos e Condições",
+        "termsDesc": "Os termos que se aplicam às reservas e estadias com a Lovely Memories em Portugal.",
         "aboutTitle": "Sobre Nós",
         "aboutDesc": "Conheça a Lovely Memories — alojamento local de luxo e gestão de propriedades no Porto, Vila Nova de Gaia, Douro e Algarve.",
         "conciergeTitle": "Concierge de Luxo no Porto e Algarve",

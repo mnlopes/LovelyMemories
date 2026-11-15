@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import parse from "html-react-parser";
 import { sanitizeBlogHtml } from "@/lib/sanitize-blog-html";
 import { Calendar, ArrowLeft, User } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing"; // SEO-5: keeps the reader's language
 import { supabase as anonSupabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/seo";
 import type { Metadata } from "next";

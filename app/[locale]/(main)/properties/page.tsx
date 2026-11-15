@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { buildPageMetadata } from '@/lib/seo';
 import { PropertiesGrid } from '@/components/PropertiesGrid';
+import { getProperties } from '@/lib/services';
 
 export async function generateMetadata({
     params,
@@ -18,10 +19,12 @@ export async function generateMetadata({
     });
 }
 
-export default function PropertiesPage() {
+export default async function PropertiesPage() {
+    // SEO-2: loaded here so the cards and their links are in the server HTML.
+    const properties = await getProperties();
     return (
         <main className="pt-20">
-            <PropertiesGrid />
+            <PropertiesGrid initialProperties={properties || []} />
         </main>
     );
 }

@@ -21,7 +21,7 @@ export const SITE_KEYWORDS = [
   'short-stay rentals Portugal',
 ];
 
-const OG_LOCALES: Record<string, string> = { en: 'en_US', pt: 'pt_PT', he: 'he_IL' };
+const OG_LOCALES: Record<string, string> = { en: 'en_US', pt: 'pt_PT' };
 
 /**
  * Build complete, SEO-correct metadata for a marketing page.

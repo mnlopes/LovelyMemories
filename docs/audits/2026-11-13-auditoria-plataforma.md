@@ -43,6 +43,8 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | S-6 — XSS no blog | ✅ **Corrigido** a 15/11: HTML dos posts limpo ao gravar, ao carregar para o editor e ao mostrar (`lib/sanitize-blog-html.ts`) | Os 4 posts reais renderizados antes/depois: texto idêntico, mesmas tags/classes/estilos/links/SVG; 14 ataques conhecidos neutralizados; post aberto no browser local; `tsc`, build, lint igual; 0 vulnerabilidades nas dependências de produção |
 | S-7 — links de convite | ✅ **Corrigido** a 15/11: o convite deixa de funcionar quando a password é definida ou quando é enviado um convite novo; até lá, 30 dias e tentativas ilimitadas | 8 cenários com tabela simulada (reutilizável antes, invalidado ao reenviar e ao definir a password, email sem maiúsculas e sem coringas, nada apagado, falha da BD não bloqueia a password); `tsc`, build, lint igual. Nenhuma conta real tocada |
 | L-6 / L-7 — números do portal dos proprietários | ✅ **Corrigido** a 15/11: meses por ano, período do filtro aplicado, ocupação do período, receita líquida, cada estadia no mês do check-in, canceladas fora da exportação; filtro de ano até ao próximo ano (L-15) | Versão antiga vs nova com dados reais (só leitura): ocupação de 2026 0% → 16%, etiquetas certas, agosto €19 977 → €6 334; 12 relatórios de 2026: 485 linhas / €274 355 → 423 / €228 255 (cada estadia uma vez); `tsc`, build, lint igual ou melhor |
+| S-13 + SEO-1/2/3/5/6/7/9 + hebraico | ✅ **Corrigido** a 15/11: sem `X-Powered-By`; páginas das casas e cartões no HTML do servidor; slug inválido = 404; hreflang só en/pt; links do blog com língua; rota antiga redireciona; metadados de privacidade/termos/contacto; `/he` → `/en` (308); textos das casas traduzidos para pt | Servidor local: redirecionamentos 308, sem cabeçalhos `Link`/`X-Powered-By`, canonicals certos, sitemap sem `he`, HTML das casas com conteúdo, 0 erros de hidratação; tradução verificada contra a cópia de segurança; `tsc`, build, lint igual ou melhor |
+| SEO-10 — região e cache | ⏳ Região `dub1` feita a 15/11; cache/ISR das páginas estáticas por fazer | — |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -144,7 +146,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **S-10.** Não há limite de tentativas de login nem MFA.
 - **S-11.** O limite do formulário de contacto depende só de um cookie, e o log guarda o pedido completo, com email e telefone.
 - **S-12.** O bucket `property-access` (fotos de acesso às casas) é público.
-- **S-13.** O cabeçalho `X-Powered-By: Next.js` é enviado. Correção: `poweredByHeader: false`.
+- **S-13.** O cabeçalho `X-Powered-By: Next.js` é enviado. Correção: `poweredByHeader: false`. ✅ Corrigido a 15/11.
 
 ### Já está bem
 - Webhook da Stripe com assinatura; cron com `CRON_SECRET`; API de parceiros com chaves em hash, limite de pedidos e kill-switch.
@@ -221,25 +223,28 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **Onde:** `components/PropertyDetails.tsx` vai buscar os dados num `useEffect`. O HTML que o servidor envia tem só o menu e o rodapé, sem título, descrição, fotos nem preço.
 - Um slug que não existe responde 200 com noindex, o que é um soft-404.
 - **Correção:** ir buscar a casa no `page.tsx` do servidor e usar `notFound()`.
+- **Estado:** ✅ corrigido a 15/11: a página de cada casa vai buscar os dados no servidor (`page.tsx`, com `cache` para não repetir a consulta) e passa-os ao `PropertyDetails`; um slug inexistente dá 404 real. Datas e hóspedes do URL lidos com `useSearchParams` (já no HTML do servidor). Verificado: título, subtítulo, descrição, fotos e preços no HTML; slug inválido → 404.
 
 **SEO-2. Nenhum link rastreável para as casas**
 - A homepage e a listagem carregam os cartões no browser, por isso o HTML tem 0 links para `/properties/`.
+- **Estado:** ✅ corrigido a 15/11: homepage (5 em destaque escolhidas no servidor) e listagem recebem as casas do servidor; a listagem põe todos os cartões no HTML e o "Carregar mais" só mostra os escondidos. HTML da listagem: 0 → 19 links de casas + 4 de edifícios.
 
 **SEO-3. hreflang contraditório**
 - O next-intl envia um cabeçalho `Link:` com x-default diferente do HTML e do sitemap, e anuncia versões pt/he de posts que dão 404.
 - **Correção:** `alternateLinks: false` em `i18n/routing.ts`.
+- **Estado:** ✅ corrigido a 15/11: `alternateLinks: false` e o hebraico retirado (ver abaixo). Já não há cabeçalho `Link`; o hreflang vem só dos metadados (en, pt, x-default=/en) e do sitemap.
 
 **SEO-4. Google Analytics desligado ✅**
 - O site carrega `G-XXXXXXXXXX` porque `NEXT_PUBLIC_GA_ID` não está definido em produção.
 - **Correção:** definir a variável na Vercel. Leva 5 minutos e o cliente passa a ter dados.
 
 ### Médio
-- **SEO-5.** Os links do blog não levam a língua: em `/pt/blog`, um link redireciona e acaba em 404. Correção: usar o `Link` de `@/i18n/routing`.
-- **SEO-6.** A rota antiga `/[locale]/property/[slug]` dá **500** (já existia antes do upgrade ✅). Correção: apagar a rota e redirecionar permanentemente para `/properties/[slug]`.
-- **SEO-7.** As páginas pt/he das casas são cópias em inglês: título e descrição iguais e texto fixo em inglês. São cerca de 90 páginas quase duplicadas.
+- **SEO-5.** Os links do blog não levam a língua: em `/pt/blog`, um link redireciona e acaba em 404. Correção: usar o `Link` de `@/i18n/routing`. ✅ Corrigido a 15/11 (`Link` de `@/i18n/routing` no cartão e no post).
+- **SEO-6.** A rota antiga `/[locale]/property/[slug]` dá **500** (já existia antes do upgrade ✅). Correção: apagar a rota e redirecionar permanentemente para `/properties/[slug]`. ✅ Corrigido a 15/11: rota apagada; `/property/:slug` e `/:locale/property/:slug` redirecionam (308) para `/:locale/properties/:slug`.
+- **SEO-7.** As páginas pt/he das casas são cópias em inglês: título e descrição iguais e texto fixo em inglês. São cerca de 90 páginas quase duplicadas. ✅ Corrigido a 15/11: o hebraico foi abandonado (o cliente desistiu da língua); 39 de 41 casas não tinham texto em português, e foram traduzidos para português europeu (856 valores: 34 subtítulos, 36 descrições, 729 comodidades, quartos, locais…), só onde o pt estava vazio; inglês intacto (verificado coluna a coluna contra a cópia `supabase/backups/2026-11-15-properties-before-pt.json`). Os títulos são nomes próprios e ficam iguais. A frase final da meta description passou a ser traduzida.
 - **SEO-8.** O preloader de ecrã inteiro atrasa o LCP em mais de 1 s e acrescenta um segundo H1 a todas as páginas.
-- **SEO-9.** Privacidade e Termos não têm metadados próprios; `/contact` não tem canonical.
-- **SEO-10.** Todas as páginas respondem com `no-store`, e as funções correm nos EUA (`iad1`). Correção: região UE e ISR nas páginas estáticas.
+- **SEO-9.** Privacidade e Termos não têm metadados próprios; `/contact` não tem canonical. ✅ Corrigido a 15/11: privacidade e termos com título, descrição, canonical e hreflang (layouts no servidor); contacto com canonical e hreflang.
+- **SEO-10.** Todas as páginas respondem com `no-store`, e as funções correm nos EUA (`iad1`). Correção: região UE e ISR nas páginas estáticas. ⏳ Parcial a 15/11: funções na Vercel em `dub1` (Dublin, ao lado da Supabase em eu-west-1). O cache/ISR das páginas estáticas fica por fazer: o layout lê a sessão e o next-intl não usa `setRequestLocale`, por isso todas as páginas são dinâmicas.
 
 ### Baixo
 - Falta JSON-LD por casa, de breadcrumbs e de posts.

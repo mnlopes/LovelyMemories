@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { Building2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from "next-intl";
-import { getProperties } from '@/lib/services';
 
 // Helper to safely extract string from potential localized object
 const getLocalizedStr = (val: any, locale: string = 'en'): string => {
@@ -39,23 +38,12 @@ interface Property {
 
 // PROPERTIES constant removed, now using Supabase
 
-export const HomeFeaturedProperties = () => {
+// SEO-2: the homepage picks the featured properties on the server (shuffled there, so the
+// browser does not reshuffle and mismatch the server HTML) and the cards are in the HTML.
+export const HomeFeaturedProperties = ({ properties }: { properties: any[] }) => {
     const t = useTranslations('Home');
     const locale = useLocale();
-    const [properties, setProperties] = React.useState<any[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
-
-    React.useEffect(() => {
-        const fetchProperties = async () => {
-            setIsLoading(true);
-            const data = await getProperties();
-            // Shuffle and take only 5
-            const shuffled = [...data].sort(() => 0.5 - Math.random());
-            setProperties(shuffled.slice(0, 5));
-            setIsLoading(false);
-        };
-        fetchProperties();
-    }, []);
+    const isLoading = false;
 
     return (
         <React.Fragment>

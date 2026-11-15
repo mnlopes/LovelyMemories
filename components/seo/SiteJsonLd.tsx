@@ -32,7 +32,7 @@ export function SiteJsonLd() {
         url: SITE_URL,
         name: 'Lovely Memories',
         publisher: { '@id': `${SITE_URL}/#organization` },
-        inLanguage: ['en', 'pt', 'he'],
+        inLanguage: ['en', 'pt'],
       },
       {
         '@type': 'LodgingBusiness',

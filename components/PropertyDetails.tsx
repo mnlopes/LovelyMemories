@@ -3,12 +3,11 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { getPropertyBySlug } from '@/lib/services';
 import { DateRange } from "react-day-picker";
 import { differenceInDays, format } from "date-fns";
 import { pt, enGB } from "date-fns/locale";
 import { Link } from '@/i18n/routing';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, MapPin, ChevronRight, X, Share2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/Button';
@@ -52,10 +51,14 @@ import { BookingPoliciesSection } from './property-details/BookingPoliciesSectio
 import { ConciergeSection } from './property-details/ConciergeSection';
 
 interface PropertyDetailsProps {
-    slug: string;
+    // SEO-1: loaded by the server page, so the HTML Google receives already carries the
+    // title, description, photos and prices (it used to be fetched here in a useEffect and the
+    // server HTML had only the menu and footer).
+    initialProperty: any;
+    initialConciergeServices: any[];
 }
 
-export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
+export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ initialProperty, initialConciergeServices }) => {
     const t = useTranslations('PropertyDetail');
     const tp = useTranslations('Properties');
     const gridT = useTranslations('PropertiesGrid');
@@ -63,55 +66,29 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
     const locale = useLocale();
     const [isCopied, setIsCopied] = React.useState(false);
 
-    const [property, setProperty] = React.useState<any>(null);
-    const [conciergeServices, setConciergeServices] = React.useState<any[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
+    const property = initialProperty;
+    const conciergeServices = initialConciergeServices;
+    // Dates, guests and the "back" target come from the URL (a search result link carries them).
+    // useSearchParams works while the server renders too, so the HTML already has them.
+    const searchParams = useSearchParams();
+    const hasSearchFilters = ['location', 'from', 'to', 'adults', 'children', 'infants', 'building']
+        .some((k) => searchParams.get(k)) || searchParams.get('fromsearch') === '1';
+    const backHref = hasSearchFilters ? `/search?${searchParams.toString()}` : '/properties';
 
-    const [adults, setAdults] = React.useState(1);
-    const [childrenCount, setChildren] = React.useState(0);
-    const [infants, setInfants] = React.useState(0);
+    const [adults, setAdults] = React.useState(() => parseInt(searchParams.get('adults') || '1', 10));
+    const [childrenCount, setChildren] = React.useState(() => parseInt(searchParams.get('children') || '0', 10));
+    const [infants, setInfants] = React.useState(() => parseInt(searchParams.get('infants') || '0', 10));
     const [availabilityStatus, setAvailabilityStatus] = React.useState<{ available: boolean; loading: boolean; error?: string }>({ available: true, loading: false });
     const [isDescriptionOpen, setIsDescriptionOpen] = React.useState(false);
     const [isHighlightsOpen, setIsHighlightsOpen] = React.useState(false);
     const [isMobileBookingOpen, setIsMobileBookingOpen] = React.useState(false);
 
-    React.useEffect(() => {
-        const fetchAll = async () => {
-            setIsLoading(true);
-            try {
-                const [propertyData, conciergeData] = await Promise.all([
-                    getPropertyBySlug(slug),
-                    import('@/lib/services').then(m => m.getConciergeServices())
-                ]);
-                setProperty(propertyData);
-                setConciergeServices(conciergeData);
 
-                // Initialize from search params
-                if (typeof window !== 'undefined') {
-                    const params = new URLSearchParams(window.location.search);
-                    const fromStr = params.get('from');
-                    const toStr = params.get('to');
-                    if (fromStr && toStr) {
-                        setSelectedRange({
-                            from: parseDateLocal(fromStr),
-                            to: parseDateLocal(toStr)
-                        });
-                    }
-
-                    setAdults(parseInt(params.get('adults') || '1', 10));
-                    setChildren(parseInt(params.get('children') || '0', 10));
-                    setInfants(parseInt(params.get('infants') || '0', 10));
-                }
-            } catch (error) {
-                console.error('Error fetching property data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchAll();
-    }, [slug]);
-
-    const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>(undefined);
+    const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>(() => {
+        const fromStr = searchParams.get('from');
+        const toStr = searchParams.get('to');
+        return fromStr && toStr ? { from: parseDateLocal(fromStr), to: parseDateLocal(toStr) } : undefined;
+    });
 
     // Validation Logic
     React.useEffect(() => {
@@ -195,13 +172,6 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
         setSelectedExtras(prev => ({ ...prev, transferType: type }));
     };
 
-    if (isLoading) {
-        return (
-            <div className="bg-white min-h-screen flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-[#b09e80] border-t-transparent rounded-full animate-spin" />
-            </div>
-        );
-    }
 
     if (!property) {
         notFound();
@@ -213,23 +183,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ slug }) => {
                 {/* Header Actions (Back & Share) */}
                 <div className="flex items-center justify-between mb-6">
                     <Link
-                        href={(() => {
-                            const params = new URLSearchParams(window.location.search);
-                            const hasSearchFilters =
-                                params.get('location') ||
-                                params.get('from') ||
-                                params.get('to') ||
-                                params.get('adults') ||
-                                params.get('children') ||
-                                params.get('infants') ||
-                                params.get('building') ||
-                                params.get('fromsearch') === '1';
-
-                            if (hasSearchFilters) {
-                                return `/search?${params.toString()}`;
-                            }
-                            return `/properties`;
-                        })()}
+                        href={backHref}
                         className="inline-flex items-center gap-2 text-sm text-navy-900/40 hover:text-navy-950 transition-colors group"
                     >
                         <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />

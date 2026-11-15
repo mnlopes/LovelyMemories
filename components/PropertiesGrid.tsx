@@ -7,7 +7,6 @@ import { ArrowLeft, MapPin, Building2, Bed, Home, Maximize, Bath, Users } from '
 import { useTranslations } from "next-intl";
 import { LegacyIcon } from './LegacyIcon';
 
-import { getProperties } from '@/lib/services';
 import { useLocale } from 'next-intl';
 
 // Helper to safely extract string from potential localized object
@@ -31,23 +30,15 @@ const safeCount = (val: any): number => {
     return 0;
 };
 
-export const PropertiesGrid = () => {
+// SEO-2: the server page loads the properties, so the cards (and their links) are in the HTML
+// Google receives. They used to be fetched here in a useEffect: the HTML had 0 property links.
+export const PropertiesGrid = ({ initialProperties }: { initialProperties: any[] }) => {
     const locale = useLocale();
     const t = useTranslations('PropertiesGrid');
-    const [properties, setProperties] = React.useState<any[]>([]);
-    const [isLoading, setIsLoading] = React.useState(true);
+    const properties = initialProperties;
+    const isLoading = false;
     const [selectedRegion, setSelectedRegion] = React.useState('all');
     const [visibleCount, setVisibleCount] = React.useState(4);
-
-    React.useEffect(() => {
-        const fetchProperties = async () => {
-            setIsLoading(true);
-            const data = await getProperties();
-            setProperties(data);
-            setIsLoading(false);
-        };
-        fetchProperties();
-    }, []);
 
     const regions = ['all', 'porto', 'gaia', 'lisboa', 'algarve', 'mykonos'];
 
@@ -143,10 +134,12 @@ export const PropertiesGrid = () => {
                     ) : filteredProperties.length === 0 ? (
                         <div className="col-span-full text-center py-20 text-gray-400">No properties found in this region.</div>
                     ) : (
-                        sortedProperties.slice(0, visibleCount).map((property: any, index: number) => (
+                        // SEO-2: every card is in the HTML (so every property link is crawlable); the
+                        // ones past "load more" are only hidden until the visitor asks for them.
+                        sortedProperties.map((property: any, index: number) => (
                             <div
                                 key={property.id || index}
-                                className={`group block w-full bg-white rounded-2xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100/50 overflow-hidden transition-all duration-500 ${property.isComingSoon
+                                className={`${index >= visibleCount ? 'hidden ' : ''}group block w-full bg-white rounded-2xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.1)] border border-gray-100/50 overflow-hidden transition-all duration-500 ${property.isComingSoon
                                     ? 'opacity-80'
                                     : 'hover:-translate-y-2 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)]'
                                     }`}

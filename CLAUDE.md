@@ -20,7 +20,7 @@ One-off maintenance/debug scripts live in `scripts/` and are run with `npx tsx s
 
 ## Architecture
 
-**Next.js 16 App Router, fully localized.** Every page lives under `app/[locale]/` with next-intl. Locales: `en`, `pt`, `he` (`i18n/routing.ts`); `defaultLocale` is `'en'` and must stay `'en'` (SEO decision). Translations are in `messages/{en,pt,he}.json` — when adding UI strings, keep the three files' keys in parity. Use the `Link`/`redirect`/`useRouter` wrappers exported from `i18n/routing.ts`, not the `next/navigation` ones.
+**Next.js 16 App Router, fully localized.** Every page lives under `app/[locale]/` with next-intl. Locales: `en`, `pt` (`i18n/routing.ts`); `defaultLocale` is `'en'` and must stay `'en'` (SEO decision). Hebrew (`he`) was dropped: `/he/*` redirects to `/en/*` (`next.config.ts`); the backoffice editors still have `he` content tabs, unused by the site. Translations are in `messages/{en,pt}.json` — when adding UI strings, keep both files' keys in parity. Use the `Link`/`redirect`/`useRouter` wrappers exported from `i18n/routing.ts`, not the `next/navigation` ones.
 
 **Route groups under `app/[locale]/`:**
 - `(main)` — public site (properties, booking, search, blog, concierge…)

@@ -77,11 +77,8 @@ export default async function LocaleLayout({
   // side is the easiest way to get started
   const messages = await getMessages();
 
-  // HEBREW support: RTL if locale is 'he'
-  const dir = locale === 'he' ? 'rtl' : 'ltr';
-
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning>
+    <html lang={locale} dir="ltr" suppressHydrationWarning>
       <body className={`${montserrat.variable} antialiased`} suppressHydrationWarning>
         <SiteJsonLd />
         <NextIntlClientProvider messages={messages} locale={locale}>

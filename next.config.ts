@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
+  // S-13: don't advertise the framework (X-Powered-By: Next.js) to scanners.
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
@@ -34,6 +36,13 @@ const nextConfig: NextConfig = {
         destination: '/properties/:slug',
         permanent: true,
       },
+      // Hebrew was dropped (i18n/routing.ts): send old /he URLs, possibly indexed, to English.
+      { source: '/he', destination: '/en', permanent: true },
+      { source: '/he/:path*', destination: '/en/:path*', permanent: true },
+      // SEO-6: the old property route /property/:slug answered 500. The page lives at
+      // /properties/:slug; the route was removed.
+      { source: '/:locale(en|pt)/property/:slug', destination: '/:locale/properties/:slug', permanent: true },
+      { source: '/property/:slug', destination: '/en/properties/:slug', permanent: true },
     ]
   },
   async headers() {

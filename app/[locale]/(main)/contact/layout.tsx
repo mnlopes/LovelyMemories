@@ -1,11 +1,7 @@
-import type { Metadata } from "next";
 import "@/app/globals.css";
 import "@/app/overrides.css";
 
-export const metadata: Metadata = {
-    title: "Contact - Lovely Memories",
-    description: "Get in touch with Lovely Memories.",
-};
+// Metadata lives in page.tsx (localized, with canonical and hreflang).
 
 export default function ContactLayout({
     children,

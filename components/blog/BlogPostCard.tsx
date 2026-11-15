@@ -2,7 +2,9 @@
 
 import React from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+// SEO-5: the locale-aware Link. next/link sent /pt/blog readers to /blog/<pt-slug>, which
+// redirected to the English blog and ended in a 404.
+import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
 import { Share2, Check } from 'lucide-react';
 import { useLocale } from 'next-intl';

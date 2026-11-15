@@ -737,6 +737,13 @@
         "termsConditions": "Terms & Conditions"
     },
     "PageMeta": {
+        "propertyBookDirect": "Book directly with Lovely Memories.",
+        "propertyFallback": "Luxury stay in {city} — book directly with Lovely Memories.",
+        "propertyFallbackNoCity": "Luxury stay — book directly with Lovely Memories.",
+        "privacyTitle": "Privacy Policy",
+        "privacyDesc": "How Lovely Memories collects, uses and protects your personal data when you book or contact us.",
+        "termsTitle": "Terms and Conditions",
+        "termsDesc": "The terms that apply to bookings and stays with Lovely Memories in Portugal.",
         "aboutTitle": "About Us",
         "aboutDesc": "Meet Lovely Memories — curated luxury short-stays and full property management across Porto, Vila Nova de Gaia, the Douro and the Algarve.",
         "conciergeTitle": "Luxury Concierge Service in Porto & the Algarve",
