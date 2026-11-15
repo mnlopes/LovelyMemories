@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { finalizeBooking } from '@/lib/booking-finalize';
 import type { ReservationData } from '@/app/actions/reservation';
+import { unpackExtraGuests } from '@/lib/booking-metadata';
 import { getPropertyBySlug } from '@/lib/services';
 import Stripe from 'stripe';
 
@@ -49,6 +50,8 @@ export async function POST(req: Request) {
         fullName: metadata.fn,
         email: metadata.em,
         phone: metadata.ph,
+        // L-4: the other guests' names (SEF/AIMA registration), see lib/booking-metadata.ts.
+        extraGuestNames: unpackExtraGuests(metadata.eg),
         propertySlug: metadata.ps,
         checkIn: metadata.ci,
         checkOut: metadata.co,

@@ -597,7 +597,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     // stale: it is never shown, and a new one is created for the current data.
     const paymentIntentKey = JSON.stringify([
         appliedCoupon?.code || "",
-        formData.fullName, formData.email, formData.phone, formData.arrivalTime,
+        formData.fullName, formData.email, formData.phoneCode, formData.phone, formData.arrivalTime,
+        formData.extraGuestNames,
         showBilling, formData.address, formData.city, formData.zip, formData.country, formData.vat,
         bookingData?.slug, bookingData?.checkIn, bookingData?.checkOut,
         bookingData?.adults, bookingData?.children, bookingData?.infants,
@@ -614,6 +615,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         try {
             const res = await createPaymentIntent({
                 ...formData,
+                // L-4: same as the bank-transfer flow (handleSubmit): phone with its country
+                // code, and the other guests' names (needed for the SEF/AIMA registration).
+                phone: formData.phone ? `${formData.phoneCode} ${formData.phone}`.trim() : "",
+                extraGuestNames: formData.extraGuestNames,
                 propertySlug: bookingData!.slug,
                 checkIn: bookingData!.checkIn,
                 checkOut: bookingData!.checkOut,

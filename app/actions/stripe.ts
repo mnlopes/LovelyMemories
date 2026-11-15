@@ -7,6 +7,7 @@ import { getPropertyBySlug } from "@/lib/services";
 import { z } from "zod";
 import type { ReservationData } from "@/app/actions/reservation";
 import { validateCoupon } from "@/app/actions/coupons";
+import { packExtraGuests, unpackExtraGuests } from "@/lib/booking-metadata";
 
 // Re-using validation logic for the intent creation
 const PaymentIntentSchema = z.object({
@@ -31,8 +32,12 @@ const PaymentIntentSchema = z.object({
   // Guest Info (for metadata)
   fullName: z.string(),
   email: z.string().email(),
+  // With the country code ("+351 912 345 678"), like the bank-transfer flow (L-4).
   phone: z.string(),
   arrivalTime: z.string().nullish(),
+  // L-4: the other guests' names (needed for the SEF/AIMA registration). Without this key
+  // zod dropped them and card bookings were saved with no extra guests.
+  extraGuestNames: z.array(z.string().max(100)).max(20).optional(),
 
   // Billing (optional)
   address: z.string().nullish(),
@@ -152,6 +157,7 @@ export async function createPaymentIntent(rawData: z.infer<typeof PaymentIntentS
         ch: data.children.toString(),
         inf: data.infants.toString(),
         at: data.arrivalTime || "",
+        eg: packExtraGuests(data.extraGuestNames),
         cc: couponCode,
         cd: couponDiscount.toString(),
         bt: breakfastTotal.toString(),
@@ -253,6 +259,7 @@ export async function confirmStripePaymentIntent(paymentIntentId: string) {
       fullName: metadata.fn,
       email: metadata.em,
       phone: metadata.ph,
+      extraGuestNames: unpackExtraGuests(metadata.eg),
       propertySlug: metadata.ps,
       checkIn: metadata.ci,
       checkOut: metadata.co,

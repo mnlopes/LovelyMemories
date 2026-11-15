@@ -38,7 +38,8 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | S-14 — qualquer pessoa escreve em `visitor_logs` | ✅ **Corrigido** a 14/11 (migração `20261114180000`): política pública de INSERT apagada e INSERT revogado a `anon`/`authenticated` | No dashboard: `anon`/`authenticated` sem INSERT, `service_role` com INSERT, só a política de leitura dos admins. Com a chave pública, a inserção dá `42501 permission denied` (antes passava). O proxy continua a gravar visitas (visita real às 23:33). `check:exposure` sem falhas |
 | S-4 — reserva pública abusável | ✅ **Corrigido** a 14/11: `finalizeBooking` deixou de ser público (`lib/booking-finalize.ts`); campos escapados nos emails; referência só no formato do site; limites de 3/email/dia, 5/hora e 15/dia no site para transferências | Manifesto do build sem `finalizeBooking`; templates com HTML injetado: 0 tags passam (antes 3–6); referência e limites testados localmente. Sem captcha; expiração das transferências fica no L-8 |
 | L-2 — valor cobrado diferente do mostrado | ✅ **Corrigido** a 15/11: o checkout cria um PaymentIntent novo sempre que o cupão ou os dados mudam, e nunca mostra um antigo | Testado no checkout local com as chaves de **teste** da Stripe (sem pagar, sem reservas): Cartão no passo 3 criou o PaymentIntent 1 (email A); voltar ao passo 3 sem mudanças não criou outro; mudar o email no passo 1 e voltar criou o PaymentIntent 2 com o email B, e é esse que o formulário usa. Bloqueio de 15 min em datas de 2027 libertado no fim; 0 reservas criadas. `tsc`, build, lint igual |
-| L-3 — reserva dupla | ⏳ Código pronto a 15/11 (verificação final; pago em datas ocupadas fica "Em revisão" com alerta à equipa). Migração `20261115090000` (regra `EXCLUDE`) **por aplicar, só depois do deploy** | 10 cenários simulados + leituras reais; `tsc`, build, lint igual. Nenhuma reserva criada |
+| L-3 — reserva dupla | ✅ **Corrigido** a 15/11: verificação final antes de gravar; pago em datas ocupadas fica "Em revisão" com alerta à equipa; regra `EXCLUDE` `reservations_no_overlap` aplicada (migração `20261115090000`, depois do deploy do código) | Regra confirmada no SQL Editor; site, leituras de reservas e `check:exposure` OK depois da regra. 10 cenários simulados + leituras reais; `tsc`, build, lint igual. Nenhuma reserva criada |
+| L-4 — dados perdidos nos pagamentos com cartão | ✅ **Corrigido** a 15/11: telefone com indicativo e nomes dos outros hóspedes passam pela metadata da Stripe | PaymentIntent de teste com `+44 …` e o nome do 2.º hóspede; pack/unpack testado (vazios, 20 máx., limite de 500 caracteres, dados estragados); `tsc`, build, lint igual. Nenhuma reserva criada |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -168,7 +169,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - `finalizeBooking` não volta a verificar a disponibilidade, e a BD não tem uma restrição contra sobreposições.
 - **Cenário:** o cron importa um bloqueio do Airbnb entre a criação do pagamento e o pagamento.
 - **Correção:** verificar de novo no fim (se houver conflito, marcar para revisão e alertar a equipa), e adicionar uma restrição `EXCLUDE` com `daterange`.
-- **Estado (15/11):** código pronto; a regra da base de dados está numa migração **por aplicar**, só depois do deploy do código.
+- **Estado:** ✅ corrigido a 15/11. Código em produção (`0ee311b`) e regra da base de dados aplicada a seguir no SQL Editor.
   - `lib/booking-conflict.ts`: verificação final mesmo antes de gravar (reservas ativas e bloqueios, incluindo os do Airbnb; os bloqueios de 15 min de outros hóspedes não contam).
   - `finalizeBooking`: transferência em datas ocupadas → recusada (`errorAlreadyBooked`), nada gravado nem enviado. Pagamento Stripe em datas ocupadas → gravado como `needs_review` ("Em revisão"), email de alerta ao info@ e email ao hóspede "pagamento recebido, estamos a confirmar as datas". O erro da regra da BD (23P01) segue o mesmo caminho; se for a mesma reserva gravada pelo outro caminho da Stripe, é tratado como duplicado.
   - Backoffice: "Em revisão" tem as ações de aprovar/rejeitar; confirmar ou reativar por cima de datas ocupadas é recusado com uma mensagem clara (resolve também o L-10). Cancelar uma reserva "Em revisão" envia o email de cancelamento, como numa confirmada.
@@ -177,6 +178,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 
 ### Médio
 - **L-4.** Nas reservas pagas com cartão perdem-se dados que as reservas por transferência guardam: o indicativo do telefone e os nomes dos outros hóspedes, que são necessários para o SEF.
+  - **Estado:** ✅ corrigido a 15/11. Confirmado antes em produção: as 6 reservas pagas do site tinham o telefone sem indicativo e 0 hóspedes adicionais (com 2 a 4 pessoas). O checkout passa a enviar o telefone com indicativo e os nomes; `createPaymentIntent` aceita-os e guarda os nomes na metadata da Stripe (`eg`, JSON até 500 caracteres, `lib/booking-metadata.ts`); o webhook e `confirmStripePaymentIntent` reconstroem-nos. Testado com um PaymentIntent de teste (`ph=+44 …`, `eg=[nome]`), sem reservas. As reservas antigas não se recuperam (os dados nunca chegaram à Stripe).
 - **L-5.** A limpeza do iCal apaga os bloqueios de um feed que falhou, se a casa tiver mais do que um URL (hoje todas têm só um, por isso ainda não acontece).
 - **L-6.** Números errados no dashboard do proprietário (`owner-analytics.ts`):
   - os meses de anos diferentes são somados juntos;
@@ -185,7 +187,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **L-7.** Na exportação mensal do proprietário (`owner-export.ts`), as reservas canceladas contam, e uma estadia que atravessa dois meses aparece inteira nos dois.
 - **L-8.** As reservas por transferência ficam `pending` para sempre, a bloquear datas.
 - **L-9.** A taxa turística é cobrada a crianças dos 2 aos 16 anos. É preciso confirmar com o regulamento municipal, que normalmente isenta as crianças.
-- **L-10.** É possível passar uma reserva de "cancelada" para "confirmada" sem verificar a disponibilidade.
+- **L-10.** É possível passar uma reserva de "cancelada" para "confirmada" sem verificar a disponibilidade. ✅ Corrigido a 15/11 com o L-3 (o backoffice recusa reativar por cima de datas ocupadas, e a regra da BD também).
 
 ### Baixo
 - **L-11.** A fórmula de preço do browser é diferente da do servidor. Por exemplo, `city_tax_per_night || 2` faz uma taxa de 0 virar €2 no ecrã, e há uma casa com taxa 0.

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BookingSuccessInvoice } from "@/components/booking/BookingSuccessInvoice";
 import { getPaymentIntentDetails } from "@/app/actions/stripe";
+import { unpackExtraGuests } from "@/lib/booking-metadata";
 import { Loader2 } from "lucide-react";
 
 export default function BookingConfirmationPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -30,6 +31,7 @@ export default function BookingConfirmationPage({ params }: { params: Promise<{ 
                         fullName: res.metadata.fn,
                         email: res.metadata.em,
                         phone: res.metadata.ph,
+                        extraGuestNames: unpackExtraGuests(res.metadata.eg),
                         address: res.metadata.ba || "",
                         city: res.metadata.bc || "",
                         zip: res.metadata.bz || "",
