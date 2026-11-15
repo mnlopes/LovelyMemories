@@ -40,14 +40,20 @@ function languagesFor(path: string): Record<string, string> {
   return languages;
 }
 
-function propertyEntry(path: string, lastModified: Date): MetadataRoute.Sitemap[number] {
-  return {
-    url: urlFor(defaultLocale, path),
-    lastModified,
-    changeFrequency: 'weekly',
-    priority: 0.8,
-    alternates: { languages: languagesFor(path) },
-  };
+type Entry = MetadataRoute.Sitemap[number];
+
+/**
+ * One <url> per language, each listing all the alternates. The pt pages used to
+ * appear only as alternates inside the en entries; Google's sitemap guidelines
+ * want every language version as its own entry.
+ */
+function inEveryLocale(path: string, rest: Omit<Entry, 'url' | 'alternates'>): Entry[] {
+  const languages = languagesFor(path);
+  return locales.map((locale) => ({ ...rest, url: urlFor(locale, path), alternates: { languages } }));
+}
+
+function propertyEntry(path: string, lastModified: Date): Entry[] {
+  return inEveryLocale(path, { lastModified, changeFrequency: 'weekly', priority: 0.8 });
 }
 
 /**
@@ -65,12 +71,12 @@ async function propertyEntries(now: Date): Promise<MetadataRoute.Sitemap> {
   if (error || !data || data.length === 0) {
     // Fail safe: never serve a property-less sitemap because of a transient DB error.
     if (error) console.error('sitemap: falling back to static property list:', error.message);
-    return PROPERTIES.map((p) => propertyEntry(`properties/${p.slug}`, now));
+    return PROPERTIES.flatMap((p) => propertyEntry(`properties/${p.slug}`, now));
   }
 
   return data
     .filter((p) => !!p.slug)
-    .map((p) => {
+    .flatMap((p) => {
       const path = p.is_multi_unit && !p.parent_id ? `buildings/${p.slug}` : `properties/${p.slug}`;
       return propertyEntry(path, p.created_at ? new Date(p.created_at) : now);
     });
@@ -104,20 +110,20 @@ async function blogEntries(now: Date): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  // One entry per language the post exists in.
   return Array.from(bySlug, ([slug, info]) => {
     const path = `blog/${slug}`;
-    const primary = info.locales.includes(defaultLocale) ? defaultLocale : info.locales[0];
     const languages: Record<string, string> = {};
     for (const l of info.locales) languages[l] = urlFor(l, path);
-    return {
-      url: urlFor(primary, path),
+    return info.locales.map((locale) => ({
+      url: urlFor(locale, path),
       lastModified: info.lastModified,
       changeFrequency: 'monthly' as const,
       priority: 0.6,
       // A single-locale post has no translations to point hreflang at.
       alternates: info.locales.length > 1 ? { languages } : undefined,
-    };
-  });
+    }));
+  }).flat();
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -125,13 +131,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];
 
   for (const path of STATIC_PATHS) {
-    entries.push({
-      url: urlFor(defaultLocale, path),
+    entries.push(...inEveryLocale(path, {
       lastModified: now,
       changeFrequency: path === '' ? 'daily' : 'weekly',
       priority: path === '' ? 1 : path === 'properties' ? 0.9 : 0.7,
-      alternates: { languages: languagesFor(path) },
-    });
+    }));
   }
 
   const [properties, posts] = await Promise.all([propertyEntries(now), blogEntries(now)]);

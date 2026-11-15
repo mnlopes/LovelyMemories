@@ -21,7 +21,7 @@ export const HomeHero = () => {
                 <div className="absolute inset-0 z-0">
                     <Image
                         src="/legacy/home/images/hero-image.png"
-                        alt="Lovely Memories Hero"
+                        alt={t('heroImageAlt')}
                         fill
                         priority
                         className="object-cover object-center"
@@ -36,14 +36,16 @@ export const HomeHero = () => {
                 {/* Hero Content */}
                 <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center pb-20 md:pb-0">
                     <div className="w-full lg:w-10/12 xl:w-9/12 md:mt-24">
-                        <p className="text-white mb-4 text-base md:text-xl font-medium tracking-widest uppercase opacity-80">
+                        {/* The h1 is the line that says what we offer and where (search words);
+                            the slogan below keeps its look as a paragraph. */}
+                        <h1 className="text-white mb-4 text-base md:text-xl font-medium tracking-widest uppercase opacity-80">
                             {t('heroOverTitle')}
-                        </p>
-                        <h1 className="text-white text-[clamp(16px,calc(5.25vw_-_1.75px),21px)] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg whitespace-pre-line">
+                        </h1>
+                        <p className="text-white text-[clamp(16px,calc(5.25vw_-_1.75px),21px)] md:text-4xl lg:text-5xl leading-tight font-sans font-bold drop-shadow-lg whitespace-pre-line">
                             {t.rich('heroTitle', {
                                 scrambler: () => <CityScrambler mainVariant />
                             })}
-                        </h1>
+                        </p>
                     </div>
                 </div>
 

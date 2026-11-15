@@ -6,8 +6,28 @@ import { sanitizeBlogHtml } from "@/lib/sanitize-blog-html";
 import { Calendar, ArrowLeft, User } from "lucide-react";
 import { Link } from "@/i18n/routing"; // SEO-5: keeps the reader's language
 import { supabase as anonSupabase } from "@/lib/supabase";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, brandedTitle, clampDescription } from "@/lib/seo";
+import { stripBrand } from "@/lib/property-seo";
 import type { Metadata } from "next";
+
+type PostText = { title?: string | null; excerpt?: string | null; content?: string | null };
+
+// Some stored titles end in "| Lovely Memories"; the layout template adds the brand
+// already, which gave "… | Lovely Memories | Lovely Memories".
+const postTitle = (post: PostText) => stripBrand(post.title || '');
+
+// The excerpt, or the start of the article when a post has none, cut to what Google shows.
+function postDescription(post: PostText): string {
+    const source = post.excerpt?.trim() || (post.content || '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&quot;/g, '"')
+        .replace(/&#x?27;|&#39;/g, "'")
+        .replace(/&amp;/g, '&');
+    return clampDescription(source);
+}
+
+const absoluteUrl = (src: string) => (src.startsWith('http') ? src : `${SITE_URL}${src}`);
 
 export async function generateMetadata({
     params,
@@ -17,7 +37,7 @@ export async function generateMetadata({
     const { locale, slug } = await params;
     const { data: post } = await anonSupabase
         .from('blog_posts')
-        .select('title, excerpt, image_url')
+        .select('title, excerpt, content, image_url')
         .eq('slug', slug)
         .eq('locale', locale)
         .eq('is_published', true)
@@ -28,19 +48,20 @@ export async function generateMetadata({
     }
 
     const url = `${SITE_URL}/${locale}/blog/${slug}`;
-    const description = post.excerpt || undefined;
+    const title = postTitle(post);
+    const description = postDescription(post) || undefined;
 
     // Posts are per-locale rows: no hreflang alternates here (a translation may not
     // exist), just the canonical for this locale. The sitemap adds alternates only
     // for slugs that actually exist in more than one language.
     return {
-        title: post.title,
+        title: brandedTitle(title),
         description,
         alternates: { canonical: url },
         openGraph: {
             type: 'article',
             siteName: 'Lovely Memories',
-            title: `Lovely Memories — ${post.title}`,
+            title: `Lovely Memories — ${title}`,
             description,
             url,
             images: [post.image_url || '/opengraph-image.png'],
@@ -79,13 +100,37 @@ export default async function BlogPostPage({
         notFound();
     }
 
+    const title = postTitle(post);
+    const url = `${SITE_URL}/${locale}/blog/${slug}`;
+    // Article structured data: lets Google show the post with its date and image.
+    const articleJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: title,
+        description: postDescription(post) || undefined,
+        image: post.image_url ? [absoluteUrl(post.image_url)] : undefined,
+        datePublished: post.created_at,
+        dateModified: post.updated_at || post.created_at,
+        inLanguage: locale,
+        mainEntityOfPage: url,
+        url,
+        author: post.author_name
+            ? { '@type': 'Person', name: post.author_name }
+            : { '@id': `${SITE_URL}/#organization` },
+        publisher: { '@id': `${SITE_URL}/#organization` },
+    };
+
     return (
         <article className="min-h-screen bg-white">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd).replace(/</g, '\\u003c') }}
+            />
             {/* HERO / COVER IMAGE */}
             <div className="relative h-[60vh] w-full overflow-hidden">
-                <img 
-                    src={post.image_url || "/legacy/blog/images/Blog-background.png"} 
-                    alt={post.title}
+                <img
+                    src={post.image_url || "/legacy/blog/images/Blog-background.png"}
+                    alt={title}
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/40" />
@@ -100,7 +145,7 @@ export default async function BlogPostPage({
                             Back to Blog
                         </Link>
                         <h1 className="text-4xl md:text-6xl font-bold text-white max-w-4xl leading-tight">
-                            {post.title}
+                            {title}
                         </h1>
                         
                         <div className="flex flex-wrap items-center gap-6 mt-8 text-white/90 text-[11px] font-black uppercase tracking-[0.2em]">

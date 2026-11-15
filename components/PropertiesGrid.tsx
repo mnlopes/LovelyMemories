@@ -6,6 +6,7 @@ import { Link } from "@/i18n/routing";
 import { ArrowLeft, MapPin, Building2, Bed, Home, Maximize, Bath, Users } from 'lucide-react';
 import { useTranslations } from "next-intl";
 import { LegacyIcon } from './LegacyIcon';
+import { listingImageAlt } from '@/lib/property-seo';
 
 import { useLocale } from 'next-intl';
 
@@ -148,7 +149,7 @@ export const PropertiesGrid = ({ initialProperties }: { initialProperties: any[]
                                     {property.isComingSoon ? (
                                         <Image
                                             src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
-                                            alt={property.title}
+                                            alt={listingImageAlt(property, locale)}
                                             fill
                                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                                             style={{ objectFit: 'cover' }}
@@ -158,7 +159,7 @@ export const PropertiesGrid = ({ initialProperties }: { initialProperties: any[]
                                         <Link href={property.is_multi_unit ? `/buildings/${property.slug}` : `/properties/${property.singleUnitSlug || property.slug}`}>
                                             <Image
                                                 src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
-                                                alt={property.title}
+                                                alt={listingImageAlt(property, locale)}
                                                 fill
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                                                 style={{ objectFit: 'cover' }}

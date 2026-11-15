@@ -1,7 +1,8 @@
 import { PropertyDetails } from "@/components/PropertyDetails";
 import { getPropertyBySlug, getConciergeServices } from "@/lib/services";
 import { notFound } from "next/navigation";
-import { buildPageMetadata } from "@/lib/seo";
+import { buildPageMetadata, clampDescription } from "@/lib/seo";
+import { propertySeoTitle, propertySeoDescription } from "@/lib/property-seo";
 import { Metadata } from "next";
 import { cache } from "react";
 import { getTranslations } from "next-intl/server";
@@ -12,15 +13,6 @@ const loadProperty = cache((slug: string) => getPropertyBySlug(slug));
 type Props = {
     params: Promise<{ locale: string; slug: string }>;
 };
-
-// Localized values coming from the DB are { en, pt, he } objects; legacy/static
-// ones can still be plain strings.
-function loc(val: unknown, locale: string): string {
-    if (!val) return '';
-    if (typeof val === 'string') return val;
-    const obj = val as Record<string, string>;
-    return obj[locale] || obj.en || obj.pt || '';
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale, slug } = await params;
@@ -36,21 +28,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    const title = loc(property.title, locale);
-    const subtitle = loc(property.subtitle, locale);
-    const city = property.location?.city || '';
-    // Localized (the closing sentence used to be English on the pt pages too).
+    // Title and description say what the place is and where, in search words
+    // ("The Charming — 1-Bedroom Apartment in Porto"), see lib/property-seo.ts.
     const t = await getTranslations({ locale, namespace: 'PageMeta' });
-    const description = subtitle
-        ? `${subtitle}${city ? ` — ${city}, Portugal` : ''}. ${t('propertyBookDirect')}`
-        : city ? t('propertyFallback', { city }) : t('propertyFallbackNoCity');
+    const description = clampDescription(`${propertySeoDescription(property, locale)} ${t('propertyBookDirect')}`, 160);
 
     // buildPageMetadata gives us the canonical URL + hreflang alternates + OG base;
     // we then swap the generic social image for the property's own photo.
     const metadata = buildPageMetadata({
         locale,
         path: `properties/${slug}`,
-        title: subtitle ? `${title} — ${subtitle}` : title,
+        title: propertySeoTitle(property, locale),
         description,
     });
 

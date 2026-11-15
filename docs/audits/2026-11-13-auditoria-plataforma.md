@@ -45,6 +45,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | L-6 / L-7 — números do portal dos proprietários | ✅ **Corrigido** a 15/11: meses por ano, período do filtro aplicado, ocupação do período, receita líquida, cada estadia no mês do check-in, canceladas fora da exportação; filtro de ano até ao próximo ano (L-15) | Versão antiga vs nova com dados reais (só leitura): ocupação de 2026 0% → 16%, etiquetas certas, agosto €19 977 → €6 334; 12 relatórios de 2026: 485 linhas / €274 355 → 423 / €228 255 (cada estadia uma vez); `tsc`, build, lint igual ou melhor |
 | S-13 + SEO-1/2/3/5/6/7/9 + hebraico | ✅ **Corrigido** a 15/11: sem `X-Powered-By`; páginas das casas e cartões no HTML do servidor; slug inválido = 404; hreflang só en/pt; links do blog com língua; rota antiga redireciona; metadados de privacidade/termos/contacto; `/he` → `/en` (308); textos das casas traduzidos para pt | Servidor local: redirecionamentos 308, sem cabeçalhos `Link`/`X-Powered-By`, canonicals certos, sitemap sem `he`, HTML das casas com conteúdo, 0 erros de hidratação; tradução verificada contra a cópia de segurança; `tsc`, build, lint igual ou melhor |
 | SEO-10 — região e cache | ⏳ Região `dub1` feita a 15/11; cache/ISR das páginas estáticas por fazer | — |
+| SEO-11 — palavras-chave e etiquetas | ✅ **Corrigido** a 15/11: títulos e descrições gerados com tipo e cidade; edifícios com texto próprio; H1 da página inicial com palavra-chave; `alt` descritivos (eram `[object Object]`); blog sem marca repetida e com ficha de artigo; sitemap com entradas pt; sem `meta keywords` | Servidor local: títulos/descrições en e pt, 0 `[object Object]`, um H1 por página, sitemap com 104 URLs, `BlogPosting` no HTML, 0 erros na consola; `tsc`, build, lint igual |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -242,9 +243,26 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **SEO-5.** Os links do blog não levam a língua: em `/pt/blog`, um link redireciona e acaba em 404. Correção: usar o `Link` de `@/i18n/routing`. ✅ Corrigido a 15/11 (`Link` de `@/i18n/routing` no cartão e no post).
 - **SEO-6.** A rota antiga `/[locale]/property/[slug]` dá **500** (já existia antes do upgrade ✅). Correção: apagar a rota e redirecionar permanentemente para `/properties/[slug]`. ✅ Corrigido a 15/11: rota apagada; `/property/:slug` e `/:locale/property/:slug` redirecionam (308) para `/:locale/properties/:slug`.
 - **SEO-7.** As páginas pt/he das casas são cópias em inglês: título e descrição iguais e texto fixo em inglês. São cerca de 90 páginas quase duplicadas. ✅ Corrigido a 15/11: o hebraico foi abandonado (o cliente desistiu da língua); 39 de 41 casas não tinham texto em português, e foram traduzidos para português europeu (856 valores: 34 subtítulos, 36 descrições, 729 comodidades, quartos, locais…), só onde o pt estava vazio; inglês intacto (verificado coluna a coluna contra a cópia `supabase/backups/2026-11-15-properties-before-pt.json`). Os títulos são nomes próprios e ficam iguais. A frase final da meta description passou a ser traduzida.
-- **SEO-8.** O preloader de ecrã inteiro atrasa o LCP em mais de 1 s e acrescenta um segundo H1 a todas as páginas.
+- **SEO-8.** O preloader de ecrã inteiro atrasa o LCP em mais de 1 s e acrescenta um segundo H1 a todas as páginas. ⏳ Parcial a 15/11: o "Lovely Memories" do preloader deixou de ser um H1 (ver SEO-11); o atraso no LCP continua.
 - **SEO-9.** Privacidade e Termos não têm metadados próprios; `/contact` não tem canonical. ✅ Corrigido a 15/11: privacidade e termos com título, descrição, canonical e hreflang (layouts no servidor); contacto com canonical e hreflang.
 - **SEO-10.** Todas as páginas respondem com `no-store`, e as funções correm nos EUA (`iad1`). Correção: região UE e ISR nas páginas estáticas. ⏳ Parcial a 15/11: funções na Vercel em `dub1` (Dublin, ao lado da Supabase em eu-west-1). O cache/ISR das páginas estáticas fica por fazer: o layout lê a sessão e o next-intl não usa `setRequestLocale`, por isso todas as páginas são dinâmicas.
+- **SEO-11.** Palavras-chave e etiquetas (achado de 15/11, ao rever as 54 páginas do sitemap em produção). Os títulos das casas não diziam a cidade e usavam abreviaturas de anúncio ("Luxe, Central 1 BDR"); 34 de 54 títulos passavam dos 60 caracteres e eram cortados; os 4 edifícios tinham a mesma descrição; o H1 da página inicial era o slogan, sem dizer o quê nem onde; **todas as fotos da listagem e dos edifícios tinham `alt="[object Object]"`**; o blog tinha a marca repetida no título, um artigo sem descrição e nenhuma ficha de artigo; as páginas pt só apareciam no sitemap como alternativas das en; havia `meta keywords` (ignorada pelo Google). ✅ Corrigido a 15/11:
+  - `lib/property-seo.ts` gera título, descrição e texto das fotos a partir dos dados de cada casa: "The Charming — 1-Bedroom Apartment in Porto" / "Apartamento T1 no Porto". O tipo vem do subtítulo ou do nome (estúdio, duplex, loft…), e o número de quartos vem do subtítulo antes da coluna `bedrooms`, porque duas casas têm a coluna errada (ver abaixo).
+  - Se o título com a marca passar dos 60 caracteres, a marca sai (`brandedTitle` em `lib/seo.ts`).
+  - Edifícios: título e descrição próprios, com o número de apartamentos, a rua e a capacidade.
+  - Página inicial: o H1 passa a ser a frase de cima, com o texto novo "Alojamento de luxo no Porto, Gaia e Algarve"; o slogan fica igual mas como parágrafo. O H2 e os H3 repetidos da versão de computador ficaram com `role="heading"`.
+  - `alt` descritivos em todas as fotos de casas, edifícios e na foto principal.
+  - Blog: título sem a marca repetida, descrição tirada do texto quando falta, ficha `BlogPosting`.
+  - Sitemap com uma entrada por língua (104 URLs).
+  - `meta keywords` removida.
+  - Verificado no servidor local: títulos e descrições em en/pt, 0 `[object Object]`, um H1 por página, sitemap e ficha do blog; `tsc`, build, lint igual.
+  - **Dados a rever pela equipa no backoffice:**
+    - `the-burgundy` e `belomonte-penthouse` dizem 2 quartos no subtítulo, mas `bedrooms` = 1;
+    - `apartment` tem "Lovely Memories |" no nome;
+    - `the-terraced-loft` tem o nome pt "Terraço no Porto" e o subtítulo pt "Lindo e maravilhoso";
+    - a descrição de `the-alluring` começa com "The Harmonious";
+    - a de `belomonte-penthouse` começa com "nesStep";
+    - os títulos dos artigos do blog levam "| Lovely Memories".
 
 ### Baixo
 - Falta JSON-LD por casa, de breadcrumbs e de posts.

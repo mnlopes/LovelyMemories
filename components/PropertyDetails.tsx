@@ -40,6 +40,7 @@ const safeCount = (val: any): number => {
 // New Components
 import { Breadcrumb } from './property-details/Breadcrumb';
 import { PropertyGallery } from './property-details/PropertyGallery';
+import { propertyImageAlt } from '@/lib/property-seo';
 import { PropertyStats } from './property-details/PropertyStats';
 import { BookingCard } from './property-details/BookingCard';
 import { HighlightsSection } from './property-details/HighlightsSection';
@@ -213,6 +214,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({ initialPropert
                 <PropertyGallery
                     images={property.images}
                     title={getLocalizedStr(property.title, locale)}
+                    imageAlt={propertyImageAlt(property, locale)}
                     metadata={{
                         guests: safeCount(property.guests),
                         bedrooms: safeCount(property.bedrooms),

@@ -738,8 +738,6 @@
     },
     "PageMeta": {
         "propertyBookDirect": "Book directly with Lovely Memories.",
-        "propertyFallback": "Luxury stay in {city} — book directly with Lovely Memories.",
-        "propertyFallbackNoCity": "Luxury stay — book directly with Lovely Memories.",
         "privacyTitle": "Privacy Policy",
         "privacyDesc": "How Lovely Memories collects, uses and protects your personal data when you book or contact us.",
         "termsTitle": "Terms and Conditions",
@@ -758,7 +756,8 @@
     "Home": {
         "metadataTitle": "Luxury Stays in Porto, Gaia & Douro",
         "metadataDesc": "Book curated luxury homes with concierge service in Porto, Vila Nova de Gaia, the Douro and the Algarve — or have us manage your property hassle-free. Direct booking, secure payments.",
-        "heroOverTitle": "Book one of our exquisite, curated homes",
+        "heroOverTitle": "Luxury holiday apartments in Porto, Gaia & the Algarve",
+        "heroImageAlt": "Porto's Ribeira and the Douro river at sunset",
         "heroTitle": "And create your own Lovely,\nlong lasting Memories of <scrambler></scrambler>",
         "aboutTitle": "From Porto to the World",
         "aboutDescription": "We are the leading tourism accommodation management agent in Portugal, run by an amazing, international team. Our clients, be it the owners or guests themselves, know exactly why!",

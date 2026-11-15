@@ -729,8 +729,6 @@
     },
     "PageMeta": {
         "propertyBookDirect": "Reserve diretamente com a Lovely Memories.",
-        "propertyFallback": "Estadia de luxo em {city} — reserve diretamente com a Lovely Memories.",
-        "propertyFallbackNoCity": "Estadia de luxo — reserve diretamente com a Lovely Memories.",
         "privacyTitle": "Política de Privacidade",
         "privacyDesc": "Como a Lovely Memories recolhe, usa e protege os seus dados pessoais quando reserva ou nos contacta.",
         "termsTitle": "Termos e Condições",
@@ -749,7 +747,8 @@
     "Home": {
         "metadataTitle": "Alojamento de Luxo no Porto, Gaia e Douro",
         "metadataDesc": "Reserve casas de luxo com serviço de concierge no Porto, Vila Nova de Gaia, Douro e Algarve — ou deixe-nos gerir a sua propriedade sem complicações. Reserva direta e pagamentos seguros.",
-        "heroOverTitle": "Reserve uma das nossas fantásticas casas cuidadosamente selecionadas",
+        "heroOverTitle": "Alojamento de luxo no Porto, Gaia e Algarve",
+        "heroImageAlt": "A Ribeira do Porto e o rio Douro ao pôr do sol",
         "heroTitle": "E crie as suas próprias,\nLovely Memories de <scrambler></scrambler>",
         "aboutTitle": "Do Porto para o Mundo",
         "aboutDescription": "Somos o principal agente de gestão de alojamento turístico em Portugal, gerido por uma equipa internacional fantástica. Os nossos clientes, sejam os proprietários ou os próprios hóspedes, sabem exatamente porquê!",

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Building2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from "next-intl";
+import { listingImageAlt } from '@/lib/property-seo';
 
 // Helper to safely extract string from potential localized object
 const getLocalizedStr = (val: any, locale: string = 'en'): string => {
@@ -78,7 +79,7 @@ export const HomeFeaturedProperties = ({ properties }: { properties: any[] }) =>
                                         <figure className="mb-0 h-[450px] w-full relative overflow-hidden rounded-2xl">
                                             <Image
                                                 src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
-                                                alt={getLocalizedStr(property.title, locale)}
+                                                alt={listingImageAlt(property, locale)}
                                                 fill
                                                 sizes="(max-width: 768px) 85vw"
                                                 style={{ objectFit: 'cover' }}
@@ -118,7 +119,8 @@ export const HomeFeaturedProperties = ({ properties }: { properties: any[] }) =>
                 <div className="container mx-auto px-4">
                     <div className="mb-12">
                         <div className="w-full">
-                            <h2 className="section-title text-center text-3xl font-sans font-bold text-[#192537]">{t('featuredTitle')}</h2>
+                            {/* Same heading as the mobile block above: a real h2 only once in the HTML. */}
+                            <p role="heading" aria-level={2} className="section-title text-center text-3xl font-sans font-bold text-[#192537]">{t('featuredTitle')}</p>
                         </div>
                     </div>
                     {/* Centered Flex Structure */}
@@ -143,7 +145,7 @@ export const HomeFeaturedProperties = ({ properties }: { properties: any[] }) =>
                                         <figure className="mb-0 buildings-posts__card--img rounded-2xl overflow-hidden relative aspect-[3/4] w-full shadow-md">
                                             <Image
                                                 src={property.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop'}
-                                                alt={getLocalizedStr(property.title, locale)}
+                                                alt={listingImageAlt(property, locale)}
                                                 fill
                                                 sizes="(max-width: 1200px) 50vw, 20vw"
                                                 style={{ objectFit: 'cover' }}
@@ -161,9 +163,9 @@ export const HomeFeaturedProperties = ({ properties }: { properties: any[] }) =>
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 transition-opacity duration-300"></div>
 
                                             <div className="absolute bottom-0 left-0 w-full p-6 z-10 text-left">
-                                                <h3 className="text-white font-sans font-bold text-xl mb-1 leading-tight">
+                                                <p role="heading" aria-level={3} className="text-white font-sans font-bold text-xl mb-1 leading-tight">
                                                     {getLocalizedStr(property.title, locale)}
-                                                </h3>
+                                                </p>
                                                 {!isBuilding && (
                                                     <p className="text-white/90 text-sm font-light tracking-wide">
                                                         {safeCount(property.bedrooms)} {t('bedrooms')} • {safeCount(property.max_guests)} {t('guests')}

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Link } from "@/i18n/routing";
 import { ArrowLeft, MapPin, Building2, Bed, Home, Users, Maximize, Bath } from 'lucide-react';
 import { useTranslations, useLocale } from "next-intl";
+import { buildingSeo, propertyImageAlt } from '@/lib/property-seo';
 
 interface BuildingUnitsPageProps {
     building: any;
@@ -91,7 +92,7 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                     <div className="mb-8 shrink-0 relative aspect-video w-full overflow-hidden rounded-2xl shadow-md">
                         <Image
                             src={building.image}
-                            alt={building.title}
+                            alt={buildingSeo(building, units, locale).imageAlt}
                             fill
                             className="object-cover"
                         />
@@ -168,7 +169,7 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                                             <div className="relative w-full h-full grayscale-[0.3]">
                                                 <Image
                                                     src={unit.image}
-                                                    alt={unit.title}
+                                                    alt={propertyImageAlt(unit, locale)}
                                                     fill
                                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                                                     className="object-cover transition-transform duration-1000"
@@ -178,7 +179,7 @@ export default function BuildingUnitsPage({ building, units }: BuildingUnitsPage
                                             <Link href={`/properties/${unit.slug}`} className="block relative w-full h-full">
                                                 <Image
                                                     src={unit.image}
-                                                    alt={unit.title}
+                                                    alt={propertyImageAlt(unit, locale)}
                                                     fill
                                                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                                                     className="object-cover transition-transform duration-1000 group-hover:scale-110"

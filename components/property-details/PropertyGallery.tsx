@@ -10,6 +10,8 @@ import { useTranslations } from "next-intl";
 interface PropertyGalleryProps {
     images: string[];
     title: string;
+    /** Describes the photos for Google Images and screen readers; falls back to the title. */
+    imageAlt?: string;
     metadata: {
         guests: number;
         bedrooms: number;
@@ -63,8 +65,13 @@ function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImag
     );
 }
 
-export function PropertyGallery({ images, title, metadata }: PropertyGalleryProps) {
+export function PropertyGallery({ images, title, imageAlt, metadata }: PropertyGalleryProps) {
     const t = useTranslations('PropertyDetail');
+    // "The Charming — 1-bedroom apartment in Porto", then "(2)", "(3)"… so each photo differs.
+    const altFor = (index: number) => {
+        const base = imageAlt || title;
+        return index === 0 ? base : `${base} (${index + 1})`;
+    };
     const [viewState, setViewState] = useState<GalleryState>("closed");
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -101,7 +108,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                 >
                     <GalleryImage
                         src={images[0]}
-                        alt={title}
+                        alt={altFor(0)}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, 50vw"
@@ -117,7 +124,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                 >
                     <GalleryImage
                         src={images[1] || images[0]}
-                        alt={title}
+                        alt={altFor(images[1] ? 1 : 0)}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="50vw"
@@ -179,7 +186,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                                     >
                                         <GalleryImage
                                             src={img}
-                                            alt={title}
+                                            alt={altFor(idx)}
                                             fill
                                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                                             sizes={isLarge ? "100vw" : "33vw"}
@@ -240,7 +247,7 @@ export function PropertyGallery({ images, title, metadata }: PropertyGalleryProp
                                     >
                                         <GalleryImage
                                             src={images[activeIndex]}
-                                            alt={title}
+                                            alt={altFor(activeIndex)}
                                             fill
                                             className="object-contain"
                                             sizes="100vw"
