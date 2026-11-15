@@ -42,6 +42,7 @@ O erro 500 em `/[locale]/property/[slug]` **já existia antes do upgrade**: foi 
 | L-4 — dados perdidos nos pagamentos com cartão | ✅ **Corrigido** a 15/11: telefone com indicativo e nomes dos outros hóspedes passam pela metadata da Stripe | PaymentIntent de teste com `+44 …` e o nome do 2.º hóspede; pack/unpack testado (vazios, 20 máx., limite de 500 caracteres, dados estragados); `tsc`, build, lint igual. Nenhuma reserva criada |
 | S-6 — XSS no blog | ✅ **Corrigido** a 15/11: HTML dos posts limpo ao gravar, ao carregar para o editor e ao mostrar (`lib/sanitize-blog-html.ts`) | Os 4 posts reais renderizados antes/depois: texto idêntico, mesmas tags/classes/estilos/links/SVG; 14 ataques conhecidos neutralizados; post aberto no browser local; `tsc`, build, lint igual; 0 vulnerabilidades nas dependências de produção |
 | S-7 — links de convite | ✅ **Corrigido** a 15/11: o convite deixa de funcionar quando a password é definida ou quando é enviado um convite novo; até lá, 30 dias e tentativas ilimitadas | 8 cenários com tabela simulada (reutilizável antes, invalidado ao reenviar e ao definir a password, email sem maiúsculas e sem coringas, nada apagado, falha da BD não bloqueia a password); `tsc`, build, lint igual. Nenhuma conta real tocada |
+| L-6 / L-7 — números do portal dos proprietários | ✅ **Corrigido** a 15/11: meses por ano, período do filtro aplicado, ocupação do período, receita líquida, cada estadia no mês do check-in, canceladas fora da exportação; filtro de ano até ao próximo ano (L-15) | Versão antiga vs nova com dados reais (só leitura): ocupação de 2026 0% → 16%, etiquetas certas, agosto €19 977 → €6 334; 12 relatórios de 2026: 485 linhas / €274 355 → 423 / €228 255 (cada estadia uma vez); `tsc`, build, lint igual ou melhor |
 
 Ferramenta nova: `npm run check:exposure` (scripts/check-public-exposure.ts). Testa, só com a chave pública e só a ler, o que um visitante consegue ver. Deve ser corrida depois de cada alteração a regras, permissões ou colunas da base de dados.
 
@@ -189,7 +190,9 @@ Confirmei que estas não têm nenhuma verificação no código:
   - os meses de anos diferentes são somados juntos;
   - com o filtro de ano, a ocupação dá sempre 0%;
   - a receita é bruta, com taxa turística e extras incluídos.
+  - **Estado:** ✅ corrigido a 15/11. Meses agrupados por `yyyy-MM` (já não somam anos diferentes); o filtro de ano e de mês define o período (totais, atividade e ocupação), e a ocupação mede as noites dentro do período (antes media os 30 dias antes de 1 de janeiro). Receita **líquida**, por decisão do cliente (`lib/owner-revenue.ts`): no Airbnb o valor pago depois da comissão; no site o total sem taxa turística e extras. Cada estadia conta no mês do check-in. Comparado com dados reais (proprietário com 47 estadias): ano 2026 passou de 0% para 16% de ocupação e de etiquetas "2025" para 2026; agosto 2026 passou de €19 977 (ano inteiro) para €6 334; receita sem filtro €19 977 bruto → €16 559 líquido.
 - **L-7.** Na exportação mensal do proprietário (`owner-export.ts`), as reservas canceladas contam, e uma estadia que atravessa dois meses aparece inteira nos dois.
+  - **Estado:** ✅ corrigido a 15/11. Cada estadia aparece só no mês do check-in (decisão do cliente) e as canceladas ficam de fora; a coluna "Líquido" usa a mesma definição do painel. Nos 12 meses de 2026: antes 485 linhas / €274 355, agora 423 linhas / €228 255, exatamente as 423 estadias de 2026.
 - **L-8.** As reservas por transferência ficam `pending` para sempre, a bloquear datas.
   - **Decisão (15/11):** fica como está, por decisão do cliente. Não há prazo nem expiração automática; as transferências pendentes continuam a ser aprovadas ou rejeitadas à mão no backoffice. (Até 15/11 nunca houve uma reserva por transferência; o limite do S-4 trava o volume de reservas falsas.)
 - **L-9.** A taxa turística é cobrada a crianças dos 2 aos 16 anos. É preciso confirmar com o regulamento municipal, que normalmente isenta as crianças.
@@ -200,7 +203,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - **L-12.** As datas aparecem um dia mais cedo no checkout para quem está a oeste de UTC.
 - **L-13.** `parseMoney` da importação do Airbnb: "120,50" passa a 12050.
 - **L-14.** O dia final dos bloqueios manuais é diferente no admin e no site.
-- **L-15.** O filtro de ano do proprietário está fixo em 2024–2026, por isso falta 2027.
+- **L-15.** O filtro de ano do proprietário está fixo em 2024–2026, por isso falta 2027. ✅ Corrigido a 15/11: do próximo ano até 2024.
 
 ### Já está bem
 - Os pagamentos são recalculados no servidor.
@@ -311,7 +314,7 @@ Confirmei que estas não têm nenhuma verificação no código:
 - ~~L-8: expirar transferências não pagas.~~ Fica como está (decisão do cliente, 15/11).
 - S-6: sanitizar o blog. ✅ Feito a 15/11.
 - S-7: revogar convites. ✅ Feito a 15/11.
-- L-6 e L-7: números dos proprietários.
+- L-6 e L-7: números dos proprietários. ✅ Feito a 15/11.
 
 **Onda 2 — SEO**
 - SEO-1/2: páginas das casas e cartões renderizados no servidor.

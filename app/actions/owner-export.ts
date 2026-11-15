@@ -2,8 +2,29 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { startOfMonth, endOfMonth, format, differenceInDays } from "date-fns";
+import { endOfMonth, format, differenceInDays } from "date-fns";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { ownerRevenue, OWNER_REPORT_STATUSES } from "@/lib/owner-revenue";
 import { getEffectiveUser } from "./auth-context";
+
+/**
+ * The stays of one month for the owner's report (audit 2026-11-13, L-7).
+ * Each stay is listed once, in the month of its check-in (owner's choice, 15/11): the old
+ * overlap query listed a stay crossing two months in full in both (and a check-out on the 1st
+ * in the month it had no night in), so adding up the monthly reports counted it twice. Cancelled
+ * stays are left out. Dates are plain "yyyy-MM-dd", like the columns.
+ */
+function fetchMonthReservations(supabase: SupabaseClient, propertyId: string, month: number, year: number) {
+    const first = new Date(year, month - 1, 1);
+    return supabase
+        .from('reservations')
+        .select('*')
+        .eq('property_id', propertyId)
+        .in('status', [...OWNER_REPORT_STATUSES])
+        .gte('check_in', format(first, 'yyyy-MM-dd'))
+        .lte('check_in', format(endOfMonth(first), 'yyyy-MM-dd'))
+        .order('check_in', { ascending: true });
+}
 
 export async function exportPropertyMonthlyData(propertyId: string, month: number, year: number, locale: string = 'pt') {
     const cookieStore = await cookies();
@@ -37,17 +58,8 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
 
     if (propError || !property) throw new Error("Property not found or unauthorized");
 
-    // 2. Fetch Reservations for the period
-    const startDate = startOfMonth(new Date(year, month - 1));
-    const endDate = endOfMonth(new Date(year, month - 1));
-
-    const { data: reservations, error: resError } = await supabase
-        .from('reservations')
-        .select('*')
-        .eq('property_id', propertyId)
-        .lte('check_in', endDate.toISOString())
-        .gte('check_out', startDate.toISOString())
-        .order('check_in', { ascending: true });
+    // 2. Fetch Reservations for the period (L-7: see fetchMonthReservations)
+    const { data: reservations, error: resError } = await fetchMonthReservations(supabase, propertyId, month, year);
 
     if (resError) throw new Error("Error fetching reservations");
 
@@ -110,7 +122,7 @@ export async function exportPropertyMonthlyData(propertyId: string, month: numbe
             Number(res.total_price || 0).toFixed(2),
             Number(res.cleaning_fee || 0).toFixed(2),
             Number(res.service_fee || 0).toFixed(2),
-            Number(res.net_amount || res.total_price || 0).toFixed(2)
+            ownerRevenue(res).toFixed(2) // L-6: what the owner earns (lib/owner-revenue.ts)
         ];
         csvRows.push(row.join(';'));
     });
@@ -157,17 +169,8 @@ export async function exportPropertyMonthlyDataRaw(propertyId: string, month: nu
 
     if (propError || !property) throw new Error("Property not found or unauthorized");
 
-    // 2. Fetch Reservations for the period
-    const startDate = startOfMonth(new Date(year, month - 1));
-    const endDate = endOfMonth(new Date(year, month - 1));
-
-    const { data: reservations, error: resError } = await supabase
-        .from('reservations')
-        .select('*')
-        .eq('property_id', propertyId)
-        .lte('check_in', endDate.toISOString())
-        .gte('check_out', startDate.toISOString())
-        .order('check_in', { ascending: true });
+    // 2. Fetch Reservations for the period (L-7: see fetchMonthReservations)
+    const { data: reservations, error: resError } = await fetchMonthReservations(supabase, propertyId, month, year);
 
     if (resError) throw new Error("Error fetching reservations");
 
@@ -228,7 +231,7 @@ export async function exportPropertyMonthlyDataRaw(propertyId: string, month: nu
             Number(res.total_price || 0).toFixed(2),
             Number(res.cleaning_fee || 0).toFixed(2),
             Number(res.service_fee || 0).toFixed(2),
-            Number(res.net_amount || res.total_price || 0).toFixed(2)
+            ownerRevenue(res).toFixed(2) // L-6: what the owner earns (lib/owner-revenue.ts)
         ];
         rows.push(row);
     });

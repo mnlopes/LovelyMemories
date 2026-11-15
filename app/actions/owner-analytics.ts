@@ -2,7 +2,8 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { startOfMonth, subMonths, format, endOfMonth, differenceInDays, subDays } from "date-fns";
+import { startOfMonth, subMonths, format, endOfMonth, differenceInCalendarDays, subDays, addDays, startOfDay, max, min } from "date-fns";
+import { ownerRevenue, OWNER_REPORT_STATUSES } from "@/lib/owner-revenue";
 import { createClient } from "@supabase/supabase-js";
 import { getEffectiveUser } from "./auth-context";
 
@@ -97,19 +98,32 @@ export async function getOwnerDashboardStats(filters: {
     const allowedPropertyIds = properties.map(p => p.id);
     const activeProperties = properties.length;
 
-    // 2. Define Date Ranges
-    const today = new Date();
-    
-    // If year/month provided, adjust reference ranges
-    let referenceDate = today;
-    if (year) {
-        referenceDate = new Date(year, (month || 1) - 1, 1);
-    }
+    // 2. Period (L-6). A stay counts in the month of its check-in (owner's choice, 15/11).
+    //    - year + month, or a month alone (current year): that month;
+    //    - year alone: that year;
+    //    - nothing: all time (occupancy: the last 30 days).
+    // Months are keyed "yyyy-MM": keying by "MMM" alone used to add up the same month of
+    // different years, and the year filter used to measure occupancy in the 30 days BEFORE
+    // 1 January (always 0%).
+    const today = startOfDay(new Date());
+    const periodYear = year ?? (month ? today.getFullYear() : undefined);
+    const hasPeriod = periodYear !== undefined;
+    const periodStart = hasPeriod ? new Date(periodYear, month ? month - 1 : 0, 1) : undefined;
+    const periodEnd = hasPeriod ? (month ? endOfMonth(periodStart!) : new Date(periodYear, 11, 31)) : undefined;
+    const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
+    const monthKey = (d: Date) => format(d, 'yyyy-MM');
+    // Stay dates are plain "yyyy-MM-dd"; read them as local days.
+    const day = (s: string) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 
-    const startOfCurrentMonth = startOfMonth(referenceDate);
-    const startOfLastMonth = startOfMonth(subMonths(referenceDate, 1));
-    const endOfLastMonth = endOfMonth(subMonths(referenceDate, 1));
-    const thirtyDaysAgo = subDays(referenceDate, 30);
+    // Chart: the 12 months ending with the period's last month (or this month). Trend: the
+    // chart's last month against the one before.
+    const chartEndMonth = startOfMonth(periodEnd ?? today);
+    const chartStart = startOfMonth(subMonths(chartEndMonth, 11));
+    const trendKey = monthKey(chartEndMonth);
+    const previousKey = monthKey(subMonths(chartEndMonth, 1));
+    // Occupancy: nights booked inside [occStart, occEnd).
+    const occStart = hasPeriod ? periodStart! : subDays(today, 30);
+    const occEnd = hasPeriod ? addDays(periodEnd!, 1) : today;
 
     // 3. Fetch Reservations
 
@@ -122,6 +136,9 @@ export async function getOwnerDashboardStats(filters: {
             cleaning_fee,
             service_fee,
             net_amount,
+            city_tax_total,
+            breakfast_total,
+            transfer_total,
             check_in,
             check_out,
             status,
@@ -138,12 +155,12 @@ export async function getOwnerDashboardStats(filters: {
             )
         `)
         .in('property_id', propertyId ? [propertyId] : allowedPropertyIds)
-        .in('status', ['confirmed', 'completed', 'checked-in', 'checked-out']);
+        .in('status', [...OWNER_REPORT_STATUSES]);
 
-    if (year) {
-        const yearStart = format(new Date(year, 0, 1), 'yyyy-MM-dd');
-        const yearEnd = format(new Date(year + 1, 0, 0), 'yyyy-MM-dd');
-        reservationsQuery = reservationsQuery.gte('check_in', yearStart).lte('check_in', yearEnd);
+    if (hasPeriod) {
+        // Everything the chart window and the period need: stays still running at the start of
+        // the chart (chartStart <= periodStart) and starting by the end of the period.
+        reservationsQuery = reservationsQuery.gt('check_out', ymd(chartStart)).lte('check_in', ymd(periodEnd!));
     }
 
     const { data: reservations, error } = await reservationsQuery;
@@ -153,15 +170,9 @@ export async function getOwnerDashboardStats(filters: {
         return getEmptyStats();
     }
 
-    // 4. Metrics Calculation
+    // 4. Metrics Calculation (amounts: ownerRevenue, what the owner earns; see lib/owner-revenue.ts)
     const monthlyRevenue: Record<string, number> = {};
-
-    // Init relevant months for chart
-    for (let i = 11; i >= 0; i--) {
-        const d = subMonths(referenceDate, i);
-        const key = format(d, 'MMM');
-        monthlyRevenue[key] = 0;
-    }
+    for (let i = 11; i >= 0; i--) monthlyRevenue[monthKey(subMonths(chartEndMonth, i))] = 0;
 
     let totalRevenue = 0;
     let currentMonthRevenue = 0;
@@ -169,60 +180,49 @@ export async function getOwnerDashboardStats(filters: {
     let totalGuests = 0;
     let currentMonthGuests = 0;
     let lastMonthGuests = 0;
-    let bookedNightsLast30Days = 0;
+    let bookedNights = 0;
+    const periodReservations: NonNullable<typeof reservations> = [];
+    const inPeriod = (checkIn: string) => !hasPeriod || (checkIn >= ymd(periodStart!) && checkIn <= ymd(periodEnd!));
 
-    if (reservations) {
-        reservations.forEach(res => {
-            const checkIn = new Date(res.check_in);
-            const checkOut = new Date(res.check_out);
-            const amount = Number(res.total_price) || 0;
-            const guests = (res.adults || 0) + (res.children || 0) + (res.infants || 0);
+    (reservations || []).forEach(res => {
+        const amount = ownerRevenue(res);
+        const guests = (res.adults || 0) + (res.children || 0) + (res.infants || 0);
+        const checkInMonth = String(res.check_in).slice(0, 7);
 
+        // Chart and trend: by check-in month.
+        if (checkInMonth in monthlyRevenue) monthlyRevenue[checkInMonth] += amount;
+        if (checkInMonth === trendKey) {
+            currentMonthRevenue += amount;
+            currentMonthGuests += guests;
+        } else if (checkInMonth === previousKey) {
+            lastMonthRevenue += amount;
+            lastMonthGuests += guests;
+        }
+
+        // Totals and activity: stays checking in during the period (all time without a filter).
+        if (inPeriod(res.check_in)) {
             totalRevenue += amount;
             totalGuests += guests;
+            periodReservations.push(res);
+        }
 
-            // Chart Data
-            const monthKey = format(checkIn, 'MMM');
-            if (monthlyRevenue.hasOwnProperty(monthKey)) {
-                monthlyRevenue[monthKey] += amount;
-            }
+        // Occupancy: the nights themselves, whatever month the stay started in.
+        const from = max([day(res.check_in), occStart]);
+        const to = min([day(res.check_out), occEnd]);
+        const nights = differenceInCalendarDays(to, from);
+        if (nights > 0) bookedNights += nights;
+    });
 
-            // Trends
-            if (checkIn >= startOfCurrentMonth && checkIn <= endOfMonth(referenceDate)) {
-                currentMonthRevenue += amount;
-                currentMonthGuests += guests;
-            } else if (checkIn >= startOfLastMonth && checkIn <= endOfLastMonth) {
-                lastMonthRevenue += amount;
-                lastMonthGuests += guests;
-            }
-
-            // Occupancy (Last 30 Days of reference date)
-            const rangeStart = checkIn < thirtyDaysAgo ? thirtyDaysAgo : checkIn;
-            const rangeEnd = checkOut > referenceDate ? referenceDate : checkOut;
-            if (rangeStart < rangeEnd) {
-                const days = differenceInDays(rangeEnd, rangeStart);
-                if (days > 0) bookedNightsLast30Days += days;
-            }
-        });
-    }
-
-    // Formatting Chart Data
-    const revenueData = [];
-    for (let i = 11; i >= 0; i--) {
-        const d = subMonths(referenceDate, i);
-        const key = format(d, 'MMM');
-        revenueData.push({
-            label: key,
-            value: monthlyRevenue[key] || 0,
-            date: d.toISOString()
-        });
-    }
+    const revenueData = Object.entries(monthlyRevenue).map(([key, value]) => {
+        const d = day(`${key}-01`);
+        return { label: format(d, 'MMM'), value, date: d.toISOString() };
+    });
 
     const revenueTrend = calculateTrend(currentMonthRevenue, lastMonthRevenue);
     const guestsTrend = calculateTrend(currentMonthGuests, lastMonthGuests);
-    const totalAvailableNights = activeProperties * 30;
+    const totalAvailableNights = activeProperties * differenceInCalendarDays(occEnd, occStart);
     const avgOccupancy = totalAvailableNights > 0
-        ? Math.round((bookedNightsLast30Days / totalAvailableNights) * 100)
+        ? Math.round((bookedNights / totalAvailableNights) * 100)
         : 0;
 
     // 5. Paginated Activity (Grouped by Sync)
@@ -230,7 +230,7 @@ export async function getOwnerDashboardStats(filters: {
     const batchMap: Record<string, any[]> = {};
     const individualBookings: any[] = [];
 
-    (reservations || []).forEach(res => {
+    periodReservations.forEach(res => {
         if (res.import_batch_id) {
             if (!batchMap[res.import_batch_id]) batchMap[res.import_batch_id] = [];
             batchMap[res.import_batch_id].push(res);
@@ -249,7 +249,7 @@ export async function getOwnerDashboardStats(filters: {
             type: 'booking',
             title: 'newBooking',
             subtitle: `${res.guest_name || 'Guest'} · ${propertyTitle}`,
-            amount: `€${(Number(res.net_amount) || Number(res.total_price) || 0).toLocaleString()}`,
+            amount: `€${ownerRevenue(res).toLocaleString()}`,
             payoutAmount: undefined, // Simpler view as requested
             date: format(new Date(res.created_at), 'MMM d, HH:mm'),
             metadata: {
@@ -272,7 +272,7 @@ export async function getOwnerDashboardStats(filters: {
     Object.keys(batchMap).forEach(batchId => {
         const batchRes = batchMap[batchId];
         const latestCreatedAt = new Date(Math.max(...batchRes.map(r => new Date(r.created_at).getTime())));
-        const totalNet = batchRes.reduce((sum, r) => sum + (Number(r.net_amount) || 0), 0);
+        const totalNet = batchRes.reduce((sum, r) => sum + ownerRevenue(r), 0);
 
         processedActivities.push({
             id: batchId,

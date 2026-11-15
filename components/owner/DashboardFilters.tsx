@@ -68,7 +68,10 @@ export const DashboardFilters = ({ properties, locale }: DashboardFiltersProps) 
         setOpenDropdown(null);
     };
 
-    const years = [2026, 2025, 2024];
+    // L-15: from next year (stays already booked ahead) back to 2024, the first year with data.
+    // It was fixed to 2024–2026, so 2027 bookings could not be selected.
+    const nextYear = new Date().getFullYear() + 1;
+    const years = Array.from({ length: nextYear - 2024 + 1 }, (_, i) => nextYear - i);
     const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
     return (
