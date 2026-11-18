@@ -85,7 +85,9 @@ test('totals are rounded to cents', () => {
         customPrices: [], checkIn: '2026-10-01', checkOut: '2026-10-08', guests: 3,
     });
     assert.ok(!('error' in r));
-    // base 7*99.99=699.93; disc 7.5% = 52.49475; after 647.43525; tax 2*3*7=42; total 774.43525 → 774.44
-    assert.equal(r.totalPrice, 774.44);
-    assert.equal(r.nightlyAverage, 92.49);
+    // base 7*99.99=699.93; disc 7.5% = 52.49475 → €52 (whole euros, L-11); after 647.93;
+    // tax 2*3*7=42; total 647.93+85+42 = 774.93
+    assert.equal(r.discountAmount, 52);
+    assert.equal(r.totalPrice, 774.93);
+    assert.equal(r.nightlyAverage, 92.56);
 });

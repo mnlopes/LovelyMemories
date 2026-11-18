@@ -94,7 +94,8 @@ export function computeStayPrice(input: {
     } else if (nights >= 7) {
         discountPercent = Number(rules.weekly_discount_percent);
     }
-    const discountAmount = totalBasePrice * (discountPercent / 100);
+    // Rounded to whole euros, exactly like calculateReservationPrice (L-11).
+    const discountAmount = Math.round(totalBasePrice * (discountPercent / 100));
     const priceAfterDiscount = totalBasePrice - discountAmount;
 
     // 6. City tax: all guests are adults, max 7 nights

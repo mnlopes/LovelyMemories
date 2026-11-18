@@ -36,6 +36,7 @@ import { ADDRESS_DATA, OTHER_COUNTRY, flagImageUrl, COUNTRY_CODES as PHONE_CODES
 import { processReservation } from "@/app/actions/reservation";
 import { getBookingSession, BookingSessionData } from "@/lib/booking-session";
 import { getPropertyBySlug } from "@/lib/services";
+import { parseDateLocal } from "@/lib/utils";
 import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
@@ -76,7 +77,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
         let existing = typeof window !== 'undefined' ? Cookies.get('booking_session_id') : null;
         if (existing) return existing;
         
-        const newSess = `sess_tmp_${Math.random().toString(36).substring(2, 9)}`;
+        // S-9: whoever knows this id can release or take over the 15-min lock, so it must be
+        // unguessable (it was 7 Math.random characters). The lock table is no longer public.
+        const random = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID().replace(/-/g, '')
+            : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+        const newSess = `sess_${random}`;
         if (typeof window !== 'undefined') Cookies.set('booking_session_id', newSess, { expires: 1/96 }); // 15 mins
         return newSess;
     });
@@ -493,7 +499,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
 
     const basePrice = nights * property.price.perNight;
     const cleaningFee = pricingRules.cleaning_fee;
-    const cityTaxPerNight = pricingRules.city_tax_per_night || 2.00;
+    // L-11: ?? like the server (lib/pricing.ts). With || a tax of 0 (the-golde-dune) showed
+    // €2 per guest and night that was never charged.
+    const cityTaxPerNight = Number(pricingRules.city_tax_per_night ?? 2.00);
 
     // Determine Discount
     let activeDiscountPercent = 0;
@@ -542,7 +550,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ locale: str
     const formatDate = (dateString: string) => {
         if (!dateString) return "";
         try {
-            const date = new Date(dateString);
+            // L-12: new Date("2026-12-05") is UTC midnight, still 4 December west of Portugal.
+            const date = parseDateLocal(dateString);
+            if (!date) return dateString;
             const d = date.getDate().toString().padStart(2, '0');
             const m = (date.getMonth() + 1).toString().padStart(2, '0');
             const y = date.getFullYear();

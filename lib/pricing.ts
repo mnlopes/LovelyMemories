@@ -90,7 +90,9 @@ export async function calculateReservationPrice({
         discountPercent = Number(rules.weekly_discount_percent);
     }
 
-    const discountAmount = totalBasePrice * (discountPercent / 100);
+    // L-11: rounded to whole euros, as every screen shows it (BookingCard, the mobile bar and
+    // the checkout). Unrounded, a 5% discount on €1 043 showed €52 and charged €52.15 off.
+    const discountAmount = Math.round(totalBasePrice * (discountPercent / 100));
     const priceAfterDiscount = totalBasePrice - discountAmount;
 
     // 6. Calcular Taxa de Cidade (Tourist Tax)
@@ -214,10 +216,8 @@ export async function verifyAvailability(propertyId: string, checkIn: Date, chec
     }
 
     if (activeLocks && activeLocks.length > 0) {
-        console.log(`⚠️ Blocked by ${activeLocks.length} other session(s).`, {
-            mySession: sessionId,
-            blockingSessions: activeLocks.map(l => l.session_id)
-        });
+        // No session ids in the logs: they are what lets someone act on another guest's lock (S-9).
+        console.log(`⚠️ Blocked by ${activeLocks.length} other session(s).`);
         return { available: false, error: 'errorTemporarilyLocked' };
     }
 

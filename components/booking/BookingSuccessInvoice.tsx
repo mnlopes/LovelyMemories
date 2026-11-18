@@ -8,6 +8,13 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { BookingInvoice } from "@/components/booking/BookingInvoice";
 import { Button } from "@/components/ui/Button";
+import { parseDateLocal } from "@/lib/utils";
+
+// L-12: a stay date ("2026-12-05") read as a local day. new Date("2026-12-05") is UTC midnight,
+// still 4 December for guests west of Portugal (Brazil, the US).
+function showStayDate(value: string, locale: string, options?: Intl.DateTimeFormatOptions): string {
+    return parseDateLocal(value)?.toLocaleDateString(locale, options) ?? value;
+}
 
 interface BookingSuccessInvoiceProps {
     reservationRef: string;
@@ -188,11 +195,11 @@ export function BookingSuccessInvoice({
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 py-4 border-b border-gray-100">
                             <div className="space-y-0.5">
                                 <p className="text-[9px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('sidebar.checkIn')}</p>
-                                <p className="text-xs font-bold text-navy-950">{new Date(checkIn).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                <p className="text-xs font-bold text-navy-950">{showStayDate(checkIn, locale, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             </div>
                             <div className="space-y-0.5">
                                 <p className="text-[9px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('sidebar.checkOut')}</p>
-                                <p className="text-xs font-bold text-navy-950">{new Date(checkOut).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                <p className="text-xs font-bold text-navy-950">{showStayDate(checkOut, locale, { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             </div>
                             <div className="space-y-0.5">
                                 <p className="text-[9px] uppercase font-bold tracking-widest text-[#B08D4A]">{t('success.duration')}</p>
@@ -365,8 +372,8 @@ export function BookingSuccessInvoice({
                     date={new Date().toLocaleDateString(locale)}
                     propertyTitle={property.title?.[locale] || property.title?.en || property.title || 'Untitled'}
                     propertyLocation={`${property.location?.city || property.city || ''}, Portugal`}
-                    checkIn={new Date(checkIn).toLocaleDateString(locale)}
-                    checkOut={new Date(checkOut).toLocaleDateString(locale)}
+                    checkIn={showStayDate(checkIn, locale)}
+                    checkOut={showStayDate(checkOut, locale)}
                     nights={nights}
                     guests={`${t('sidebar.adults', { count: adults })}${children > 0 ? `, ${t('sidebar.children', { count: children })}` : ''}${infants > 0 ? `, ${t('sidebar.infants', { count: infants })}` : ''}`}
                     basePrice={basePrice}

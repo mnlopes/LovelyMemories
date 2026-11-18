@@ -57,12 +57,36 @@ export function addDays(ymd: string, days: number): string {
     return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
 }
 
-/** "1,234.56" / "€ 120.00" / "" → number; null when the cell has something unparseable. */
-function parseMoney(raw: string | undefined): number | null {
+/**
+ * "1,234.56" / "1.234,56" / "120,50" / "€ 120.00" / "" → number; null when the cell has
+ * something unparseable.
+ *
+ * L-13: the comma used to be thrown away, so a European "120,50" became 12050. Now, with both
+ * separators the later one is the decimal; a lone comma is a decimal ("120,50") unless it is
+ * followed by exactly 3 digits or repeated ("1,234", "1,234,567": thousands).
+ */
+export function parseMoney(raw: string | undefined): number | null {
     const s = (raw || '').trim();
     if (!s) return 0;
-    const n = parseFloat(s.replace(/[^\d.-]/g, ''));
-    return isNaN(n) ? null : n;
+    let t = s.replace(/[^\d.,-]/g, '');
+    if (!/\d/.test(t)) return null;
+
+    const lastDot = t.lastIndexOf('.');
+    const lastComma = t.lastIndexOf(',');
+    if (lastDot !== -1 && lastComma !== -1) {
+        const decimal = lastDot > lastComma ? '.' : ',';
+        const thousands = decimal === '.' ? ',' : '.';
+        t = t.split(thousands).join('').replace(decimal, '.');
+    } else if (lastComma !== -1) {
+        const commas = t.split(',').length - 1;
+        const digitsAfter = t.length - lastComma - 1;
+        t = commas > 1 || digitsAfter === 3 ? t.split(',').join('') : t.replace(',', '.');
+    } else if (t.split('.').length - 1 > 1) {
+        t = t.split('.').join(''); // "1.234.567"
+    }
+
+    const n = Number(t);
+    return Number.isFinite(n) ? n : null;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;

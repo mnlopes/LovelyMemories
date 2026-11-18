@@ -119,24 +119,35 @@ export async function createBlockedDate(data: {
     try {
         const admin = await getAdminClientAndCheckRole();
 
+        // L-14: end_date is the first free day, like a check-out (the sheet sends the last
+        // picked night + 1). Ranges overlap when each starts before the other ends, so a block
+        // may start on a check-out day or end on a check-in day.
+        const isYmd = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+        if (!isYmd(data.start_date) || !isYmd(data.end_date) || data.end_date <= data.start_date) {
+            return { error: "Invalid dates." };
+        }
+
         // Check for overlap with existing BLOCKS
         const { data: overlapBlock } = await admin
             .from('blocked_dates')
             .select('id')
             .eq('property_id', data.property_id)
-            .or(`and(start_date.lte.${data.end_date},end_date.gte.${data.start_date})`);
+            .lt('start_date', data.end_date)
+            .gt('end_date', data.start_date);
 
         if (overlapBlock && overlapBlock.length > 0) {
             return { error: "Dates overlap with an existing block." };
         }
 
-        // Check for overlap with EXISTING RESERVATIONS
+        // Check for overlap with EXISTING RESERVATIONS (any that still holds the dates, pending
+        // transfers included, as on the site)
         const { data: overlapRes } = await admin
             .from('reservations')
             .select('id')
             .eq('property_id', data.property_id)
-            .eq('status', 'confirmed')
-            .or(`and(check_in.lte.${data.end_date},check_out.gte.${data.start_date})`);
+            .neq('status', 'cancelled')
+            .lt('check_in', data.end_date)
+            .gt('check_out', data.start_date);
 
         if (overlapRes && overlapRes.length > 0) {
             return { error: "Dates overlap with an existing reservation." };

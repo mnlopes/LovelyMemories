@@ -17,6 +17,7 @@ interface CheckoutTimerProps {
 
 export default function CheckoutTimer({ propertyId, checkIn, checkOut, sessionId, slug }: CheckoutTimerProps) {
   const t = useTranslations("Checkout.timer");
+  const tc = useTranslations("Checkout");
   const router = useRouter();
   const INITIAL_SECONDS = 15 * 60; // 15 minutes
   const [timeLeft, setTimeLeft] = useState(INITIAL_SECONDS);
@@ -59,7 +60,8 @@ export default function CheckoutTimer({ propertyId, checkIn, checkOut, sessionId
         setShowExtension(false);
         toast.error(t('alreadyExtended'));
       } else if (res.status === 409) {
-        toast.error(useTranslations("Checkout")('errorTemporarilyLocked'));
+        // A hook can't be called here (it threw, and the guest saw "connection error").
+        toast.error(tc('errorTemporarilyLocked'));
       } else {
         toast.error(t('extendError'));
       }

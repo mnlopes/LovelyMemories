@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { format } from "date-fns";
 import { pt, enGB } from "date-fns/locale";
+import { parseDateLocal } from "@/lib/utils";
 import { SearchCalendarPopover } from './SearchCalendarPopover';
 import { HomeLocationPopover } from "./HomeLocationPopover";
 import { BookingGuestPopover } from './property-details/BookingGuestPopover';
@@ -78,7 +79,9 @@ function SearchResultsContent() {
         const from = searchParams.get('from');
         const to = searchParams.get('to');
         if (from && to) {
-            return { from: new Date(from), to: new Date(to) };
+            // L-12: local days. new Date("2026-12-05") is UTC midnight, still 4 December
+            // west of Portugal, which showed and searched the day before.
+            return { from: parseDateLocal(from), to: parseDateLocal(to) };
         }
         return undefined;
     });
@@ -137,8 +140,8 @@ function SearchResultsContent() {
                 // Use new searchProperties service
                 const { searchProperties } = await import('@/lib/services');
 
-                const from = searchParams.get('from') ? new Date(searchParams.get('from')!) : undefined;
-                const to = searchParams.get('to') ? new Date(searchParams.get('to')!) : undefined;
+                const from = parseDateLocal(searchParams.get('from'));
+                const to = parseDateLocal(searchParams.get('to'));
                 const adults = parseInt(searchParams.get('adults') || '1', 10);
                 const children = parseInt(searchParams.get('children') || '0', 10);
                 const location = searchParams.get('location') || undefined;

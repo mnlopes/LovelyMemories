@@ -80,11 +80,12 @@ async function main() {
         }
     }
 
-    // Known, lower-risk exposure (audit S-9): checkout locks expose their session id.
+    // Audit S-9: a lock's session id lets anyone release or take over that guest's 15-min lock.
+    // Closed by migration 20261118100000_locked_dates_private.sql.
     {
         const { count, error } = await anon.from('locked_dates').select('session_id', { count: 'exact', head: true });
         if (error) report('PASS', 'locked_dates.session_id', 'not readable');
-        else report('WARN', 'locked_dates.session_id', `${count ?? 0} rows readable (known issue S-9)`);
+        else report('FAIL', 'locked_dates.session_id', `${count ?? 0} rows readable — apply 20261118100000_locked_dates_private.sql`);
     }
 
     const width = Math.max(...results.map((r) => r.check.length));

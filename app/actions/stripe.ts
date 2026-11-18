@@ -8,6 +8,7 @@ import { z } from "zod";
 import type { ReservationData } from "@/app/actions/reservation";
 import { validateCoupon } from "@/app/actions/coupons";
 import { packExtraGuests, unpackExtraGuests } from "@/lib/booking-metadata";
+import { stripeReference, legacyStripeReference } from "@/lib/stripe-reference";
 
 // Re-using validation logic for the intent creation
 const PaymentIntentSchema = z.object({
@@ -292,13 +293,15 @@ export async function confirmStripePaymentIntent(paymentIntentId: string) {
     const property = await getPropertyBySlug(resData.propertySlug);
     if (!property) throw new Error(`Property ${resData.propertySlug} not found`);
 
-    const referenceId = `LM-${paymentIntentId.split('_')[1].toUpperCase().substring(0, 8)}`;
+    // Same reference as the webhook (S-8: the random end of the id, see lib/stripe-reference.ts).
+    const referenceId = stripeReference(paymentIntentId);
 
     console.log("Triggering finalizeBooking with Ref:", referenceId);
     const result = await finalizeBooking({
       data: resData,
       propertyId: property.id,
       referenceId,
+      legacyReferenceIds: [legacyStripeReference(paymentIntentId)],
       status: 'confirmed',
       // metadata.tp is the amount actually charged and ALREADY includes extras and the
       // coupon discount (see createPaymentIntent). Adding bt/tt again double-counted the
@@ -346,16 +349,27 @@ export async function getPaymentIntentDetails(paymentIntentId: string) {
 
         const property = await getPropertyBySlug(paymentIntent.metadata.ps);
 
-        // L-3: was this paid booking saved for review (dates already taken)? Same reference
-        // as the webhook / confirmStripePaymentIntent. Unknown until the webhook has run.
+        // L-3: was this paid booking saved for review (dates already taken)? And under which
+        // reference: the webhook / confirmStripePaymentIntent one, its pre-S-8 form, or
+        // "<ref>-2"… when another booking held it (lib/booking-finalize.ts). The guest email
+        // makes sure the row is this booking. Unknown until the webhook has run.
         let inReview = false;
+        let reference = stripeReference(paymentIntentId);
         try {
             const { getSupabaseAdmin } = await import("@/lib/supabase");
             const { REVIEW_STATUS } = await import("@/lib/booking-conflict");
             const admin = await getSupabaseAdmin();
-            const ref = `LM-${paymentIntentId.split('_')[1].toUpperCase().substring(0, 8)}`;
-            const { data: row } = await admin.from('reservations').select('status').eq('reference_id', ref).maybeSingle();
-            inReview = row?.status === REVIEW_STATUS;
+            const { data: rows } = await admin
+                .from('reservations')
+                .select('status, reference_id')
+                .or(`reference_id.eq.${reference},reference_id.like.${reference}-*,reference_id.eq.${legacyStripeReference(paymentIntentId)}`)
+                .eq('guest_email', paymentIntent.metadata.em ?? '')
+                .limit(1);
+            const row = rows?.[0];
+            if (row) {
+                inReview = row.status === REVIEW_STATUS;
+                reference = row.reference_id;
+            }
         } catch (reviewErr) {
             console.warn("Could not read the reservation status:", reviewErr);
         }
@@ -367,7 +381,8 @@ export async function getPaymentIntentDetails(paymentIntentId: string) {
             status: paymentIntent.status,
             paymentMethod: actualPaymentMethod,
             property: property,
-            inReview
+            inReview,
+            reference
         };
     } catch(err: any) {
         return { success: false, error: err.message };

@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { createBlockedDate, deleteBlockedDate, getUnavailableDates, BlockedDate, ReservationDate } from "@/app/actions/blocked-dates";
 import { toast } from "sonner";
+import { parseDateLocal } from "@/lib/utils";
 
 export function BlockedDatesSheet({
     propertyId,
@@ -49,10 +50,13 @@ export function BlockedDatesSheet({
         }
 
         setIsLoading(true);
+        // L-14: the days picked here are the nights to block, last one included. blocked_dates
+        // stores end_date like a check-out (first free day), as the site, the iCal imports and
+        // the export to Airbnb all read it, so the last picked day becomes end_date - 1.
         const result = await createBlockedDate({
             property_id: propertyId,
             start_date: format(selectedRange.from, 'yyyy-MM-dd'),
-            end_date: format(selectedRange.to, 'yyyy-MM-dd'),
+            end_date: format(addDays(selectedRange.to, 1), 'yyyy-MM-dd'),
             reason: reason
         });
 
@@ -68,17 +72,25 @@ export function BlockedDatesSheet({
         setIsLoading(false);
     };
 
-    const disabledDays = [
-        ...blockedDates.map(b => ({ from: new Date(b.start_date), to: new Date(b.end_date) })),
-        ...reservations.map(r => ({ from: new Date(r.check_in), to: new Date(r.check_out) }))
-    ];
+    // Occupied NIGHTS: from the first day to the day before the end (check-out / end_date is
+    // free, L-14). A check-out day can start a block, as it can start a booking on the site.
+    const nights = (start: string, end: string) => {
+        const from = parseDateLocal(start);
+        const endDay = parseDateLocal(end);
+        if (!from || !endDay) return null;
+        const last = addDays(endDay, -1);
+        return { from, to: last < from ? from : last };
+    };
+    const occupied = [
+        ...reservations.map(r => nights(r.check_in, r.check_out)),
+        ...blockedDates.map(b => nights(b.start_date, b.end_date))
+    ].filter((r): r is { from: Date; to: Date } => r !== null);
+
+    const disabledDays = occupied;
 
     // Modifiers to style reservations differently if needed (optional)
     const modifiers = {
-        booked: [
-            ...reservations.map(r => ({ from: new Date(r.check_in), to: new Date(r.check_out) })),
-            ...blockedDates.map(b => ({ from: new Date(b.start_date), to: new Date(b.end_date) }))
-        ]
+        booked: occupied
     };
 
     const modifiersStyles = {

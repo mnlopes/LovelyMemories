@@ -94,7 +94,8 @@ export default function AnnualCalendarTab({ propertyId, activeLang = "en", view:
     const isDateUnavailable = (date: Date) => {
         const d = startOfDay(date);
         if (reservations.some(r => d >= startOfDay(new Date(r.check_in)) && d < startOfDay(new Date(r.check_out)))) return true;
-        if (blockedDates.some(b => d >= startOfDay(new Date(b.start_date)) && d <= startOfDay(new Date(b.end_date)))) return true;
+        // L-14: end_date is the first free day (like check_out), as for the bars below and the site.
+        if (blockedDates.some(b => d >= startOfDay(new Date(b.start_date)) && d < startOfDay(new Date(b.end_date)))) return true;
         return false;
     };
 

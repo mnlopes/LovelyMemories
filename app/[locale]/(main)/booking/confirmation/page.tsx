@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { BookingSuccessInvoice } from "@/components/booking/BookingSuccessInvoice";
 import { getPaymentIntentDetails } from "@/app/actions/stripe";
 import { unpackExtraGuests } from "@/lib/booking-metadata";
+import { stripeReference } from "@/lib/stripe-reference";
 import { Loader2 } from "lucide-react";
 
 export default function BookingConfirmationPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -14,7 +15,9 @@ export default function BookingConfirmationPage({ params }: { params: Promise<{ 
     const searchParams = useSearchParams();
     
     const piParam = searchParams.get("payment_intent") || searchParams.get("pi");
-    const reference = searchParams.get("ref") || (piParam ? `LM-${piParam.split('_')[1]?.toUpperCase().substring(0, 8) || "PENDING"}` : "LM-PENDING");
+    // S-8: same reference as the webhook (lib/stripe-reference.ts); the saved one wins below.
+    const refParam = searchParams.get("ref");
+    const reference = refParam || (piParam ? stripeReference(piParam) : "LM-PENDING");
 
     const [loading, setLoading] = useState(!!piParam);
     const [invoiceData, setInvoiceData] = useState<any>(null);
@@ -26,7 +29,7 @@ export default function BookingConfirmationPage({ params }: { params: Promise<{ 
             if (res.success && res.metadata) {
                 setInvoiceData({
                     property: res.property || { title: res.metadata.ps }, // fallback
-                    reservationRef: reference,
+                    reservationRef: refParam || res.reference || reference,
                     formData: {
                         fullName: res.metadata.fn,
                         email: res.metadata.em,
@@ -63,7 +66,7 @@ export default function BookingConfirmationPage({ params }: { params: Promise<{ 
             setLoading(false);
         };
         fetchDetails();
-    }, [piParam, reference]);
+    }, [piParam, reference, refParam]);
 
     if (loading) {
         return (

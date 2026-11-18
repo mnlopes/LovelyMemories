@@ -64,7 +64,11 @@ export async function validatePropertyAvailability(propertyId: string, from: str
         // 2. Check availability including locks for other sessions.
         // Parse the 'yyyy-MM-dd' strings as UTC midnight (same as the checkout flow)
         // so the day isn't shifted when verifyAvailability formats them on the server.
-        const result = await verifyAvailability(propertyId, new Date(from), new Date(to), sessionId);
+        // Service role, like the checkout's final checks: locks are private (S-9) and the
+        // public key never saw reservations (RLS), so this check now sees both.
+        const { getSupabaseAdmin } = await import('@/lib/supabase');
+        const adminSupabase = await getSupabaseAdmin();
+        const result = await verifyAvailability(propertyId, new Date(from), new Date(to), sessionId, adminSupabase);
         return result;
     } catch (error) {
         console.error("[validatePropertyAvailability] Error:", error);

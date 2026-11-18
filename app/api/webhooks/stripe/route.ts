@@ -5,6 +5,7 @@ import { finalizeBooking } from '@/lib/booking-finalize';
 import type { ReservationData } from '@/app/actions/reservation';
 import { unpackExtraGuests } from '@/lib/booking-metadata';
 import { getPropertyBySlug } from '@/lib/services';
+import { stripeReference, legacyStripeReference } from '@/lib/stripe-reference';
 import Stripe from 'stripe';
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -85,13 +86,12 @@ export async function POST(req: Request) {
       const property = await getPropertyBySlug(resData.propertySlug);
       if (!property) throw new Error(`Property ${resData.propertySlug} not found in webhook Context`);
 
-      // Finalize the booking in the DB
-      const referenceId = `LM-${paymentIntent.id.split('_')[1].toUpperCase().substring(0, 8)}`;
-
+      // Finalize the booking in the DB (same reference as confirmStripePaymentIntent, S-8)
       const result = await finalizeBooking({
         data: resData,
         propertyId: property.id,
-        referenceId,
+        referenceId: stripeReference(paymentIntent.id),
+        legacyReferenceIds: [legacyStripeReference(paymentIntent.id)],
         status: 'confirmed', // Paid via Stripe
         // metadata.tp is the amount actually charged and ALREADY includes extras and the
         // coupon discount (see createPaymentIntent). Adding bt/tt again double-counted the

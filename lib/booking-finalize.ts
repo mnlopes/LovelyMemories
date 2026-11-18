@@ -19,7 +19,8 @@ import { findStayConflict, REVIEW_STATUS, OVERLAP_ERROR_CODE, type StayConflict 
 export async function finalizeBooking({
     data,
     propertyId,
-    referenceId,
+    referenceId: requestedReference,
+    legacyReferenceIds = [],
     status,
     finalTotal,
     pricingReport
@@ -27,6 +28,8 @@ export async function finalizeBooking({
     data: ReservationData;
     propertyId: string;
     referenceId: string;
+    /** Older references this same booking may already be saved under (S-8: Stripe payments). */
+    legacyReferenceIds?: string[];
     status: string;
     finalTotal: number;
     pricingReport: {
@@ -36,6 +39,10 @@ export async function finalizeBooking({
         cityTaxTotal: number;
     };
 }) {
+    // The reference actually saved: requestedReference, or "<requestedReference>-2"… when
+    // another booking already holds it (S-8). Every email and the result use this one.
+    let referenceId = requestedReference;
+
     // 6. Save to Supabase (using Admin Client to bypass RLS for guest insertions)
     const reservationData: any = {
         property_id: propertyId,
@@ -72,23 +79,56 @@ export async function finalizeBooking({
 
     const adminSupabase = await getSupabaseAdmin();
 
-    // The same booking, already saved by the other path (Stripe webhook + browser confirm).
+    // The same booking may already be saved by the other path (Stripe webhook + browser
+    // confirm). S-8: a reference only counts as "already saved" when the row IS this booking
+    // (same house, dates and guest email). A row of ANOTHER booking under the same reference is
+    // a collision: this booking is then saved as "<ref>-2" (then -3…) instead of being dropped.
+    // Both Stripe paths walk the same sequence, so they still find each other.
+    type SavedRow = { id: string; status: string; reference_id: string; property_id: string; check_in: string; check_out: string; guest_email: string | null };
+    const day = (d: unknown) => String(d ?? '').slice(0, 10);
+    const sameEmail = (a: unknown, b: unknown) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+    const isThisBooking = (row: SavedRow) =>
+        row.property_id === propertyId &&
+        day(row.check_in) === day(data.checkIn) &&
+        day(row.check_out) === day(data.checkOut) &&
+        sameEmail(row.guest_email, data.email);
     // inReview tells the browser which success message to show.
-    const alreadySaved = async () => {
-        const { data: row } = await adminSupabase
+    const savedResult = (row: SavedRow) => {
+        console.log(`Duplicate insertion caught for reference: ${row.reference_id}`);
+        return { success: true, ref: row.reference_id, warning: "Reservation already exists.", inReview: row.status === REVIEW_STATUS };
+    };
+    const findByReference = async (refs: string[]): Promise<SavedRow[]> => {
+        const { data: rows, error } = await adminSupabase
             .from('reservations')
-            .select('id, status')
-            .eq('reference_id', referenceId)
-            .maybeSingle();
-        return row ? { success: true, ref: referenceId, warning: "Reservation already exists.", inReview: row.status === REVIEW_STATUS } : null;
+            .select('id, status, reference_id, property_id, check_in, check_out, guest_email')
+            .in('reference_id', refs);
+        if (error) {
+            // Carry on: the unique index on reference_id still refuses a second row.
+            console.error('finalizeBooking: reference lookup failed:', error.message);
+            return [];
+        }
+        return (rows ?? []) as SavedRow[];
+    };
+    const MAX_REFERENCE_TRIES = 5;
+    /** This booking's saved row, or the first reference in the sequence nobody holds. */
+    const resolveReference = async (): Promise<{ saved: SavedRow } | { ref: string }> => {
+        for (let n = 1; n <= MAX_REFERENCE_TRIES; n++) {
+            const ref = n === 1 ? requestedReference : `${requestedReference}-${n}`;
+            const rows = await findByReference(n === 1 ? [ref, ...legacyReferenceIds] : [ref]);
+            const mine = rows.find(isThisBooking);
+            if (mine) return { saved: mine };
+            if (!rows.some(r => r.reference_id === ref)) return { ref };
+            console.error(`finalizeBooking: reference ${ref} already belongs to another booking (S-8); trying the next one.`);
+        }
+        // Practically impossible; an error keeps the payment visible (Stripe retries the webhook).
+        throw new Error(`No free booking reference after ${requestedReference}-${MAX_REFERENCE_TRIES}`);
     };
 
     // Prevent Duplicates from concurrent Webhooks & Client requests
-    const duplicate = await alreadySaved();
-    if (duplicate) {
-        console.log(`Duplicate insertion caught for reference: ${referenceId}`);
-        return duplicate;
-    }
+    const resolved = await resolveReference();
+    if ('saved' in resolved) return savedResult(resolved.saved);
+    referenceId = resolved.ref;
+    reservationData.reference_id = referenceId;
 
     // L-3: last availability check right before saving (see lib/booking-conflict.ts).
     // Wire transfers are not paid yet, so a conflict simply refuses the booking. Stripe
@@ -117,30 +157,41 @@ export async function finalizeBooking({
         .select('id')
         .single();
 
-    let { data: insertedRes, error: dbError } = await insertReservation();
-
-    // Database rule reservations_no_overlap: another active reservation was saved for these
-    // dates between the check above and this insert.
-    if (dbError?.code === OVERLAP_ERROR_CODE) {
-        const same = await alreadySaved();
-        if (same) return same; // our own booking, saved by the other Stripe path
-        if (!isPaid) {
-            return { success: false, error: "errorAlreadyBooked", warning: undefined, ref: undefined };
-        }
-        console.error(`finalizeBooking: paid booking ${referenceId} hit reservations_no_overlap; saved for review.`);
-        reservationData.status = REVIEW_STATUS;
-        conflict = conflict ?? { kind: 'reservation', id: '', checkIn: data.checkIn, checkOut: data.checkOut, label: null };
+    let insertedRes: { id: string } | null = null;
+    let dbError: { code?: string; message?: string } | null = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
         ({ data: insertedRes, error: dbError } = await insertReservation());
+        if (!dbError) break;
+
+        // Database rule reservations_no_overlap: another active reservation was saved for
+        // these dates between the check above and this insert.
+        if (dbError.code === OVERLAP_ERROR_CODE && reservationData.status !== REVIEW_STATUS) {
+            const again = await resolveReference();
+            if ('saved' in again) return savedResult(again.saved); // our own booking, saved by the other Stripe path
+            if (!isPaid) {
+                return { success: false, error: "errorAlreadyBooked", warning: undefined, ref: undefined };
+            }
+            console.error(`finalizeBooking: paid booking ${referenceId} hit reservations_no_overlap; saved for review.`);
+            reservationData.status = REVIEW_STATUS;
+            conflict = conflict ?? { kind: 'reservation', id: '', checkIn: data.checkIn, checkOut: data.checkOut, label: null };
+            continue;
+        }
+
+        // Unique violation on reference_id: the other Stripe path saved this booking a moment
+        // ago (benign duplicate), or another booking took this reference in between (S-8:
+        // save under the next free one). Never report success for a booking that isn't saved.
+        if (dbError.code === '23505') {
+            const again = await resolveReference();
+            if ('saved' in again) return savedResult(again.saved);
+            referenceId = again.ref;
+            reservationData.reference_id = referenceId;
+            continue;
+        }
+        break;
     }
 
     if (dbError) {
         console.error('CRITICAL: Database Error saving reservation:', JSON.stringify(dbError, null, 2));
-        // Unique violation on reference_id: a concurrent finalize (webhook + manual confirm)
-        // already created this reservation. Treat as a benign duplicate, not an error.
-        if (dbError.code === '23505') {
-            console.log(`Duplicate insertion caught via unique constraint for reference: ${referenceId}`);
-            return (await alreadySaved()) ?? { success: true, ref: referenceId, warning: "Reservation already exists." };
-        }
         if (dbError.code === '42703') {
             return {
                 success: false,
