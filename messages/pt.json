@@ -903,7 +903,7 @@
     "OwnerFeatures": {
         "transparency": {
             "title": "Transparência Online",
-            "desc": "Aceda a tudo sobre a sua propriedade e anúncios 24/7 de qualquer lugar do mundo graças ao nosso dashboard LovelyStay."
+            "desc": "Aceda a tudo sobre a sua propriedade e anúncios 24/7 de qualquer lugar do mundo graças ao nosso dashboard Lovely Memories."
         },
         "checkin": {
             "title": "Check-in e Check-out",
@@ -971,7 +971,7 @@
         },
         "services": {
             "marketStudy": "Estudo de mercado",
-            "dashboard": "Área de utilizador no dashboard LS",
+            "dashboard": "Área de utilizador no dashboard Lovely Memories",
             "listing": "Listagem em sites de reservas",
             "bookingMgmt": "Gestão de reservas",
             "communication": "Comunicação 24/7 com hóspedes",
@@ -990,7 +990,7 @@
             "amenities": "Amenities",
             "sef": "Comunicação ao SEF",
             "guestSupport": "Apoio ao hóspede durante a estadia",
-            "linen": "Toalhas e roupa de cama LovelyStay",
+            "linen": "Toalhas e roupa de cama Lovely Memories",
             "admin": "Assistência administrativa",
             "taxes": "Pagamento de taxas turísticas",
             "invoice": "Serviço completo de faturação",

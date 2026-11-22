@@ -86,7 +86,7 @@ export const PolicySection = ({ rules, cancellationPolicy }: PolicySectionProps)
                 <h3 className="text-[11px] font-extrabold text-[#AD9C7E] uppercase tracking-[0.4em] mb-12">The Host</h3>
                 <div className="flex flex-col lg:flex-row gap-20 items-start">
                     <div className="flex-1 space-y-8">
-                        <h2 className="text-4xl font-playfair font-bold text-navy-950 underline decoration-[#AD9C7E]/30 underline-offset-[12px]">This home is managed by Lovely Stay</h2>
+                        <h2 className="text-4xl font-playfair font-bold text-navy-950 underline decoration-[#AD9C7E]/30 underline-offset-[12px]">This home is managed by Lovely Memories</h2>
                         <p className="text-navy-950/70 text-lg leading-relaxed max-w-2xl font-medium italic">
                             "This home is managed directly by a business. A member of their staff will be your point of contact before and during your stay. The team has over 30 years of experience looking after guests wanting to stay in the most exclusive locations."
                         </p>

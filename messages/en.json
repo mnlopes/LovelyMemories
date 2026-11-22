@@ -912,7 +912,7 @@
     "OwnerFeatures": {
         "transparency": {
             "title": "Online Transparency",
-            "desc": "Access everything about your property and listings 24/7 from anywhere in the world thanks to our LovelyStay dashboard."
+            "desc": "Access everything about your property and listings 24/7 from anywhere in the world thanks to our Lovely Memories dashboard."
         },
         "checkin": {
             "title": "Check-in & Check-out",
@@ -980,7 +980,7 @@
         },
         "services": {
             "marketStudy": "Market study",
-            "dashboard": "User area on LS dashboard",
+            "dashboard": "User area on Lovely Memories dashboard",
             "listing": "Listing on booking websites",
             "bookingMgmt": "Booking management",
             "communication": "24/7 Guest communication",
@@ -999,7 +999,7 @@
             "amenities": "Amenities",
             "sef": "Communication to SEF",
             "guestSupport": "Guest support during the stay",
-            "linen": "LovelyStay towels and linens",
+            "linen": "Lovely Memories towels and linens",
             "admin": "Administrative assistance",
             "taxes": "Payment of tourist taxes",
             "invoice": "Complete invoice service",
