@@ -14,8 +14,8 @@ const NAV: Record<'a' | 'b', { title: string; items: Item[] }[]> = {
     a: [
         { title: 'Operations', items: [
             { label: 'Overview', icon: LayoutDashboard },
-            { label: 'Properties', icon: Hotel, href: '/mockups-propertysell/a/admin' },
-            { label: 'Sale leads', icon: PenLine, href: '/mockups-propertysell/a/admin/leads', badge: 3 },
+            { label: 'Properties', icon: Hotel },
+            { label: 'Sale listings', icon: PenLine, href: '/mockups-propertysell/a/admin' },
             { label: 'Bookings', icon: Calendar },
             { label: 'Owners', icon: KeyRound },
             { label: 'Content', icon: LayoutGrid },

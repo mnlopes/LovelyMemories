@@ -7,13 +7,13 @@ const OPTIONS = [
     {
         id: 'A',
         title: 'A dedicated “For Sale” tab',
-        text: 'A new tab in the menu with its own catalogue of homes for sale, a property page with a contact form, and a simple lead inbox in the backoffice.',
+        text: 'A new tab in the menu with its own catalogue of homes for sale, a property page with a contact form that emails the team, and the listings managed in the backoffice.',
         img: IMG.cottage,
         screens: [
             { href: '/mockups-propertysell/a', label: 'For Sale page' },
             { href: '/mockups-propertysell/a/garden-house-paranhos', label: 'Property for sale' },
-            { href: '/mockups-propertysell/a/admin', label: 'Backoffice — new sale listing' },
-            { href: '/mockups-propertysell/a/admin/leads', label: 'Backoffice — sale leads' },
+            { href: '/mockups-propertysell/a/admin', label: 'Backoffice — sale listings' },
+            { href: '/mockups-propertysell/a/admin/edit', label: 'Backoffice — edit listing' },
         ],
     },
     {

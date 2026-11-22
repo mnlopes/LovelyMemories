@@ -14,7 +14,11 @@ const TABS: { id: 'all' | SaleType; label: string }[] = [
     { id: 'building', label: 'Buildings' },
 ];
 
-const fieldLabel = "text-[10px] font-bold uppercase tracking-[0.2em] text-[#6b7280]";
+// Example overrides for this mockup only: one home under offer, one with the price on request.
+const UNDER_OFFER_ID = 'almada';
+const PRICE_ON_REQUEST_ID = 'foz';
+
+const fieldLabel ="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6b7280]";
 const fieldSelect = "w-full border-0 bg-transparent p-0 text-[15px] font-semibold text-[#192537] focus:outline-none";
 
 export default function ForSalePage() {
@@ -97,6 +101,8 @@ export default function ForSalePage() {
                     <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
                         {homes.map((h) => {
                             const sold = h.status === 'sold';
+                            const underOffer = h.id === UNDER_OFFER_ID;
+                            const onRequest = h.id === PRICE_ON_REQUEST_ID;
                             return (
                                 <article key={h.id} className="flex flex-col overflow-hidden rounded-2xl border border-[#eef0f2] bg-white shadow-[0_10px_40px_-15px_rgba(0,0,0,0.12)] transition-transform duration-500 hover:-translate-y-1">
                                     <div className="relative aspect-[4/3] overflow-hidden bg-[#e5e7eb]">
@@ -106,6 +112,7 @@ export default function ForSalePage() {
                                             <div className="flex gap-1.5">
                                                 {h.status === 'new' && <span className="rounded-full bg-[#b09e80] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#192537]">New</span>}
                                                 {h.status === 'reserved' && <span className="rounded-full bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#192537]">Reserved</span>}
+                                                {underOffer && <span className="rounded-full bg-[#fbf3e2] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#6e5218]">Under offer</span>}
                                                 {sold && <span className="rounded-full bg-[#192537] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white">Sold</span>}
                                             </div>
                                             {h.earned && !sold && (
@@ -130,8 +137,8 @@ export default function ForSalePage() {
                                         </div>
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="flex flex-col">
-                                                <span className={`text-[26px] font-bold tracking-tight ${sold ? 'text-[#6b7280]' : ''}`}>{sold ? 'Sold' : eur(h.price)}</span>
-                                                <span className="text-xs text-[#6b7280]">{sold ? 'Similar homes on request' : perM2(h)}</span>
+                                                <span className={`text-[26px] font-bold tracking-tight ${sold ? 'text-[#6b7280]' : ''}`}>{sold ? 'Sold' : onRequest ? 'Price on request' : eur(h.price)}</span>
+                                                {!onRequest && <span className="text-xs text-[#6b7280]">{sold ? 'Similar homes on request' : perM2(h)}</span>}
                                             </div>
                                             <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[#e6f4ea] px-2.5 py-1 text-[11px] font-bold text-[#1d6b40]">
                                                 <Zap className="size-3" aria-hidden="true" />

@@ -1,8 +1,9 @@
 import Image from "next/image";
-import { ArrowLeft, Check, FileText, Grid3x3, Heart, MapPin, MessageCircle, Share2, TrendingUp } from "lucide-react";
+import { ArrowLeft, Check, FileText, Grid3x3, MapPin, MessageCircle, Share2, TrendingUp } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { SiteFooter, SiteHeader } from "../../_components/SiteChrome";
 import { FEATURED, HOMES, IMG, eur, perM2 } from "../../_components/data";
+import { ContactBox } from "../_components/ContactBox";
 
 const GALLERY = [
     { src: IMG.cottage, alt: 'Garden and terrace' },
@@ -19,10 +20,7 @@ const FACTS = [
 
 const FEATURES = ['Private garden and terrace', 'Sold furnished and equipped', 'Air conditioning', 'Fibre internet', 'Double glazing', 'Open-plan equipped kitchen'];
 
-const STATS = [['Gross revenue', '€26,900'], ['Gross yield', '8.7%'], ['Occupancy', '78%'], ['Guest rating', '4.92']];
-
-const inputCls = "min-h-[46px] rounded-xl border border-[#dfe2e6] bg-white px-3.5 text-sm text-[#192537]";
-const labelCls = "flex flex-col gap-1.5 text-xs font-semibold text-[#374151]";
+const STATS = [['Gross revenue', '€26,900'], ['Gross yield', '8.7%'], ['Occupancy', '78%']];
 
 export default function SaleDetailA() {
     const h = FEATURED;
@@ -64,7 +62,7 @@ export default function SaleDetailA() {
                             <div className="flex flex-wrap gap-2">
                                 <span className="rounded-full bg-[#192537] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white">For sale</span>
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f4ea] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#1d6b40]"><TrendingUp className="size-3" aria-hidden="true" />Income-generating</span>
-                                <span className="rounded-full border border-[#d6d9de] px-3 py-1 text-[11px] font-semibold text-[#4b5563]">Ref. LM-V-0042</span>
+                                <span className="rounded-full border border-[#d6d9de] px-3 py-1 text-[11px] font-semibold text-[#4b5563]">Ref. LM-V-0003</span>
                             </div>
                             <h1 className="text-[34px] font-bold leading-[1.1] tracking-tight md:text-5xl">{h.title}</h1>
                             <p className="text-lg leading-snug text-[#4b5563] md:text-xl">T1 house with a private garden, 10 minutes from Trindade</p>
@@ -104,7 +102,7 @@ export default function SaleDetailA() {
                                 <h2 className="text-2xl font-bold leading-snug text-white md:text-[28px]">Already earning as a Lovely Memories rental</h2>
                                 <p className="text-sm text-white/75">Real figures from our booking system, last 12 months.</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                 {STATS.map(([k, v]) => (
                                     <div key={k} className="flex flex-col gap-1.5 rounded-2xl border border-white/12 bg-white/[0.06] p-4">
                                         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/70">{k}</span>
@@ -112,6 +110,7 @@ export default function SaleDetailA() {
                                     </div>
                                 ))}
                             </div>
+                            <p className="text-xs leading-relaxed text-white/65">Revenue after platform commissions, before management costs and taxes; last 12 months to Oct 2026. Gross yield = revenue ÷ asking price.</p>
                             <div className="flex flex-col gap-5 border-t border-white/12 pt-5 md:flex-row md:items-center md:justify-between">
                                 <ul className="flex flex-col gap-2.5">
                                     {['Active short-term rental licence (AL)', 'Full booking history available on request', 'Keep it under Lovely Memories management'].map((t) => (
@@ -145,10 +144,9 @@ export default function SaleDetailA() {
                         <section className="flex flex-col gap-3.5">
                             <h2 className="text-2xl font-bold">Documents</h2>
                             <div className="flex flex-wrap gap-3">
-                                {['Energy certificate (PDF)', 'Floor plan (PDF)'].map((d) => (
-                                    <a key={d} href="#" className="inline-flex min-h-12 items-center gap-2.5 rounded-2xl border border-[#e3e6ea] bg-white px-4 text-sm font-semibold"><FileText className="size-[18px] text-[#7a6a4d]" aria-hidden="true" />{d}</a>
-                                ))}
+                                <a href="#" className="inline-flex min-h-12 items-center gap-2.5 rounded-2xl border border-[#e3e6ea] bg-white px-4 text-sm font-semibold"><FileText className="size-[18px] text-[#7a6a4d]" aria-hidden="true" />Floor plan (PDF)</a>
                             </div>
+                            <p className="text-sm text-[#6b7280]">Energy certificate available on request</p>
                         </section>
                     </div>
 
@@ -161,40 +159,18 @@ export default function SaleDetailA() {
                                     <span className="text-[13px] text-[#6b7280]">{perM2(h)}</span>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button type="button" aria-label="Save to favourites" className="flex size-11 items-center justify-center rounded-full border border-[#e3e6ea]"><Heart className="size-[18px]" aria-hidden="true" /></button>
                                     <button type="button" aria-label="Share" className="flex size-11 items-center justify-center rounded-full border border-[#e3e6ea]"><Share2 className="size-[18px]" aria-hidden="true" /></button>
                                 </div>
                             </div>
                             <p className="flex items-center gap-2 text-[13px] text-[#374151]"><span aria-hidden="true" className="size-2 rounded-full bg-[#2d8653]" /><strong className="text-[#1d6b40]">Available</strong> · Listed 12 days ago</p>
-                            <div className="grid grid-cols-2 gap-1 rounded-full bg-[#f1f3f5] p-1">
-                                <button type="button" aria-pressed="true" className="min-h-10 rounded-full bg-[#192537] text-xs font-bold tracking-wide text-white">Request info</button>
-                                <button type="button" aria-pressed="false" className="min-h-10 rounded-full text-xs font-bold tracking-wide text-[#374151]">Book a visit</button>
-                            </div>
-                            <form className="flex flex-col gap-3">
-                                <label className={labelCls}>Full name<input type="text" placeholder="Your name" className={inputCls} /></label>
-                                <label className={labelCls}>Email<input type="email" placeholder="you@email.com" className={inputCls} /></label>
-                                <label className={labelCls}>Phone<input type="tel" placeholder="+351" className={inputCls} /></label>
-                                <label className={labelCls}>I&apos;m buying to
-                                    <select className={inputCls}><option>Live in it</option><option>Invest / rent it out</option><option>Both</option></select>
-                                </label>
-                                <label className={labelCls}>Message
-                                    <textarea rows={3} defaultValue={`I'd like more information about ${h.title} (Ref. LM-V-0042).`} className="rounded-xl border border-[#dfe2e6] bg-white px-3.5 py-3 text-sm leading-normal text-[#192537]" />
-                                </label>
-                                <label className="flex items-start gap-2.5 text-xs leading-normal text-[#4b5563]">
-                                    <input type="checkbox" className="mt-0.5 size-4 accent-[#192537]" />
-                                    I agree to the processing of my data under the Privacy Policy.
-                                </label>
-                                <button type="button" className="min-h-[52px] rounded-full bg-[#192537] text-xs font-bold uppercase tracking-[0.18em] text-white">Request information</button>
-                                <a href="#" className="flex min-h-[50px] items-center justify-center gap-2.5 rounded-full border border-[#d6d9de] text-[13px] font-semibold"><MessageCircle className="size-[18px] text-[#1d6b40]" aria-hidden="true" />Message us on WhatsApp</a>
-                                <p className="text-center text-xs text-[#6b7280]">No obligation — we&apos;ll get back to you shortly.</p>
-                            </form>
+                            <ContactBox title={h.title} reference="LM-V-0003" />
                         </div>
                         <div className="flex items-center gap-4 rounded-[20px] border border-[#eceef1] bg-white px-6 py-5">
                             <span aria-hidden="true" className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#192537] text-base font-extrabold tracking-wide text-[#b09e80]">LM</span>
                             <div className="flex flex-col gap-0.5">
                                 <span className="text-[15px] font-bold">Lovely Memories Sales</span>
                                 <span className="text-[13px] text-[#4b5563]">Your contact for this home</span>
-                                <span className="text-xs text-[#6b7280]">Licence AMI nº [XXXXX]</span>
+                                <span className="text-xs text-[#6b7280]">Licence AMI nº [to confirm]</span>
                             </div>
                         </div>
                     </aside>
