@@ -1,0 +1,142 @@
+import 'server-only';
+import { unstable_cache } from 'next/cache';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { PUBLIC_SALE_COLUMNS, type SaleListing } from './types';
+import { approxCoord } from './format';
+import { OWNER_REPORT_STATUSES } from '@/lib/owner-revenue';
+import { computePerformance, type PerfReservation, type PerformanceSnapshot } from './performance';
+
+function roundCoords(l: SaleListing): SaleListing {
+    return { ...l, lat: approxCoord(l.lat), lng: approxCoord(l.lng) };
+}
+
+/** Today in Europe/Lisbon as YYYY-MM-DD. */
+function lisbonToday(): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Lisbon' }).format(new Date());
+}
+
+function shiftDays(iso: string, days: number): string {
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+export async function getPublishedSaleListings(): Promise<SaleListing[]> {
+    const supabase = await getSupabaseAdmin();
+    const { data, error } = await supabase
+        .from('sale_listings')
+        .select(PUBLIC_SALE_COLUMNS)
+        .eq('published', true)
+        .order('published_at', { ascending: false });
+    if (error) {
+        console.error('getPublishedSaleListings failed:', error.code);
+        return [];
+    }
+    return ((data ?? []) as unknown as SaleListing[]).map(roundCoords);
+}
+
+export async function getSaleListingBySlug(
+    slug: string,
+    opts: { includeDrafts?: boolean } = {},
+): Promise<SaleListing | null> {
+    const supabase = await getSupabaseAdmin();
+    let q = supabase.from('sale_listings').select(PUBLIC_SALE_COLUMNS).eq('slug', slug);
+    if (!opts.includeDrafts) q = q.eq('published', true);
+    const { data, error } = await q.maybeSingle();
+    if (error) {
+        console.error('getSaleListingBySlug failed:', error.code);
+        return null;
+    }
+    return data ? roundCoords(data as unknown as SaleListing) : null;
+}
+
+/**
+ * Uncached loader, shared by the cached public read and the backoffice preview.
+ *
+ * The window bounds come from the home's whole history (first counted check-in, last imported
+ * Airbnb check-out), looked up separately; only the stays that touch the window are then loaded.
+ */
+export async function loadSalePerformance(
+    propertyId: string,
+    price: number | null,
+    priceOnRequest: boolean,
+): Promise<PerformanceSnapshot | null> {
+    const today = lisbonToday();
+    const statuses = [...OWNER_REPORT_STATUSES];
+    const supabase = await getSupabaseAdmin();
+
+    const [first, lastImported] = await Promise.all([
+        supabase
+            .from('reservations')
+            .select('check_in')
+            .eq('property_id', propertyId)
+            .in('status', statuses)
+            .order('check_in', { ascending: true })
+            .limit(1),
+        supabase
+            .from('reservations')
+            .select('check_out')
+            .eq('property_id', propertyId)
+            .in('status', statuses)
+            .eq('platform', 'airbnb')
+            .not('import_batch_id', 'is', null)
+            .order('check_out', { ascending: false })
+            .limit(1),
+    ]);
+    if (first.error) throw new Error('perf_load_failed:' + first.error.code);
+    if (lastImported.error) throw new Error('perf_load_failed:' + lastImported.error.code);
+
+    const firstCheckIn = (first.data?.[0]?.check_in as string | undefined)?.slice(0, 10) ?? null;
+    if (!firstCheckIn) return null;
+    const lastImportedCheckOut = (lastImported.data?.[0]?.check_out as string | undefined)?.slice(0, 10) ?? null;
+
+    // Same rule as computePerformance: the data date is the oldest of today and the last import.
+    const windowEnd = lastImportedCheckOut && lastImportedCheckOut < today ? lastImportedCheckOut : today;
+    const { data, error } = await supabase
+        .from('reservations')
+        .select(
+            'check_in,check_out,status,platform,import_batch_id,net_amount,total_price,city_tax_total,breakfast_total,transfer_total',
+        )
+        .eq('property_id', propertyId)
+        .in('status', statuses)
+        .gt('check_out', shiftDays(windowEnd, -365))
+        .lt('check_in', windowEnd);
+    if (error) {
+        throw new Error('perf_load_failed:' + error.code);
+    }
+    return computePerformance((data ?? []) as PerfReservation[], {
+        today,
+        price,
+        priceOnRequest,
+        firstCheckIn,
+        lastImportedCheckOut,
+    });
+}
+
+export async function getSalePerformance(l: SaleListing): Promise<PerformanceSnapshot | null> {
+    if (!l.property_id || !l.show_performance) return null;
+    const propertyId = l.property_id;
+    const cached = unstable_cache(
+        () => loadSalePerformance(propertyId, l.price, l.price_on_request),
+        ['sale-perf', propertyId, String(l.price), String(l.price_on_request)],
+        { revalidate: 86400, tags: ['sale-perf-' + propertyId] },
+    );
+    try {
+        return await cached();
+    } catch (e) {
+        console.error('getSalePerformance failed:', (e as Error).message);
+        return null;
+    }
+}
+
+export async function getSalesContact(): Promise<{ amiLicense: string | null; whatsapp: string | null }> {
+    const supabase = await getSupabaseAdmin();
+    const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'sales_contact')
+        .maybeSingle();
+    if (error || !data) return { amiLicense: null, whatsapp: null };
+    const v = (data.value ?? {}) as { ami_license?: unknown; whatsapp?: unknown };
+    const clean = (x: unknown) => (typeof x === 'string' && x.trim() ? x.trim() : null);
+    return { amiLicense: clean(v.ami_license), whatsapp: clean(v.whatsapp) };
+}

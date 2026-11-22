@@ -16,6 +16,7 @@ export const PERMISSION_MODULES: { id: string; label: string; viewOnly?: boolean
     { id: 'content', label: 'Content (Blog, FAQ, Pages)' },
     { id: 'coupons', label: 'Coupons Management' },
     { id: 'imports', label: 'Airbnb Imports' },
+    { id: 'sales', label: 'Sale Listings' },
     { id: 'team', label: 'Team & Access' },
 ];
 
@@ -26,6 +27,8 @@ export const PERMISSION_MODULES: { id: string; label: string; viewOnly?: boolean
 const MODULE_DEFAULTS: Record<string, Partial<Record<string, PermissionFlags>>> = {
     overview: { admin: { can_view: true, can_edit: true } },
     content: { admin: { can_view: true, can_edit: true } },
+    // Casas à venda: a migração 20261121100000 semeia as linhas; até ser aplicada vale este default.
+    sales: { admin: { can_view: true, can_edit: true }, editor: { can_view: true, can_edit: true } },
 };
 
 /** Permissão a usar quando não existe linha em role_permissions para (role, módulo). */

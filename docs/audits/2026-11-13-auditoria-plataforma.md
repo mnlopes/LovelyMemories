@@ -143,6 +143,14 @@ Confirmei que estas não têm nenhuma verificação no código:
   - **Correção:** uma migração que apaga a política e revoga `INSERT` a `anon`/`authenticated`.
   - **Confirmado em produção a 14/11:** com a chave pública, uma inserção feita para falhar passou pela política e só parou na regra NOT NULL de `path` (nada foi gravado). Nos últimos 30 dias não há sinais de visitas falsas: todas têm os campos que o proxy preenche, e os outros hosts são `localhost` de desenvolvimento.
   - **Estado:** ✅ corrigido a 14/11, migração `20261114180000_visitor_logs_no_public_insert.sql` aplicada no SQL Editor. A inserção com a chave pública dá agora `42501 permission denied`, e o proxy continua a gravar visitas.
+- **S-15. Qualquer conta autenticada escreve e apaga fotos das casas** (encontrado a 20/11, ao desenhar a área de venda):
+  - As políticas do bucket de Storage `properties` (`supabase/migrations/20260201_setup_storage.sql`) deixam qualquer conta autenticada, proprietários incluídos, carregar e apagar fotos das casas.
+  - **Correção:** políticas de escrita só para a equipa, com `public.has_role(...)`, como no bucket novo `sale-listings`.
+  - **Estado:** por corrigir.
+- **S-16. HTML sem escape nos emails do concierge e da newsletter** (encontrado a 20/11, ao desenhar a área de venda):
+  - `app/api/contact-concierge/route.ts` e `app/api/newsletter/route.ts` põem texto escrito pelo visitante no HTML do email sem o escapar.
+  - **Correção:** usar `escapeHtml` de `lib/email-templates.ts`.
+  - **Estado:** por corrigir.
 
 ### Baixo
 - **S-8.** A referência Stripe usa só os primeiros 8 caracteres do ID do PaymentIntent. Uma colisão descartaria um pagamento em silêncio. Nota de 14/11: os 8 caracteres têm pouca variação na prática (as referências reais são todas `LM-3U????ED`), por isso o risco é maior do que parece.

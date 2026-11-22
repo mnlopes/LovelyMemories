@@ -2,7 +2,7 @@ import 'server-only';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'STATUS_CHANGE' | 'INVITE';
-type AuditResource = 'PROPERTY' | 'RESERVATION' | 'USER' | 'SETTINGS' | 'AUTH';
+type AuditResource = 'PROPERTY' | 'RESERVATION' | 'USER' | 'SETTINGS' | 'AUTH' | 'SALE_LISTING';
 type Severity = 'INFO' | 'WARNING' | 'CRITICAL';
 
 /**

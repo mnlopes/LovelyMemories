@@ -19,6 +19,7 @@ export const Footer = () => {
         { path: '/join', label: tNav('owner') },
         { path: '/about-us', label: tNav('about') },
         { path: '/properties', label: tNav('properties') },
+        { path: '/for-sale', label: tNav('forSale') },
         { path: '/concierge', label: tNav('concierge') },
         { path: '/blog', label: tNav('blog') },
         { path: '/contact', label: tNav('contact') },

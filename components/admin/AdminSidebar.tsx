@@ -1,7 +1,7 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, UserCircle, Plug, type LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Building2, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, UserCircle, Plug, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -94,6 +94,7 @@ export const AdminSidebar = () => {
                 // Overview e Content seguem a matriz Roles & Permissions (2026-10-09)
                 ...(hasAccess('overview') ? [{ icon: LayoutDashboard, label: t('overview'), path: "/admin" }] : []),
                 ...(hasAccess('properties') ? [{ icon: Hotel, label: t('properties'), path: "/admin/properties" }] : []),
+                ...(hasAccess('sales') ? [{ icon: Building2, label: t('sales'), path: "/admin/sales" }] : []),
                 ...(hasAccess('bookings') ? [{ icon: Calendar, label: t('bookings'), path: "/admin/reservations" }] : []),
                 ...(hasAccess('team') ? [{ icon: Users, label: t('tenants'), path: "/admin/users" }] : []),
                 ...(hasAccess('owners') ? [{ icon: KeyRound, label: t('owners'), path: "/admin/owners" }] : []),

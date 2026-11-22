@@ -36,6 +36,7 @@ export const Navbar = () => {
         { path: '/join', label: t('owner') },
         { path: '/about-us', label: t('about') },
         { path: '/properties', label: t('properties') },
+        { path: '/for-sale', label: t('forSale') },
         { path: '/concierge', label: t('concierge') },
         { path: '/blog', label: t('blog') },
         { path: '/contact', label: t('contact') },

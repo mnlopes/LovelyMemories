@@ -19,6 +19,9 @@ import { useVisibleInterval } from "@/lib/use-visible-interval";
 
 export default function SettingsPage() {
     const router = useRouter();
+    const tSales = useTranslations("AdminSales");
+    const [salesContact, setSalesContact] = useState({ ami_license: '', whatsapp: '' });
+    const [isSavingSales, setIsSavingSales] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'translations' | 'analytics' | 'ical'>('general');
 
@@ -160,13 +163,23 @@ export default function SettingsPage() {
                     
                     const lastSync = await getSystemSetting('ical_last_sync_at');
                     if (lastSync) setLastSyncTime(lastSync);
+
+                    const sales = await getSystemSetting('sales_contact');
+                    if (sales && typeof sales === 'object') {
+                        const contact = sales as { ami_license?: unknown; whatsapp?: unknown };
+                        setSalesContact({
+                            ami_license: String(contact.ami_license ?? ''),
+                            whatsapp: String(contact.whatsapp ?? ''),
+                        });
+                    }
                 } catch (error) {
                     console.error("Failed to load settings:", error);
+                    toast.error(tSales("settings.loadFailed"));
                 }
             };
             loadSettings();
         }
-    }, [isAuthorized]);
+    }, [isAuthorized, tSales]);
 
     // Load keys from storage
     useEffect(() => {
@@ -278,6 +291,26 @@ export default function SettingsPage() {
             toast.error("An error occurred");
         } finally {
             setIsUpdatingIcal(false);
+        }
+    };
+
+    const handleSaveSalesContact = async () => {
+        setIsSavingSales(true);
+        try {
+            const { updateSystemSetting } = await import('@/app/actions/settings');
+            const result = await updateSystemSetting('sales_contact', {
+                ami_license: salesContact.ami_license.trim(),
+                whatsapp: salesContact.whatsapp.trim(),
+            });
+            if (result.success) {
+                toast.success(tSales('settings.saved'));
+            } else {
+                toast.error(tSales('settings.saveFailed'));
+            }
+        } catch {
+            toast.error(tSales('settings.saveFailed'));
+        } finally {
+            setIsSavingSales(false);
         }
     };
 
@@ -837,6 +870,59 @@ export default function SettingsPage() {
                             >
                                 {isPurgingLogs ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
                                 Purge Logs ({'>'} 7 days)
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Sales contact details (this page is super admin only) */}
+                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
+                        <div className="space-y-1 mb-6">
+                            <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
+                                {tSales('settings.title')}
+                            </h3>
+                            <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary max-w-md">
+                                {tSales('settings.description')}
+                            </p>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label htmlFor="sales-ami" className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider mb-1.5 block">
+                                    {tSales('settings.amiLicense')}
+                                </label>
+                                <input
+                                    id="sales-ami"
+                                    type="text"
+                                    value={salesContact.ami_license}
+                                    onChange={(e) => setSalesContact((s) => ({ ...s, ami_license: e.target.value }))}
+                                    maxLength={40}
+                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-white transition-all dark:text-admin-dark-text-primary"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="sales-whatsapp" className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider mb-1.5 block">
+                                    {tSales('settings.whatsapp')}
+                                </label>
+                                <input
+                                    id="sales-whatsapp"
+                                    type="tel"
+                                    inputMode="tel"
+                                    value={salesContact.whatsapp}
+                                    onChange={(e) => setSalesContact((s) => ({ ...s, whatsapp: e.target.value }))}
+                                    maxLength={30}
+                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-white transition-all dark:text-admin-dark-text-primary"
+                                />
+                                <p className="text-[11px] text-[#a3a3a3] mt-1">{tSales('settings.whatsappHint')}</p>
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={handleSaveSalesContact}
+                                disabled={isSavingSales}
+                                className="px-6 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold shadow-sm hover:bg-black dark:hover:bg-gray-200 transition-all disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isSavingSales && <Loader2 className="size-4 animate-spin" />}
+                                {isSavingSales ? tSales('settings.saving') : tSales('settings.save')}
                             </button>
                         </div>
                     </div>

@@ -88,7 +88,7 @@ const PLACES: Record<string, { en: string; pt: string }> = {
 };
 
 /** "in Porto" / "no Porto"; empty when the listing has no city. */
-function placePhrase(city: string | undefined, locale: Locale): string {
+export function placePhrase(city: string | undefined, locale: Locale): string {
     const c = (city || '').trim();
     if (!c) return '';
     const known = PLACES[c.toLowerCase()];

@@ -3,7 +3,7 @@
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, Calendar, Sparkles, Hotel, Menu, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Calendar, Sparkles, Hotel, Building2, Menu, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -73,6 +73,7 @@ export const AdminBottomNav = () => {
         ...(hasAccess("bookings") ? [{ icon: Calendar, label: t("bookings"), path: "/admin/reservations" }] : []),
         ...((role === "super_admin" || role === "admin") && beds24Available ? [{ icon: Sparkles, label: "Co-Host", path: "/admin/cohost", badge: pending }] : []),
         ...(hasAccess("properties") ? [{ icon: Hotel, label: t("properties"), path: "/admin/properties" }] : []),
+        ...(hasAccess("sales") ? [{ icon: Building2, label: t("sales"), path: "/admin/sales" }] : []),
     ];
 
     const isActive = (path: string) => {

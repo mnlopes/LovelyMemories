@@ -8,7 +8,7 @@
  * Email clients don't execute JS, but this prevents broken markup and HTML-injection
  * tricks (e.g. a crafted full_name closing a tag) from a value that originates in the DB.
  */
-const escapeHtml = (value: unknown): string =>
+export const escapeHtml = (value: unknown): string =>
     String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')

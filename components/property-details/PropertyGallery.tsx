@@ -12,13 +12,16 @@ interface PropertyGalleryProps {
     title: string;
     /** Describes the photos for Google Images and screen readers; falls back to the title. */
     imageAlt?: string;
-    metadata: {
+    /** Rental facts line of the grid modal header; not needed when a `caption` is given. */
+    metadata?: {
         guests: number;
         bedrooms: number;
         beds: number;
         bathrooms: number;
         area: number;
     };
+    /** Replaces the guests/bedrooms line in the grid modal header (used by sale listings). */
+    caption?: string;
 }
 
 type GalleryState = "closed" | "grid" | "slider";
@@ -65,7 +68,7 @@ function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImag
     );
 }
 
-export function PropertyGallery({ images, title, imageAlt, metadata }: PropertyGalleryProps) {
+export function PropertyGallery({ images, title, imageAlt, metadata, caption }: PropertyGalleryProps) {
     const t = useTranslations('PropertyDetail');
     // "The Charming — 1-bedroom apartment in Porto", then "(2)", "(3)"… so each photo differs.
     const altFor = (index: number) => {
@@ -157,9 +160,13 @@ export function PropertyGallery({ images, title, imageAlt, metadata }: PropertyG
                             <div className="max-w-7xl mx-auto flex items-start justify-between">
                                 <div className="space-y-1">
                                     <h2 className="text-3xl font-bold text-navy-950 font-montserrat">{title}</h2>
-                                    <p className="text-navy-900/40 text-sm font-medium">
-                                        {t('sleepsUpTo', { count: metadata.guests })} • {t('bedroomsCount', { count: metadata.bedrooms })}, {t('bathroomsCount', { count: metadata.bathrooms })} • {metadata.area} m²
-                                    </p>
+                                    {caption ? (
+                                        <p className="text-navy-900/40 text-sm font-medium">{caption}</p>
+                                    ) : metadata ? (
+                                        <p className="text-navy-900/40 text-sm font-medium">
+                                            {t('sleepsUpTo', { count: metadata.guests })} • {t('bedroomsCount', { count: metadata.bedrooms })}, {t('bathroomsCount', { count: metadata.bathrooms })} • {metadata.area} m²
+                                        </p>
+                                    ) : null}
                                 </div>
                                 <button
                                     onClick={closeGallery}

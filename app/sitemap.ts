@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { routing } from '@/i18n/routing';
 import { supabase } from '@/lib/supabase';
 import { PROPERTIES } from '@/lib/data';
+import { getPublishedSaleListings } from '@/lib/sales/repo';
 
 const BASE_URL = 'https://www.lovelymemories.pt';
 const { locales, defaultLocale } = routing;
@@ -21,6 +22,7 @@ const STATIC_PATHS = [
   'about-us',
   'concierge',
   'properties',
+  'for-sale',
   'contact',
   'blog',
   'join',
@@ -126,6 +128,27 @@ async function blogEntries(now: Date): Promise<MetadataRoute.Sitemap> {
   }).flat();
 }
 
+/**
+ * Published sale listings. Never breaks the sitemap: if the table is missing or the
+ * query fails, the sale entries are skipped.
+ */
+async function saleEntries(now: Date): Promise<MetadataRoute.Sitemap> {
+  try {
+    const listings = await getPublishedSaleListings();
+    return listings.flatMap((l) => {
+      const updated = new Date(l.updated_at);
+      return inEveryLocale(`for-sale/${l.slug}`, {
+        lastModified: Number.isNaN(updated.getTime()) ? now : updated,
+        changeFrequency: 'weekly',
+        priority: 0.7,
+      });
+    });
+  } catch {
+    console.error('sitemap: skipping sale entries');
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const entries: MetadataRoute.Sitemap = [];
@@ -138,8 +161,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
   }
 
-  const [properties, posts] = await Promise.all([propertyEntries(now), blogEntries(now)]);
-  entries.push(...properties, ...posts);
+  const [properties, posts, sales] = await Promise.all([propertyEntries(now), blogEntries(now), saleEntries(now)]);
+  entries.push(...properties, ...posts, ...sales);
 
   return entries;
 }

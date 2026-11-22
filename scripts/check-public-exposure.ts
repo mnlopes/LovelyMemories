@@ -88,6 +88,37 @@ async function main() {
         else report('FAIL', 'locked_dates.session_id', `${count ?? 0} rows readable — apply 20261118100000_locked_dates_private.sql`);
     }
 
+    // Sale listings: exact address, certificate data and contact-form counters stay server-side.
+    // Closed by migration 20261121100000_sale_listings.sql (until applied: table "not readable").
+    // Both tables are empty after the migration, so a count would PASS on a broken REVOKE:
+    // any successful read (even `[]`) is a FAIL.
+    {
+        const { error } = await anon.from('sale_listings').select('id').limit(1);
+        if (error) report('PASS', 'sale_listings', `not readable (${error.code || error.message})`);
+        else report('FAIL', 'sale_listings', 'readable by anyone — apply 20261121100000_sale_listings.sql');
+    }
+    {
+        const { error } = await anon.from('form_rate_limits').select('key').limit(1);
+        if (error) report('PASS', 'form_rate_limits', `not readable (${error.code || error.message})`);
+        else report('FAIL', 'form_rate_limits', 'readable by anyone — apply 20261121100000_sale_listings.sql');
+    }
+
+    // The rate-limit function is for the server only; a visitor could burn other people's limits.
+    {
+        const { data, error } = await anon.rpc('hit_rate_limit', { p_key: 'exposure-check', p_window_seconds: 60, p_max: 1 });
+        if (error && (error.code === '42501' || error.code === 'PGRST202')) report('PASS', 'rpc hit_rate_limit', `not callable (${error.code})`);
+        else if (error) report('FAIL', 'rpc hit_rate_limit', `unexpected error (${error.code || error.message}) — expected 42501 or PGRST202`);
+        else report('FAIL', 'rpc hit_rate_limit', `callable by anyone (returned ${JSON.stringify(data)}) — apply 20261121100000_sale_listings.sql`);
+    }
+
+    // The private bucket (energy certificates) must not be listable with the public key.
+    {
+        const { data, error } = await anon.storage.from('sale-listings-private').list();
+        if (error) report('PASS', 'storage sale-listings-private', `not listable (${error.message || 'denied'})`);
+        else if (!data || data.length === 0) report('PASS', 'storage sale-listings-private', 'no files visible');
+        else report('FAIL', 'storage sale-listings-private', `${data.length} entries listable by anyone`);
+    }
+
     const width = Math.max(...results.map((r) => r.check.length));
     for (const r of results) console.log(`${r.status.padEnd(4)}  ${r.check.padEnd(width)}  ${r.detail}`);
     const failed = results.filter((r) => r.status === 'FAIL').length;

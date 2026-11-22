@@ -1,0 +1,315 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { requireRole, PROPERTY_EDITORS } from '@/lib/auth/require-role';
+import { checkPermission } from '@/app/actions/permissions';
+import { logActivity } from '@/lib/audit-log';
+import { loadSalePerformance } from '@/lib/sales/repo';
+import { saleListingInputSchema, publishProblems, type PublishProblem } from '@/lib/sales/validation';
+import { slugify } from '@/lib/sales/format';
+import { copyFromProperty, type CopySourceProperty } from '@/lib/sales/copy-from-property';
+import type { PerformanceSnapshot } from '@/lib/sales/performance';
+import type { Localized, SaleListingPrivate } from '@/lib/sales/types';
+
+const idSchema = z.string().uuid();
+const BUCKETS = ['sale-listings', 'sale-listings-private'] as const;
+const LOCALES = ['en', 'pt'] as const;
+
+// Not exported: every export of a 'use server' file is a public endpoint.
+// Writes need can_edit; reads need can_view, the same check as the layout guard.
+async function assertSalesEditor(): Promise<void> {
+    await requireRole(PROPERTY_EDITORS);
+    if (!(await checkPermission('sales', 'can_edit'))) throw new Error('Not authorized');
+}
+
+async function assertSalesViewer(): Promise<void> {
+    await requireRole(PROPERTY_EDITORS);
+    if (!(await checkPermission('sales', 'can_view'))) throw new Error('Not authorized');
+}
+
+async function currentUserId(): Promise<string | null> {
+    const { createServerClient } = await import('@supabase/ssr');
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    const serverSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return cookieStore.getAll();
+                },
+                setAll() {
+                    // read-only here
+                },
+            },
+        },
+    );
+    const {
+        data: { user },
+    } = await serverSupabase.auth.getUser();
+    return user?.id ?? null;
+}
+
+function revalidateSales(slugs: (string | null | undefined)[]) {
+    for (const locale of LOCALES) {
+        revalidatePath(`/${locale}/for-sale`);
+        revalidatePath(`/${locale}/admin/sales`);
+        for (const slug of new Set(slugs.filter((s): s is string => !!s))) {
+            revalidatePath(`/${locale}/for-sale/${slug}`);
+        }
+    }
+    revalidatePath('/sitemap.xml');
+}
+
+export async function listSaleListings(): Promise<SaleListingPrivate[]> {
+    await assertSalesViewer();
+    const supabase = await getSupabaseAdmin();
+    const { data, error } = await supabase
+        .from('sale_listings')
+        .select('*')
+        .order('updated_at', { ascending: false });
+    if (error) {
+        console.error('listSaleListings failed:', error.code);
+        throw new Error('load_failed');
+    }
+    return (data ?? []) as SaleListingPrivate[];
+}
+
+export async function getSaleListing(id: string): Promise<SaleListingPrivate | null> {
+    await assertSalesViewer();
+    if (!idSchema.safeParse(id).success) return null;
+    const supabase = await getSupabaseAdmin();
+    const { data, error } = await supabase.from('sale_listings').select('*').eq('id', id).maybeSingle();
+    if (error) {
+        console.error('getSaleListing failed:', error.code);
+        return null;
+    }
+    return (data as SaleListingPrivate | null) ?? null;
+}
+
+export async function saveSaleListing(
+    id: string,
+    input: unknown,
+): Promise<{ ok: true; slug: string } | { ok: false; error: string; problems?: PublishProblem[] }> {
+    await assertSalesEditor();
+    if (!idSchema.safeParse(id).success) return { ok: false, error: 'invalid_id' };
+    const parsed = saleListingInputSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, error: 'invalid_input' };
+    const data = parsed.data;
+    if (data.energy_cert_path && !data.energy_cert_path.startsWith(`${id}/docs/`)) {
+        return { ok: false, error: 'invalid_input' };
+    }
+
+    if (data.published) {
+        const problems = publishProblems(data);
+        if (problems.length > 0) return { ok: false, error: 'publish_blocked', problems };
+    }
+
+    const supabase = await getSupabaseAdmin();
+    const { data: existing, error: readError } = await supabase
+        .from('sale_listings')
+        .select('id, slug, published_at')
+        .eq('id', id)
+        .maybeSingle();
+    if (readError) {
+        console.error('saveSaleListing read failed:', readError.code);
+        return { ok: false, error: 'db_error' };
+    }
+
+    const now = new Date().toISOString();
+    const baseSlug = slugify(data.slug);
+    if (!baseSlug) return { ok: false, error: 'invalid_slug' };
+    const row = {
+        ...data,
+        // The income summary needs a linked home: without one it is switched off.
+        show_performance: data.property_id ? data.show_performance : false,
+        published_at: data.published ? (existing?.published_at ?? now) : (existing?.published_at ?? null),
+        updated_at: now,
+    };
+
+    let saved = false;
+    let finalSlug = baseSlug;
+    let suffix = 1;
+    for (let attempt = 0; attempt < 2 && !saved; attempt++) {
+        // find a free slug (another row may already hold it)
+        for (;;) {
+            if (suffix > 50) return { ok: false, error: 'slug_taken' };
+            const candidate = suffix === 1 ? baseSlug : `${baseSlug}-${suffix}`;
+            const { data: clash, error: clashError } = await supabase
+                .from('sale_listings')
+                .select('id')
+                .eq('slug', candidate)
+                .neq('id', id)
+                .limit(1);
+            if (clashError) {
+                console.error('saveSaleListing slug check failed:', clashError.code);
+                return { ok: false, error: 'db_error' };
+            }
+            if (!clash || clash.length === 0) {
+                finalSlug = candidate;
+                break;
+            }
+            suffix++;
+        }
+
+        const payload = { ...row, slug: finalSlug };
+        const { error } = existing
+            ? await supabase.from('sale_listings').update(payload).eq('id', id)
+            : await supabase
+                  .from('sale_listings')
+                  .insert({ ...payload, id, created_by: await currentUserId() });
+        if (!error) {
+            saved = true;
+        } else if (error.code === '23505' && attempt === 0) {
+            suffix++; // lost a race on the unique slug index: retry with the next suffix
+        } else {
+            console.error('saveSaleListing write failed:', error.code);
+            return { ok: false, error: error.code === '23505' ? 'slug_taken' : 'db_error' };
+        }
+    }
+    if (!saved) return { ok: false, error: 'db_error' };
+
+    await logActivity(
+        await currentUserId(),
+        existing ? 'UPDATE' : 'CREATE',
+        'SALE_LISTING',
+        id,
+        { slug: finalSlug, published: data.published },
+    );
+    revalidateSales([finalSlug, existing?.slug]);
+    return { ok: true, slug: finalSlug };
+}
+
+async function removeFolder(
+    supabase: Awaited<ReturnType<typeof getSupabaseAdmin>>,
+    bucket: string,
+    folder: string,
+): Promise<boolean> {
+    const { data, error } = await supabase.storage.from(bucket).list(folder, { limit: 1000 });
+    if (error || !data) {
+        console.error('deleteSaleListing storage list failed:', bucket, folder, error?.name ?? 'no_data');
+        return false;
+    }
+    const files = data.filter((o) => o.id !== null).map((o) => `${folder}/${o.name}`);
+    if (files.length > 0) {
+        const { error: rmError } = await supabase.storage.from(bucket).remove(files);
+        if (rmError) {
+            console.error('deleteSaleListing storage remove failed:', bucket, folder, rmError.name);
+            return false;
+        }
+    }
+    return true;
+}
+
+export async function deleteSaleListing(id: string): Promise<{ ok: boolean }> {
+    await assertSalesEditor();
+    if (!idSchema.safeParse(id).success) return { ok: false };
+    const supabase = await getSupabaseAdmin();
+
+    const { data: existing } = await supabase.from('sale_listings').select('slug').eq('id', id).maybeSingle();
+
+    for (const bucket of BUCKETS) {
+        for (const folder of [id, `${id}/photos`, `${id}/docs`]) {
+            let ok = false;
+            try {
+                ok = await removeFolder(supabase, bucket, folder);
+            } catch (e) {
+                console.error('deleteSaleListing storage cleanup failed:', (e as Error).name);
+            }
+            if (!ok) return { ok: false };
+        }
+    }
+
+    const { error } = await supabase.from('sale_listings').delete().eq('id', id);
+    if (error) {
+        console.error('deleteSaleListing failed:', error.code);
+        return { ok: false };
+    }
+    await logActivity(await currentUserId(), 'DELETE', 'SALE_LISTING', id, { slug: existing?.slug ?? null });
+    revalidateSales([existing?.slug]);
+    return { ok: true };
+}
+
+export async function searchLinkableProperties(
+    query: string,
+): Promise<{ id: string; slug: string; title: Localized; city: string | null }[]> {
+    await assertSalesViewer();
+    const q = String(query ?? '')
+        .replace(/[%,()]/g, '')
+        .trim()
+        .slice(0, 80);
+    const supabase = await getSupabaseAdmin();
+    let req = supabase
+        .from('properties')
+        .select('id, slug, title, city')
+        .eq('is_multi_unit', false)
+        .order('title->>en', { ascending: true })
+        .limit(10);
+    if (q) {
+        req = req.or(`slug.ilike.%${q}%,title->>en.ilike.%${q}%,title->>pt.ilike.%${q}%`);
+    }
+    const { data, error } = await req;
+    if (error) {
+        console.error('searchLinkableProperties failed:', error.code);
+        return [];
+    }
+    return (data ?? []) as { id: string; slug: string; title: Localized; city: string | null }[];
+}
+
+export async function getPropertyCopy(propertyId: string): Promise<ReturnType<typeof copyFromProperty>> {
+    await assertSalesViewer();
+    if (!idSchema.safeParse(propertyId).success) throw new Error('Invalid property');
+    const supabase = await getSupabaseAdmin();
+    const { data, error } = await supabase
+        .from('properties')
+        .select('images, bedrooms, bathrooms, area, description, city, lat, lng, address, amenities')
+        .eq('id', propertyId)
+        .maybeSingle();
+    if (error || !data) throw new Error('Property not found');
+    const p = data as Record<string, unknown>;
+    return copyFromProperty({
+        images: Array.isArray(p.images) ? (p.images as CopySourceProperty['images']) : [],
+        bedrooms: (p.bedrooms as number | null) ?? null,
+        bathrooms: (p.bathrooms as number | null) ?? null,
+        area: (p.area as number | null) ?? null,
+        description: (p.description as Localized | null) ?? null,
+        city: (p.city as string | null) ?? null,
+        lat: (p.lat as number | null) ?? null,
+        lng: (p.lng as number | null) ?? null,
+        address: (p.address as string | null) ?? null,
+        amenities: Array.isArray(p.amenities) ? (p.amenities as CopySourceProperty['amenities']) : null,
+    });
+}
+
+export async function previewSalePerformance(
+    propertyId: string,
+    price: number | null,
+    priceOnRequest: boolean,
+): Promise<PerformanceSnapshot | null> {
+    await assertSalesViewer();
+    const args = z
+        .object({ id: idSchema, price: z.number().min(0).nullable(), por: z.boolean() })
+        .safeParse({ id: propertyId, price, por: priceOnRequest });
+    if (!args.success) return null;
+    try {
+        return await loadSalePerformance(args.data.id, args.data.price, args.data.por);
+    } catch (e) {
+        console.error('previewSalePerformance failed:', (e as Error).message);
+        return null;
+    }
+}
+
+export async function getEnergyCertUrl(id: string): Promise<string | null> {
+    await assertSalesViewer();
+    if (!idSchema.safeParse(id).success) return null;
+    const supabase = await getSupabaseAdmin();
+    const { data } = await supabase.from('sale_listings').select('energy_cert_path').eq('id', id).maybeSingle();
+    const path = (data as { energy_cert_path: string | null } | null)?.energy_cert_path;
+    if (!path || !path.startsWith(`${id}/docs/`)) return null;
+    const { data: signed, error } = await supabase.storage.from('sale-listings-private').createSignedUrl(path, 600);
+    if (error || !signed) return null;
+    return signed.signedUrl;
+}
