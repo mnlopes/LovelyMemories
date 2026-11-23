@@ -565,7 +565,9 @@
         "blog": "Blog",
         "contact": "Contact",
         "forSale": "For sale",
-        "login": "Login"
+        "login": "Login",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu"
     },
     "Auth": {
         "login": "Login",

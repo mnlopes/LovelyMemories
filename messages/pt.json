@@ -555,8 +555,10 @@
         "concierge": "Concierge",
         "blog": "Blog",
         "contact": "Contacto",
-        "forSale": "Imóveis à venda",
-        "login": "Entrar"
+        "forSale": "À venda",
+        "login": "Entrar",
+        "openMenu": "Abrir menu",
+        "closeMenu": "Fechar menu"
     },
     "Auth": {
         "login": "Login",
