@@ -738,7 +738,12 @@
         "rights": "© 2026 Lovely Memories. All rights reserved.",
         "privacyPolicy": "Privacy & Cookie Policy",
         "cookieSettings": "Cookie Settings",
-        "termsConditions": "Terms & Conditions"
+        "termsConditions": "Terms & Conditions",
+        "emailLabel": "Email address",
+        "newsletterIntro": "Get our news and exclusive offers. Subscribe to our newsletter.",
+        "newsletterSuccess": "Thank you! Your subscription is confirmed.",
+        "newsletterError": "Something went wrong. Please try again.",
+        "newsletterWait": "Please wait a few minutes before trying again."
     },
     "Sales": {
         "eyebrow": "Lovely Memories · Real estate",

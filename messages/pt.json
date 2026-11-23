@@ -729,7 +729,12 @@
         "rights": "© 2026 Lovely Memories. Todos os direitos reservados.",
         "privacyPolicy": "Política de Privacidade e Cookies",
         "cookieSettings": "Definições de Cookies",
-        "termsConditions": "Termos e Condições"
+        "termsConditions": "Termos e Condições",
+        "emailLabel": "Endereço de email",
+        "newsletterIntro": "Acompanhe as nossas novidades e ofertas exclusivas. Subscreva a nossa newsletter.",
+        "newsletterSuccess": "Obrigado! A sua subscrição está confirmada.",
+        "newsletterError": "Ocorreu um erro. Tente novamente.",
+        "newsletterWait": "Por favor aguarde uns minutos antes de tentar novamente."
     },
     "Sales": {
         "eyebrow": "Lovely Memories · Imobiliário",

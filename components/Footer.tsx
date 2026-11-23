@@ -40,8 +40,7 @@ export const Footer = () => {
             });
 
             if (response.status === 429) {
-                const data = await response.json();
-                toast.error(data.message || "Por favor aguarde uns minutos.");
+                toast.error(t('newsletterWait'));
                 setStatus('error');
                 return;
             }
@@ -50,11 +49,11 @@ export const Footer = () => {
                 setStatus('success');
                 setEmail("");
                 setWebsite("");
-                setTimeout(() => setStatus('idle'), 3000);
+                setTimeout(() => setStatus('idle'), 5000);
             } else {
                 setStatus('error');
             }
-        } catch (error) {
+        } catch {
             setStatus('error');
         }
     };
@@ -84,17 +83,23 @@ export const Footer = () => {
                 <div className="flex flex-col items-center text-center mb-16 space-y-6 w-full max-w-4xl">
                     <h2 className="text-3xl md:text-4xl font-sans font-bold">{t('getInTouch')}</h2>
                     <p className="text-gray-300 font-light leading-relaxed max-w-2xl">
-                        Acompanhe as nossas novidades e ofertas exclusivas. Subscreva a nossa newsletter.
+                        {t('newsletterIntro')}
                     </p>
 
                     <div className="w-full max-w-xl mt-8">
                         <form onSubmit={handleSubmit} className="flex items-center bg-white rounded-full p-1 shadow-xl border border-white/10">
                             <input
                                 type="email"
+                                name="email"
+                                aria-label={t('emailLabel')}
+                                autoComplete="email"
+                                inputMode="email"
+                                autoCapitalize="none"
+                                spellCheck={false}
                                 placeholder={t('enterEmail')}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="flex-grow bg-transparent text-gray-900 placeholder-gray-400 font-light focus:outline-none pl-4 md:pl-6 py-2 md:py-2.5 text-sm md:text-base min-w-0"
+                                className="flex-grow bg-transparent text-gray-900 placeholder-gray-400 font-light focus:outline-none pl-4 md:pl-6 py-2 md:py-2.5 text-base min-w-0"
                                 required
                             />
                             {/* HONEYPOT FIELD (Hidden) */}
@@ -106,29 +111,32 @@ export const Footer = () => {
                                 style={{ display: 'none' }}
                                 tabIndex={-1}
                                 autoComplete="off"
+                                aria-hidden="true"
                             />
                             <button
                                 type="submit"
                                 disabled={!email.trim() || status === 'loading'}
-                                className={`px-8 md:px-12 py-3.5 md:py-4 bg-[#a39076] text-white text-[13px] md:text-[14px] !rounded-full transition-all duration-300 border border-white/10 whitespace-nowrap ml-1 md:ml-2 font-bold tracking-tight ${!email.trim() || status === 'loading' ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#8e7d65] cursor-pointer'}`}
+                                className={`px-6 sm:px-8 md:px-12 py-3.5 md:py-4 bg-[#a39076] text-white text-[13px] md:text-[14px] !rounded-full transition-all duration-300 border border-white/10 whitespace-nowrap ml-1 md:ml-2 font-bold tracking-tight ${!email.trim() || status === 'loading' ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#8e7d65] cursor-pointer'}`}
                             >
                                 {status === 'loading' ? '...' : status === 'success' ? '✓' : t('subscribe')}
                             </button>
                         </form>
-                        {status === 'error' && <p className="text-red-400 text-xs mt-2">Ocorreu um erro. Tente novamente.</p>}
+                        <p role="status" aria-live="polite" className={`text-sm mt-3 min-h-5 ${status === 'error' ? 'text-red-300' : 'text-[#d8c9ae]'}`}>
+                            {status === 'error' ? t('newsletterError') : status === 'success' ? t('newsletterSuccess') : ''}
+                        </p>
                     </div>
                 </div>
 
                 {/* Middle Section: Navigation & Socials */}
-                <div className="w-full flex flex-col items-center gap-8 mb-16">
+                <div className="w-full flex flex-col items-center gap-6 md:gap-8 mb-16">
                     {/* Navigation */}
                     <nav>
-                        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-4">
+                        <ul className="flex flex-wrap justify-center gap-x-6 md:gap-x-8 gap-y-1 md:gap-y-4">
                             {navLinks.map((link) => (
                                 <li key={link.path}>
                                     <Link
                                         href={link.path}
-                                        className="text-sm !font-bold uppercase tracking-widest text-white hover:text-[#a39076] transition-colors"
+                                        className="inline-flex min-h-11 md:min-h-0 items-center whitespace-nowrap text-sm !font-bold uppercase tracking-widest text-white hover:text-[#a39076] transition-colors"
                                     >
                                         {link.label}
                                     </Link>
@@ -138,14 +146,14 @@ export const Footer = () => {
                     </nav>
 
                     {/* Social Icons */}
-                    <div className="flex items-center gap-8">
-                        <a href="https://www.facebook.com/lovely.memories.pt" target="_blank" rel="noreferrer" aria-label="Facebook" className="text-white hover:text-[#a39076] transition-colors">
+                    <div className="flex items-center gap-4 md:gap-6">
+                        <a href="https://www.facebook.com/lovely.memories.pt" target="_blank" rel="noreferrer" aria-label="Facebook" className="flex size-11 items-center justify-center rounded-full text-white hover:text-[#a39076] transition-colors">
                             <Facebook size={22} strokeWidth={2} />
                         </a>
-                        <a href="https://www.instagram.com/lovely_memories_pt/" target="_blank" rel="noreferrer" aria-label="Instagram" className="text-white hover:text-[#a39076] transition-colors">
+                        <a href="https://www.instagram.com/lovely_memories_pt/" target="_blank" rel="noreferrer" aria-label="Instagram" className="flex size-11 items-center justify-center rounded-full text-white hover:text-[#a39076] transition-colors">
                             <Instagram size={22} strokeWidth={2} />
                         </a>
-                        <a href="https://www.linkedin.com/company/lovely-memories-lda/" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="text-white hover:text-[#a39076] transition-colors">
+                        <a href="https://www.linkedin.com/company/lovely-memories-lda/" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="flex size-11 items-center justify-center rounded-full text-white hover:text-[#a39076] transition-colors">
                             <Linkedin size={22} strokeWidth={2} />
                         </a>
                     </div>
@@ -169,11 +177,11 @@ export const Footer = () => {
 
                     <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_280px_1fr] items-center gap-6 lg:gap-4">
                         {/* Links Column */}
-                        <div className="flex flex-wrap justify-center lg:justify-start gap-4 lg:gap-x-4 xl:gap-x-6 gap-y-2">
-                            <Link href="/privacy-policy" className="!font-bold hover:text-white transition-colors">
+                        <div className="flex flex-wrap justify-center lg:justify-start gap-x-4 xl:gap-x-6 gap-y-0 lg:gap-y-2">
+                            <Link href="/privacy-policy" className="inline-flex min-h-11 lg:min-h-0 items-center !font-bold hover:text-white transition-colors">
                                 {t('privacyPolicy')}
                             </Link>
-                            <Link href="/terms-conditions" className="!font-bold hover:text-white transition-colors">
+                            <Link href="/terms-conditions" className="inline-flex min-h-11 lg:min-h-0 items-center !font-bold hover:text-white transition-colors">
                                 {t('termsConditions')}
                             </Link>
                         </div>
