@@ -8,7 +8,7 @@ export async function POST(request: Request) {
 
         // 1. HONEYPOT CHECK
         if (website && website.length > 0) {
-            console.warn(`[Anti-Spam] Honeypot filled by ${email} in newsletter.`);
+            console.warn("[Anti-Spam] Honeypot filled in newsletter.");
             return NextResponse.json({ message: 'Success' }, { status: 200 });
         }
 
