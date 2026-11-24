@@ -102,7 +102,7 @@ export function SaleLocationTab({ form, set }: SaleTabProps) {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#a3a3a3]">
                         {t("location.mapTitle")}
                     </span>
-                    <div className="h-64 overflow-hidden rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border md:h-80">
+                    <div className="h-80 overflow-hidden rounded-2xl border border-[#f5f5f5] dark:border-admin-dark-border md:h-[460px] lg:h-[520px]">
                         <PickerMap lat={form.lat} lng={form.lng} onPick={setPoint} />
                     </div>
                     <p className="text-xs text-[#a3a3a3]">{t("location.mapHint")}</p>
