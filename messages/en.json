@@ -771,6 +771,8 @@
         "sortNewest": "Newest",
         "sortPriceAsc": "Price: low to high",
         "sortPriceDesc": "Price: high to low",
+        "swipeHint": "Swipe for more photos",
+        "typologyAndType": "{typology} {type}",
         "readMore": "Read more",
         "readLess": "Show less",
         "filterTypeTitle": "Property type",

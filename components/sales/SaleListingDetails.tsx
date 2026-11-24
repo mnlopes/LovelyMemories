@@ -93,8 +93,14 @@ export function SaleListingDetails({
     const addFact = (label: string, value: string | null | undefined) => {
         if (value) facts.push([label, value]);
     };
-    addFact(t('factType'), t(TYPE_KEY[listing.type]));
-    addFact(t('factTypology'), listing.typology);
+    // As in the approved design ("T1 house"): one box with the type and the typology together.
+    const typeName = t(TYPE_KEY[listing.type]);
+    addFact(
+        listing.typology ? t('factTypology') : t('factType'),
+        listing.typology
+            ? t('typologyAndType', { typology: listing.typology, type: locale === 'en' ? typeName.toLowerCase() : typeName })
+            : typeName,
+    );
     addFact(t('factGrossArea'), listing.gross_area ? `${listing.gross_area} m²` : null);
     addFact(t('factUsefulArea'), listing.useful_area ? `${listing.useful_area} m²` : null);
     addFact(t('factPlot'), listing.plot_area ? `${listing.plot_area} m²` : null);
@@ -134,25 +140,27 @@ export function SaleListingDetails({
                 </Link>
 
                 {photos.length > 0 && (
-                    <div className="relative">
-                        <PropertyGallery
-                            images={photos.map((p) => p.url)}
-                            title={title}
-                            imageAlt={saleImageAlt(listing, locale, 0)}
-                            caption={caption}
-                        />
-                        {listing.floor_plan_url && (
-                            <a
-                                href={listing.floor_plan_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="absolute bottom-5 left-5 z-10 hidden min-h-11 items-center gap-2 rounded-full bg-white px-4 text-[13px] font-semibold text-[#192537] shadow-[0_6px_20px_rgba(0,0,0,0.18)] md:flex"
-                            >
-                                <FileText className="size-4" aria-hidden="true" />
-                                {t('floorPlan')}
-                            </a>
-                        )}
-                    </div>
+                    <PropertyGallery
+                        layout="mosaic"
+                        images={photos.map((p) => p.url)}
+                        title={title}
+                        imageAlt={saleImageAlt(listing, locale, 0)}
+                        caption={caption}
+                        swipeHint={photos.length > 1 ? t('swipeHint') : undefined}
+                        extraAction={
+                            listing.floor_plan_url ? (
+                                <a
+                                    href={listing.floor_plan_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex min-h-11 items-center gap-2 rounded-full bg-white px-4 text-[13px] font-semibold text-[#192537] shadow-[0_6px_20px_rgba(0,0,0,0.18)] transition-colors hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b09e80]"
+                                >
+                                    <FileText className="size-4" aria-hidden="true" />
+                                    {t('floorPlan')}
+                                </a>
+                            ) : undefined
+                        }
+                    />
                 )}
 
                 <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-12">

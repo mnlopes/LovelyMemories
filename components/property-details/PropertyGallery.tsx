@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Grid, X, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
@@ -22,9 +22,28 @@ interface PropertyGalleryProps {
     };
     /** Replaces the guests/bedrooms line in the grid modal header (used by sale listings). */
     caption?: string;
+    /**
+     * "pair" (default, rental pages): two large photos. "mosaic" (sale listings): one large photo and
+     * four small ones on md+, a swipeable row of photos on phones.
+     */
+    layout?: "pair" | "mosaic";
+    /** Extra button shown next to "View all photos" (e.g. the floor plan link). */
+    extraAction?: ReactNode;
+    /** Hint under the swipeable row on phones (mosaic layout). */
+    swipeHint?: string;
 }
 
 type GalleryState = "closed" | "grid" | "slider";
+
+/** Grid spans of the mosaic (4 columns × 2 rows on md+) so it stays full with fewer than five photos. */
+function mosaicSpan(count: number, index: number): string {
+    if (count === 1) return "md:col-span-4 md:row-span-2";
+    if (count === 2) return "md:col-span-2 md:row-span-2";
+    if (index === 0) return "md:col-span-2 md:row-span-2";
+    if (count === 3) return "md:col-span-2";
+    if (count === 4 && index === 3) return "md:col-span-2";
+    return "";
+}
 
 function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImages = [] }: { 
     src: string; 
@@ -68,7 +87,7 @@ function GalleryImage({ src, alt, fill, className, sizes, priority, fallbackImag
     );
 }
 
-export function PropertyGallery({ images, title, imageAlt, metadata, caption }: PropertyGalleryProps) {
+export function PropertyGallery({ images, title, imageAlt, metadata, caption, layout = "pair", extraAction, swipeHint }: PropertyGalleryProps) {
     const t = useTranslations('PropertyDetail');
     // "The Charming — 1-bedroom apartment in Porto", then "(2)", "(3)"… so each photo differs.
     const altFor = (index: number) => {
@@ -101,9 +120,54 @@ export function PropertyGallery({ images, title, imageAlt, metadata, caption }: 
         setViewState("slider");
     };
 
+    const tiles = images.slice(0, 5);
+
     return (
         <>
-            {/* Page Gallery Grid */}
+            {layout === "mosaic" ? (
+            <div className="relative">
+                <div className="-mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:grid md:h-[480px] md:grid-cols-4 md:grid-rows-2 md:gap-2.5 md:overflow-hidden md:rounded-[20px] md:px-0">
+                    {tiles.map((src, i) => (
+                        <button
+                            key={`${src}-${i}`}
+                            type="button"
+                            onClick={() => openSlider(i)}
+                            aria-label={altFor(i)}
+                            className={`group relative aspect-[4/3] w-[86%] shrink-0 snap-center overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b09e80] md:aspect-auto md:w-auto md:rounded-none ${mosaicSpan(tiles.length, i)}`}
+                        >
+                            <GalleryImage
+                                src={src}
+                                alt={altFor(i)}
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                sizes={i === 0 ? "(max-width: 768px) 86vw, (max-width: 1280px) 50vw, 640px" : "(max-width: 768px) 86vw, (max-width: 1280px) 25vw, 320px"}
+                                priority={i === 0}
+                                fallbackImages={images}
+                            />
+                            <span aria-hidden="true" className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                        </button>
+                    ))}
+                </div>
+                <div className="absolute bottom-4 right-4 hidden gap-2.5 md:flex">
+                    {extraAction}
+                    <button
+                        type="button"
+                        onClick={openGrid}
+                        className="flex min-h-11 items-center gap-2 rounded-full bg-white px-4 text-[13px] font-semibold text-[#192537] shadow-[0_6px_20px_rgba(0,0,0,0.18)] transition-colors hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b09e80]"
+                    >
+                        <Grid className="h-4 w-4" aria-hidden="true" />
+                        {t('viewAllPhotos', { count: images.length })}
+                    </button>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 md:hidden">
+                    {swipeHint && <p className="text-xs text-[#6b7280]">{swipeHint}</p>}
+                    <button type="button" onClick={openGrid} className="ml-auto min-h-11 text-xs font-bold uppercase tracking-[0.16em] text-[#7a6a4d]">
+                        {t('viewAllPhotos', { count: images.length })}
+                    </button>
+                </div>
+            </div>
+            ) : (
+            /* Page Gallery Grid */
             <div className="relative grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-3 h-[450px] md:h-[450px] lg:h-[400px] 2xl:h-[520px] overflow-hidden rounded-2xl">
                 <div
                     className="md:col-span-2 md:row-span-2 relative overflow-hidden cursor-pointer group"
@@ -145,6 +209,7 @@ export function PropertyGallery({ images, title, imageAlt, metadata, caption }: 
                     {t('viewAllPhotos', { count: images.length })}
                 </Button>
             </div>
+            )}
 
             <AnimatePresence>
                 {/* Step 1: Grid View */}
