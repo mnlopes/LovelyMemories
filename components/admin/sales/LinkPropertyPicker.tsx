@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { localized } from "@/lib/sales/format";
 import type { Localized } from "@/lib/sales/types";
 import { AmenityPicker } from "./AmenityPicker";
+import { useConfirm } from "./useConfirm";
 import { Section, input, secondaryBtn, type SaleTabProps } from "./ui";
 
 type Found = { id: string; slug: string; title: Localized; city: string | null };
@@ -32,6 +33,7 @@ function hasCopyableData(form: SaleTabProps["form"]): boolean {
 
 export function LinkPropertyPicker({ form, set }: SaleTabProps) {
     const t = useTranslations("AdminSales");
+    const { confirm, dialog } = useConfirm();
     const locale = useLocale();
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<{ query: string; items: Found[] } | null>(null);
@@ -112,7 +114,11 @@ export function LinkPropertyPicker({ form, set }: SaleTabProps) {
 
     async function copy() {
         if (!propertyId || copying) return;
-        if (hasCopyableData(form) && !window.confirm(t("link.copyConfirm"))) return;
+        if (
+            hasCopyableData(form) &&
+            !(await confirm({ title: t("link.copyTitle"), message: t("link.copyConfirm"), confirmLabel: t("link.copy"), variant: "warning" }))
+        )
+            return;
         setCopying(true);
         try {
             const { draft, amenitySuggestions } = await getPropertyCopy(propertyId);
@@ -137,6 +143,7 @@ export function LinkPropertyPicker({ form, set }: SaleTabProps) {
 
     return (
         <Section title={t("link.section")}>
+            {dialog}
             <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary">{t("link.intro")}</p>
 
             {propertyId ? (

@@ -13,6 +13,14 @@ export type EnergyClass = (typeof ENERGY_CLASSES)[number];
 
 export type SaleImage = { url: string; alt: Localized; order: number; is_main: boolean };
 
+/** Extra document of a listing (land registry record, licence...). The file is always in the private bucket. */
+export type SaleDocument = { id: string; name: Localized; path: string; public: boolean; size: number | null };
+/** What the public page gets of a document marked public: never the storage path. */
+export type SalePublicDocument = { id: string; name: Localized };
+/** Id used in /api/sale-doc/<listing>/<doc> for the energy certificate. */
+export const ENERGY_CERT_DOC_ID = 'energy-certificate';
+export const MAX_SALE_DOCUMENTS = 10;
+
 /** Public columns of a sale listing (safe to send to the browser). */
 export type SaleListing = {
     id: string;
@@ -52,6 +60,10 @@ export type SaleListing = {
     al_license: string | null;
     created_at: string;
     updated_at: string;
+    /** Listing page only (computed on the server from private columns): documents marked public. */
+    public_documents?: SalePublicDocument[];
+    /** Listing page only: the energy certificate PDF exists and is marked public. */
+    energy_cert_downloadable?: boolean;
 };
 
 /**
@@ -113,10 +125,12 @@ export function toSaleCard(l: SaleListing): SaleCardListing {
 }
 
 /** Includes columns that must never reach the browser. */
-export type SaleListingPrivate = SaleListing & {
+export type SaleListingPrivate = Omit<SaleListing, 'public_documents' | 'energy_cert_downloadable'> & {
     address_private: string | null;
     energy_cert_number: string | null;
     energy_cert_path: string | null;
+    energy_cert_public: boolean;
+    documents: SaleDocument[];
     created_by: string | null;
 };
 

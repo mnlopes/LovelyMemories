@@ -850,6 +850,9 @@
         "floorPlan": "Floor plan",
         "floorPlanPdf": "Floor plan (PDF)",
         "energyOnRequest": "Energy certificate available on request",
+        "energyCertPdf": "Energy certificate (PDF)",
+        "documentPdf": "{name} (PDF)",
+        "documentFallback": "Document",
         "askingPrice": "Asking price",
         "negotiable": "Negotiable",
         "listedDaysAgo": "{count, plural, =0 {Listed today} one {Listed # day ago} other {Listed # days ago}}",
@@ -3186,6 +3189,7 @@
             "unpublish": "Unpublish",
             "delete": "Delete listing",
             "deleteConfirm": "Delete this listing and all its files? This cannot be undone.",
+            "deleteTitle": "Delete listing?",
             "readOnly": "You can view this listing but not change it.",
             "cardPreview": "Card preview",
             "priceOnRequest": "Price on request"
@@ -3290,6 +3294,7 @@
             "makeMain": "Make cover",
             "delete": "Delete photo",
             "deleteConfirm": "Delete this photo? This cannot be undone.",
+            "deleteTitle": "Remove photo?",
             "lastPublished": "A published listing needs at least one photo. Upload another one or unpublish first."
         },
         "documents": {
@@ -3308,10 +3313,28 @@
             "open": "Open",
             "remove": "Remove",
             "deleteConfirm": "Remove this file? This cannot be undone.",
+            "deleteTitle": "Remove file?",
             "notPdf": "Only PDF files are accepted.",
             "tooBig": "The file is larger than {mb} MB.",
             "uploadFailed": "Could not upload the file. Try again.",
-            "openFailed": "Could not open the file. Try again."
+            "openFailed": "Could not open the file. Try again.",
+            "certPublicHint": "Private file. Switch it on to let buyers open the PDF on the listing page; off, the page says \"available on request\".",
+            "planAlwaysPublic": "Always shown on the site",
+            "visible": "Visible on the site",
+            "private": "Private",
+            "uploadToShow": "Upload the PDF to show it",
+            "otherSection": "Other documents",
+            "otherHint": "Land registry record, permanent certificate, habitation licence, condominium rules… They stay private until you switch on \"Visible on the site\".",
+            "addDocument": "Add document",
+            "addHint": "PDF up to {mb} MB, up to {max} documents",
+            "maxDocs": "A listing can have up to {max} documents.",
+            "namePt": "Name (PT)",
+            "nameEn": "Name (EN)",
+            "namePlaceholderPt": "Caderneta predial",
+            "namePlaceholderEn": "Land registry record",
+            "personalWarning": "Check you may show it: land registry records and certificates carry the owner's name and tax number.",
+            "moveUp": "Move up",
+            "moveDown": "Move down"
         },
         "performance": {
             "section": "Rental performance",
@@ -3340,6 +3363,7 @@
             "unlink": "Unlink",
             "copyHint": "Copies photos, bedrooms, bathrooms, area, description, city, coordinates and exact address into this listing. The home itself is not changed.",
             "copyConfirm": "This listing already has some data. Copying will replace photos, bedrooms, bathrooms, area, description, city, coordinates and exact address. Continue?",
+            "copyTitle": "Replace the data?",
             "copied": "Data copied. Review it and save.",
             "copyFailed": "Could not copy the data. Try again.",
             "amenities": "Amenities of the home",
@@ -3359,6 +3383,7 @@
             "removeCustom": "Remove {name}",
             "otherToggle": "Other rental amenities ({count}), usually not relevant to a buyer"
         },
+        "confirm": { "cancel": "Cancel", "remove": "Remove", "delete": "Delete" },
         "settings": {
             "title": "Sales",
             "description": "Contact details shown on the sale listings.",

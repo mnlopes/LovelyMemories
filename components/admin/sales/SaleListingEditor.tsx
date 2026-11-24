@@ -17,6 +17,7 @@ import { SaleDocumentsTab } from "./SaleDocumentsTab";
 import { SalePerformanceTab } from "./SalePerformanceTab";
 import { SaleEditorSide } from "./SaleEditorSide";
 import { SaleSaveBar, type SaveStatus } from "./SaleSaveBar";
+import { useConfirm } from "./useConfirm";
 import { focusRing, type PersistFn, type SaleFormState, type SaleTabProps } from "./ui";
 
 export type EditorListing = Omit<SaleListingPrivate, "created_by">;
@@ -60,6 +61,8 @@ const EMPTY_FORM: SaleFormState = {
     address_private: null,
     energy_cert_number: null,
     energy_cert_path: null,
+    energy_cert_public: false,
+    documents: [],
 };
 
 function toForm(l: EditorListing | null): SaleFormState {
@@ -100,6 +103,9 @@ function toForm(l: EditorListing | null): SaleFormState {
         address_private: l.address_private,
         energy_cert_number: l.energy_cert_number,
         energy_cert_path: l.energy_cert_path,
+        energy_cert_public: l.energy_cert_public ?? false,
+        // Older rows (before the documents column) have no list.
+        documents: Array.isArray(l.documents) ? l.documents : [],
     };
 }
 
@@ -157,6 +163,7 @@ export default function SaleListingEditor({
     const t = useTranslations("AdminSales");
     const locale = useLocale();
     const router = useRouter();
+    const { confirm, dialog } = useConfirm();
     // A new listing becomes saved in place on its first autosave (the URL is swapped, the page is not reloaded).
     const [created, setCreated] = useState<{ reference: string | null } | null>(null);
     const isSaved = initial !== null || created !== null;
@@ -450,7 +457,7 @@ export default function SaleListingEditor({
 
     async function remove() {
         if (locked || !isSaved) return;
-        if (!window.confirm(t("editor.deleteConfirm"))) return;
+        if (!(await confirm({ title: t("editor.deleteTitle"), message: t("editor.deleteConfirm"), confirmLabel: t("confirm.delete") }))) return;
         setBusy("delete");
         try {
             const res = await enqueue(() => deleteSaleListing(id));
@@ -483,6 +490,7 @@ export default function SaleListingEditor({
                 if (dirty) runAutoSave();
             }}
         >
+            {dialog}
             <div className="flex flex-col gap-1.5">
                 <nav aria-label={t("editor.breadcrumb")} className="flex gap-2 text-xs font-medium text-[#a3a3a3]">
                     <Link

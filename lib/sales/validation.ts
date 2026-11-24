@@ -4,6 +4,7 @@ import {
     SALE_CONDITIONS,
     SALE_STATUSES,
     SALE_TYPES,
+    MAX_SALE_DOCUMENTS,
     type SaleListing,
 } from './types';
 
@@ -20,6 +21,14 @@ const imageSchema = z.object({
 });
 
 const nonNegative = z.number().min(0).nullable();
+
+const documentSchema = z.object({
+    id: z.string().uuid(),
+    name: z.object({ en: z.string().max(120).optional(), pt: z.string().max(120).optional() }),
+    path: z.string().min(1).max(500),
+    public: z.boolean(),
+    size: z.number().int().min(0).nullable(),
+});
 
 export const saleListingInputSchema = z.object({
     slug: z.string().min(1).max(160),
@@ -57,6 +66,8 @@ export const saleListingInputSchema = z.object({
     address_private: z.string().max(300).nullable(),
     energy_cert_number: z.string().max(60).nullable(),
     energy_cert_path: z.string().max(500).nullable(),
+    energy_cert_public: z.boolean(),
+    documents: z.array(documentSchema).max(MAX_SALE_DOCUMENTS),
 });
 
 export type PublishProblem = 'title' | 'photo' | 'type' | 'price' | 'energy_class' | 'city';

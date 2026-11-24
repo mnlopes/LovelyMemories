@@ -11,6 +11,7 @@ import { newPhotoPath, ownedStoragePath } from "@/lib/sales/storage";
 import { localized } from "@/lib/sales/format";
 import type { SaleImage } from "@/lib/sales/types";
 import { DEFAULT_LANG, LangTabs, Section, focusRing, input, primaryBtn, type Lang, type SaleFileTabProps } from "./ui";
+import { useConfirm } from "./useConfirm";
 
 const BUCKET = "sale-listings";
 const ACCEPT = ["image/jpeg", "image/png", "image/webp"];
@@ -27,6 +28,7 @@ function normalize(images: SaleImage[]): SaleImage[] {
 
 export function SalePhotosTab({ form, set, listingId, isSaved, canEdit, persist }: SaleFileTabProps) {
     const t = useTranslations("AdminSales");
+    const { confirm, dialog } = useConfirm();
     const locale = useLocale();
     const [lang, setLang] = useState<Lang>(DEFAULT_LANG);
     const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -166,7 +168,7 @@ export function SalePhotosTab({ form, set, listingId, isSaved, canEdit, persist 
             toast.error(t("photos.lastPublished"));
             return;
         }
-        if (!window.confirm(t("photos.deleteConfirm"))) return;
+        if (!(await confirm({ title: t("photos.deleteTitle"), message: t("photos.deleteConfirm") }))) return;
         const url = images[index].url;
         setDeleting(index);
         try {
@@ -187,6 +189,7 @@ export function SalePhotosTab({ form, set, listingId, isSaved, canEdit, persist 
 
     return (
         <Section title={t("tabs.photos")} hint={`${images.length}/${MAX_IMAGES}`}>
+            {dialog}
             <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary">{t("photos.intro")}</p>
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">

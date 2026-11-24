@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from 'react';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,10 +27,26 @@ export default function DeleteConfirmModal({
     cancelLabel = "Cancel",
     variant = 'danger'
 }: DeleteConfirmModalProps) {
+    // Escape cancels, as the backdrop click does (not while the action runs).
+    useEffect(() => {
+        if (!isOpen || isLoading) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [isOpen, isLoading, onClose]);
+
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirm-title"
+            aria-describedby="delete-confirm-message"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        >
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
@@ -46,8 +63,8 @@ export default function DeleteConfirmModal({
                         <AlertTriangle className="size-8" />
                     </div>
 
-                    <h2 className="text-2xl font-black text-[#171717] dark:text-white mb-3 uppercase tracking-tight">{title}</h2>
-                    <p className="text-[#737373] dark:text-[#a3a3a3] text-sm font-medium leading-relaxed mb-8">
+                    <h2 id="delete-confirm-title" className="text-2xl font-black text-[#171717] dark:text-white mb-3 uppercase tracking-tight">{title}</h2>
+                    <p id="delete-confirm-message" className="text-[#737373] dark:text-[#a3a3a3] text-sm font-medium leading-relaxed mb-8">
                         {message}
                     </p>
 
@@ -55,6 +72,7 @@ export default function DeleteConfirmModal({
                         <button
                             onClick={onClose}
                             disabled={isLoading}
+                            autoFocus
                             className="flex-1 px-6 py-3 border border-[#e5e5e5] dark:border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest text-[#171717] dark:text-white hover:bg-[#fafafa] dark:hover:bg-white/5 transition-all disabled:opacity-50"
                         >
                             {cancelLabel}

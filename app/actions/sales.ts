@@ -11,7 +11,8 @@ import { saleListingInputSchema, publishProblems, type PublishProblem } from '@/
 import { slugify } from '@/lib/sales/format';
 import { copyFromProperty, type CopySourceProperty } from '@/lib/sales/copy-from-property';
 import type { PerformanceSnapshot } from '@/lib/sales/performance';
-import type { Localized, SaleListingPrivate } from '@/lib/sales/types';
+import { ENERGY_CERT_DOC_ID, type Localized, type SaleListingPrivate } from '@/lib/sales/types';
+import { isOwnDocPath } from '@/lib/sales/storage';
 
 const idSchema = z.string().uuid();
 const BUCKETS = ['sale-listings', 'sale-listings-private'] as const;
@@ -102,6 +103,13 @@ export async function saveSaleListing(
     if (!parsed.success) return { ok: false, error: 'invalid_input' };
     const data = parsed.data;
     if (data.energy_cert_path && !data.energy_cert_path.startsWith(`${id}/docs/`)) {
+        return { ok: false, error: 'invalid_input' };
+    }
+    // Documents point only at files in this listing's own private folder, each id once.
+    if (
+        data.documents.some((d) => !isOwnDocPath(d.path, id)) ||
+        new Set(data.documents.map((d) => d.id)).size !== data.documents.length
+    ) {
         return { ok: false, error: 'invalid_input' };
     }
 
@@ -340,14 +348,30 @@ export async function previewSalePerformance(
     }
 }
 
-export async function getEnergyCertUrl(id: string): Promise<string | null> {
+/**
+ * Short-lived link (10 minutes) for the team to open a private file: the energy certificate
+ * (docId `energy-certificate`) or one of the listing's documents.
+ */
+export async function getSaleDocUrl(id: string, docId: string): Promise<string | null> {
     await assertSalesViewer();
-    if (!idSchema.safeParse(id).success) return null;
+    if (!idSchema.safeParse(id).success || typeof docId !== 'string' || docId.length > 60) return null;
     const supabase = await getSupabaseAdmin();
-    const { data } = await supabase.from('sale_listings').select('energy_cert_path').eq('id', id).maybeSingle();
-    const path = (data as { energy_cert_path: string | null } | null)?.energy_cert_path;
-    if (!path || !path.startsWith(`${id}/docs/`)) return null;
+    const { data } = await supabase
+        .from('sale_listings')
+        .select('energy_cert_path, documents')
+        .eq('id', id)
+        .maybeSingle();
+    const row = data as { energy_cert_path: string | null; documents: { id: string; path: string }[] | null } | null;
+    if (!row) return null;
+    const path =
+        docId === ENERGY_CERT_DOC_ID
+            ? row.energy_cert_path
+            : ((Array.isArray(row.documents) ? row.documents : []).find((d) => d.id === docId)?.path ?? null);
+    if (!path || !isOwnDocPath(path, id)) return null;
     const { data: signed, error } = await supabase.storage.from('sale-listings-private').createSignedUrl(path, 600);
-    if (error || !signed) return null;
+    if (error || !signed) {
+        console.error('getSaleDocUrl sign failed:', error?.name ?? 'no_data');
+        return null;
+    }
     return signed.signedUrl;
 }

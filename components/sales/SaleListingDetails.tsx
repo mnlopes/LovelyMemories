@@ -8,7 +8,7 @@ import { parseDateLocal } from '@/lib/utils';
 import { daysListed, formatEuro, localized, pricePerM2 } from '@/lib/sales/format';
 import type { PerformanceSnapshot } from '@/lib/sales/performance';
 import { saleImageAlt } from '@/lib/sales/seo';
-import type { SaleCardListing, SaleCondition, SaleListing, SaleStatus, SaleType } from '@/lib/sales/types';
+import { ENERGY_CERT_DOC_ID, type SaleCardListing, type SaleCondition, type SaleListing, type SaleStatus, type SaleType } from '@/lib/sales/types';
 import { SaleAreaMap } from './SaleAreaMap';
 import { EnergyPill } from './EnergyPill';
 import { SaleCard } from './SaleCard';
@@ -90,6 +90,11 @@ export function SaleListingDetails({
 
     const energy =
         listing.energy_class === null ? null : listing.energy_class === 'exempt' ? t('energyExempt') : listing.energy_class;
+
+    const publicDocs = listing.public_documents ?? [];
+    const certDownloadable = listing.energy_cert_downloadable === true;
+    const docLinkCls =
+        'inline-flex min-h-12 items-center gap-2.5 rounded-2xl border border-[#e3e6ea] bg-white px-4 text-sm font-semibold text-[#192537] transition-colors duration-300 hover:border-[#192537]';
 
     const yes = t('yes');
     const facts: [string, ReactNode][] = [];
@@ -271,23 +276,39 @@ export function SaleListingDetails({
                             </section>
                         )}
 
-                        {(listing.floor_plan_url || energy) && (
+                        {(listing.floor_plan_url || energy || publicDocs.length > 0 || certDownloadable) && (
                         <section className="flex flex-col gap-3.5">
                             <h2 className="text-2xl font-bold text-[#192537]">{t('documentsTitle')}</h2>
-                            {listing.floor_plan_url && (
+                            {(listing.floor_plan_url || certDownloadable || publicDocs.length > 0) && (
                                 <div className="flex flex-wrap gap-3">
-                                    <a
-                                        href={listing.floor_plan_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex min-h-12 items-center gap-2.5 rounded-2xl border border-[#e3e6ea] bg-white px-4 text-sm font-semibold text-[#192537]"
-                                    >
-                                        <FileText className="size-[18px] text-[#7a6a4d]" aria-hidden="true" />
-                                        {t('floorPlanPdf')}
-                                    </a>
+                                    {listing.floor_plan_url && (
+                                        <a href={listing.floor_plan_url} target="_blank" rel="noopener noreferrer" className={docLinkCls}>
+                                            <FileText className="size-[18px] text-[#7a6a4d]" aria-hidden="true" />
+                                            {t('floorPlanPdf')}
+                                        </a>
+                                    )}
+                                    {certDownloadable && (
+                                        // Private file: the route checks it is still public, then hands out a short-lived link.
+                                        <a href={`/api/sale-doc/${listing.id}/${ENERGY_CERT_DOC_ID}`} target="_blank" rel="noopener noreferrer nofollow" className={docLinkCls}>
+                                            <FileText className="size-[18px] text-[#7a6a4d]" aria-hidden="true" />
+                                            {t('energyCertPdf')}
+                                        </a>
+                                    )}
+                                    {publicDocs.map((d) => (
+                                        <a
+                                            key={d.id}
+                                            href={`/api/sale-doc/${listing.id}/${d.id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer nofollow"
+                                            className={docLinkCls}
+                                        >
+                                            <FileText className="size-[18px] text-[#7a6a4d]" aria-hidden="true" />
+                                            {t('documentPdf', { name: localized(d.name, locale) || t('documentFallback') })}
+                                        </a>
+                                    ))}
                                 </div>
                             )}
-                            {energy && <p className="text-sm text-[#6b7280]">{t('energyOnRequest')}</p>}
+                            {energy && !certDownloadable && <p className="text-sm text-[#6b7280]">{t('energyOnRequest')}</p>}
                         </section>
                         )}
                     </div>

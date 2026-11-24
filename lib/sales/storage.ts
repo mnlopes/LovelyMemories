@@ -23,5 +23,10 @@ export function ownedStoragePath(url: string, listingId: string): string | null 
 
 export const floorPlanPath = (listingId: string) => `${listingId}/docs/floor-plan.pdf`;
 export const energyCertPath = (listingId: string) => `${listingId}/docs/energy-certificate.pdf`;
+/** Extra documents, in the private bucket. */
+export const saleDocumentPath = (listingId: string, docId: string) => `${listingId}/docs/${docId}.pdf`;
+/** True when a private-bucket path belongs to this listing's documents folder. */
+export const isOwnDocPath = (path: string, listingId: string) =>
+    path.startsWith(`${listingId}/docs/`) && !path.includes('..') && path.endsWith('.pdf');
 export const newPhotoPath = (listingId: string) =>
     `${listingId}/photos/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.jpg`;

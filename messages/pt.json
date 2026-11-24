@@ -841,6 +841,9 @@
         "floorPlan": "Planta",
         "floorPlanPdf": "Planta (PDF)",
         "energyOnRequest": "Certificado energético disponível a pedido",
+        "energyCertPdf": "Certificado energético (PDF)",
+        "documentPdf": "{name} (PDF)",
+        "documentFallback": "Documento",
         "askingPrice": "Preço pedido",
         "negotiable": "Negociável",
         "listedDaysAgo": "{count, plural, =0 {Anunciado hoje} one {Anunciado há # dia} other {Anunciado há # dias}}",
@@ -3177,6 +3180,7 @@
             "unpublish": "Despublicar",
             "delete": "Apagar anúncio",
             "deleteConfirm": "Apagar este anúncio e todos os seus ficheiros? Não se pode desfazer.",
+            "deleteTitle": "Apagar anúncio?",
             "readOnly": "Pode ver este anúncio, mas não o pode alterar.",
             "cardPreview": "Pré-visualização do cartão",
             "priceOnRequest": "Preço sob consulta"
@@ -3281,6 +3285,7 @@
             "makeMain": "Tornar capa",
             "delete": "Eliminar fotografia",
             "deleteConfirm": "Eliminar esta fotografia? Esta ação não pode ser desfeita.",
+            "deleteTitle": "Remover fotografia?",
             "lastPublished": "Um anúncio publicado precisa de pelo menos uma foto. Carregue outra ou despublique primeiro."
         },
         "documents": {
@@ -3299,10 +3304,28 @@
             "open": "Abrir",
             "remove": "Remover",
             "deleteConfirm": "Remover este ficheiro? Esta ação não pode ser desfeita.",
+            "deleteTitle": "Remover ficheiro?",
             "notPdf": "Só são aceites ficheiros PDF.",
             "tooBig": "O ficheiro tem mais de {mb} MB.",
             "uploadFailed": "Não foi possível enviar o ficheiro. Tente outra vez.",
-            "openFailed": "Não foi possível abrir o ficheiro. Tente outra vez."
+            "openFailed": "Não foi possível abrir o ficheiro. Tente outra vez.",
+            "certPublicHint": "Ficheiro privado. Ligue para os compradores poderem abrir o PDF na página do anúncio; desligado, a página diz \"disponível a pedido\".",
+            "planAlwaysPublic": "Sempre visível no site",
+            "visible": "Visível no site",
+            "private": "Privado",
+            "uploadToShow": "Carregue o PDF para o mostrar",
+            "otherSection": "Outros documentos",
+            "otherHint": "Caderneta predial, certidão permanente, licença de utilização, regulamento do condomínio… Ficam privados até ligar \"Visível no site\".",
+            "addDocument": "Adicionar documento",
+            "addHint": "PDF até {mb} MB, até {max} documentos",
+            "maxDocs": "Um anúncio pode ter até {max} documentos.",
+            "namePt": "Nome (PT)",
+            "nameEn": "Nome (EN)",
+            "namePlaceholderPt": "Caderneta predial",
+            "namePlaceholderEn": "Land registry record",
+            "personalWarning": "Confirme que o pode mostrar: cadernetas e certidões têm o nome e o NIF do dono.",
+            "moveUp": "Subir",
+            "moveDown": "Descer"
         },
         "performance": {
             "section": "Rendimento do arrendamento",
@@ -3331,6 +3354,7 @@
             "unlink": "Desligar",
             "copyHint": "Copia fotografias, quartos, casas de banho, área, descrição, cidade, coordenadas e morada exata para este anúncio. A casa em si não é alterada.",
             "copyConfirm": "Este anúncio já tem dados. Ao copiar, as fotografias, quartos, casas de banho, área, descrição, cidade, coordenadas e morada exata serão substituídos. Continuar?",
+            "copyTitle": "Substituir os dados?",
             "copied": "Dados copiados. Reveja e guarde.",
             "copyFailed": "Não foi possível copiar os dados. Tente outra vez.",
             "amenities": "Comodidades da casa",
@@ -3350,6 +3374,7 @@
             "removeCustom": "Remover {name}",
             "otherToggle": "Outras do alojamento ({count}), normalmente não interessam a quem compra"
         },
+        "confirm": { "cancel": "Cancelar", "remove": "Remover", "delete": "Apagar" },
         "settings": {
             "title": "Vendas",
             "description": "Contactos mostrados nos anúncios de venda.",

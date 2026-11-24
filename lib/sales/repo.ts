@@ -1,7 +1,8 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { PUBLIC_SALE_COLUMNS, type SaleListing } from './types';
+import { ENERGY_CERT_DOC_ID, PUBLIC_SALE_COLUMNS, type SaleDocument, type SaleListing, type SalePublicDocument } from './types';
+import { isOwnDocPath } from './storage';
 import { approxCoord } from './format';
 import { OWNER_REPORT_STATUSES } from '@/lib/owner-revenue';
 import { computePerformance, type PerfReservation, type PerformanceSnapshot } from './performance';
@@ -34,19 +35,63 @@ export async function getPublishedSaleListings(): Promise<SaleListing[]> {
     return ((data ?? []) as unknown as SaleListing[]).map(roundCoords);
 }
 
+// Private columns read only to work out which documents the page may link to; stripped before returning.
+type DocColumns = { documents: SaleDocument[] | null; energy_cert_public: boolean | null; energy_cert_path: string | null };
+
+const asDocList = (v: unknown): SaleDocument[] => (Array.isArray(v) ? (v as SaleDocument[]) : []);
+
+/** The page's view of a listing's documents: names of the public ones, never their paths. */
+function withPublicDocuments(row: SaleListing & DocColumns): SaleListing {
+    const { documents, energy_cert_public, energy_cert_path, ...listing } = row;
+    const public_documents: SalePublicDocument[] = asDocList(documents)
+        .filter((d) => d.public && isOwnDocPath(d.path, listing.id))
+        .map((d) => ({ id: d.id, name: d.name ?? {} }));
+    return { ...listing, public_documents, energy_cert_downloadable: !!(energy_cert_public && energy_cert_path) };
+}
+
 export async function getSaleListingBySlug(
     slug: string,
     opts: { includeDrafts?: boolean } = {},
 ): Promise<SaleListing | null> {
     const supabase = await getSupabaseAdmin();
-    let q = supabase.from('sale_listings').select(PUBLIC_SALE_COLUMNS).eq('slug', slug);
+    let q = supabase
+        .from('sale_listings')
+        .select(`${PUBLIC_SALE_COLUMNS},documents,energy_cert_public,energy_cert_path`)
+        .eq('slug', slug);
     if (!opts.includeDrafts) q = q.eq('published', true);
     const { data, error } = await q.maybeSingle();
     if (error) {
         console.error('getSaleListingBySlug failed:', error.code);
         return null;
     }
-    return data ? roundCoords(data as unknown as SaleListing) : null;
+    return data ? roundCoords(withPublicDocuments(data as unknown as SaleListing & DocColumns)) : null;
+}
+
+/**
+ * Storage path (private bucket) of a document a visitor may download: the listing must be published
+ * (or `includeDrafts`, for the team's preview) and the document marked public. Null otherwise.
+ */
+export async function getPublicSaleDocumentPath(
+    listingId: string,
+    docId: string,
+    opts: { includeDrafts?: boolean } = {},
+): Promise<{ path: string; name: string } | null> {
+    const supabase = await getSupabaseAdmin();
+    const { data, error } = await supabase
+        .from('sale_listings')
+        .select('id, slug, published, documents, energy_cert_public, energy_cert_path')
+        .eq('id', listingId)
+        .maybeSingle();
+    if (error || !data) return null;
+    const row = data as { id: string; slug: string; published: boolean } & DocColumns;
+    if (!row.published && !opts.includeDrafts) return null;
+    if (docId === ENERGY_CERT_DOC_ID) {
+        if (!row.energy_cert_public || !row.energy_cert_path || !isOwnDocPath(row.energy_cert_path, row.id)) return null;
+        return { path: row.energy_cert_path, name: `${row.slug}-energy-certificate` };
+    }
+    const doc = asDocList(row.documents).find((d) => d.id === docId);
+    if (!doc || !doc.public || !isOwnDocPath(doc.path, row.id)) return null;
+    return { path: doc.path, name: `${row.slug}-${docId.slice(0, 8)}` };
 }
 
 /**
