@@ -15,6 +15,7 @@ import { Footer } from "@/components/Footer";
 import { GuestSelectorWrapper } from "@/components/GuestSelectorWrapper";
 import { DateSelectorWrapper } from "@/components/DateSelectorWrapper";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { VercelAnalytics } from "@/components/VercelAnalytics";
 import { CookieConsent } from "@/components/CookieConsent";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import type { Metadata } from "next";
@@ -94,6 +95,7 @@ export default async function LocaleLayout({
           {children}
           <CookieConsent />
           <GoogleAnalytics />
+          <VercelAnalytics />
         </NextIntlClientProvider>
       </body>
     </html>

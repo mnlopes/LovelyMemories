@@ -181,5 +181,7 @@ export default async function proxy(request: NextRequest, event: NextFetchEvent)
 }
 
 export const config = {
-    matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.).*)'],
+    // _vercel: Vercel Web Analytics posts page views to /_vercel/insights/*; without the exclusion
+    // next-intl would redirect them to /en/_vercel/... and no visit would be counted.
+    matcher: ['/((?!_next/static|_next/image|_vercel|favicon.ico|.*\\.).*)'],
 };
