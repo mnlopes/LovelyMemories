@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import L from 'leaflet';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { cartoTileUrl } from '@/lib/map-tiles';
 
 const PORTO: [number, number] = [41.1496, -8.6109];
 
@@ -53,7 +54,7 @@ export default function SaleLocationPickerMap({
             style={{ height: '100%', width: '100%', background: '#f1f1f1' }}
         >
             <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png"
+                url={cartoTileUrl()}
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
             <ClickToSet onPick={onPick} />

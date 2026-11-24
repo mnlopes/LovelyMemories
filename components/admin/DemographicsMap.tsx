@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, Fragment } from "react";
 import { MapContainer, TileLayer, GeoJSON, Tooltip as MapTooltip, useMap, ZoomControl, Marker, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { cartoTileUrl } from "@/lib/map-tiles";
 import { cn } from "@/lib/utils";
 
 // Leaflet CSS fix for Next.js
@@ -201,7 +202,7 @@ export function DemographicsMap({ data, className }: DemographicsMapProps) {
             >
                 {/* Dark Matter Tile Layer */}
                 <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
+                    url={cartoTileUrl("dark_nolabels")}
                 />
 
                 <GeoJSON

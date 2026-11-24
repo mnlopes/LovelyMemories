@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { CARTO_ATTRIBUTION, cartoTileUrl } from '@/lib/map-tiles';
 
 // Fix for default marker icon missing in Leaflet + Next.js
 // We are using a custom icon anyway, but good to have for safety
@@ -80,8 +81,8 @@ export default function MapLeaflet() {
             style={{ height: '100%', width: '100%', background: '#f1f1f1' }}
         >
             <TileLayer
-                attribution=''
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png"
+                attribution={CARTO_ATTRIBUTION}
+                url={cartoTileUrl()}
             />
 
             <ZoomControl position="bottomright" />

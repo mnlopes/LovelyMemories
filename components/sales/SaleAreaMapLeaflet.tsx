@@ -2,6 +2,7 @@
 
 import { Circle, MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { cartoTileUrl } from '@/lib/map-tiles';
 
 /** Approximate area only: a ~400 m circle on the already rounded coordinates, no pin, no popup. */
 export default function SaleAreaMapLeaflet({ lat, lng }: { lat: number; lng: number }) {
@@ -15,7 +16,7 @@ export default function SaleAreaMapLeaflet({ lat, lng }: { lat: number; lng: num
         >
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png"
+                url={cartoTileUrl()}
             />
             <Circle
                 center={[lat, lng]}
