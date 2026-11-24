@@ -1,25 +1,17 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { Bath, BedDouble, Home, MapPin, Maximize, TrendingUp, Zap } from 'lucide-react';
+import { Bath, BedDouble, Home, MapPin, Maximize, TrendingUp } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { formatEuro, isNewListing, localized, pricePerM2 } from '@/lib/sales/format';
 import { saleImageAlt } from '@/lib/sales/seo';
-import type { EnergyClass, SaleCardListing } from '@/lib/sales/types';
+import type { SaleCardListing } from '@/lib/sales/types';
+import { EnergyPill } from './EnergyPill';
 
 const badge = 'rounded-full px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em]';
 
-/** Energy pill tint, following the certificate scale: green for A+ to B, yellow B- and C, orange D and E, red F. */
-const ENERGY_TINT: Record<EnergyClass, string> = {
-    'A+': 'bg-[#e6f4ea] text-[#1d6b40]',
-    A: 'bg-[#e6f4ea] text-[#1d6b40]',
-    B: 'bg-[#e6f4ea] text-[#1d6b40]',
-    'B-': 'bg-[#f6f4d8] text-[#6b6410]',
-    C: 'bg-[#fdf3d4] text-[#7a5a00]',
-    D: 'bg-[#fdebd7] text-[#8a4a0c]',
-    E: 'bg-[#fde3d6] text-[#94400f]',
-    F: 'bg-[#fbe1e0] text-[#9b2420]',
-    exempt: 'bg-[#eef0f3] text-[#4b5563]',
-};
+/** "Income-generating" pill on the card photo (the listing page uses the same look on white). */
+const incomeBadgeClass =
+    'inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-[#192537]/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur';
 
 /**
  * Takes the slim card shape (`toSaleCard`), never a whole listing: in the catalogue it renders on the client.
@@ -83,7 +75,7 @@ export function SaleCard({ listing, locale, today }: { listing: SaleCardListing;
                         {showNew && <span className={`${badge} bg-[#b09e80] text-[#192537]`}>{t('badgeNew')}</span>}
                     </div>
                     {listing.incomeBadge && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-[#192537]/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
+                        <span className={incomeBadgeClass}>
                             <TrendingUp className="size-3.5" aria-hidden="true" />
                             {t('badgeIncome')}
                         </span>
@@ -112,10 +104,7 @@ export function SaleCard({ listing, locale, today }: { listing: SaleCardListing;
                         )}
                     </div>
                     {energy && energyText && (
-                        <span className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ${ENERGY_TINT[energy]}`}>
-                            <Zap className="size-3" aria-hidden="true" />
-                            {t('energy', { value: energyText })}
-                        </span>
+                        <EnergyPill energy={energy} label={t('energy', { value: energyText })} />
                     )}
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] text-[#374151]">

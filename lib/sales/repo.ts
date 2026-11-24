@@ -128,6 +128,21 @@ export async function getSalePerformance(l: SaleListing): Promise<PerformanceSna
     }
 }
 
+const DEFAULT_LEADS_EMAIL = 'info@lovelymemories.pt';
+
+/**
+ * Where buyer requests from the sale pages are sent: `sales_contact.leads_email` in Settings → Sales,
+ * or info@lovelymemories.pt when it is empty or not a plain email address.
+ */
+export async function getSalesLeadsEmail(): Promise<string> {
+    const supabase = await getSupabaseAdmin();
+    const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'sales_contact').maybeSingle();
+    if (error || !data) return DEFAULT_LEADS_EMAIL;
+    const raw = (data.value as { leads_email?: unknown } | null)?.leads_email;
+    const email = typeof raw === 'string' ? raw.trim() : '';
+    return /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(email) && email.length <= 120 ? email : DEFAULT_LEADS_EMAIL;
+}
+
 export async function getSalesContact(): Promise<{ amiLicense: string | null; whatsapp: string | null }> {
     const supabase = await getSupabaseAdmin();
     const { data, error } = await supabase

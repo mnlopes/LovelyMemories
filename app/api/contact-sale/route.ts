@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { sendEmail } from '@/lib/email';
+import { getSalesLeadsEmail } from '@/lib/sales/repo';
 import { SITE_URL } from '@/lib/seo';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { hitRateLimit } from '@/lib/rate-limit';
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
         // 6. Email to the team: its failure is the request's failure.
         const team = saleInquiryTeamEmail(teamData);
         const sent = await sendEmail({
-            to: 'info@lovelymemories.pt',
+            to: await getSalesLeadsEmail(),
             subject: team.subject,
             html: team.html,
             replyTo: input.email,

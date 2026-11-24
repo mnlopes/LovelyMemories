@@ -20,7 +20,7 @@ import { useVisibleInterval } from "@/lib/use-visible-interval";
 export default function SettingsPage() {
     const router = useRouter();
     const tSales = useTranslations("AdminSales");
-    const [salesContact, setSalesContact] = useState({ ami_license: '', whatsapp: '' });
+    const [salesContact, setSalesContact] = useState({ ami_license: '', whatsapp: '', leads_email: '' });
     const [isSavingSales, setIsSavingSales] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'translations' | 'analytics' | 'ical'>('general');
@@ -166,10 +166,11 @@ export default function SettingsPage() {
 
                     const sales = await getSystemSetting('sales_contact');
                     if (sales && typeof sales === 'object') {
-                        const contact = sales as { ami_license?: unknown; whatsapp?: unknown };
+                        const contact = sales as { ami_license?: unknown; whatsapp?: unknown; leads_email?: unknown };
                         setSalesContact({
                             ami_license: String(contact.ami_license ?? ''),
                             whatsapp: String(contact.whatsapp ?? ''),
+                            leads_email: String(contact.leads_email ?? ''),
                         });
                     }
                 } catch (error) {
@@ -295,12 +296,18 @@ export default function SettingsPage() {
     };
 
     const handleSaveSalesContact = async () => {
+        const leadsEmail = salesContact.leads_email.trim();
+        if (leadsEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadsEmail)) {
+            toast.error(tSales('settings.leadsEmailInvalid'));
+            return;
+        }
         setIsSavingSales(true);
         try {
             const { updateSystemSetting } = await import('@/app/actions/settings');
             const result = await updateSystemSetting('sales_contact', {
                 ami_license: salesContact.ami_license.trim(),
                 whatsapp: salesContact.whatsapp.trim(),
+                leads_email: leadsEmail,
             });
             if (result.success) {
                 toast.success(tSales('settings.saved'));
@@ -912,6 +919,24 @@ export default function SettingsPage() {
                                     className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-white transition-all dark:text-admin-dark-text-primary"
                                 />
                                 <p className="text-[11px] text-[#a3a3a3] mt-1">{tSales('settings.whatsappHint')}</p>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label htmlFor="sales-leads-email" className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider mb-1.5 block">
+                                    {tSales('settings.leadsEmail')}
+                                </label>
+                                <input
+                                    id="sales-leads-email"
+                                    type="email"
+                                    inputMode="email"
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    placeholder="info@lovelymemories.pt"
+                                    value={salesContact.leads_email}
+                                    onChange={(e) => setSalesContact((s) => ({ ...s, leads_email: e.target.value }))}
+                                    maxLength={120}
+                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-white transition-all dark:text-admin-dark-text-primary"
+                                />
+                                <p className="text-[11px] text-[#a3a3a3] mt-1">{tSales('settings.leadsEmailHint')}</p>
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end">

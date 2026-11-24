@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ArrowLeft, Check, FileText, MapPin, TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
@@ -8,6 +9,7 @@ import type { PerformanceSnapshot } from '@/lib/sales/performance';
 import { saleImageAlt } from '@/lib/sales/seo';
 import type { SaleCardListing, SaleCondition, SaleListing, SaleStatus, SaleType } from '@/lib/sales/types';
 import { SaleAreaMap } from './SaleAreaMap';
+import { EnergyPill } from './EnergyPill';
 import { SaleCard } from './SaleCard';
 import { SaleDescription } from './SaleDescription';
 import { SaleContactForm } from './SaleContactForm';
@@ -89,8 +91,8 @@ export function SaleListingDetails({
         listing.energy_class === null ? null : listing.energy_class === 'exempt' ? t('energyExempt') : listing.energy_class;
 
     const yes = t('yes');
-    const facts: [string, string][] = [];
-    const addFact = (label: string, value: string | null | undefined) => {
+    const facts: [string, ReactNode][] = [];
+    const addFact = (label: string, value: ReactNode | null | undefined) => {
         if (value) facts.push([label, value]);
     };
     // As in the approved design ("T1 house"): one box with the type and the typology together.
@@ -106,7 +108,8 @@ export function SaleListingDetails({
     addFact(t('factPlot'), listing.plot_area ? `${listing.plot_area} m²` : null);
     addFact(t('factBedrooms'), listing.bedrooms !== null ? String(listing.bedrooms) : null);
     addFact(t('factBathrooms'), listing.bathrooms !== null ? String(listing.bathrooms) : null);
-    addFact(t('factEnergy'), energy);
+    // Same coloured pill as on the catalogue cards.
+    addFact(t('factEnergy'), listing.energy_class && energy ? <EnergyPill energy={listing.energy_class} label={energy} size="md" /> : null);
     addFact(t('factCondition'), listing.condition ? t(CONDITION_KEY[listing.condition]) : null);
     addFact(t('factRenovated'), listing.year_renovated ? String(listing.year_renovated) : null);
     addFact(t('factFurnished'), listing.furnished === null ? null : listing.furnished ? yes : t('no'));
@@ -178,7 +181,8 @@ export function SaleListingDetails({
                                     {listing.status === 'available' ? t('forSale') : statusLabel}
                                 </span>
                                 {showPerformance && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e6f4ea] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#1d6b40]">
+                                    // Same dark pill as on the catalogue card photo.
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4a5568] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                                         <TrendingUp className="size-3" aria-hidden="true" />
                                         {t('badgeIncome')}
                                     </span>
@@ -287,7 +291,12 @@ export function SaleListingDetails({
                         )}
                     </div>
 
-                    <aside id="contact" className="flex w-full scroll-mt-24 flex-col gap-4 lg:w-[380px] lg:shrink-0">
+                    {/* On lg+ the contact column follows the scroll, below the fixed header. On a short screen,
+                        where it is taller than the space left, it scrolls on its own so the button stays reachable. */}
+                    <aside
+                        id="contact"
+                        className="flex w-full scroll-mt-24 flex-col gap-4 lg:sticky lg:top-[112px] lg:max-h-[calc(100vh-128px)] lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:overscroll-contain lg:pb-1 lg:[scrollbar-width:thin]"
+                    >
                         <div className="flex flex-col gap-5 rounded-[20px] border border-[#eceef1] bg-white p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.14)] md:p-7">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex flex-col gap-1">
