@@ -194,14 +194,33 @@ export function SaleContactForm({
                         className={inputCls}
                     />
                 </label>
-                <label className={labelCls}>
-                    {t('fieldPurpose')}
-                    <select name="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value as typeof purpose)} className={inputCls}>
-                        <option value="live">{t('purposeLive')}</option>
-                        <option value="invest">{t('purposeInvest')}</option>
-                        <option value="both">{t('purposeBoth')}</option>
-                    </select>
-                </label>
+                {/* Three short choices: buttons you see at once read better than a native dropdown. */}
+                <fieldset className="flex flex-col gap-1.5">
+                    <legend className="mb-1.5 text-xs font-semibold text-[#374151]">{t('fieldPurpose')}</legend>
+                    <div className="flex flex-wrap gap-2">
+                        {(
+                            [
+                                ['live', t('purposeLive')],
+                                ['invest', t('purposeInvest')],
+                                ['both', t('purposeBoth')],
+                            ] as const
+                        ).map(([value, text]) => (
+                            <label key={value} className="cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="purpose"
+                                    value={value}
+                                    checked={purpose === value}
+                                    onChange={() => setPurpose(value)}
+                                    className="peer sr-only"
+                                />
+                                <span className="inline-flex min-h-[42px] items-center rounded-full border border-[#d6d9de] bg-white px-3.5 text-[13px] font-semibold text-[#374151] transition-colors duration-300 hover:border-[#192537] peer-checked:border-[#192537] peer-checked:bg-[#192537] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#b09e80] peer-focus-visible:ring-offset-1">
+                                    {text}
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                </fieldset>
                 {visit && (
                     <label className={labelCls}>
                         {t('fieldVisitTimes')}

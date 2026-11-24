@@ -845,7 +845,7 @@
         "negotiable": "Negociável",
         "listedDaysAgo": "{count, plural, =0 {Anunciado hoje} one {Anunciado há # dia} other {Anunciado há # dias}}",
         "share": "Partilhar",
-        "shareCopied": "Ligação copiada",
+        "shareCopied": "Link copiado",
         "modeInfo": "Pedir informação",
         "modeVisit": "Marcar visita",
         "fieldName": "Nome completo",

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import { ArrowLeft, Check, FileText, MapPin, TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
@@ -332,12 +333,13 @@ export function SaleListingDetails({
                         </div>
                         {amiLicense && (
                             <div className="flex items-center gap-4 rounded-[20px] border border-[#eceef1] bg-white px-6 py-5">
-                                <span
-                                    aria-hidden="true"
-                                    className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-[#192537] text-base font-extrabold tracking-wide text-[#b09e80]"
-                                >
-                                    LM
-                                </span>
+                                <Image
+                                    src="/icon-192.png"
+                                    alt=""
+                                    width={52}
+                                    height={52}
+                                    className="size-[52px] shrink-0 rounded-full"
+                                />
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-[15px] font-bold text-[#192537]">{t('amiTitle')}</span>
                                     <span className="text-[13px] text-[#4b5563]">{t('amiSubtitle')}</span>
