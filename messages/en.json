@@ -3384,6 +3384,16 @@
             "otherToggle": "Other rental amenities ({count}), usually not relevant to a buyer"
         },
         "confirm": { "cancel": "Cancel", "remove": "Remove", "delete": "Delete" },
+        "contacts": {
+            "button": "Sales contacts",
+            "title": "Sales contacts",
+            "description": "Shown on every listing. Each field saves when you leave it.",
+            "close": "Close",
+            "requestsGoTo": "Buyer requests go to",
+            "change": "change",
+            "see": "see contacts",
+            "viewOnly": "View only: you cannot change these contacts."
+        },
         "settings": {
             "title": "Sales",
             "description": "Contact details shown on the sale listings.",

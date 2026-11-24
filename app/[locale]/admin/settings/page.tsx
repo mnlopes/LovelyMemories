@@ -8,25 +8,16 @@ const DemographicsMap = dynamic(() => import("@/components/admin/DemographicsMap
 import { AnalyticsPanels } from "@/components/admin/AnalyticsPanels";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { TrafficTimeline } from "@/components/admin/TrafficTimeline";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Loader2, Globe, Edit3, Check, Settings as SettingsIcon, Mail, Activity, Users, BarChart3, Clock, MapPin, Trash2, RefreshCw, X, ExternalLink, ChevronRight, Zap, Link2Off, AlertTriangle } from "lucide-react";
 import { syncAllPropertiesICal } from "@/app/actions/ical";
 import { useVisibleInterval } from "@/lib/use-visible-interval";
 
 export default function SettingsPage() {
     const router = useRouter();
-    const tSales = useTranslations("AdminSales");
-    const locale = useLocale();
-    const [salesContact, setSalesContact] = useState({ ami_license: '', whatsapp: '', leads_email: '' });
-    const [isSavingSales, setIsSavingSales] = useState(false);
-    // Sales contact autosave: what was last saved (as text) and when, shown next to the fields.
-    const salesSavedRef = useRef('');
-    const [salesSavedAt, setSalesSavedAt] = useState<number | null>(null);
-    const [salesEmailError, setSalesEmailError] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
     const [activeTab, setActiveTab] = useState<'general' | 'translations' | 'analytics' | 'ical'>('general');
 
@@ -169,25 +160,13 @@ export default function SettingsPage() {
                     const lastSync = await getSystemSetting('ical_last_sync_at');
                     if (lastSync) setLastSyncTime(lastSync);
 
-                    const sales = await getSystemSetting('sales_contact');
-                    if (sales && typeof sales === 'object') {
-                        const contact = sales as { ami_license?: unknown; whatsapp?: unknown; leads_email?: unknown };
-                        const loaded = {
-                            ami_license: String(contact.ami_license ?? ''),
-                            whatsapp: String(contact.whatsapp ?? ''),
-                            leads_email: String(contact.leads_email ?? ''),
-                        };
-                        salesSavedRef.current = JSON.stringify(loaded);
-                        setSalesContact(loaded);
-                    }
                 } catch (error) {
                     console.error("Failed to load settings:", error);
-                    toast.error(tSales("settings.loadFailed"));
                 }
             };
             loadSettings();
         }
-    }, [isAuthorized, tSales]);
+    }, [isAuthorized]);
 
     // Load keys from storage
     useEffect(() => {
@@ -299,39 +278,6 @@ export default function SettingsPage() {
             toast.error("An error occurred");
         } finally {
             setIsUpdatingIcal(false);
-        }
-    };
-
-    /** Saves the sales contact details. `auto` (leaving a field): only when something changed, no success toast. */
-    const handleSaveSalesContact = async (auto = false) => {
-        const next = {
-            ami_license: salesContact.ami_license.trim(),
-            whatsapp: salesContact.whatsapp.trim(),
-            leads_email: salesContact.leads_email.trim(),
-        };
-        if (next.leads_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next.leads_email)) {
-            setSalesEmailError(true);
-            if (!auto) toast.error(tSales('settings.leadsEmailInvalid'));
-            return;
-        }
-        setSalesEmailError(false);
-        const snapshot = JSON.stringify(next);
-        if (auto && snapshot === salesSavedRef.current) return;
-        setIsSavingSales(true);
-        try {
-            const { updateSystemSetting } = await import('@/app/actions/settings');
-            const result = await updateSystemSetting('sales_contact', next);
-            if (result.success) {
-                salesSavedRef.current = snapshot;
-                setSalesSavedAt(Date.now());
-                if (!auto) toast.success(tSales('settings.saved'));
-            } else {
-                toast.error(tSales('settings.saveFailed'));
-            }
-        } catch {
-            toast.error(tSales('settings.saveFailed'));
-        } finally {
-            setIsSavingSales(false);
         }
     };
 
@@ -891,100 +837,6 @@ export default function SettingsPage() {
                             >
                                 {isPurgingLogs ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
                                 Purge Logs ({'>'} 7 days)
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Sales contact details (this page is super admin only) */}
-                    <div className="bg-white dark:bg-admin-dark-surface rounded-2xl p-8 border border-[#eaeaea] dark:border-admin-dark-border shadow-sm transition-colors duration-300">
-                        <div className="space-y-1 mb-6">
-                            <h3 className="text-lg font-bold text-[#171717] dark:text-admin-dark-text-primary">
-                                {tSales('settings.title')}
-                            </h3>
-                            <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary max-w-md">
-                                {tSales('settings.description')}
-                            </p>
-                        </div>
-                        <div
-                            className="grid gap-4 md:grid-cols-2"
-                            // Leaving any of these fields saves them (autosave).
-                            onBlur={() => void handleSaveSalesContact(true)}
-                        >
-                            <div>
-                                <label htmlFor="sales-ami" className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider mb-1.5 block">
-                                    {tSales('settings.amiLicense')}
-                                </label>
-                                <input
-                                    id="sales-ami"
-                                    type="text"
-                                    value={salesContact.ami_license}
-                                    onChange={(e) => setSalesContact((s) => ({ ...s, ami_license: e.target.value }))}
-                                    maxLength={40}
-                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-white transition-all dark:text-admin-dark-text-primary"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="sales-whatsapp" className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider mb-1.5 block">
-                                    {tSales('settings.whatsapp')}
-                                </label>
-                                <input
-                                    id="sales-whatsapp"
-                                    type="tel"
-                                    inputMode="tel"
-                                    value={salesContact.whatsapp}
-                                    onChange={(e) => setSalesContact((s) => ({ ...s, whatsapp: e.target.value }))}
-                                    maxLength={30}
-                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-white transition-all dark:text-admin-dark-text-primary"
-                                />
-                                <p className="text-[11px] text-[#a3a3a3] mt-1">{tSales('settings.whatsappHint')}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                                <label htmlFor="sales-leads-email" className="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider mb-1.5 block">
-                                    {tSales('settings.leadsEmail')}
-                                </label>
-                                <input
-                                    id="sales-leads-email"
-                                    type="email"
-                                    inputMode="email"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    placeholder="info@lovelymemories.pt"
-                                    value={salesContact.leads_email}
-                                    onChange={(e) => {
-                                        setSalesContact((s) => ({ ...s, leads_email: e.target.value }));
-                                        setSalesEmailError(false);
-                                    }}
-                                    aria-invalid={salesEmailError}
-                                    aria-describedby={salesEmailError ? 'sales-leads-email-error' : undefined}
-                                    maxLength={120}
-                                    className="w-full bg-white dark:bg-admin-dark-surface border border-[#eaeaea] dark:border-admin-dark-border rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#171717] dark:focus:ring-white transition-all dark:text-admin-dark-text-primary"
-                                />
-                                {salesEmailError && (
-                                    <p id="sales-leads-email-error" role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                        {tSales('settings.leadsEmailInvalid')}
-                                    </p>
-                                )}
-                                <p className="text-[11px] text-[#a3a3a3] mt-1">{tSales('settings.leadsEmailHint')}</p>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex items-center justify-end gap-4">
-                            <span role="status" className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                                {salesSavedAt !== null && !isSavingSales &&
-                                    tSales('settings.autoSaved', {
-                                        time: new Intl.DateTimeFormat(locale === 'pt' ? 'pt-PT' : 'en-GB', {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        }).format(salesSavedAt),
-                                    })}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => void handleSaveSalesContact()}
-                                disabled={isSavingSales}
-                                className="px-6 py-2.5 bg-[#171717] dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold shadow-sm hover:bg-black dark:hover:bg-gray-200 transition-all disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {isSavingSales && <Loader2 className="size-4 animate-spin" />}
-                                {isSavingSales ? tSales('settings.saving') : tSales('settings.save')}
                             </button>
                         </div>
                     </div>

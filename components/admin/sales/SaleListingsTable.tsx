@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { BookUser, Mail, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { formatEuro, localized } from "@/lib/sales/format";
 import { focusRing } from "./ui";
+import { SaleContactsPanel } from "./SaleContactsPanel";
+import type { SalesContactSettings } from "@/app/actions/sales";
 import { SALE_STATUSES, type Localized, type SaleStatus } from "@/lib/sales/types";
 
 /** Slim row the list page builds on the server (no private columns reach the browser). */
@@ -42,10 +44,21 @@ function Chip({ className, children }: { className: string; children: React.Reac
     );
 }
 
-export default function SaleListingsTable({ rows, canEdit }: { rows: SaleListRow[]; canEdit: boolean }) {
+export default function SaleListingsTable({
+    rows,
+    canEdit,
+    contacts: initialContacts,
+}: {
+    rows: SaleListRow[];
+    canEdit: boolean;
+    /** Null when they could not be loaded: the button and the line are hidden. */
+    contacts: SalesContactSettings | null;
+}) {
     const t = useTranslations("AdminSales");
     const locale = useLocale();
     const [filter, setFilter] = useState<"all" | SaleStatus>("all");
+    const [contacts, setContacts] = useState(initialContacts);
+    const [contactsOpen, setContactsOpen] = useState(false);
 
     const visible = rows.filter((r) => filter === "all" || r.status === filter);
     const price = (r: SaleListRow) =>
@@ -97,6 +110,16 @@ export default function SaleListingsTable({ rows, canEdit }: { rows: SaleListRow
                             ))}
                         </select>
                     </label>
+                    {contacts && (
+                        <button
+                            type="button"
+                            onClick={() => setContactsOpen(true)}
+                            className={`flex min-h-11 items-center gap-2 rounded-xl border border-[#eaeaea] bg-white px-5 py-2.5 text-sm font-semibold text-[#171717] transition-all hover:bg-[#fafafa] dark:border-white/10 dark:bg-white/5 dark:text-admin-dark-text-primary dark:hover:bg-white/10 md:min-h-0 ${focusRing}`}
+                        >
+                            <BookUser className="size-4" aria-hidden="true" />
+                            {t("contacts.button")}
+                        </button>
+                    )}
                     {canEdit && (
                         <Link
                             href="/admin/sales/new"
@@ -194,6 +217,32 @@ export default function SaleListingsTable({ rows, canEdit }: { rows: SaleListRow
                 <p className="rounded-2xl border border-dashed border-[#eaeaea] p-8 text-center text-sm text-[#a3a3a3] dark:border-white/10">
                     {rows.length === 0 ? t("empty") : t("emptyFiltered")}
                 </p>
+            )}
+            {contacts && (
+                <p className="flex flex-wrap items-center gap-1.5 text-xs text-[#a3a3a3]">
+                    <Mail className="size-3.5" aria-hidden="true" />
+                    {t("contacts.requestsGoTo")}
+                    <strong className="font-bold text-[#737373] dark:text-admin-dark-text-secondary">
+                        {contacts.leads_email.trim() || "info@lovelymemories.pt"}
+                    </strong>
+                    <span aria-hidden="true">·</span>
+                    <button
+                        type="button"
+                        onClick={() => setContactsOpen(true)}
+                        className={`rounded font-bold text-[#171717] underline underline-offset-2 dark:text-admin-dark-text-primary ${focusRing}`}
+                    >
+                        {canEdit ? t("contacts.change") : t("contacts.see")}
+                    </button>
+                </p>
+            )}
+            {contacts && (
+                <SaleContactsPanel
+                    open={contactsOpen}
+                    onClose={() => setContactsOpen(false)}
+                    contacts={contacts}
+                    onSaved={setContacts}
+                    canEdit={canEdit}
+                />
             )}
         </div>
     );

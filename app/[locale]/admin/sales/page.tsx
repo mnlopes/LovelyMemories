@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { listSaleListings } from "@/app/actions/sales";
+import { getSalesContactSettings, listSaleListings, type SalesContactSettings } from "@/app/actions/sales";
 import { checkPermission } from "@/app/actions/permissions";
 import SaleListingsTable, { type SaleListRow } from "@/components/admin/sales/SaleListingsTable";
 
@@ -10,9 +10,15 @@ export default async function AdminSalesPage() {
 
     let rows: SaleListRow[];
     let canEdit = false;
+    let contacts: SalesContactSettings | null = null;
     try {
-        const [listings, edit] = await Promise.all([listSaleListings(), checkPermission("sales", "can_edit")]);
+        const [listings, edit, contactSettings] = await Promise.all([
+            listSaleListings(),
+            checkPermission("sales", "can_edit"),
+            getSalesContactSettings(),
+        ]);
         canEdit = edit;
+        contacts = contactSettings;
         // Only what the list shows: private columns never reach the browser.
         rows = listings.map((l) => ({
             id: l.id,
@@ -35,5 +41,5 @@ export default async function AdminSalesPage() {
         );
     }
 
-    return <SaleListingsTable rows={rows} canEdit={canEdit} />;
+    return <SaleListingsTable rows={rows} canEdit={canEdit} contacts={contacts} />;
 }

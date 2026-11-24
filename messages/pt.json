@@ -3375,6 +3375,16 @@
             "otherToggle": "Outras do alojamento ({count}), normalmente não interessam a quem compra"
         },
         "confirm": { "cancel": "Cancelar", "remove": "Remover", "delete": "Apagar" },
+        "contacts": {
+            "button": "Contactos de vendas",
+            "title": "Contactos de vendas",
+            "description": "Mostrados em todos os anúncios. Cada campo guarda ao sair dele.",
+            "close": "Fechar",
+            "requestsGoTo": "Os pedidos dos compradores vão para",
+            "change": "alterar",
+            "see": "ver contactos",
+            "viewOnly": "Só de leitura: não pode alterar estes contactos."
+        },
         "settings": {
             "title": "Vendas",
             "description": "Contactos mostrados nos anúncios de venda.",

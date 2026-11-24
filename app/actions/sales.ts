@@ -375,3 +375,69 @@ export async function getSaleDocUrl(id: string, docId: string): Promise<string |
     }
     return signed.signedUrl;
 }
+
+// ---------------------------------------------------------------------------
+// Sales contacts (AMI licence, WhatsApp, email that receives buyer requests), shown on every listing.
+// Managed from the Sale listings page by whoever can edit listings (it used to be super admin only,
+// in Settings). Stored in system_settings.sales_contact, read on the server by lib/sales/repo.ts.
+// ---------------------------------------------------------------------------
+
+export type SalesContactSettings = { ami_license: string; whatsapp: string; leads_email: string };
+
+// Same rule as getSalesLeadsEmail: a plain address, no lists or display names.
+const LEADS_EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/;
+
+const salesContactSchema = z.object({
+    ami_license: z.string().trim().max(40),
+    whatsapp: z.string().trim().max(30),
+    leads_email: z.string().trim().max(120),
+});
+
+async function readSalesContact(supabase: Awaited<ReturnType<typeof getSupabaseAdmin>>): Promise<SalesContactSettings> {
+    const { data } = await supabase.from('system_settings').select('value').eq('key', 'sales_contact').maybeSingle();
+    const v = ((data?.value ?? {}) as Record<string, unknown>) || {};
+    const str = (x: unknown) => (typeof x === 'string' ? x : '');
+    return { ami_license: str(v.ami_license), whatsapp: str(v.whatsapp), leads_email: str(v.leads_email) };
+}
+
+export async function getSalesContactSettings(): Promise<SalesContactSettings | null> {
+    await assertSalesViewer();
+    try {
+        return await readSalesContact(await getSupabaseAdmin());
+    } catch (e) {
+        console.error('getSalesContactSettings failed:', (e as Error).name);
+        return null;
+    }
+}
+
+export async function saveSalesContactSettings(
+    input: unknown,
+): Promise<{ ok: true } | { ok: false; error: 'invalid_email' | 'invalid_input' | 'db_error' }> {
+    await assertSalesEditor();
+    const parsed = salesContactSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, error: 'invalid_input' };
+    const next = parsed.data;
+    if (next.leads_email && !LEADS_EMAIL_RE.test(next.leads_email)) return { ok: false, error: 'invalid_email' };
+
+    const supabase = await getSupabaseAdmin();
+    const before = await readSalesContact(supabase);
+    const { error } = await supabase
+        .from('system_settings')
+        .upsert({ key: 'sales_contact', value: next, updated_at: new Date().toISOString() });
+    if (error) {
+        console.error('saveSalesContactSettings failed:', error.code);
+        return { ok: false, error: 'db_error' };
+    }
+    // Where buyer requests go is worth a trace: log which fields changed (values included, none are secret).
+    const changed = (Object.keys(next) as (keyof SalesContactSettings)[]).filter((k) => before[k] !== next[k]);
+    if (changed.length > 0) {
+        await logActivity(await currentUserId(), 'UPDATE', 'SETTINGS', 'sales_contact', {
+            changed,
+            ...(changed.includes('leads_email') ? { leads_email: { from: before.leads_email, to: next.leads_email } } : {}),
+        });
+    }
+    // The AMI card and the WhatsApp button are on every listing page.
+    for (const locale of LOCALES) revalidatePath(`/${locale}/admin/sales`);
+    revalidatePath('/[locale]/for-sale/[slug]', 'page');
+    return { ok: true };
+}
