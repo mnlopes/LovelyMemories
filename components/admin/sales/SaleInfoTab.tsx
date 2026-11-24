@@ -256,11 +256,12 @@ export function SaleInfoTab({ form, set, slugTouched, onSlugEdit, onTitleChange,
                 <label className={label}>
                     {t("info.description", { lang: lang.toUpperCase() })}
                     <textarea
-                        rows={6}
+                        rows={14}
                         value={form.description[lang] ?? ""}
                         onChange={(e) => setLocalized("description", e.target.value)}
                         maxLength={5000}
-                        className={`${input} leading-relaxed`}
+                        // Grows with the text (where field-sizing is supported), between about 14 lines and 70% of the screen.
+                        className={`${input} min-h-[18rem] max-h-[70vh] resize-y leading-relaxed [field-sizing:content]`}
                     />
                 </label>
                 <div className="flex flex-col gap-3">
