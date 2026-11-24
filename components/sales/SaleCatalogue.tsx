@@ -2,6 +2,10 @@
 
 import { useMemo } from 'react';
 import Image from 'next/image';
+import {
+    ArrowDownWideNarrow, ArrowUpNarrowWide, Building, Building2, Clock, Euro, Globe, Home, Infinity as InfinityIcon,
+    LayoutGrid, MapPin, Trees,
+} from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, Link } from '@/i18n/routing';
@@ -9,17 +13,23 @@ import { applyFilters, filtersToQuery, parseFilters, type CatalogueFilters, type
 import { formatEuro } from '@/lib/sales/format';
 import { SALE_TYPES, type SaleCardListing, type SaleType } from '@/lib/sales/types';
 import { SaleCard } from './SaleCard';
+import { SaleFilterMenu, type FilterOption } from './SaleFilterMenu';
 
-const fieldLabel = 'text-[10px] font-bold uppercase tracking-[0.2em] text-[#6b7280]';
-const fieldSelect = 'w-full border-0 bg-transparent p-0 text-base font-semibold text-[#192537] focus:outline-none md:text-[15px]';
-const fieldLabelWrap = 'focus-within:ring-2 focus-within:ring-[#b09e80]';
 const PRICE_STEPS = [250000, 500000, 1000000];
+const BEDROOM_STEPS = [1, 2, 3, 4];
+const iconClass = 'h-[18px] w-[18px]';
 
-const TYPE_KEYS: Record<SaleType, { tab: string; option: string }> = {
-    apartment: { tab: 'tabApartment', option: 'typeApartment' },
-    house: { tab: 'tabHouse', option: 'typeHouse' },
-    building: { tab: 'tabBuilding', option: 'typeBuilding' },
-    land: { tab: 'tabLand', option: 'typeLand' },
+const TYPE_KEYS: Record<SaleType, { tab: string; option: string; icon: typeof Building2 }> = {
+    apartment: { tab: 'tabApartment', option: 'typeApartment', icon: Building2 },
+    house: { tab: 'tabHouse', option: 'typeHouse', icon: Home },
+    building: { tab: 'tabBuilding', option: 'typeBuilding', icon: Building },
+    land: { tab: 'tabLand', option: 'typeLand', icon: Trees },
+};
+
+const SORT_LABELS: Record<CatalogueSort, { long: string; short: string; icon: typeof Clock }> = {
+    newest: { long: 'sortNewest', short: 'sortNewest', icon: Clock },
+    price_asc: { long: 'sortPriceAsc', short: 'sortPriceAscShort', icon: ArrowUpNarrowWide },
+    price_desc: { long: 'sortPriceDesc', short: 'sortPriceDescShort', icon: ArrowDownWideNarrow },
 };
 
 export function SaleCatalogue({
@@ -50,6 +60,11 @@ export function SaleCatalogue({
         for (const l of listings) c[l.type] = (c[l.type] ?? 0) + 1;
         return c;
     }, [listings]);
+    const cityCounts = useMemo(() => {
+        const c: Record<string, number> = {};
+        for (const l of listings) if (l.city) c[l.city] = (c[l.city] ?? 0) + 1;
+        return c;
+    }, [listings]);
     const visible = useMemo(() => applyFilters(listings, filters), [listings, filters]);
 
     const priceOptions = filters.maxPrice && !PRICE_STEPS.includes(filters.maxPrice)
@@ -65,9 +80,43 @@ export function SaleCatalogue({
     const hasFilters = !!(filters.type || filters.city || filters.minBedrooms || filters.maxPrice);
     const clear = () => update({ type: undefined, city: undefined, minBedrooms: undefined, maxPrice: undefined });
 
+    const shownTypes = SALE_TYPES.filter((ty) => ty !== 'land' || (counts.land ?? 0) > 0);
+
+    const cityOptions: FilterOption[] = [
+        { value: '', label: t('allLocations'), icon: <Globe className={iconClass} /> },
+        ...[...cities, ...(filters.city && !cities.includes(filters.city) ? [filters.city] : [])].map((c) => ({
+            value: c,
+            label: c,
+            sublabel: t('filterCount', { count: cityCounts[c] ?? 0 }),
+            icon: <MapPin className={iconClass} />,
+        })),
+    ];
+    const typeOptions: FilterOption[] = [
+        { value: '', label: t('anyType'), icon: <LayoutGrid className={iconClass} /> },
+        ...shownTypes.map((ty) => {
+            const Icon = TYPE_KEYS[ty].icon;
+            return { value: ty, label: t(TYPE_KEYS[ty].option), sublabel: t('filterCount', { count: counts[ty] ?? 0 }), icon: <Icon className={iconClass} /> };
+        }),
+    ];
+    const bedroomOptions: FilterOption[] = [
+        { value: '', label: t('anyBedrooms') },
+        ...[...BEDROOM_STEPS, ...(filters.minBedrooms && !BEDROOM_STEPS.includes(filters.minBedrooms) ? [filters.minBedrooms] : [])]
+            .sort((a, b) => a - b)
+            .map((n) => ({ value: String(n), label: `${n}+` })),
+    ];
+    const priceOptionsList: FilterOption[] = [
+        { value: '', label: t('noLimit'), icon: <InfinityIcon className={iconClass} /> },
+        ...priceOptions.map((p) => ({ value: String(p), label: t('filterUpTo', { price: formatEuro(p, locale) }), icon: <Euro className={iconClass} /> })),
+    ];
+    const sortOptions: FilterOption[] = (Object.keys(SORT_LABELS) as CatalogueSort[]).map((s) => {
+        const Icon = SORT_LABELS[s].icon;
+        return { value: s, label: t(SORT_LABELS[s].long), icon: <Icon className={iconClass} /> };
+    });
+    const menuText = { closeLabel: t('filterClose'), clearLabel: t('filterClear') };
+
     const tabs: { id: 'all' | SaleType; label: string; count: number }[] = [
         { id: 'all', label: t('tabAll'), count: listings.length },
-        ...SALE_TYPES.filter((ty) => ty !== 'land' || (counts.land ?? 0) > 0).map((ty) => ({
+        ...shownTypes.map((ty) => ({
             id: ty,
             label: t(TYPE_KEYS[ty].tab),
             count: counts[ty] ?? 0,
@@ -76,7 +125,8 @@ export function SaleCatalogue({
 
     return (
         <div className="bg-[#f8f9fa] text-[#192537]">
-            <section className="relative flex min-h-[460px] items-end overflow-hidden bg-[#0a1128]">
+            {/* No overflow-hidden here: the filter menus open below the hero */}
+            <section className="relative flex min-h-[460px] items-end bg-[#0a1128]">
                 <Image src="/legacy/home/images/hero-image.png" alt="" fill priority sizes="100vw" className="object-cover" />
                 <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#0a1128]/95 via-[#0a1128]/55 to-[#0a1128]/15" />
                 <div className="relative mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-10 pt-36 lg:px-6 lg:pb-12">
@@ -87,37 +137,48 @@ export function SaleCatalogue({
                         onSubmit={(e) => e.preventDefault()}
                         className="mt-3 grid grid-cols-2 gap-1 rounded-[20px] bg-white p-2 shadow-[0_20px_50px_rgba(0,0,0,0.25)] lg:flex lg:items-stretch"
                     >
-                        <label className={`col-span-2 flex flex-col gap-1 rounded-xl px-4 py-2.5 lg:flex-1 lg:px-5 ${fieldLabelWrap}`}>
-                            <span className={fieldLabel}>{t('location')}</span>
-                            <select className={fieldSelect} value={filters.city ?? ''} onChange={(e) => update({ city: e.target.value || undefined })}>
-                                <option value="">{t('allLocations')}</option>
-                                {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-                                {filters.city && !cities.includes(filters.city) && <option value={filters.city}>{filters.city}</option>}
-                            </select>
-                        </label>
-                        <label className={`flex flex-col gap-1 rounded-xl px-4 py-2.5 lg:flex-1 lg:border-l lg:border-[#eceef1] lg:px-5 ${fieldLabelWrap}`}>
-                            <span className={fieldLabel}>{t('type')}</span>
-                            <select className={fieldSelect} value={filters.type ?? ''} onChange={(e) => update({ type: (e.target.value || undefined) as SaleType | undefined })}>
-                                <option value="">{t('anyType')}</option>
-                                {SALE_TYPES.filter((ty) => ty !== 'land' || (counts.land ?? 0) > 0).map((ty) => (
-                                    <option key={ty} value={ty}>{t(TYPE_KEYS[ty].option)}</option>
-                                ))}
-                            </select>
-                        </label>
-                        <label className={`flex flex-col gap-1 rounded-xl px-4 py-2.5 lg:flex-1 lg:border-l lg:border-[#eceef1] lg:px-5 ${fieldLabelWrap}`}>
-                            <span className={fieldLabel}>{t('bedroomsFilter')}</span>
-                            <select className={fieldSelect} value={filters.minBedrooms ?? ''} onChange={(e) => update({ minBedrooms: e.target.value ? Number(e.target.value) : undefined })}>
-                                <option value="">{t('anyBedrooms')}</option>
-                                {[1, 2, 3].map((n) => <option key={n} value={n}>{n}+</option>)}
-                            </select>
-                        </label>
-                        <label className={`col-span-2 flex flex-col gap-1 rounded-xl px-4 py-2.5 lg:flex-1 lg:border-l lg:border-[#eceef1] lg:px-5 ${fieldLabelWrap}`}>
-                            <span className={fieldLabel}>{t('maxPrice')}</span>
-                            <select className={fieldSelect} value={filters.maxPrice ?? ''} onChange={(e) => update({ maxPrice: e.target.value ? Number(e.target.value) : undefined })}>
-                                <option value="">{t('noLimit')}</option>
-                                {priceOptions.map((p) => <option key={p} value={p}>{formatEuro(p, locale)}</option>)}
-                            </select>
-                        </label>
+                        <SaleFilterMenu
+                            {...menuText}
+                            className="col-span-2 lg:flex-1"
+                            label={t('location')}
+                            title={t('location')}
+                            valueLabel={filters.city ?? t('allLocations')}
+                            options={cityOptions}
+                            value={filters.city ?? ''}
+                            onChange={(v) => update({ city: v || undefined })}
+                        />
+                        <SaleFilterMenu
+                            {...menuText}
+                            className="lg:flex-1 lg:border-l lg:border-[#eceef1]"
+                            label={t('type')}
+                            title={t('filterTypeTitle')}
+                            valueLabel={filters.type ? t(TYPE_KEYS[filters.type].option) : t('anyType')}
+                            options={typeOptions}
+                            value={filters.type ?? ''}
+                            onChange={(v) => update({ type: (v || undefined) as SaleType | undefined })}
+                        />
+                        <SaleFilterMenu
+                            {...menuText}
+                            className="lg:flex-1 lg:border-l lg:border-[#eceef1]"
+                            variant="chips"
+                            label={t('bedroomsFilter')}
+                            title={t('filterBedroomsTitle')}
+                            valueLabel={filters.minBedrooms ? `${filters.minBedrooms}+` : t('anyBedrooms')}
+                            options={bedroomOptions}
+                            value={filters.minBedrooms ? String(filters.minBedrooms) : ''}
+                            onChange={(v) => update({ minBedrooms: v ? Number(v) : undefined })}
+                        />
+                        <SaleFilterMenu
+                            {...menuText}
+                            className="col-span-2 lg:flex-1 lg:border-l lg:border-[#eceef1]"
+                            align="end"
+                            label={t('maxPrice')}
+                            title={t('maxPrice')}
+                            valueLabel={filters.maxPrice ? formatEuro(filters.maxPrice, locale) : t('noLimit')}
+                            options={priceOptionsList}
+                            value={filters.maxPrice ? String(filters.maxPrice) : ''}
+                            onChange={(v) => update({ maxPrice: v ? Number(v) : undefined })}
+                        />
                     </form>
                 </div>
             </section>
@@ -147,18 +208,17 @@ export function SaleCatalogue({
                             <p className="text-[13px] text-[#4b5563]" aria-live="polite">
                                 {t('showing', { count: visible.length })}
                             </p>
-                            <label className="flex items-center gap-2 whitespace-nowrap text-[13px] text-[#4b5563]">
-                                <span className="sr-only sm:not-sr-only">{t('sortBy')}</span>
-                                <select
-                                    className="rounded-full border border-[#dfe2e6] bg-white px-3.5 py-2 text-base font-semibold text-[#192537] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b09e80] md:text-[13px]"
-                                    value={filters.sort}
-                                    onChange={(e) => update({ sort: e.target.value as CatalogueSort })}
-                                >
-                                    <option value="newest">{t('sortNewest')}</option>
-                                    <option value="price_asc">{t('sortPriceAsc')}</option>
-                                    <option value="price_desc">{t('sortPriceDesc')}</option>
-                                </select>
-                            </label>
+                            <SaleFilterMenu
+                                closeLabel={t('filterClose')}
+                                trigger="pill"
+                                align="end"
+                                label={t('sortBy')}
+                                title={t('sortBy')}
+                                valueLabel={t(SORT_LABELS[filters.sort].short)}
+                                options={sortOptions}
+                                value={filters.sort}
+                                onChange={(v) => update({ sort: v as CatalogueSort })}
+                            />
                         </div>
                     </div>
 
