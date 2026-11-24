@@ -3153,6 +3153,10 @@
         "editor": {
             "unsaved": "Alterações por guardar",
             "unsavedShort": "Por guardar",
+            "autoSaved": "Guardado às {time}",
+            "autoSaveFailed": "Não foi possível guardar automaticamente.",
+            "auto": { "pending": "A guardar dentro de momentos…", "saving": "A guardar…", "error": "Não guardado. Volta a tentar na próxima alteração.", "needsTitle": "Fica guardado assim que tiver título", "blocked": "Não guardado: um anúncio publicado precisa de tudo o que está na lista" },
+            "autoShort": { "pending": "A guardar…", "saving": "A guardar…", "error": "Não guardado", "needsTitle": "Falta o título", "blocked": "Não guardado" },
             "leaveConfirm": "Tem alterações por guardar. Sair sem guardar?",
             "publishMissing": "Falta: {items}",
             "new": "Novo anúncio",
@@ -3359,7 +3363,8 @@
             "saving": "A guardar…",
             "saved": "Definições de vendas guardadas",
             "saveFailed": "Não foi possível guardar as definições de vendas.",
-            "loadFailed": "Não foi possível carregar as definições de vendas."
+            "loadFailed": "Não foi possível carregar as definições de vendas.",
+            "autoSaved": "Guardado às {time}"
         }
     }
 }

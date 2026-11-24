@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Link, useRouter } from "@/i18n/routing";
@@ -16,7 +16,7 @@ import { SalePhotosTab } from "./SalePhotosTab";
 import { SaleDocumentsTab } from "./SaleDocumentsTab";
 import { SalePerformanceTab } from "./SalePerformanceTab";
 import { SaleEditorSide } from "./SaleEditorSide";
-import { SaleSaveBar } from "./SaleSaveBar";
+import { SaleSaveBar, type SaveStatus } from "./SaleSaveBar";
 import { focusRing, type PersistFn, type SaleFormState, type SaleTabProps } from "./ui";
 
 export type EditorListing = Omit<SaleListingPrivate, "created_by">;
@@ -134,6 +134,10 @@ const PROBLEM_FIELD: Record<PublishProblem, { tab: SaleTab; id: string }> = {
     city: { tab: "location", id: "sale-field-city" },
 };
 
+/** Autosave waits this long after the last change. Longer once published: every save is live on the site. */
+const AUTOSAVE_DRAFT_MS = 1500;
+const AUTOSAVE_PUBLISHED_MS = 4000;
+
 /** The form as the server would store it, as comparable text (to tell if there are unsaved changes). */
 function comparable(f: SaleFormState): string {
     const slug = slugify(f.slug);
@@ -153,12 +157,15 @@ export default function SaleListingEditor({
     const t = useTranslations("AdminSales");
     const locale = useLocale();
     const router = useRouter();
-    const isSaved = initial !== null;
+    // A new listing becomes saved in place on its first autosave (the URL is swapped, the page is not reloaded).
+    const [created, setCreated] = useState<{ reference: string | null } | null>(null);
+    const isSaved = initial !== null || created !== null;
 
     const [form, setForm] = useState<SaleFormState>(() => toForm(initial));
     // The listing as last saved (initial data, then each successful save). `persist` builds on it,
     // never on the live form, so unsaved edits are not published by an upload or a delete.
     const savedRef = useRef<SaleFormState>(toForm(initial));
+    const createdRef = useRef(false);
     // The same value as state, so rendering can compare against it (refs are not read while rendering).
     const [savedState, setSavedState] = useState<SaleFormState>(() => toForm(initial));
     const markSaved = (next: SaleFormState) => {
@@ -195,6 +202,16 @@ export default function SaleListingEditor({
     }
 
     const set: SaleTabProps["set"] = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+
+    // Autosave: "saving" while a save runs, "saved" with the time, "error" until the next change.
+    const [auto, setAuto] = useState<{ state: "idle" | "saving" | "saved" | "error"; at: number | null }>({
+        state: "idle",
+        at: null,
+    });
+    const formRef = useRef(form);
+    useEffect(() => {
+        formRef.current = form;
+    }, [form]);
 
     const dirty = useMemo(
         () => canEdit && comparable(form) !== comparable(savedState),
@@ -245,6 +262,25 @@ export default function SaleListingEditor({
     const mainImage = form.images.find((i) => i.is_main) ?? form.images[0];
 
     const checklist: PublishProblem[] = ["title", "photo", "type", "price", "energy_class", "city"];
+
+    const needsTitle = !isSaved && isBlank(form.title);
+    // A published listing is never saved with something missing: the server would refuse it.
+    const blocked = form.published && problems.length > 0;
+    const saveStatus: SaveStatus = !canEdit
+        ? { kind: "clean" }
+        : auto.state === "saving" || busy === "save"
+          ? { kind: "saving" }
+          : dirty
+            ? needsTitle
+                ? { kind: "needsTitle" }
+                : blocked
+                  ? { kind: "blocked" }
+                  : auto.state === "error"
+                    ? { kind: "error" }
+                    : { kind: "pending" }
+            : auto.at !== null
+              ? { kind: "saved", at: auto.at }
+              : { kind: "clean" };
 
     function saveErrorText(res: { error: string; problems?: PublishProblem[] }): string {
         if (res.error === "publish_blocked" && res.problems?.length) {
@@ -299,6 +335,65 @@ export default function SaleListingEditor({
         });
     };
 
+    /**
+     * Saves the form as it is when the save runs (queued behind any other write), without toasts on success.
+     * Skipped while a new listing has no title and while a published listing misses something to publish.
+     */
+    const autoErrorRef = useRef(false);
+    function failAuto(message: string) {
+        // One toast per run of failures, not one per keystroke.
+        if (!autoErrorRef.current) toast.error(`${t("editor.autoSaveFailed")} ${message}`);
+        autoErrorRef.current = true;
+        setAuto((a) => ({ ...a, state: "error" }));
+    }
+    function runAutoSave() {
+        if (!canEdit || busy !== null) return;
+        void enqueue(async () => {
+            const f = formRef.current;
+            if (comparable(f) === comparable(savedRef.current)) return;
+            const finalSlug = slugify(f.slug);
+            if (!finalSlug || (initial === null && !createdRef.current && isBlank(f.title))) return;
+            if (f.published && publishProblems(f).length > 0) return;
+            setAuto((a) => ({ ...a, state: "saving" }));
+            try {
+                const sent = cleanForSave({ ...f, slug: finalSlug }, f.published);
+                const res = await saveSaleListing(id, sent);
+                if (!res.ok) {
+                    failAuto(saveErrorText(res));
+                    if (res.error === "slug_taken" || res.error === "invalid_slug") setSlugError(res.error);
+                    return;
+                }
+                setSlugError(null);
+                markSaved(asStored(sent, res.slug));
+                setSavedSlug(res.slug);
+                setForm((cur) => ({
+                    ...cur,
+                    // Keep a slug the user changed while the save ran; otherwise follow what the server stored.
+                    slug: slugify(cur.slug) === sent.slug ? res.slug : cur.slug,
+                    ...(sent.property_id || cur.property_id ? {} : { show_performance: false }),
+                }));
+                autoErrorRef.current = false;
+                setAuto({ state: "saved", at: Date.now() });
+                if (initial === null && !createdRef.current) {
+                    createdRef.current = true;
+                    setCreated({ reference: res.reference });
+                    // Reloading now opens the saved draft, not an empty form. No navigation: focus stays put.
+                    window.history.replaceState(window.history.state, "", window.location.pathname.replace(/\/new\/?$/, `/${id}`));
+                }
+            } catch {
+                failAuto(t("errors.generic"));
+            }
+        });
+    }
+    const autoSaveLater = useEffectEvent(runAutoSave);
+
+    // Save a moment after the last change.
+    useEffect(() => {
+        if (!dirty) return;
+        const timer = setTimeout(autoSaveLater, form.published ? AUTOSAVE_PUBLISHED_MS : AUTOSAVE_DRAFT_MS);
+        return () => clearTimeout(timer);
+    }, [form, dirty]);
+
     async function submit(published: boolean, action: "save" | "publish") {
         if (locked) return;
         if (!form.slug.trim()) {
@@ -339,8 +434,13 @@ export default function SaleListingEditor({
             toast.success(
                 action === "publish" ? (published ? t("toast.published") : t("toast.unpublished")) : t("toast.saved"),
             );
-            if (!isSaved) router.replace(`/admin/sales/${id}`);
-            else router.refresh();
+            autoErrorRef.current = false;
+            setAuto({ state: "saved", at: Date.now() });
+            if (initial === null && !createdRef.current) {
+                createdRef.current = true;
+                setCreated({ reference: res.reference });
+                window.history.replaceState(window.history.state, "", window.location.pathname.replace(/\/new\/?$/, `/${id}`));
+            } else if (initial !== null) router.refresh();
         } catch {
             toast.error(t("errors.generic"));
         } finally {
@@ -377,7 +477,12 @@ export default function SaleListingEditor({
         .join(" · ");
 
     return (
-        <div className="space-y-8 pb-6 xl:pb-20">
+        <div
+            className="space-y-8 pb-6 xl:pb-20"
+            onBlur={() => {
+                if (dirty) runAutoSave();
+            }}
+        >
             <div className="flex flex-col gap-1.5">
                 <nav aria-label={t("editor.breadcrumb")} className="flex gap-2 text-xs font-medium text-[#a3a3a3]">
                     <Link
@@ -466,13 +571,13 @@ export default function SaleListingEditor({
 
                 <SaleEditorSide
                     published={form.published}
-                    reference={initial?.reference ?? null}
+                    reference={initial?.reference ?? created?.reference ?? null}
                     savedSlug={savedSlug}
                     isSaved={isSaved}
                     canEdit={canEdit}
                     locked={locked}
                     busy={busy}
-                    dirty={dirty}
+                    status={saveStatus}
                     problems={problems}
                     checklist={checklist}
                     onSave={() => submit(form.published, "save")}
@@ -486,7 +591,7 @@ export default function SaleListingEditor({
                 />
             </div>
             <SaleSaveBar
-                dirty={dirty}
+                status={saveStatus}
                 locked={locked}
                 busy={busy}
                 published={form.published}

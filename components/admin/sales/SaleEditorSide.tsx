@@ -3,7 +3,7 @@
 import { CheckCircle2, Circle, Eye, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { PublishProblem } from "@/lib/sales/validation";
-import { DirtyIndicator, PublishReason } from "./SaleSaveBar";
+import { PublishReason, SaveIndicator, type SaveStatus } from "./SaleSaveBar";
 import { card, focusRing, primaryBtn, secondaryBtn } from "./ui";
 
 /** Status card (checklist, save / publish / delete) and card preview: the editor's right-hand column. */
@@ -15,7 +15,7 @@ export function SaleEditorSide({
     canEdit,
     locked,
     busy,
-    dirty,
+    status,
     problems,
     checklist,
     onSave,
@@ -34,7 +34,7 @@ export function SaleEditorSide({
     canEdit: boolean;
     locked: boolean;
     busy: null | "save" | "publish" | "delete";
-    dirty: boolean;
+    status: SaveStatus;
     problems: PublishProblem[];
     checklist: PublishProblem[];
     onSave: () => void;
@@ -72,7 +72,7 @@ export function SaleEditorSide({
                         {reference ?? t("editor.referenceAfterSave")}
                     </strong>
                 </p>
-                <DirtyIndicator dirty={dirty} />
+                <SaveIndicator status={status} />
 
                 <div className="flex flex-col gap-2 border-t border-[#f5f5f5] dark:border-admin-dark-border pt-4">
                     <h3 className="text-xs font-bold text-[#171717] dark:text-admin-dark-text-primary">

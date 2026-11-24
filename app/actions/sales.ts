@@ -93,7 +93,9 @@ export async function getSaleListing(id: string): Promise<SaleListingPrivate | n
 export async function saveSaleListing(
     id: string,
     input: unknown,
-): Promise<{ ok: true; slug: string } | { ok: false; error: string; problems?: PublishProblem[] }> {
+): Promise<
+    { ok: true; slug: string; reference: string | null } | { ok: false; error: string; problems?: PublishProblem[] }
+> {
     await assertSalesEditor();
     if (!idSchema.safeParse(id).success) return { ok: false, error: 'invalid_id' };
     const parsed = saleListingInputSchema.safeParse(input);
@@ -131,6 +133,7 @@ export async function saveSaleListing(
     };
 
     let saved = false;
+    let reference: string | null = null;
     let finalSlug = baseSlug;
     let suffix = 1;
     for (let attempt = 0; attempt < 2 && !saved; attempt++) {
@@ -156,13 +159,17 @@ export async function saveSaleListing(
         }
 
         const payload = { ...row, slug: finalSlug };
-        const { error } = existing
-            ? await supabase.from('sale_listings').update(payload).eq('id', id)
+        // The reference (LM-V-0001) is set by the database: read it back so a new listing shows it at once.
+        const { data: written, error } = existing
+            ? await supabase.from('sale_listings').update(payload).eq('id', id).select('reference').maybeSingle()
             : await supabase
                   .from('sale_listings')
-                  .insert({ ...payload, id, created_by: await currentUserId() });
+                  .insert({ ...payload, id, created_by: await currentUserId() })
+                  .select('reference')
+                  .maybeSingle();
         if (!error) {
             saved = true;
+            reference = (written as { reference: string | null } | null)?.reference ?? null;
         } else if (error.code === '23505' && attempt === 0) {
             suffix++; // lost a race on the unique slug index: retry with the next suffix
         } else {
@@ -172,15 +179,46 @@ export async function saveSaleListing(
     }
     if (!saved) return { ok: false, error: 'db_error' };
 
-    await logActivity(
-        await currentUserId(),
-        existing ? 'UPDATE' : 'CREATE',
-        'SALE_LISTING',
-        id,
-        { slug: finalSlug, published: data.published },
-    );
+    const actorId = await currentUserId();
+    const details = { slug: finalSlug, published: data.published };
+    if (!existing || !(await recentlyLoggedSameUpdate(supabase, actorId, id, details))) {
+        await logActivity(actorId, existing ? 'UPDATE' : 'CREATE', 'SALE_LISTING', id, details);
+    }
     revalidateSales([finalSlug, existing?.slug]);
-    return { ok: true, slug: finalSlug };
+    return { ok: true, slug: finalSlug, reference };
+}
+
+/** Window in which repeated autosaves of one listing by one person share a single audit line. */
+const AUDIT_UPDATE_WINDOW_MS = 15 * 60 * 1000;
+
+/**
+ * True when the same person already logged an UPDATE of this listing in the last 15 minutes with the same
+ * slug and published state: the editor autosaves every few seconds, and the log keeps one line per editing
+ * session. Creating, publishing, unpublishing and slug changes always differ, so they are always logged.
+ * Decided here on the server from the log itself (not a client flag), so it cannot be used to hide a change.
+ * Not exported: every export of a 'use server' file is a public endpoint.
+ */
+async function recentlyLoggedSameUpdate(
+    supabase: Awaited<ReturnType<typeof getSupabaseAdmin>>,
+    actorId: string | null,
+    listingId: string,
+    details: { slug: string; published: boolean },
+): Promise<boolean> {
+    if (!actorId) return false;
+    const since = new Date(Date.now() - AUDIT_UPDATE_WINDOW_MS).toISOString();
+    const { data, error } = await supabase
+        .from('audit_logs')
+        .select('details')
+        .eq('actor_id', actorId)
+        .eq('action_type', 'UPDATE')
+        .eq('resource_type', 'SALE_LISTING')
+        .eq('resource_id', listingId)
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(1);
+    if (error || !data || data.length === 0) return false; // when in doubt, log
+    const last = (data[0] as { details: { slug?: unknown; published?: unknown } | null }).details;
+    return last?.slug === details.slug && last?.published === details.published;
 }
 
 async function removeFolder(

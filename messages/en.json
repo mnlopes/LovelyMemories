@@ -3162,6 +3162,10 @@
         "editor": {
             "unsaved": "Unsaved changes",
             "unsavedShort": "Unsaved",
+            "autoSaved": "Saved at {time}",
+            "autoSaveFailed": "Could not save automatically.",
+            "auto": { "pending": "Saving shortly…", "saving": "Saving…", "error": "Not saved. It will try again on your next change.", "needsTitle": "Saved as soon as it has a title", "blocked": "Not saved: a published listing needs everything in the checklist" },
+            "autoShort": { "pending": "Saving shortly…", "saving": "Saving…", "error": "Not saved", "needsTitle": "Add a title", "blocked": "Not saved" },
             "leaveConfirm": "You have unsaved changes. Leave without saving?",
             "publishMissing": "Missing: {items}",
             "new": "New listing",
@@ -3368,7 +3372,8 @@
             "saving": "Saving…",
             "saved": "Sales settings saved",
             "saveFailed": "Could not save the sales settings.",
-            "loadFailed": "Could not load the sales settings."
+            "loadFailed": "Could not load the sales settings.",
+            "autoSaved": "Saved at {time}"
         }
     }
 }
