@@ -79,7 +79,7 @@ export function SaleSaveBar({
             <div className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <DirtyIndicator dirty={dirty} compact />
-                    <PublishReason problems={problems} published={published} className="truncate" />
+                    <PublishReason problems={problems} published={published} className="line-clamp-2 leading-snug" />
                 </div>
                 <button type="button" disabled={locked} onClick={onSave} className={`${secondaryBtn} min-h-11 px-5`}>
                     {busy === "save" ? t("editor.saving") : t("editor.save")}

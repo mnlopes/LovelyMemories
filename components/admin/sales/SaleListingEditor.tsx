@@ -166,6 +166,11 @@ export default function SaleListingEditor({
         setSavedState(next);
     };
     const [tab, setTab] = useState<SaleTab>("info");
+    // On phones the tab bar scrolls sideways: keep the current tab in view (also when the publish
+    // checklist jumps to Documents or Performance).
+    useEffect(() => {
+        document.getElementById(`sale-tab-${tab}`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }, [tab]);
     const [slugTouched, setSlugTouched] = useState(isSaved);
     const [savedSlug, setSavedSlug] = useState<string | null>(initial?.slug ?? null);
     // The server may add a suffix to a taken slug: follow what it actually stored.
@@ -397,11 +402,13 @@ export default function SaleListingEditor({
             <div
                 role="tablist"
                 aria-label={t("editor.sections")}
-                className="flex gap-6 overflow-x-auto px-1 pt-1 border-b border-[#f5f5f5] dark:border-admin-dark-border [scrollbar-width:none]"
+                // Fade on the right below md hints that more tabs are off-screen.
+                className="flex gap-6 overflow-x-auto px-1 pr-8 pt-1 border-b border-[#f5f5f5] dark:border-admin-dark-border [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)] md:pr-1 md:[mask-image:none]"
             >
                 {SALE_TABS.map((id2) => (
                     <button
                         key={id2}
+                        id={`sale-tab-${id2}`}
                         type="button"
                         role="tab"
                         aria-selected={tab === id2}
