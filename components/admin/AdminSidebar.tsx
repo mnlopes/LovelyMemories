@@ -1,7 +1,7 @@
 "use client";
 
 import { type ClassValue, clsx } from "clsx";
-import { LayoutGrid, LayoutDashboard, Hotel, Building2, Calendar, Users, Wallet, BarChart3, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, UserCircle, Plug, type LucideIcon } from "lucide-react";
+import { LayoutGrid, LayoutDashboard, Hotel, Building2, Calendar, Users, LogOut, ConciergeBell, Settings, Activity, KeyRound, Ticket, FileUp, X, Sparkles, UserCircle, Plug, type LucideIcon } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -103,16 +103,6 @@ export const AdminSidebar = () => {
                 ...(hasAccess('content') ? [{ icon: LayoutGrid, label: t('content'), path: "/admin/content" }] : []),
             ]
         },
-        // Only show Reports to Super Admins
-        ...(role === 'super_admin' ? [
-            {
-                title: t('reports'),
-                items: [
-                    { icon: Wallet, label: t('finances'), path: "/admin/finances" },
-                    { icon: BarChart3, label: t('performance'), path: "/admin/performance" },
-                ]
-            }
-        ] : []),
         // Only show System/Settings to Super Admins (and Activity to Admins)
         ...(role === 'super_admin' || role === 'admin' ? [
             {

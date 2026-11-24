@@ -576,3 +576,11 @@ html,
 }
 .gap-heartbeat-icon { animation: gap-heartbeat-icon 2.1s ease-in-out infinite; }
 .gap-heartbeat:hover .gap-heartbeat-icon { animation-duration: 1s; }
+
+/* Backoffice in dark mode: native <select> lists open with the browser's light popup while the
+   text inherits the light admin colour, so the options were unreadable. Dark popup + explicit
+   option colours (the latter for Firefox). */
+html.dark select { color-scheme: dark; }
+html.dark select option,
+html.dark select optgroup { background-color: var(--admin-surface); color: var(--admin-text-primary); }
+html.dark select option:disabled { color: var(--admin-text-secondary); }

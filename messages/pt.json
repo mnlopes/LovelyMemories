@@ -3256,6 +3256,7 @@
         },
         "photos": {
             "saveFirst": "Guarde primeiro o anúncio; depois pode adicionar fotografias.",
+            "copiedUnsaved": "{count, plural, one {# foto copiada da casa gerida.} other {# fotos copiadas da casa gerida.}} Guarde o anúncio para as ordenar, escolher a capa ou acrescentar mais.",
             "intro": "A primeira fotografia é a capa. As fotografias grandes são reduzidas automaticamente antes do envio. Tudo neste separador (envios, eliminações, ordem, capa e descrições) fica guardado automaticamente.",
             "upload": "Carregar fotografias",
             "uploading": "A enviar {done}/{total}…",

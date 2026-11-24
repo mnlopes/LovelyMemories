@@ -247,7 +247,7 @@ export async function searchLinkableProperties(
         .select('id, slug, title, city')
         .eq('is_multi_unit', false)
         .order('title->>en', { ascending: true })
-        .limit(10);
+        .limit(50);
     if (q) {
         req = req.or(`slug.ilike.%${q}%,title->>en.ilike.%${q}%,title->>pt.ilike.%${q}%`);
     }

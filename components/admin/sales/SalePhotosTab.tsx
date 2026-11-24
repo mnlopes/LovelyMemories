@@ -40,7 +40,24 @@ export function SalePhotosTab({ form, set, listingId, isSaved, canEdit, persist 
     if (!isSaved) {
         return (
             <Section title={t("tabs.photos")}>
-                <p className="text-sm text-[#a3a3a3]">{t("photos.saveFirst")}</p>
+                {/* Target of the "at least one photo" item in the publish checklist. */}
+                <p id="sale-field-photo" tabIndex={-1} className="text-sm text-[#a3a3a3] focus:outline-none">
+                    {images.length > 0 ? t("photos.copiedUnsaved", { count: images.length }) : t("photos.saveFirst")}
+                </p>
+                {images.length > 0 && (
+                    <ul className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                        {images.slice(0, 12).map((img, i) => (
+                            <li key={img.url} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-[#f5f5f5] dark:bg-admin-dark-bg">
+                                <Image src={img.url} alt="" fill sizes="120px" className="object-cover" />
+                                {i === 0 && (
+                                    <span className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                                        {t("photos.main")}
+                                    </span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </Section>
         );
     }

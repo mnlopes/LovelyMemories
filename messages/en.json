@@ -3265,6 +3265,7 @@
         },
         "photos": {
             "saveFirst": "Save the listing first, then you can add photos.",
+            "copiedUnsaved": "{count, plural, one {# photo copied from the managed home.} other {# photos copied from the managed home.}} Save the listing to reorder them, choose the cover or add more.",
             "intro": "The first photo is the cover. Large photos are shrunk automatically before upload. Everything in this tab (uploads, deletions, order, cover and descriptions) is saved automatically.",
             "upload": "Upload photos",
             "uploading": "Uploading {done}/{total}…",
