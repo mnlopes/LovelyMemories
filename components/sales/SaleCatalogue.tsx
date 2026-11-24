@@ -234,7 +234,7 @@ export function SaleCatalogue({
                                 <button
                                     type="button"
                                     onClick={clear}
-                                    className="flex min-h-12 items-center justify-center rounded-full bg-[#192537] px-7 text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#b09e80] hover:text-[#192537] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b09e80] focus-visible:ring-offset-2"
+                                    className="flex min-h-12 items-center justify-center rounded-full bg-[#192537] px-7 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors duration-500 ease-out hover:bg-[#b09e80] hover:text-[#192537] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b09e80] focus-visible:ring-offset-2"
                                 >
                                     {t('clearFilters')}
                                 </button>

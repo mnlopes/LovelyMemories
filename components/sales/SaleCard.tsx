@@ -4,14 +4,46 @@ import { Bath, BedDouble, Home, MapPin, Maximize, TrendingUp, Zap } from 'lucide
 import { Link } from '@/i18n/routing';
 import { formatEuro, isNewListing, localized, pricePerM2 } from '@/lib/sales/format';
 import { saleImageAlt } from '@/lib/sales/seo';
-import type { SaleCardListing } from '@/lib/sales/types';
+import type { EnergyClass, SaleCardListing } from '@/lib/sales/types';
 
 const badge = 'rounded-full px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em]';
 
-/** Takes the slim card shape (`toSaleCard`), never a whole listing: in the catalogue it renders on the client. */
+/** Energy pill tint, following the certificate scale: green for A+ to B, yellow B- and C, orange D and E, red F. */
+const ENERGY_TINT: Record<EnergyClass, string> = {
+    'A+': 'bg-[#e6f4ea] text-[#1d6b40]',
+    A: 'bg-[#e6f4ea] text-[#1d6b40]',
+    B: 'bg-[#e6f4ea] text-[#1d6b40]',
+    'B-': 'bg-[#f6f4d8] text-[#6b6410]',
+    C: 'bg-[#fdf3d4] text-[#7a5a00]',
+    D: 'bg-[#fdebd7] text-[#8a4a0c]',
+    E: 'bg-[#fde3d6] text-[#94400f]',
+    F: 'bg-[#fbe1e0] text-[#9b2420]',
+    exempt: 'bg-[#eef0f3] text-[#4b5563]',
+};
+
+/**
+ * Takes the slim card shape (`toSaleCard`), never a whole listing: in the catalogue it renders on the client.
+ *
+ * A home that is no longer simply available shows its state in a band across the top of the photo (brand
+ * gold for reserved / under offer, navy for sold). The price stays visible while reserved or under offer;
+ * a sold home shows "Sold" instead of the price.
+ */
 export function SaleCard({ listing, locale, today }: { listing: SaleCardListing; locale: string; today: string }) {
     const t = useTranslations('Sales');
     const sold = listing.status === 'sold';
+    // "New" only matters while the home can still be bought.
+    const showNew = listing.status === 'available' && isNewListing(listing.published_at, today);
+    const statusLabel =
+        listing.status === 'reserved'
+            ? t('badgeReserved')
+            : listing.status === 'under_offer'
+              ? t('badgeUnderOffer')
+              : sold
+                ? t('badgeSold')
+                : null;
+    const statusBand = statusLabel !== null;
+    const energy = listing.energy_class;
+    const energyText = energy === 'exempt' ? t('energyExempt') : energy;
     const image = listing.mainImage;
     const title = localized(listing.title, locale);
     const subtitle = localized(listing.subtitle, locale);
@@ -37,14 +69,18 @@ export function SaleCard({ listing, locale, today }: { listing: SaleCardListing;
                     </div>
                 )}
                 <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
-                <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-2">
+                {statusBand && (
+                    <div
+                        className={`absolute inset-x-0 top-0 z-10 flex h-8 items-center justify-center text-[11px] font-extrabold uppercase tracking-[0.24em] ${
+                            sold ? 'bg-[#192537] text-white' : 'bg-[#b09e80] text-[#192537]'
+                        }`}
+                    >
+                        {statusLabel}
+                    </div>
+                )}
+                <div className={`absolute inset-x-4 flex items-start justify-between gap-2 ${statusBand ? 'top-11' : 'top-4'}`}>
                     <div className="flex flex-wrap gap-1.5">
-                        {isNewListing(listing.published_at, today) && !sold && (
-                            <span className={`${badge} bg-[#b09e80] text-[#192537]`}>{t('badgeNew')}</span>
-                        )}
-                        {listing.status === 'reserved' && <span className={`${badge} bg-white text-[#192537]`}>{t('badgeReserved')}</span>}
-                        {listing.status === 'under_offer' && <span className={`${badge} bg-[#fbf3e2] text-[#6e5218]`}>{t('badgeUnderOffer')}</span>}
-                        {sold && <span className={`${badge} bg-[#192537] text-white`}>{t('badgeSold')}</span>}
+                        {showNew && <span className={`${badge} bg-[#b09e80] text-[#192537]`}>{t('badgeNew')}</span>}
                     </div>
                     {listing.incomeBadge && (
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-[#192537]/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
@@ -67,7 +103,7 @@ export function SaleCard({ listing, locale, today }: { listing: SaleCardListing;
                     {place && <span className="truncate text-xs text-[#6b7280]">{place}</span>}
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                    <div className="flex flex-col">
+                    <div className="flex min-w-0 flex-col">
                         <span className={`text-[26px] font-bold tracking-tight ${sold ? 'text-[#6b7280]' : 'text-[#192537]'}`}>
                             {sold ? t('badgeSold') : onRequest ? t('priceOnRequest') : formatEuro(listing.price!, locale)}
                         </span>
@@ -75,10 +111,10 @@ export function SaleCard({ listing, locale, today }: { listing: SaleCardListing;
                             <span className="text-xs text-[#6b7280]">{formatEuro(perM2, locale)}/m²</span>
                         )}
                     </div>
-                    {listing.energy_class && (
-                        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[#e6f4ea] px-2.5 py-1 text-[11px] font-bold text-[#1d6b40]">
+                    {energy && energyText && (
+                        <span className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ${ENERGY_TINT[energy]}`}>
                             <Zap className="size-3" aria-hidden="true" />
-                            {t('energy', { value: listing.energy_class === 'exempt' ? t('energyExempt') : listing.energy_class })}
+                            {t('energy', { value: energyText })}
                         </span>
                     )}
                 </div>
@@ -110,7 +146,7 @@ export function SaleCard({ listing, locale, today }: { listing: SaleCardListing;
                 </div>
                 <Link
                     href={`/for-sale/${listing.slug}`}
-                    className="mt-auto flex min-h-12 items-center justify-center rounded-full bg-[#192537] text-xs font-bold uppercase tracking-[0.18em] text-white hover:bg-[#b09e80] hover:text-[#192537]"
+                    className="mt-auto flex min-h-12 items-center justify-center rounded-full bg-[#192537] text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors duration-500 ease-out hover:bg-[#b09e80] hover:text-[#192537]"
                 >
                     {t('viewProperty')}
                     <span className="sr-only"> — {title}</span>
