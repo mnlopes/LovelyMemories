@@ -76,7 +76,6 @@ export default function MapLeaflet() {
             zoom={16}
             scrollWheelZoom={false}
             zoomControl={false}
-            attributionControl={false}
             className="w-full h-full z-0"
             style={{ height: '100%', width: '100%', background: '#f1f1f1' }}
         >
