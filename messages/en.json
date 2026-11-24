@@ -3339,11 +3339,21 @@
             "copied": "Data copied. Review it and save.",
             "copyFailed": "Could not copy the data. Try again.",
             "amenities": "Amenities of the home",
-            "amenitiesHint": "Tick the ones to add to this listing's features.",
+            "amenitiesHint": "Tap the ones that matter to a buyer. They are added to Features, where you can translate them.",
             "searchLabel": "Search managed homes",
             "searchPlaceholder": "Search by name…",
             "searching": "Searching…",
-            "noResults": "No homes found."
+            "noResults": "No homes found.",
+            "pickedCount": "{count, plural, =0 {None picked} one {# picked} other {# picked}}",
+            "groups": { "outdoor": "View and outdoors", "comfort": "Comfort", "kitchen": "Kitchen", "building": "Building" },
+            "addLabel": "Add another",
+            "addPlaceholder": "Building restored in 2020",
+            "add": "Add",
+            "addEmpty": "Type the feature first.",
+            "addDuplicate": "That feature is already on the list.",
+            "addLimit": "A listing can have up to {max} features.",
+            "removeCustom": "Remove {name}",
+            "otherToggle": "Other rental amenities ({count}), usually not relevant to a buyer"
         },
         "settings": {
             "title": "Sales",

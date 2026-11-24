@@ -8,12 +8,11 @@ import { getPropertyCopy, searchLinkableProperties } from "@/app/actions/sales";
 import { supabase } from "@/lib/supabase";
 import { localized } from "@/lib/sales/format";
 import type { Localized } from "@/lib/sales/types";
-import { Checkbox, Section, input, secondaryBtn, type SaleTabProps } from "./ui";
+import { AmenityPicker } from "./AmenityPicker";
+import { Section, input, secondaryBtn, type SaleTabProps } from "./ui";
 
 type Found = { id: string; slug: string; title: Localized; city: string | null };
 type Linked = { id: string; title: Localized; slug: string };
-
-const featureKey = (f: Localized) => (f.en ?? f.pt ?? "").trim().toLowerCase();
 
 /** True when copying would overwrite something the listing already has. */
 function hasCopyableData(form: SaleTabProps["form"]): boolean {
@@ -136,19 +135,6 @@ export function LinkPropertyPicker({ form, set }: SaleTabProps) {
         }
     }
 
-    function toggleSuggestion(item: Localized, on: boolean) {
-        const k = featureKey(item);
-        if (on) {
-            if (form.features.length >= 60 || form.features.some((f) => featureKey(f) === k)) return;
-            set("features", [...form.features, item]);
-        } else {
-            set(
-                "features",
-                form.features.filter((f) => featureKey(f) !== k),
-            );
-        }
-    }
-
     return (
         <Section title={t("link.section")}>
             <p className="text-sm text-[#737373] dark:text-admin-dark-text-secondary">{t("link.intro")}</p>
@@ -177,25 +163,7 @@ export function LinkPropertyPicker({ form, set }: SaleTabProps) {
                     </div>
                     <p className="text-xs text-[#a3a3a3]">{t("link.copyHint")}</p>
 
-                    {suggestions.length > 0 && (
-                        <fieldset className="flex flex-col gap-2 border-t border-[#f5f5f5] dark:border-admin-dark-border pt-4">
-                            <legend className="text-[11px] font-bold uppercase tracking-wider text-[#a3a3a3]">
-                                {t("link.amenities")}
-                            </legend>
-                            <p className="text-xs text-[#a3a3a3]">{t("link.amenitiesHint")}</p>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                                {suggestions.map((item) => (
-                                    <Checkbox
-                                        key={featureKey(item)}
-                                        checked={form.features.some((f) => featureKey(f) === featureKey(item))}
-                                        onChange={(v) => toggleSuggestion(item, v)}
-                                    >
-                                        {localized(item, locale)}
-                                    </Checkbox>
-                                ))}
-                            </div>
-                        </fieldset>
-                    )}
+                    {suggestions.length > 0 && <AmenityPicker suggestions={suggestions} form={form} set={set} />}
                 </div>
             ) : (
                 <div
