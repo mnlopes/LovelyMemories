@@ -762,6 +762,8 @@
         "sortNewest": "Mais recentes",
         "sortPriceAsc": "Preço: do mais baixo ao mais alto",
         "sortPriceDesc": "Preço: do mais alto ao mais baixo",
+        "readMore": "Ler mais",
+        "readLess": "Mostrar menos",
         "filterTypeTitle": "Tipo de imóvel",
         "filterBedroomsTitle": "Número mínimo de quartos",
         "filterUpTo": "Até {price}",

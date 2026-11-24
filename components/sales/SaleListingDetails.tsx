@@ -9,6 +9,7 @@ import { saleImageAlt } from '@/lib/sales/seo';
 import type { SaleCardListing, SaleCondition, SaleListing, SaleStatus, SaleType } from '@/lib/sales/types';
 import { SaleAreaMap } from './SaleAreaMap';
 import { SaleCard } from './SaleCard';
+import { SaleDescription } from './SaleDescription';
 import { SaleContactForm } from './SaleContactForm';
 import { SaleMobileBar } from './SaleMobileBar';
 import { SalePerformance } from './SalePerformance';
@@ -202,9 +203,7 @@ export function SaleListingDetails({
                         {description.length > 0 && (
                             <section className="flex flex-col gap-3.5">
                                 <h2 className="text-2xl font-bold text-[#192537]">{t('aboutTitle')}</h2>
-                                {description.map((p, i) => (
-                                    <p key={i} className="whitespace-pre-line text-base leading-[1.75] text-[#374151]">{p}</p>
-                                ))}
+                                <SaleDescription paragraphs={description} readMore={t('readMore')} readLess={t('readLess')} />
                             </section>
                         )}
 
