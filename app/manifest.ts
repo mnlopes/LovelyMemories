@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Lovely Memories — Luxury Stays & Property Management',
+    name: 'Lovely Memories | Luxury Stays & Property Management',
     short_name: 'Lovely Memories',
     description:
       'Curated luxury homes with concierge service in Porto, Vila Nova de Gaia and the Douro, plus full property management for owners.',

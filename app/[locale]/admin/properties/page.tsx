@@ -261,7 +261,7 @@ export default function AdminProperties() {
         if (stillFailing === 0) {
             toast.success(`All ${recovered} propert${recovered === 1 ? 'y' : 'ies'} synced successfully.`);
         } else {
-            toast.error(`${stillFailing} of ${failed.length} still failing — hover each red sync icon to see the reason.`);
+            toast.error(`${stillFailing} of ${failed.length} still failing. Hover each red sync icon to see the reason.`);
         }
     };
 

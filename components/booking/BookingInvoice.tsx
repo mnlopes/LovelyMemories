@@ -158,7 +158,7 @@ export const BookingInvoice: React.FC<BookingInvoiceProps> = ({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '24px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <p style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.15em', color: 'rgba(255, 255, 255, 0.4)', margin: 0 }}>{t('success.dates')}</p>
-                                <p style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{checkIn} — {checkOut}</p>
+                                <p style={{ fontSize: '15px', fontWeight: 'bold', margin: 0 }}>{checkIn} → {checkOut}</p>
                             </div>
                             <Calendar style={{ width: '22px', height: '22px', color: '#B08D4A' }} />
                         </div>

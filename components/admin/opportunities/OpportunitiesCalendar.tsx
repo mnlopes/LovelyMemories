@@ -111,7 +111,7 @@ export function OpportunitiesCalendar({
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-[11px] text-admin-text-secondary">
-                        {format(days[0], "d MMM", { locale: dateLocale })} — {format(days[VISIBLE_DAYS - 1], "d MMM", { locale: dateLocale })}
+                        {format(days[0], "d MMM", { locale: dateLocale })} a {format(days[VISIBLE_DAYS - 1], "d MMM", { locale: dateLocale })}
                     </span>
                     <div className="flex gap-1">
                         <button

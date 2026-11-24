@@ -77,7 +77,7 @@ export function buildPageMetadata({
       type: 'website',
       siteName: 'Lovely Memories',
       locale: OG_LOCALES[locale] ?? 'en_US',
-      title: `Lovely Memories — ${title}`,
+      title: `${title} | Lovely Memories`,
       description,
       url,
       images: ['/opengraph-image.png'],

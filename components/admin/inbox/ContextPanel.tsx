@@ -142,7 +142,7 @@ export function ContextPanel(props: {
                                                 <CircleAlert className="h-3.5 w-3.5 shrink-0 text-amber-500" />
                                             )}
                                             <span className={cn(filled ? "text-[#525252] dark:text-white/70" : "text-[#a3a3a3]")}>
-                                                {f}{!filled && ` — ${t("knowledgeMissing")}`}
+                                                {f}{!filled && ` (${t("knowledgeMissing")})`}
                                             </span>
                                         </li>
                                     );

@@ -76,7 +76,7 @@ function propertyLines(rows: Row[]): string[] {
     }
 
     const sub = loc(r.subtitle);
-    const detail = [facts.join(', '), sub].filter(Boolean).join(' — ');
+    const detail = [facts.join(', '), sub].filter(Boolean).join('. ');
     const line = `- [${name}](${url}): ${label}${detail ? `. ${detail}` : ''}.`;
 
     const list = byCity.get(label) ?? [];
@@ -117,7 +117,7 @@ async function inventorySection(): Promise<string> {
     '',
     '## Properties currently offered',
     '',
-    `${top.length} bookable listings. This list is generated from our live inventory, so it reflects what is actually available to book today. Every property is booked directly on our own website — no platform fees.`,
+    `${top.length} bookable listings. This list is generated from our live inventory, so it reflects what is actually available to book today. Every property is booked directly on our own website, with no platform fees.`,
     ...lines,
     '',
   ].join('\n');

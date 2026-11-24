@@ -313,8 +313,8 @@ export const passwordResetEmail = (data: { fullName?: string; link: string; emai
         cta: isEn ? "Reset password" : "Redefinir palavra-passe",
         fallback: isEn ? "If the button doesn't work, copy and paste this link into your browser:" : "Se o botão não funcionar, copie e cole este link no navegador:",
         ignore: isEn
-            ? "If you didn't request this, you can safely ignore this email — your password won't change."
-            : "Se não fez este pedido, pode ignorar este email com segurança — a sua palavra-passe não será alterada.",
+            ? "If you didn't request this, you can safely ignore this email. Your password won't change."
+            : "Se não fez este pedido, pode ignorar este email com segurança. A sua palavra-passe não será alterada.",
         footer: isEn ? "Best regards," : "Com os melhores cumprimentos,",
         team: isEn ? "Lovely Memories Team" : "Equipa Lovely Memories"
     };
@@ -358,8 +358,8 @@ export const ownerInviteEmail = (data: { fullName?: string; link: string; email?
         subtitle: isEn ? "Owner Portal" : "Portal de Proprietário",
         greeting: isEn ? "Hello" : "Olá",
         intro: isEn
-            ? `You've been invited to join the <strong style="color:#B08D4A;">Lovely Memories Owner Portal</strong> — your private space to follow how your properties are performing.`
-            : `Foi convidado(a) para aceder ao <strong style="color:#B08D4A;">Portal de Proprietário da Lovely Memories</strong> — o seu espaço privado para acompanhar o desempenho das suas propriedades.`,
+            ? `You've been invited to join the <strong style="color:#B08D4A;">Lovely Memories Owner Portal</strong>, your private space to follow how your properties are performing.`
+            : `Foi convidado(a) para aceder ao <strong style="color:#B08D4A;">Portal de Proprietário da Lovely Memories</strong>, o seu espaço privado para acompanhar o desempenho das suas propriedades.`,
         bullets: isEn
             ? ["Revenue & payouts at a glance", "Bookings and occupancy in real time", "Monthly reports you can export"]
             : ["Receitas e pagamentos num relance", "Reservas e ocupação em tempo real", "Relatórios mensais para exportar"],

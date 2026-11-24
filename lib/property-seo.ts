@@ -136,11 +136,11 @@ export function propertyHeadline(p: SeoProperty, locale: string, lower = false):
     return place ? `${label} ${place}` : label;
 }
 
-/** Page title without the brand: "The Charming — 1-Bedroom Apartment in Porto". */
+/** Page title without the brand: "The Charming, 1-Bedroom Apartment in Porto". */
 export function propertySeoTitle(p: SeoProperty, locale: string): string {
     const name = propertyName(p, locale);
     const headline = propertyHeadline(p, locale);
-    return name ? `${name} — ${headline}` : headline;
+    return name ? `${name}, ${headline}` : headline;
 }
 
 const guestsPhrase = (n: number, l: Locale) =>
@@ -171,11 +171,11 @@ export function propertySeoDescription(p: SeoProperty, locale: string): string {
     return [lead, fact].filter(Boolean).join(' ');
 }
 
-/** Photo alt text: "The Charming — 1-bedroom apartment in Porto". */
+/** Photo alt text: "The Charming, 1-bedroom apartment in Porto". */
 export function propertyImageAlt(p: SeoProperty, locale: string): string {
     const name = propertyName(p, locale);
     const headline = propertyHeadline(p, locale, true);
-    return name ? `${name} — ${headline}` : headline;
+    return name ? `${name}, ${headline}` : headline;
 }
 
 /** "Rua do Belomonte, 86 - 88" -> "Rua do Belomonte". */
@@ -225,9 +225,9 @@ export function buildingSeo(building: SeoProperty, units: SeoProperty[], locale:
     const title = `${titleCount}${where}`;
     const alt = `${count}${where}`;
     return {
-        title: name ? `${name} — ${title}` : title,
+        title: name ? `${name}, ${title}` : title,
         description,
-        imageAlt: name ? `${name} — ${alt}` : alt,
+        imageAlt: name ? `${name}, ${alt}` : alt,
     };
 }
 

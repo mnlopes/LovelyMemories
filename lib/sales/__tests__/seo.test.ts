@@ -86,9 +86,9 @@ test('headline: T5+ and other cities', () => {
 });
 
 test('seo title uses the title with language fallback', () => {
-    assert.equal(saleSeoTitle(make(), 'pt'), 'Casa do Jardim — Moradia T1 à venda no Porto');
+    assert.equal(saleSeoTitle(make(), 'pt'), 'Casa do Jardim, Moradia T1 à venda no Porto');
     const onlyPt = make({ title: { pt: 'Casa do Jardim' } });
-    assert.equal(saleSeoTitle(onlyPt, 'en'), 'Casa do Jardim — 1-Bedroom House for Sale in Porto');
+    assert.equal(saleSeoTitle(onlyPt, 'en'), 'Casa do Jardim, 1-Bedroom House for Sale in Porto');
     assert.equal(saleSeoTitle(make({ title: {} }), 'en'), '1-Bedroom House for Sale in Porto');
 });
 
@@ -123,9 +123,9 @@ test('description is at most 160 characters', () => {
 });
 
 test('image alt: lower-case headline, index from the 2nd photo', () => {
-    assert.equal(saleImageAlt(make(), 'pt', 0), 'Casa do Jardim — moradia T1 à venda no Porto');
-    assert.equal(saleImageAlt(make(), 'en', 0), 'Garden House — 1-bedroom house for sale in porto'.replace('porto', 'Porto'));
-    assert.equal(saleImageAlt(make(), 'pt', 1), 'Casa do Jardim — moradia T1 à venda no Porto (2)');
+    assert.equal(saleImageAlt(make(), 'pt', 0), 'Casa do Jardim, moradia T1 à venda no Porto');
+    assert.equal(saleImageAlt(make(), 'en', 0), 'Garden House, 1-bedroom house for sale in porto'.replace('porto', 'Porto'));
+    assert.equal(saleImageAlt(make(), 'pt', 1), 'Casa do Jardim, moradia T1 à venda no Porto (2)');
 });
 
 test('json-ld: available listing with price', () => {

@@ -138,7 +138,7 @@ export function SaleCard({ listing, locale, today }: { listing: SaleCardListing;
                     className="mt-auto flex min-h-12 items-center justify-center rounded-full bg-[#192537] text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors duration-500 ease-out hover:bg-[#b09e80] hover:text-[#192537]"
                 >
                     {t('viewProperty')}
-                    <span className="sr-only"> — {title}</span>
+                    <span className="sr-only">: {title}</span>
                 </Link>
             </div>
         </article>

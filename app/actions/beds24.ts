@@ -229,7 +229,7 @@ export async function createTestBooking(beds24PropertyId: number) {
             numAdult: 2,
             firstName: 'TESTE',
             lastName: 'Lovely PMS (apagar)',
-            notes: 'Reserva de teste outbound — medir propagação ao Airbnb e cancelar.',
+            notes: 'Reserva de teste outbound: medir propagação ao Airbnb e cancelar.',
         }],
         context: 'action',
     }) as Array<{ success: boolean; new?: { id: number } }>;

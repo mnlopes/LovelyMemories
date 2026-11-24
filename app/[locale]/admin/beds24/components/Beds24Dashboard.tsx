@@ -85,7 +85,7 @@ export default function Beds24Dashboard(props: {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Beds24 PMS Lab</h1>
-                    <p className="text-[#a3a3a3] mt-1 font-medium text-sm">Fase 1 — medição webhook vs polling · 6 anúncios Primary Owner · produção (só super_admin) · atualização automática 30s</p>
+                    <p className="text-[#a3a3a3] mt-1 font-medium text-sm">Fase 1: medição webhook vs polling · 6 anúncios Primary Owner · produção (só super_admin) · atualização automática 30s</p>
                 </div>
                 <div className="flex items-center gap-2">
                     {credits !== null && credits !== undefined && (
@@ -157,7 +157,7 @@ export default function Beds24Dashboard(props: {
                                 </tr>
                             ))}
                             {properties.length === 0 && (
-                                <tr><td colSpan={5} className="py-6 text-center text-[#a3a3a3]">Nada importado ainda — clica “Importar os 6”.</td></tr>
+                                <tr><td colSpan={5} className="py-6 text-center text-[#a3a3a3]">Nada importado ainda. Clica “Importar os 6”.</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -171,7 +171,7 @@ export default function Beds24Dashboard(props: {
                 {preview && (
                     <div className="mt-3 p-3 rounded-xl bg-gray-50 dark:bg-admin-dark-surface border border-[#f5f5f5] dark:border-admin-dark-border">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold">Calendário Beds24 — {preview.name} (30 dias)</span>
+                            <span className="text-sm font-semibold">Calendário Beds24: {preview.name} (30 dias)</span>
                             <button onClick={() => setPreview(null)} className="text-xs underline">fechar</button>
                         </div>
                         <div className="flex flex-wrap gap-1 text-xs font-mono">
@@ -210,7 +210,7 @@ export default function Beds24Dashboard(props: {
                                 </tr>
                             ))}
                             {status.recentEvents.length === 0 && (
-                                <tr><td colSpan={5} className="py-6 text-center text-[#a3a3a3]">Ainda nenhum webhook — configura o URL + header secreto no Beds24 (Settings → Properties → Access).</td></tr>
+                                <tr><td colSpan={5} className="py-6 text-center text-[#a3a3a3]">Ainda nenhum webhook. Configura o URL + header secreto no Beds24 (Settings → Properties → Access).</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -287,7 +287,7 @@ export default function Beds24Dashboard(props: {
                         </div>
                     ))}
                     {messages.length === 0 && (
-                        <p className="py-6 text-center text-[#a3a3a3] text-sm">Sem mensagens ainda — chegam via webhook ou no “Sync agora”.</p>
+                        <p className="py-6 text-center text-[#a3a3a3] text-sm">Sem mensagens ainda. Chegam via webhook ou no “Sync agora”.</p>
                     )}
                 </div>
             </Card>

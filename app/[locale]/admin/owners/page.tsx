@@ -494,8 +494,8 @@ export default function AdminOwnersPage({ params }: { params: Promise<{ locale: 
                         </h3>
                         <p className="text-sm text-gray-500 mt-1">
                             {locale === 'en'
-                                ? `Set a new password for ${pwTarget.full_name || pwTarget.email}. Share it with the owner — they can change it after logging in.`
-                                : `Define uma nova password para ${pwTarget.full_name || pwTarget.email}. Partilha-a com o proprietário — ele pode alterá-la após entrar.`}
+                                ? `Set a new password for ${pwTarget.full_name || pwTarget.email}. Share it with the owner. They can change it after logging in.`
+                                : `Define uma nova password para ${pwTarget.full_name || pwTarget.email}. Partilha-a com o proprietário. Ele pode alterá-la após entrar.`}
                         </p>
 
                         {pwDone ? (

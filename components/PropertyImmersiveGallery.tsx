@@ -149,7 +149,7 @@ export const PropertyImmersiveGallery = ({ images, title }: PropertyImmersiveGal
                         </div>
 
                         <div className="mt-8 text-white/50 text-sm font-medium tracking-widest uppercase selection:hidden">
-                            {currentImageIndex + 1} of {images.length} — {title}
+                            {currentImageIndex + 1} of {images.length} · {title}
                         </div>
                     </motion.div>
                 )}

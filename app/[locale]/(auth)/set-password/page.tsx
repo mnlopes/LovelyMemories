@@ -86,8 +86,8 @@ function SetPasswordForm() {
             setError(
                 sessionMissing
                     ? (isPt
-                        ? "A ligação expirou. Volte a abrir o link do email — de preferência no Safari ou Chrome, não dentro da aplicação de email."
-                        : "Your link expired. Please open the email link again — ideally in Safari or Chrome, not inside your email app.")
+                        ? "A ligação expirou. Volte a abrir o link do email, de preferência no Safari ou Chrome, não dentro da aplicação de email."
+                        : "Your link expired. Please open the email link again, ideally in Safari or Chrome, not inside your email app.")
                     : (err?.message || (isPt ? "Ocorreu um erro ao guardar a palavra-passe." : "An error occurred while updating your password"))
             );
             toast.error(isPt ? "Não foi possível guardar a palavra-passe" : "Failed to update password");

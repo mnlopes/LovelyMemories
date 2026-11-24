@@ -59,11 +59,11 @@ export function saleHeadline(l: HeadlineFields, locale: string): string {
     return [label, forSale, place].filter(Boolean).join(' ');
 }
 
-/** Page title without the brand: "Casa do Jardim — Moradia T1 à venda no Porto". */
+/** Page title without the brand: "Casa do Jardim, Moradia T1 à venda no Porto". */
 export function saleSeoTitle(l: SaleListing, locale: string): string {
     const name = localized(l.title, locale).trim();
     const headline = saleHeadline(l, locale);
-    return name ? `${name} — ${headline}` : headline;
+    return name ? `${name}, ${headline}` : headline;
 }
 
 /** Meta description: headline, area, energy class and price, at most 160 characters. */
@@ -84,14 +84,14 @@ export function saleSeoDescription(l: SaleListing, locale: string): string {
     return clampDescription([head, tail.charAt(0).toUpperCase() + tail.slice(1) + '.'].join(' '), 160);
 }
 
-/** Photo alt text: "Casa do Jardim — moradia T1 à venda no Porto", " (n)" from the 2nd photo. */
+/** Photo alt text: "Casa do Jardim, moradia T1 à venda no Porto", " (n)" from the 2nd photo. */
 export function saleImageAlt(l: HeadlineFields, locale: string, index: number): string {
     const { loc, label, forSale, place } = headlineParts(l, locale);
     const lowerLabel = loc === 'en' ? label.toLowerCase() : label.charAt(0).toLowerCase() + label.slice(1);
     const lowerForSale = forSale.toLowerCase();
     const headline = [lowerLabel, lowerForSale, place].filter(Boolean).join(' ');
     const name = localized(l.title, locale).trim();
-    const base = name ? `${name} — ${headline}` : headline;
+    const base = name ? `${name}, ${headline}` : headline;
     return index > 0 ? `${base} (${index + 1})` : base;
 }
 

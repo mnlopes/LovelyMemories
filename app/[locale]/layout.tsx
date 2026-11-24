@@ -36,7 +36,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.lovelymemories.pt"),
   title: {
-    default: `${SITE_NAME} — Luxury Stays & Property Management in Porto & Douro`,
+    default: `${SITE_NAME} | Luxury Stays & Property Management in Porto & Douro`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Luxury Stays & Property Management`,
+    title: `${SITE_NAME} | Luxury Stays & Property Management`,
     description: SITE_DESCRIPTION,
     url: "https://www.lovelymemories.pt",
     images: ["/opengraph-image.png"],

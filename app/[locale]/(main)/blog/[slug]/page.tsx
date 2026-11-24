@@ -61,7 +61,7 @@ export async function generateMetadata({
         openGraph: {
             type: 'article',
             siteName: 'Lovely Memories',
-            title: `Lovely Memories — ${title}`,
+            title: `${title} | Lovely Memories`,
             description,
             url,
             images: [post.image_url || '/opengraph-image.png'],

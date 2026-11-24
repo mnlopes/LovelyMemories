@@ -438,9 +438,9 @@ async function syncPropertyICalInternal(propertyId: string, opts: SyncOptions = 
                         .in('id', uidsToDelete);
                 }
             } else if (failedFeeds > 0) {
-                console.warn(`[iCal Sync] ${failedFeeds} feed(s) failed for ${propertyTitle} — skipping cleanup so the failed feed's blocks are kept.`);
+                console.warn(`[iCal Sync] ${failedFeeds} feed(s) failed for ${propertyTitle}; skipping cleanup so the failed feed's blocks are kept.`);
             } else {
-                console.warn(`[iCal Sync] Feed returned 0 events for ${propertyTitle} — skipping cleanup to avoid wiping blocks on a transient empty feed.`);
+                console.warn(`[iCal Sync] Feed returned 0 events for ${propertyTitle}; skipping cleanup to avoid wiping blocks on a transient empty feed.`);
             }
 
             newEventsCount = uniqueEvents.length;
