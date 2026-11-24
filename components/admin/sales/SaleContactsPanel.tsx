@@ -5,7 +5,7 @@ import { Check, Loader2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { saveSalesContactSettings, type SalesContactSettings } from "@/app/actions/sales";
-import { focusRing, input, label } from "./ui";
+import { focusRing, input, label, primaryBtn } from "./ui";
 
 const EMAIL_RE = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/;
 
@@ -55,8 +55,9 @@ export function SaleContactsPanel({
         return () => window.removeEventListener("keydown", onKey);
     }, [open]);
 
-    async function save() {
-        if (!canEdit) return;
+    /** `manual` (the Save button): saves even with no change and confirms it; otherwise only when something changed. */
+    async function save(manual = false) {
+        if (!canEdit || saving) return;
         const next = {
             ami_license: draft.ami_license.trim(),
             whatsapp: draft.whatsapp.trim(),
@@ -67,7 +68,7 @@ export function SaleContactsPanel({
             return;
         }
         setEmailError(false);
-        if (JSON.stringify(next) === JSON.stringify(savedRef.current)) return;
+        if (!manual && JSON.stringify(next) === JSON.stringify(savedRef.current)) return;
         setSaving(true);
         try {
             const res = await saveSalesContactSettings(next);
@@ -156,7 +157,8 @@ export function SaleContactsPanel({
                     <span className="text-[11px] font-normal normal-case tracking-normal text-[#a3a3a3]">{t("settings.leadsEmailHint")}</span>
                 </label>
 
-                <p role="status" className="mt-auto flex min-h-5 items-center gap-2 text-xs font-bold">
+                <div className="mt-auto flex items-center justify-between gap-3 border-t border-[#f5f5f5] pt-4 dark:border-admin-dark-border">
+                <p role="status" className="flex min-h-5 items-center gap-2 text-xs font-bold">
                     {saving ? (
                         <span className="flex items-center gap-2 text-[#737373] dark:text-admin-dark-text-secondary">
                             <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -176,6 +178,18 @@ export function SaleContactsPanel({
                         <span className="text-[#a3a3a3]">{t("contacts.viewOnly")}</span>
                     ) : null}
                 </p>
+                {canEdit && (
+                    // Also saves on its own when a field is left; the button is there for peace of mind.
+                    <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => void save(true)}
+                        className={`${primaryBtn} min-h-11 shrink-0 px-6`}
+                    >
+                        {t("settings.save")}
+                    </button>
+                )}
+                </div>
             </div>
         </div>
     );
